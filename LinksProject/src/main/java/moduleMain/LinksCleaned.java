@@ -1456,15 +1456,15 @@ public class LinksCleaned extends Thread {
 
         try {
 
-            // Start the application and specify the property file with a vm parameter, e.g.
-            // java -har -Dlinks.properties=/path/to/propertyfile
-            String filename = System.getProperty("links.properties")
+            // Start the application and specify the property file with a parameter, e.g.
+            // java -jar -Dlinks.properties=/path/to/propertyfile
+            String filename = System.getProperty( "links.properties" );
             input = (filename == null)
-                    ? getClass().getClassLoader().getResourceAsStream(filename) :
-            :new FileInputStream(filename);
+                    ? getClass().getClassLoader().getResourceAsStream( filename )
+                    : new FileInputStream( filename );
 
-            if (input == null) {
-                System.out.println("Sorry, unable to find " + filename);
+            if( input == null ) {
+                System.out.println( "Sorry, unable to find " + filename );
                 return;
             }
 
