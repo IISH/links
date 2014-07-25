@@ -268,8 +268,18 @@ public class LinksSpecific {
         return sdf.format(cal.getTime());
     }
 
-    
-    
+
+    /**
+     *
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat( format );
+        return sdf.format(cal.getTime());
+    }
+
+
     /**
      * 
      * @param seconds
@@ -298,7 +308,7 @@ public class LinksSpecific {
      * Gebruik deze functie om een datum te controleren en te splitsen
      * De datum kan splitchars bevatten als -, / \ [] etc.
      * Formaat kan zijn: d-M-yyyy or dd-M-yyyy or d-MM-yyyy or dd-MM-yyyy
-     * @param Te controleren datum
+     * @param date
      * @return een DateYearMonthDay object met datum en evt. fouten
      */
     public static DateYearMonthDaySet devideCheckDate(String date){
