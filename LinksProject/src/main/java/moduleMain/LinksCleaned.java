@@ -55,7 +55,14 @@ import linksManager.ManagerGui;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-23-Jul-2014 Read properties file
- * FL-23-Jul-2014 Latest change
+ * FL-28-Jul-2014 Timing functions
+ * FL-28-Jul-2014 Latest change
+ *
+if( 1 == 1 ) {
+System.out.println( "EXIT." );
+funcShowMessage( "EXIT", false, true );
+return;
+}
  */
 public class LinksCleaned extends Thread
 {
@@ -134,6 +141,7 @@ public class LinksCleaned extends Thread
     private String pass = "";
 
     private int[] sources = { 10, 225 };
+    private String endl = ". OK.";              // ".";
 
     /**
      * Constructor
@@ -205,16 +213,19 @@ public class LinksCleaned extends Thread
 
             if( bronNr != 0 ) { setSourceFilters(); }       // Set source filters
 
-            if( dos.isDoRenewData() ) { funcRenewData(); }  // Renew Data in Cleaned
+            if( dos.isDoRenewData() ) {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoRenewData" );
+
+                funcRenewData();        // Renew Data in Cleaned
+            }
 
             // Load reports
-            ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-            System.out.println( ts + " Loading report table" );
             funcShowMessage( "Loading report table", false, false );
             {
                 ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
             }
-            funcShowMessage( ".", false, true );
+            funcShowMessage( endl, false, true );
 
 
             // basic names TEMP
@@ -224,8 +235,6 @@ public class LinksCleaned extends Thread
                 System.out.println( ts + " dos.isDoPreBasicNames" );
 
                 // load the ref tables
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " Loading reftabel(s)" );
                 funcShowMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
                 {
                     // ttalFirstname = new TableToArraysSet(conGeneral, "original", "firstname");
@@ -234,10 +243,9 @@ public class LinksCleaned extends Thread
                     ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
                     ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 // run name functions
-                //removeFirstnameTable();
                 createTempFirstname();
                 createTempFirstnameFile();
                 ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
@@ -270,34 +278,29 @@ public class LinksCleaned extends Thread
                 ttalSuffix.free();
 
 
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " Converting names to lowercase" );
                 funcShowMessage( "Converting names to lowercase", false, false );
                 {
                     String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
                     conCleaned.runQuery(qLower);
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
 
                 //
                 LinksPrematch lpm = new LinksPrematch(taLOLCoutput, tbLOLClatestOutput);
 
                 // temp
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Splitting names", false, false );
                 {
                     lpm.doSplitName();
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Creating unique name tables", false, false );
                 {
                     lpm.doUniqueNameTablesTemp();
                 }
 
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Basic names tables", false, false );
                 {
                     lpm.doBasicName();
@@ -312,14 +315,13 @@ public class LinksCleaned extends Thread
                 System.out.println( ts + " dos.isDoNames" );
 
                 // Loading reference tables
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Loading name reference tables", false, false );
                 {
                     ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
                     ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
                     ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 // First name
                 //removeFirstnameTable();
@@ -327,10 +329,9 @@ public class LinksCleaned extends Thread
                 createTempFirstnameFile();
                 String IndexField = "original";
                 String tableName = "firstname";
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, false );
                 ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 runMethod("funcStandardFirstname");
                 ttalFirstname.updateTable();
@@ -346,10 +347,9 @@ public class LinksCleaned extends Thread
                 createTempFamilyname();
                 createTempFamilynameFile();
                 tableName = "familyname";
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, false );
                 ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 runMethod("funcStandardFamilyname");
                 ttalFamilyname.updateTable();
@@ -364,13 +364,12 @@ public class LinksCleaned extends Thread
                 funcDeleteRows();
 
                 // Names to lowercase
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Converting names to lowercase", false, false );
                 {
                     String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
                     conCleaned.runQuery(qLower);
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 // Run prepiece
                 runMethod("funcStandardPrepiece");
@@ -379,17 +378,14 @@ public class LinksCleaned extends Thread
                 runMethod("funcStandardSuffix");
 
                 // Update reference
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 funcShowMessage( "Updating names reference tables...", false, false );
                 {
                     ttalPrepiece.updateTable();
                     ttalSuffix.updateTable();
                     ttalAlias.updateTable();
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
-
-            if( 1 == 1 ) { System.out.println( "ABORT." ); return; }
 
             // Remarks
             if (dos.isDoRemarks())
@@ -403,7 +399,7 @@ public class LinksCleaned extends Thread
                     //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
                     //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 runMethod("scanRemarks");
 
@@ -412,7 +408,7 @@ public class LinksCleaned extends Thread
                     //ttalLocation.updateTable();
                     //ttalOccupation.updateTable();
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // All location functions,
@@ -425,7 +421,7 @@ public class LinksCleaned extends Thread
                 {
                     ttalLocation = new TableToArraysSet(conGeneral, conOr, "original", "location");
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 runMethod("funcStandardRegistrationLocation");
                 runMethod("funcStandardBirthLocation");
@@ -436,22 +432,29 @@ public class LinksCleaned extends Thread
                 {
                     ttalLocation.updateTable();
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // AGE YEAR
-            if (dos.isDoAgeYear()) {
+            if( dos.isDoAgeYear() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoAgeYear" );
+
                 runMethod("funcStandardYearAge");
             }
 
             // Status Sex
-            if (dos.isDoStatusSex())
+            if( dos.isDoStatusSex() )
             {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoStatusSex" );
+
                 funcShowMessage( "Loading reftabel(s): " + "status_sex" + "...", false, false );
                 {
                     ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
 
                 runMethod("funcStandardSex");
                 runMethod("funcStandardStatusSex");
@@ -460,27 +463,36 @@ public class LinksCleaned extends Thread
                 {
                     ttalStatusSex.updateTable();
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // registration Type
-            if (dos.isDoType()) {
+            if( dos.isDoType() ) {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoType" );
+
                 runMethod("funcStandardType");
             }
 
 
             // ROLE
-            if (dos.isDoRole()) {
+            if( dos.isDoRole() ) {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoRole" );
+
                 funcShowMessage( "Running funcStandardRole on all sources...", false, false );
                 funcStandardRole();
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // DATE FUNCTIONS
 
             // Run date queries
-            if (dos.isDoDates())
+            if( dos.isDoDates() )
             {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoDates" );
+
                 funcShowMessage( "Running Date functions on all sources...", false, false );
                 {
                     // Clean dates
@@ -521,19 +533,29 @@ public class LinksCleaned extends Thread
                     conCleaned.runQuery(q5);
 
                 }
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
-            if (dos.isDoSequence()) {
+            if( dos.isDoSequence() ) {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoSequence" );
+
                 runMethod("funcStandardSequence");
             }
 
-            if (dos.isDoRelation()) {
+            if( dos.isDoRelation() ) {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoRelation" );
+
                 runMethod("funcRelation");
             }
 
             // funMinMaxDateMain
-            if (dos.isDoMinMaxDate()) {
+            if( dos.isDoMinMaxDate() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoMinMaxDate" );
+
                 if (bronFilter.isEmpty()) {
                     for (int i : sources) {
                         funcShowMessage( "Running funMinMaxDateMain for source: " + i + "...", false, false );
@@ -541,7 +563,7 @@ public class LinksCleaned extends Thread
                             funcFillMinMaxArrays("" + i);
                             funMinMaxDateMain("" + i);
                         }
-                        funcShowMessage( ".", false, true );
+                        funcShowMessage( endl, false, true );
                     }
                 } else {
                     funcShowMessage( "Running funMinMaxDateMain...", false, false );
@@ -549,12 +571,16 @@ public class LinksCleaned extends Thread
                         funcFillMinMaxArrays("" + this.bronNr);
                         funMinMaxDateMain("");
                     }
-                    funcShowMessage( ".", false, true );
+                    funcShowMessage( endl, false, true );
                 }
             }
 
             // funcMinMaxMarriageYear
-            if (dos.isDoMinMaxMarriage()) {
+            if( dos.isDoMinMaxMarriage() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoMinMaxMarriage" );
+
                 try {
                     // loading ref
                     ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
@@ -567,7 +593,7 @@ public class LinksCleaned extends Thread
                             {
                                 funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
                             }
-                            funcShowMessage( ".", false, true );
+                            funcShowMessage( endl, false, true );
                         }
 
                     } else {
@@ -575,29 +601,41 @@ public class LinksCleaned extends Thread
                         {
                             funcMinMaxMarriageYear(funcSetMarriageYear(this.bronNr + ""), refMinMaxMarriageYear);
                         }
-                        funcShowMessage( ".", false, true );
+                        funcShowMessage( endl, false, true );
                     }
                 } catch (Exception e) {
                     funcShowMessage( "An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true );
                 }
             }
 
-            if (dos.isDoPartsToFullDate()) {
+            if( dos.isDoPartsToFullDate() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoPartsToFullDate" );
+
                 funcShowMessage( "Running func Part to Date on all sources...", false, false );
                 funcPartsToDate();
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
-            if (dos.isDoDaysSinceBegin()) {
+            if( dos.isDoDaysSinceBegin() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoDaysSinceBegin" );
+
                 funcShowMessage( "Running func Days since begin on all sources...", false, false );
                 funcDaysSinceBegin();
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
-            if (dos.isDoPostTasks()) {
+            if( dos.isDoPostTasks() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoPostTasks" );
+
                 funcShowMessage( "Running func post tasks all sources...", false, false );
                 funcPostTasks();
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // Close connections
@@ -608,10 +646,14 @@ public class LinksCleaned extends Thread
             conTemp.close();
 
 
-            if (dos.isDoPrematch()) {
+            if( dos.isDoPrematch() )
+            {
+                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.println( ts + " dos.isDoPrematch" );
+
                 funcShowMessage( "Running PREMATCH...", false, false );
                 mg.firePrematch();
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
 
             // Total time
@@ -639,8 +681,7 @@ public class LinksCleaned extends Thread
         if (bronFilter.isEmpty())
         {
             for (int i : sources) {
-                String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                funcShowMessage( ts + " Running " + MethodName + " for source: " + i + "...", false, false );
+                funcShowMessage( "Running " + MethodName + " for source: " + i + "...", false, false );
 
                 argList[0] = i + "";
                 Method m = this.getClass().getMethod(MethodName, partypes);
@@ -648,12 +689,11 @@ public class LinksCleaned extends Thread
                 // Call method
                 m.invoke(this, argList);
 
-                funcShowMessage( ".", false, true );
+                funcShowMessage( endl, false, true );
             }
         } else
         {
-            String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-            funcShowMessage( ts + "Running " + MethodName + "...", false, false );
+            funcShowMessage( "Running " + MethodName + "...", false, false );
 
             argList[0] = "";
             Method m = this.getClass().getMethod(MethodName, partypes);
@@ -661,7 +701,7 @@ public class LinksCleaned extends Thread
             // Call method
             m.invoke(this, argList);
 
-            funcShowMessage( ".", false, true );
+            funcShowMessage( endl, false, true );
         }
     }
 
@@ -1303,8 +1343,8 @@ public class LinksCleaned extends Thread
 
 
         // Lees Opmerkingen in
-        ResultSet rs = conOriginal.runQueryWithResult(query);
-        funcShowMessage("OK.", false, true);
+        ResultSet rs = conOriginal.runQueryWithResult( query );
+        funcShowMessage( endl, false, true );
 
         // Parsing Opmerkingen
         funcShowMessage("Parsing remarks...", false, false);
@@ -1315,7 +1355,7 @@ public class LinksCleaned extends Thread
             funcShowMessage(teller + " ERROR:" + e.getMessage(), false, false);
             return;
         }
-        funcShowMessage("OK.", false, true);
+        funcShowMessage( endl, false, true );
 
         // Maak logtabel aan met resterende opmekingen
         String createQuery = ""
@@ -1329,13 +1369,13 @@ public class LinksCleaned extends Thread
                 + "DEFAULT CHARACTER SET = utf8;";
 
         // Voer query uit
-        conLog.runQuery(createQuery);
+        conLog.runQuery( createQuery );
 
         // Cache overzetten
         Set keySet = cache.keySet();
         Iterator keySetIterator = keySet.iterator();
 
-        funcShowMessage("Writing rest remarks tot database...", false, false);
+        funcShowMessage( "Writing rest remarks tot database...", false, false );
 
         // Loop door de resterende opmerkingen heen
         /*
@@ -1358,7 +1398,7 @@ public class LinksCleaned extends Thread
         rs.close();
         rs = null;
 
-        funcShowMessage("OK.", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     /**
@@ -1371,8 +1411,6 @@ public class LinksCleaned extends Thread
      */
     private void funcRenewData() throws Exception
     {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        System.out.println( ts + " funcRenewData()" );
         funcShowMessage( "Renewing data for links_cleaned", false, true );
 
         // Delete existing data
@@ -1381,14 +1419,12 @@ public class LinksCleaned extends Thread
         String deleteRegistration = "DELETE FROM registration_c" + bronFilter;
 
         // Execute queries
-        ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Deleting previous data", false, true );
         conCleaned.runQuery(deletePerson);
         conCleaned.runQuery(deleteRegistration);
 
         // Copy links_original data to links_cleaned
         // Create queries
-        ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Copying person keys to links_cleaned", false, true );
         String keysPerson = ""
                 + "INSERT INTO links_cleaned.person_c ( "
@@ -1396,7 +1432,6 @@ public class LinksCleaned extends Thread
                 + " SELECT id_person , id_registration , id_source , id_person_o "
                 + "FROM links_original.person_o" + bronFilterOrigineelPers;
 
-        ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Copying registration keys to links_cleaned", false, true );
         String keysRegistration = ""
                 + "INSERT INTO links_cleaned.registration_c ("
@@ -1482,10 +1517,13 @@ public class LinksCleaned extends Thread
                 newLineToken = "\r\n";
             }
 
-            if( logText != "." ) {
+            if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                System.out.printf( "%s ", ts );
                 taLOLCoutput.append( ts + " " );
             }
+
+            System.out.printf( "%s%s", logText, newLineToken );
             taLOLCoutput.append( logText + newLineToken );
         }
     }
@@ -1591,7 +1629,6 @@ public class LinksCleaned extends Thread
 
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
-
     }
 
     /**
@@ -1600,8 +1637,6 @@ public class LinksCleaned extends Thread
     private void connectToDatabases()
     throws Exception
     {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        System.out.println( ts + " connectToDatabases()" );
         funcShowMessage( "Connecting to databases.", false, true );
 
         //funcShowMessage( "links_general", false, true );
@@ -1626,8 +1661,6 @@ public class LinksCleaned extends Thread
     private void createLogTable()
     throws Exception
     {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        System.out.println( ts + " createLogTable()" );
         funcShowMessage( "Creating logging table.", false, true );
 
         String query = ""
@@ -1657,8 +1690,6 @@ public class LinksCleaned extends Thread
      */
     private void setSourceFilters()
     {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        System.out.println( ts + " setSourceFilters()" );
         funcShowMessage( "Set source filters for:  + bronNr", false, true );
 
         bronFilter = " WHERE id_source = " + bronNr;
@@ -5739,85 +5770,79 @@ public class LinksCleaned extends Thread
      * @throws Exception
      */
     private void createTempFamilyname() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + " Creating familyname_t table", false, false );
+        funcShowMessage( "Creating familyname_t table", false, false );
 
         String query = "CREATE  TABLE links_temp.familyname_t ("
                 + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
                 + " familyname VARCHAR(80) NULL ,"
                 + " PRIMARY KEY (person_id) );";
 
-        conTemp.runQuery(query);
-        funcShowMessage(".", false, true);
+        conTemp.runQuery( query );
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     private void createTempFamilynameFile() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + " Creating familyname_t csv", false, false );
+        funcShowMessage( "Creating familyname_t csv", false, false );
 
-        writerFamilyname = new java.io.FileWriter("familyname_t.csv");
-        funcShowMessage(".", false, true);
+        writerFamilyname = new java.io.FileWriter( "familyname_t.csv" );
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     private void loadFamilynameToTable() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + " Loading CSV data into temp table", false, false );
+        funcShowMessage( "Loading CSV data into temp table", false, false );
 
         {
             String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
-            conTemp.runQuery(query);
+            conTemp.runQuery( query );
         }
-        funcShowMessage(".", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     /**
      *
      */
     private void updateFamilynameToPersonC() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + " Moving familynames from temp table to person_c", false, false );
+        funcShowMessage( "Moving familynames from temp table to person_c", false, false );
 
         {
             String query = "UPDATE links_cleaned.person_c, links_temp.familyname_t"
                     + " SET links_cleaned.person_c.familyname = links_temp.familyname_t.familyname"
                     + " WHERE links_cleaned.person_c.id_person = links_temp.familyname_t.person_id;";
 
-            conTemp.runQuery(query);
+            conTemp.runQuery( query );
         }
-        funcShowMessage(".", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     public void removeFamilynameFile() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + "Removing familyname_t csv", false, false );
+        funcShowMessage( "Removing familyname_t csv", false, false );
 
         {
             java.io.File f = new java.io.File("familyname_t.csv");
             f.delete();
         }
-        funcShowMessage(".", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     public void removeFamilynameTable() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        funcShowMessage( ts + " Removing familyname_t table", false, false );
+        funcShowMessage( "Removing familyname_t table", false, false );
 
         String query = "DROP TABLE IF EXISTS familyname_t;";
-        conTemp.runQuery(query);
-        funcShowMessage(".", false, true);
+
+        conTemp.runQuery( query );
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     private void createTempFirstname() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Creating firstname_t table", false, false );
 
         String query = "CREATE  TABLE links_temp.firstname_t ("
@@ -5825,80 +5850,71 @@ public class LinksCleaned extends Thread
                 + " firstname VARCHAR(80) NULL ,"
                 + " PRIMARY KEY (person_id) );";
 
-        conTemp.runQuery(query);
-        funcShowMessage(".", false, true);
+        conTemp.runQuery( query );
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     private void createTempFirstnameFile() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Creating firstname_t csv", false, false );
 
-        writerFirstname = new java.io.FileWriter("firstname_t.csv");
-        funcShowMessage(".", false, true);
+        writerFirstname = new java.io.FileWriter( "firstname_t.csv" );
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     private void loadFirstnameToTable() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Loading CSV data into temp table", false, false );
-
         {
             String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
-            conTemp.runQuery(query);
+            conTemp.runQuery( query );
         }
-        funcShowMessage(".", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     /**
      *
      */
     private void updateFirstnameToPersonC() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Moving first names from temp table to person_c...", false, false );
-
         {
             String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
                     + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
                     + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
 
-            conTemp.runQuery(query);
+            conTemp.runQuery( query );
         }
-        funcShowMessage("OK.", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     public void removeFirstnameFile() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Removing firstname_t csv file", false, false );
-
         {
-            java.io.File f = new java.io.File("firstname_t.csv");
+            java.io.File f = new java.io.File( "firstname_t.csv" );
             f.delete();
         }
-        funcShowMessage(".", false, true);
+        funcShowMessage( endl, false, true );
     }
 
     /**
      * @throws Exception
      */
     public void removeFirstnameTable() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Removing firstname_t table", false, false );
 
         String query = "DROP TABLE IF EXISTS firstname_t;";
-        conTemp.runQuery(query);
-        funcShowMessage(".", false, true);
+        conTemp.runQuery( query );
+        funcShowMessage( endl, false, true );
     }
 
     private void funcPostTasks() throws Exception {
-        String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         funcShowMessage( "Post tasks", false, false );
 
         String[] queries = {
@@ -5939,14 +5955,14 @@ public class LinksCleaned extends Thread
         };
 
         // Execute queries
-        for (String s : queries) {
-            conCleaned.runQuery(s);
+        for( String s : queries ) {
+            conCleaned.runQuery( s );
         }
     }
 
     private void funcDeleteRows() throws Exception {
         String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
-        conCleaned.runQuery(q1);
+        conCleaned.runQuery( q1 );
     }
 
     private Connection getConnection(String dbName) throws Exception {

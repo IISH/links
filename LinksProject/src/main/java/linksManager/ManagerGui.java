@@ -541,7 +541,7 @@ public class ManagerGui extends javax.swing.JFrame {
                         .addGroup(pMainLayout.createSequentialGroup()
                             .addContainerGap()
                             .addGroup(pMainLayout.createParallelGroup()
-                                .addComponent(jScrollPane4, GroupLayout.DEFAULT_SIZE, 591, Short.MAX_VALUE)
+                                .addComponent(jScrollPane4, GroupLayout.DEFAULT_SIZE, 584, Short.MAX_VALUE)
                                 .addGroup(pMainLayout.createSequentialGroup()
                                     .addGroup(pMainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                         .addComponent(tMAINProjectName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -588,7 +588,7 @@ public class ManagerGui extends javax.swing.JFrame {
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                     .addGroup(pMainLayout.createParallelGroup()
                                         .addComponent(jLabel41)
-                                        .addComponent(jScrollPane5, GroupLayout.DEFAULT_SIZE, 354, Short.MAX_VALUE))))
+                                        .addComponent(jScrollPane5, GroupLayout.DEFAULT_SIZE, 333, Short.MAX_VALUE))))
                             .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                             .addGroup(pMainLayout.createParallelGroup()
                                 .addGroup(pMainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -715,7 +715,7 @@ public class ManagerGui extends javax.swing.JFrame {
                         .addGroup(GroupLayout.Alignment.TRAILING, pCsvLayout.createSequentialGroup()
                             .addContainerGap()
                             .addGroup(pCsvLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                .addComponent(jScrollPane1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1101, Short.MAX_VALUE)
+                                .addComponent(jScrollPane1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
                                 .addGroup(pCsvLayout.createSequentialGroup()
                                     .addGroup(pCsvLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
                                         .addComponent(jLabel13, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -726,17 +726,17 @@ public class ManagerGui extends javax.swing.JFrame {
                                         .addComponent(jLabel12, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                     .addGroup(pCsvLayout.createParallelGroup()
-                                        .addComponent(tfCSVInfo, GroupLayout.DEFAULT_SIZE, 1013, Short.MAX_VALUE)
-                                        .addComponent(tfCSVLineData, GroupLayout.DEFAULT_SIZE, 1013, Short.MAX_VALUE)
+                                        .addComponent(tfCSVInfo, GroupLayout.DEFAULT_SIZE, 992, Short.MAX_VALUE)
+                                        .addComponent(tfCSVLineData, GroupLayout.DEFAULT_SIZE, 992, Short.MAX_VALUE)
                                         .addGroup(GroupLayout.Alignment.TRAILING, pCsvLayout.createSequentialGroup()
                                             .addGroup(pCsvLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                                .addComponent(tfCSVFilterText, GroupLayout.DEFAULT_SIZE, 893, Short.MAX_VALUE)
+                                                .addComponent(tfCSVFilterText, GroupLayout.DEFAULT_SIZE, 870, Short.MAX_VALUE)
                                                 .addGroup(GroupLayout.Alignment.LEADING, pCsvLayout.createSequentialGroup()
                                                     .addComponent(jLabel18)
                                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                    .addComponent(tfCSVFilterIndex, GroupLayout.DEFAULT_SIZE, 729, Short.MAX_VALUE))
-                                                .addComponent(tfCSVOutputFile, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 893, Short.MAX_VALUE)
-                                                .addComponent(tfCSVCsvFile, GroupLayout.DEFAULT_SIZE, 893, Short.MAX_VALUE))
+                                                    .addComponent(tfCSVFilterIndex, GroupLayout.DEFAULT_SIZE, 658, Short.MAX_VALUE))
+                                                .addComponent(tfCSVOutputFile, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 870, Short.MAX_VALUE)
+                                                .addComponent(tfCSVCsvFile, GroupLayout.DEFAULT_SIZE, 870, Short.MAX_VALUE))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                                             .addGroup(pCsvLayout.createParallelGroup()
                                                 .addComponent(bCSVPathOutpuFile, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE)
@@ -786,7 +786,7 @@ public class ManagerGui extends javax.swing.JFrame {
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(jLabel2)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 437, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
                             .addContainerGap())
                 );
             }
@@ -834,23 +834,18 @@ public class ManagerGui extends javax.swing.JFrame {
                 jLabel17.setName("jLabel17");
 
                 //---- tfCTDDbLocation ----
-                tfCTDDbLocation.setText("node-152.dev.socialhistoryservices.org");
                 tfCTDDbLocation.setName("tfCTDDbLocation");
 
                 //---- tfCTDPreFix ----
-                tfCTDPreFix.setText("genlias");
                 tfCTDPreFix.setName("tfCTDPreFix");
 
                 //---- tfCTDDbName ----
-                tfCTDDbName.setText("source_internal");
                 tfCTDDbName.setName("tfCTDDbName");
 
                 //---- tfCTDDbUser ----
-                tfCTDDbUser.setText("linksdev");
                 tfCTDDbUser.setName("tfCTDDbUser");
 
                 //---- tfCTDDbPass ----
-                tfCTDDbPass.setText("devlinks");
                 tfCTDDbPass.setName("tfCTDDbPass");
                 tfCTDDbPass.addActionListener(new ActionListener() {
                     @Override
@@ -920,6 +915,7 @@ public class ManagerGui extends javax.swing.JFrame {
                 //---- rbBebiIndexGeen ----
                 rbBebiIndexGeen.setText("Geen Indexering");
                 rbBebiIndexGeen.setName("rbBebiIndexGeen");
+                rbBebiIndexGeen.setSelected(true);
 
                 //---- rbBebiIndexGenlias ----
                 rbBebiIndexGenlias.setText("Genlias 7-tabellen indexering");
@@ -941,7 +937,7 @@ public class ManagerGui extends javax.swing.JFrame {
                                 .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                     .addComponent(jLabel3)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(tfCTBCsvFiles, GroupLayout.DEFAULT_SIZE, 973, Short.MAX_VALUE)
+                                    .addComponent(tfCTBCsvFiles, GroupLayout.DEFAULT_SIZE, 936, Short.MAX_VALUE)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                     .addComponent(bSelectCsvToDbCsvFile, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE))
                                 .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
@@ -957,12 +953,12 @@ public class ManagerGui extends javax.swing.JFrame {
                                                 .addComponent(jLabel32))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
-                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
-                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)))
+                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)))
                                         .addComponent(rbBebiIndexGeen, GroupLayout.Alignment.LEADING)
                                         .addComponent(rbBebiIndexGenlias, GroupLayout.Alignment.LEADING))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -970,8 +966,8 @@ public class ManagerGui extends javax.swing.JFrame {
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGap(58, 58, 58)
                                             .addComponent(jLabel11))
-                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 668, Short.MAX_VALUE)
-                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 668, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 661, Short.MAX_VALUE)
+                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 661, Short.MAX_VALUE)
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
                                                 .addComponent(jLabel21)
@@ -979,9 +975,9 @@ public class ManagerGui extends javax.swing.JFrame {
                                                 .addComponent(jLabel22))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE)
-                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE)
-                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE))))))
+                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
+                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
+                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE))))))
                             .addContainerGap())
                 );
                 pCsvToDatabaseLayout.setVerticalGroup(
@@ -1029,7 +1025,7 @@ public class ManagerGui extends javax.swing.JFrame {
                                 .addComponent(tfCTDLatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                             .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                             .addGroup(pCsvToDatabaseLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                .addComponent(jScrollPane2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 444, Short.MAX_VALUE)
+                                .addComponent(jScrollPane2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 425, Short.MAX_VALUE)
                                 .addGroup(GroupLayout.Alignment.LEADING, pCsvToDatabaseLayout.createSequentialGroup()
                                     .addGroup(pCsvToDatabaseLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                         .addComponent(tfCTDdelay, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -1053,7 +1049,6 @@ public class ManagerGui extends javax.swing.JFrame {
                 jLabel25.setName("jLabel25");
 
                 //---- tfBILODbLocation ----
-                tfBILODbLocation.setText("hebe");
                 tfBILODbLocation.setName("tfBILODbLocation");
 
                 //---- jLabel27 ----
@@ -1061,11 +1056,9 @@ public class ManagerGui extends javax.swing.JFrame {
                 jLabel27.setName("jLabel27");
 
                 //---- tfBILODbUser ----
-                tfBILODbUser.setText("linksbeta");
                 tfBILODbUser.setName("tfBILODbUser");
 
                 //---- tfBILODbPass ----
-                tfBILODbPass.setText("betalinks");
                 tfBILODbPass.setName("tfBILODbPass");
 
                 //---- jLabel28 ----
@@ -1087,7 +1080,6 @@ public class ManagerGui extends javax.swing.JFrame {
                 });
 
                 //---- tfBILOProjectName ----
-                tfBILOProjectName.setText("drenthe");
                 tfBILOProjectName.setName("tfBILOProjectName");
                 tfBILOProjectName.addKeyListener(new KeyAdapter() {
                     @Override
@@ -1157,13 +1149,13 @@ public class ManagerGui extends javax.swing.JFrame {
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
                                 .addGroup(pBronInternToLinksOrigineelLayout.createSequentialGroup()
                                     .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
-                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
-                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
                                         .addGroup(GroupLayout.Alignment.TRAILING, pBronInternToLinksOrigineelLayout.createSequentialGroup()
-                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 269, Short.MAX_VALUE)
+                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE)
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addComponent(bBronInternToLinksOrigineel)))
                                     .addGap(14, 14, 14))
@@ -1171,8 +1163,8 @@ public class ManagerGui extends javax.swing.JFrame {
                                     .addComponent(cbOrunCleaned, GroupLayout.PREFERRED_SIZE, 137, GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 608, Short.MAX_VALUE)
-                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 608, Short.MAX_VALUE)
+                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 585, Short.MAX_VALUE)
+                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 585, Short.MAX_VALUE)
                                 .addComponent(jLabel31))
                             .addContainerGap())
                 );
@@ -1210,7 +1202,7 @@ public class ManagerGui extends javax.swing.JFrame {
                                         .addComponent(jLabel46))
                                     .addGap(18, 18, 18)
                                     .addComponent(cbOrunCleaned))
-                                .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE))
+                                .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE))
                             .addContainerGap())
                 );
             }
@@ -1221,7 +1213,6 @@ public class ManagerGui extends javax.swing.JFrame {
                 pLOLC.setName("pLOLC");
 
                 //---- tbLOLCurl ----
-                tbLOLCurl.setText("localhost");
                 tbLOLCurl.setName("tbLOLCurl");
 
                 //---- jLabel4 ----
@@ -1229,11 +1220,9 @@ public class ManagerGui extends javax.swing.JFrame {
                 jLabel4.setName("jLabel4");
 
                 //---- tbLOLCuser ----
-                tbLOLCuser.setText("links");
                 tbLOLCuser.setName("tbLOLCuser");
 
                 //---- tbLOLCpass ----
-                tbLOLCpass.setText("mslinks");
                 tbLOLCpass.setName("tbLOLCpass");
 
                 //---- jLabel42 ----
@@ -1378,64 +1367,68 @@ public class ManagerGui extends javax.swing.JFrame {
                         .addGroup(pLOLCLayout.createSequentialGroup()
                             .addContainerGap()
                             .addGroup(pLOLCLayout.createParallelGroup()
-                                    .addGroup(pLOLCLayout.createSequentialGroup()
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                                    .addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                    .addComponent(cbCdoLocations, GroupLayout.PREFERRED_SIZE, 162, GroupLayout.PREFERRED_SIZE)
-                                                    .addGroup(GroupLayout.Alignment.LEADING, pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-                                                            .addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                            .addComponent(cbCdoOpmerkingen, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                                    .addComponent(cbLOLCdoRole, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 93, GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(cbCdoJaarLeeftijd, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                    .addComponent(cbCdoRelation, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(cbLOLCdoSequentie, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 91, GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(cbCdoType, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 73, GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(cbCdoStaatSex, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 113, GroupLayout.PREFERRED_SIZE))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup()
-                                                    .addComponent(cbLOLCdoMinMaxDate)
-                                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-                                                            .addComponent(tbLOLCuser, GroupLayout.Alignment.LEADING)
-                                                            .addComponent(tbLOLCpass, GroupLayout.Alignment.LEADING)
-                                                            .addComponent(tbLOLCurl, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1, Short.MAX_VALUE)
-                                                            .addComponent(tbLOLCBronNr, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 154, GroupLayout.PREFERRED_SIZE))
-                                                    .addComponent(cbLOLCdoMinMaxMarriage)
-                                                    .addComponent(cbLOLCdoPartsToFullDate)
-                                                    .addComponent(cbCdoDaysSinceBegin)
-                                                    .addGroup(pLOLCLayout.createSequentialGroup()
-                                                            .addComponent(cbCdoDates, GroupLayout.PREFERRED_SIZE, 122, GroupLayout.PREFERRED_SIZE)
-                                                            .addGap(67, 67, 67)
-                                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-                                                                    .addGroup(pLOLCLayout.createSequentialGroup()
-                                                                            .addComponent(cbLOLCdoPostTasks, GroupLayout.PREFERRED_SIZE, 104, GroupLayout.PREFERRED_SIZE)
-                                                                            .addGap(10, 10, 10))
-                                                                    .addComponent(cbCdoPrematch, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
-                                    .addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addGroup(pLOLCLayout.createSequentialGroup()
-                                            .addGroup(pLOLCLayout.createParallelGroup()
-                                                    .addComponent(jLabel44)
-                                                    .addComponent(jLabel4)
-                                                    .addComponent(jLabel42)
-                                                    .addComponent(jLabel43)
-                                                    .addComponent(jLabel51, GroupLayout.PREFERRED_SIZE, 113, GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(cbCdoVernieuwen, GroupLayout.PREFERRED_SIZE, 155, GroupLayout.PREFERRED_SIZE))
-                                            .addGap(336, 336, 336)))
-                            .addGap(6, 6, 6)
-                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-                                .addComponent(jLabel45)
-                                .addComponent(tbLOLClatestOutput)
-                                .addComponent(jScrollPane6, GroupLayout.PREFERRED_SIZE, 628, GroupLayout.PREFERRED_SIZE))
-                            .addGap(1357, 1357, 1357))
+                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                                        .addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addGroup(GroupLayout.Alignment.LEADING, pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+                                            .addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(cbCdoOpmerkingen, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                        .addComponent(cbLOLCdoRole, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 93, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbCdoJaarLeeftijd, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoRelation, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbLOLCdoSequentie, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 91, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbCdoType, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 73, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbCdoStaatSex, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 113, GroupLayout.PREFERRED_SIZE))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup()
+                                        .addComponent(cbLOLCdoMinMaxDate)
+                                        .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+                                            .addComponent(tbLOLCuser, GroupLayout.Alignment.LEADING)
+                                            .addComponent(tbLOLCpass, GroupLayout.Alignment.LEADING)
+                                            .addComponent(tbLOLCurl, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1, Short.MAX_VALUE)
+                                            .addComponent(tbLOLCBronNr, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 154, GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(cbLOLCdoMinMaxMarriage)
+                                        .addComponent(cbLOLCdoPartsToFullDate)
+                                        .addComponent(cbCdoDaysSinceBegin)
+                                        .addGroup(pLOLCLayout.createSequentialGroup()
+                                            .addComponent(cbCdoDates, GroupLayout.PREFERRED_SIZE, 122, GroupLayout.PREFERRED_SIZE)
+                                            .addGap(67, 67, 67)
+                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                                    .addComponent(cbLOLCdoPostTasks, GroupLayout.PREFERRED_SIZE, 104, GroupLayout.PREFERRED_SIZE)
+                                                    .addGap(10, 10, 10))
+                                                .addComponent(cbCdoPrematch, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                                .addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                    .addGroup(pLOLCLayout.createParallelGroup()
+                                        .addComponent(jLabel44)
+                                        .addComponent(jLabel4)
+                                        .addComponent(jLabel42)
+                                        .addComponent(jLabel43)
+                                        .addComponent(jLabel51, GroupLayout.PREFERRED_SIZE, 113, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbCdoVernieuwen, GroupLayout.PREFERRED_SIZE, 155, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cbCdoLocations, GroupLayout.PREFERRED_SIZE, 162, GroupLayout.PREFERRED_SIZE))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 334, Short.MAX_VALUE)))
+                            .addGroup(pLOLCLayout.createParallelGroup()
+                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                    .addGap(6, 6, 6)
+                                    .addComponent(jLabel45))
+                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(jScrollPane6, GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
+                                        .addComponent(tbLOLClatestOutput, GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE))))
+                            .addGap(11, 11, 11))
                 );
                 pLOLCLayout.setVerticalGroup(
                     pLOLCLayout.createParallelGroup()
                         .addGroup(pLOLCLayout.createSequentialGroup()
                             .addContainerGap()
                             .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel44)
-                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                            .addComponent(tbLOLCBronNr, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel45)))
+                                .addComponent(jLabel44)
+                                .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                    .addComponent(tbLOLCBronNr, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel45)))
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(jLabel4)
@@ -1443,54 +1436,54 @@ public class ManagerGui extends javax.swing.JFrame {
                                 .addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                             .addGap(6, 6, 6)
                             .addGroup(pLOLCLayout.createParallelGroup()
-                                    .addGroup(pLOLCLayout.createSequentialGroup()
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(jLabel42)
-                                                    .addComponent(tbLOLCuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(jLabel43)
-                                                    .addComponent(tbLOLCpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                                            .addGap(29, 29, 29)
-                                            .addComponent(jLabel51)
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(cbCdoVernieuwen)
-                                                    .addComponent(cbLOLCdoPostTasks)
-                                                    .addComponent(cbCdoDates))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(cbCdoPrematch)
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .addComponent(cbCdoPreBasicNames)
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(cbCdoOpmerkingen)
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(cbCdoNames)
-                                            .addGap(118, 118, 118)
-                                            .addComponent(cbCdoLocations)
-                                            .addGap(46, 46, 46)
-                                            .addComponent(cbCdoStaatSex)
-                                            .addGap(2, 2, 2)
-                                            .addComponent(cbCdoType)
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(cbLOLCdoMinMaxDate)
-                                                    .addComponent(cbLOLCdoSequentie))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(cbLOLCdoMinMaxMarriage)
-                                                    .addComponent(cbCdoRelation))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(cbLOLCdoPartsToFullDate)
-                                                    .addComponent(cbCdoJaarLeeftijd))
-                                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                                    .addComponent(cbCdoDaysSinceBegin)
-                                                    .addComponent(cbLOLCdoRole))
-                                            .addGap(5, 5, 5)
-                                            .addComponent(bnLOLCstartProcess))
-                                    .addComponent(jScrollPane6))
+                                .addGroup(pLOLCLayout.createSequentialGroup()
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel42)
+                                        .addComponent(tbLOLCuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel43)
+                                        .addComponent(tbLOLCpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                    .addGap(29, 29, 29)
+                                    .addComponent(jLabel51)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbCdoVernieuwen)
+                                        .addComponent(cbLOLCdoPostTasks)
+                                        .addComponent(cbCdoDates))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(cbCdoPrematch)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(cbCdoPreBasicNames)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(cbCdoOpmerkingen)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(cbCdoNames)
+                                    .addGap(118, 118, 118)
+                                    .addComponent(cbCdoLocations)
+                                    .addGap(46, 46, 46)
+                                    .addComponent(cbCdoStaatSex)
+                                    .addGap(2, 2, 2)
+                                    .addComponent(cbCdoType)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbLOLCdoMinMaxDate)
+                                        .addComponent(cbLOLCdoSequentie))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbLOLCdoMinMaxMarriage)
+                                        .addComponent(cbCdoRelation))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbLOLCdoPartsToFullDate)
+                                        .addComponent(cbCdoJaarLeeftijd))
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbCdoDaysSinceBegin)
+                                        .addComponent(cbLOLCdoRole))
+                                    .addGap(5, 5, 5)
+                                    .addComponent(bnLOLCstartProcess))
+                                .addComponent(jScrollPane6))
                             .addGap(584, 584, 584))
                 );
             }
@@ -1558,11 +1551,11 @@ public class ManagerGui extends javax.swing.JFrame {
                             .addContainerGap()
                             .addGroup(jPanel1Layout.createParallelGroup()
                                 .addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 1101, Short.MAX_VALUE)
-                                .addComponent(taPinfo, GroupLayout.DEFAULT_SIZE, 1101, Short.MAX_VALUE)
+                                .addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
+                                .addComponent(taPinfo, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
                                 .addGroup(GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                                     .addComponent(cbPdoNameToNo, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 733, Short.MAX_VALUE)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 729, Short.MAX_VALUE)
                                     .addComponent(bnPstartProcess, GroupLayout.PREFERRED_SIZE, 107, GroupLayout.PREFERRED_SIZE))
                                 .addGroup(jPanel1Layout.createSequentialGroup()
                                     .addGroup(jPanel1Layout.createParallelGroup()
@@ -1593,7 +1586,7 @@ public class ManagerGui extends javax.swing.JFrame {
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 479, Short.MAX_VALUE)
+                            .addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 478, Short.MAX_VALUE)
                             .addContainerGap())
                 );
             }
@@ -1612,8 +1605,8 @@ public class ManagerGui extends javax.swing.JFrame {
         contentPaneLayout.setVerticalGroup(
             contentPaneLayout.createParallelGroup()
                 .addGroup(contentPaneLayout.createSequentialGroup()
-                    .addComponent(tpMain, GroupLayout.PREFERRED_SIZE, 675, GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(tpMain, GroupLayout.PREFERRED_SIZE, 668, GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 0, Short.MAX_VALUE))
         );
         pack();
         setLocationRelativeTo(getOwner());
@@ -1640,7 +1633,7 @@ public class ManagerGui extends javax.swing.JFrame {
             try {
                 UIManager.setLookAndFeel(lafString);
             } catch (Exception e) {
-                // TODO: Schrijf naar systeemlog
+                // TODO: Write to system log
             }
         }
     }
@@ -1705,11 +1698,18 @@ public class ManagerGui extends javax.swing.JFrame {
             System.out.println( "mysql_links_username:\t" + user );
             System.out.println( "mysql_links_password:\t" + pass );
 
-            int source_id_first = Integer.parseInt(properties.getProperty("source_id_first"));
-            int source_id_last  = Integer.parseInt(properties.getProperty("source_id_last"));
+            int source_id_first = 0;
+            String source_id_first_str = properties.getProperty( "source_id_first" ) ;
+            if( source_id_first_str != null ) { source_id_first = Integer.parseInt( source_id_first_str ); }
 
-            System.out.println( "source_id_first: " + source_id_first );
-            System.out.println( "source_id_last:  " + source_id_last );
+            int source_id_last = 0;
+            String source_id_last_str = properties.getProperty( "source_id_last" );
+            if( source_id_last_str != null ) { source_id_last = Integer.parseInt( source_id_last_str ); }
+
+            if( !( source_id_first == 0 && source_id_last == 0 ) ) {
+                System.out.println("source_id_first: " + source_id_first);
+                System.out.println("source_id_last:  " + source_id_last);
+            }
 
           //System.out.println( "sources: " + Arrays.toString( sources ) );     // declared in LinksCleaned
 
@@ -2128,7 +2128,7 @@ public class ManagerGui extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-                String timestamp = "25-Jul-2014 14:43";
+                String timestamp = "28-Jul-2014 10:17";
                 System.out.println( "LINKS timestamp: " + timestamp );
 
                 timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");
