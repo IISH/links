@@ -13,6 +13,11 @@
  *
  * @author oaz
  */
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.GroupLayout;
+import javax.swing.LayoutStyle;
 import javax.xml.parsers.*;
 import org.xml.sax.InputSource;
 import org.w3c.dom.*;
@@ -33,146 +38,195 @@ public class CodeGenerator extends javax.swing.JFrame {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // Generated using JFormDesigner Evaluation license - Fons Laan
     private void initComponents() {
+        menuBar = new JMenuBar();
+        fileMenu = new JMenu();
+        openMenuItem = new JMenuItem();
+        saveMenuItem = new JMenuItem();
+        saveAsMenuItem = new JMenuItem();
+        exitMenuItem = new JMenuItem();
+        editMenu = new JMenu();
+        cutMenuItem = new JMenuItem();
+        copyMenuItem = new JMenuItem();
+        pasteMenuItem = new JMenuItem();
+        deleteMenuItem = new JMenuItem();
+        helpMenu = new JMenu();
+        contentsMenuItem = new JMenuItem();
+        aboutMenuItem = new JMenuItem();
+        jLabel1 = new JLabel();
+        jLabel2 = new JLabel();
+        jScrollPane1 = new JScrollPane();
+        taIn = new JTextArea();
+        jScrollPane2 = new JScrollPane();
+        taOut = new JTextArea();
+        bGenerate = new JButton();
 
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        taIn = new javax.swing.JTextArea();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        taOut = new javax.swing.JTextArea();
-        bGenerate = new javax.swing.JButton();
-        menuBar = new javax.swing.JMenuBar();
-        fileMenu = new javax.swing.JMenu();
-        openMenuItem = new javax.swing.JMenuItem();
-        saveMenuItem = new javax.swing.JMenuItem();
-        saveAsMenuItem = new javax.swing.JMenuItem();
-        exitMenuItem = new javax.swing.JMenuItem();
-        editMenu = new javax.swing.JMenu();
-        cutMenuItem = new javax.swing.JMenuItem();
-        copyMenuItem = new javax.swing.JMenuItem();
-        pasteMenuItem = new javax.swing.JMenuItem();
-        deleteMenuItem = new javax.swing.JMenuItem();
-        helpMenu = new javax.swing.JMenu();
-        contentsMenuItem = new javax.swing.JMenuItem();
-        aboutMenuItem = new javax.swing.JMenuItem();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        //======== this ========
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle("function Generator");
+        setName("this");
+        Container contentPane = getContentPane();
 
-        jLabel1.setText("XML Functie Omschrijving");
-        jLabel1.setName("jLabel1"); // NOI18N
+        //======== menuBar ========
+        {
+            menuBar.setName("menuBar");
 
-        jLabel2.setText("Java Output");
-        jLabel2.setName("jLabel2"); // NOI18N
+            //======== fileMenu ========
+            {
+                fileMenu.setText("File");
+                fileMenu.setName("fileMenu");
 
-        jScrollPane1.setName("jScrollPane1"); // NOI18N
+                //---- openMenuItem ----
+                openMenuItem.setText("Open");
+                openMenuItem.setName("openMenuItem");
+                fileMenu.add(openMenuItem);
 
-        taIn.setColumns(20);
-        taIn.setRows(5);
-        taIn.setName("taIn"); // NOI18N
-        jScrollPane1.setViewportView(taIn);
+                //---- saveMenuItem ----
+                saveMenuItem.setText("Save");
+                saveMenuItem.setName("saveMenuItem");
+                fileMenu.add(saveMenuItem);
 
-        jScrollPane2.setName("jScrollPane2"); // NOI18N
+                //---- saveAsMenuItem ----
+                saveAsMenuItem.setText("Save As ...");
+                saveAsMenuItem.setName("saveAsMenuItem");
+                fileMenu.add(saveAsMenuItem);
 
-        taOut.setColumns(20);
-        taOut.setRows(5);
-        taOut.setName("taOut"); // NOI18N
-        jScrollPane2.setViewportView(taOut);
-
-        bGenerate.setText("jButton1");
-        bGenerate.setName("bGenerate"); // NOI18N
-        bGenerate.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                bGenerateActionPerformed(evt);
+                //---- exitMenuItem ----
+                exitMenuItem.setText("Exit");
+                exitMenuItem.setName("exitMenuItem");
+                exitMenuItem.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        exitMenuItemActionPerformed(e);
+                    }
+                });
+                fileMenu.add(exitMenuItem);
             }
-        });
+            menuBar.add(fileMenu);
 
-        fileMenu.setText("File");
+            //======== editMenu ========
+            {
+                editMenu.setText("Edit");
+                editMenu.setName("editMenu");
 
-        openMenuItem.setText("Open");
-        fileMenu.add(openMenuItem);
+                //---- cutMenuItem ----
+                cutMenuItem.setText("Cut");
+                cutMenuItem.setName("cutMenuItem");
+                editMenu.add(cutMenuItem);
 
-        saveMenuItem.setText("Save");
-        fileMenu.add(saveMenuItem);
+                //---- copyMenuItem ----
+                copyMenuItem.setText("Copy");
+                copyMenuItem.setName("copyMenuItem");
+                editMenu.add(copyMenuItem);
 
-        saveAsMenuItem.setText("Save As ...");
-        fileMenu.add(saveAsMenuItem);
+                //---- pasteMenuItem ----
+                pasteMenuItem.setText("Paste");
+                pasteMenuItem.setName("pasteMenuItem");
+                editMenu.add(pasteMenuItem);
 
-        exitMenuItem.setText("Exit");
-        exitMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exitMenuItemActionPerformed(evt);
+                //---- deleteMenuItem ----
+                deleteMenuItem.setText("Delete");
+                deleteMenuItem.setName("deleteMenuItem");
+                editMenu.add(deleteMenuItem);
             }
-        });
-        fileMenu.add(exitMenuItem);
+            menuBar.add(editMenu);
 
-        menuBar.add(fileMenu);
+            //======== helpMenu ========
+            {
+                helpMenu.setText("Help");
+                helpMenu.setName("helpMenu");
 
-        editMenu.setText("Edit");
+                //---- contentsMenuItem ----
+                contentsMenuItem.setText("Contents");
+                contentsMenuItem.setName("contentsMenuItem");
+                helpMenu.add(contentsMenuItem);
 
-        cutMenuItem.setText("Cut");
-        editMenu.add(cutMenuItem);
-
-        copyMenuItem.setText("Copy");
-        editMenu.add(copyMenuItem);
-
-        pasteMenuItem.setText("Paste");
-        editMenu.add(pasteMenuItem);
-
-        deleteMenuItem.setText("Delete");
-        editMenu.add(deleteMenuItem);
-
-        menuBar.add(editMenu);
-
-        helpMenu.setText("Help");
-
-        contentsMenuItem.setText("Contents");
-        helpMenu.add(contentsMenuItem);
-
-        aboutMenuItem.setText("About");
-        helpMenu.add(aboutMenuItem);
-
-        menuBar.add(helpMenu);
-
+                //---- aboutMenuItem ----
+                aboutMenuItem.setText("About");
+                aboutMenuItem.setName("aboutMenuItem");
+                helpMenu.add(aboutMenuItem);
+            }
+            menuBar.add(helpMenu);
+        }
         setJMenuBar(menuBar);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 415, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 415, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
-                .addGap(10, 10, 10))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(773, Short.MAX_VALUE)
-                .addComponent(bGenerate)
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel2))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 401, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 401, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(bGenerate)
-                .addContainerGap(23, Short.MAX_VALUE))
-        );
+        //---- jLabel1 ----
+        jLabel1.setText("XML Functie Omschrijving");
+        jLabel1.setName("jLabel1");
 
+        //---- jLabel2 ----
+        jLabel2.setText("Java Output");
+        jLabel2.setName("jLabel2");
+
+        //======== jScrollPane1 ========
+        {
+            jScrollPane1.setName("jScrollPane1");
+
+            //---- taIn ----
+            taIn.setColumns(20);
+            taIn.setRows(5);
+            taIn.setName("taIn");
+            jScrollPane1.setViewportView(taIn);
+        }
+
+        //======== jScrollPane2 ========
+        {
+            jScrollPane2.setName("jScrollPane2");
+
+            //---- taOut ----
+            taOut.setColumns(20);
+            taOut.setRows(5);
+            taOut.setName("taOut");
+            jScrollPane2.setViewportView(taOut);
+        }
+
+        //---- bGenerate ----
+        bGenerate.setText("jButton1");
+        bGenerate.setName("bGenerate");
+        bGenerate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                bGenerateActionPerformed(e);
+            }
+        });
+
+        GroupLayout contentPaneLayout = new GroupLayout(contentPane);
+        contentPane.setLayout(contentPaneLayout);
+        contentPaneLayout.setHorizontalGroup(
+            contentPaneLayout.createParallelGroup()
+                .addGroup(contentPaneLayout.createSequentialGroup()
+                    .addContainerGap()
+                    .addGroup(contentPaneLayout.createParallelGroup()
+                        .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, 415, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel1))
+                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(contentPaneLayout.createParallelGroup()
+                        .addComponent(jScrollPane2, GroupLayout.PREFERRED_SIZE, 415, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel2))
+                    .addGap(10, 10, 10))
+                .addGroup(GroupLayout.Alignment.TRAILING, contentPaneLayout.createSequentialGroup()
+                    .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(bGenerate)
+                    .addContainerGap())
+        );
+        contentPaneLayout.setVerticalGroup(
+            contentPaneLayout.createParallelGroup()
+                .addGroup(contentPaneLayout.createSequentialGroup()
+                    .addContainerGap()
+                    .addGroup(contentPaneLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel1)
+                        .addComponent(jLabel2))
+                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(contentPaneLayout.createParallelGroup()
+                        .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, 401, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jScrollPane2, GroupLayout.PREFERRED_SIZE, 401, GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(bGenerate)
+                    .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
         pack();
+        setLocationRelativeTo(getOwner());
     }// </editor-fold>//GEN-END:initComponents
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
@@ -277,27 +331,28 @@ public class CodeGenerator extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JMenuItem aboutMenuItem;
-    private javax.swing.JButton bGenerate;
-    private javax.swing.JMenuItem contentsMenuItem;
-    private javax.swing.JMenuItem copyMenuItem;
-    private javax.swing.JMenuItem cutMenuItem;
-    private javax.swing.JMenuItem deleteMenuItem;
-    private javax.swing.JMenu editMenu;
-    private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JMenu fileMenu;
-    private javax.swing.JMenu helpMenu;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JMenuBar menuBar;
-    private javax.swing.JMenuItem openMenuItem;
-    private javax.swing.JMenuItem pasteMenuItem;
-    private javax.swing.JMenuItem saveAsMenuItem;
-    private javax.swing.JMenuItem saveMenuItem;
-    private javax.swing.JTextArea taIn;
-    private javax.swing.JTextArea taOut;
+    // Generated using JFormDesigner Evaluation license - Fons Laan
+    private JMenuBar menuBar;
+    private JMenu fileMenu;
+    private JMenuItem openMenuItem;
+    private JMenuItem saveMenuItem;
+    private JMenuItem saveAsMenuItem;
+    private JMenuItem exitMenuItem;
+    private JMenu editMenu;
+    private JMenuItem cutMenuItem;
+    private JMenuItem copyMenuItem;
+    private JMenuItem pasteMenuItem;
+    private JMenuItem deleteMenuItem;
+    private JMenu helpMenu;
+    private JMenuItem contentsMenuItem;
+    private JMenuItem aboutMenuItem;
+    private JLabel jLabel1;
+    private JLabel jLabel2;
+    private JScrollPane jScrollPane1;
+    private JTextArea taIn;
+    private JScrollPane jScrollPane2;
+    private JTextArea taOut;
+    private JButton bGenerate;
     // End of variables declaration//GEN-END:variables
 
 }
