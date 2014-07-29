@@ -1,0 +1,229 @@
+JFDML JFormDesigner: "5.2.0.0.109" Java: "1.7.0_65" encoding: "UTF-8"
+
+new FormModel {
+	"i18n.bundlePackage": "replacedirect.resources"
+	"i18n.bundleName": "ReplaceDirectView"
+	"i18n.autoExternalize": true
+	"i18n.keyPrefix": "ReplaceDirectView"
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+			"$horizontalGroup": "par l {seq l {space :p::p, par l {comp jSeparator1::t::838:x, comp jScrollPane2::l::838:x, seq l {comp jButton3:::p::p, space :::p, comp jButton4:::p::p, space :::p, comp jButton1:::p::p, space :::p, comp jButton5:::p::p, space :::p, comp jButton2:::p::p, space ::306:x, comp jButton10:::p::p}, comp jSeparator2::t::838:x, seq l {par l {comp jLabel2::l:p::p, comp jLabel1::l:p::p, comp jTextField2::l::250:x:2, seq l {comp jButton6:::p::p, space :::p, comp jButton7:::p::p, space :::p, comp jButton8:::p::p, space :::p, comp jButton9:::p::p}, comp jTextField1::l::250:x:2, seq l {comp jLabel3:::p::p, space :::p, comp jTextField3:::p:61:p}}, space :::p, comp jScrollPane3:3::p:242:p:2, space :::p, comp jScrollPane4:3::p:288:p:2}}, space :p::p}}"
+			"$verticalGroup": "par l {seq l {space :p::p, par l:::p {seq l:::1 {comp jLabel1:::p::p, space :::p, comp jTextField1:::p::p, space :p:18:p, comp jLabel2:::p::p, space :::p, comp jTextField2:::p::p, space :::p, par b {comp jButton6::b:p::p, comp jButton7::b:p::p, comp jButton8::b:p::p, comp jButton9::b:p::p}, space ::19:x, par t {comp jLabel3:::p::p, comp jTextField3:::p::p}, space :p:2:p}, comp jScrollPane3::l::168:x:1, comp jScrollPane4::l:::x:1}, space :::p, comp jSeparator1:::p::p, space :p:8:p, par b {comp jButton3::b:p::p, comp jButton4::b:p::p, comp jButton1::b:p::p, comp jButton5::b:p::p, comp jButton2::b:p::p, comp jButton10::b:p::p}, space u:p::p, comp jSeparator2:::p:5:p, space :p::p, comp jScrollPane2::::247:x, space :p:34:p}}"
+		} ) {
+			name: "mainPanel"
+			"name": "mainPanel"
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane2"
+				"name": "jScrollPane2"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "jTextArea2"
+					"columns": 20
+					"rows": 5
+					"name": "jTextArea2"
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane3"
+				"name": "jScrollPane3"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "jTextArea3"
+					"columns": 20
+					"rows": 5
+					"text": new FormMessage( null, "jTextArea3.text" )
+					"name": "jTextArea3"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "jTextArea3MouseClicked", true ) )
+					addEvent( new FormEvent( "java.awt.event.KeyListener", "keyPressed", "jTextArea3KeyPressed", true ) )
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane4"
+				"name": "jScrollPane4"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "jTextArea4"
+					"columns": 20
+					"rows": 5
+					"text": new FormMessage( null, "jTextArea4.text" )
+					"name": "jTextArea4"
+				} )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton1"
+				"text": new FormMessage( null, "jButton1.text" )
+				"name": "jButton1"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton1ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton2"
+				"text": new FormMessage( null, "jButton2.text" )
+				"name": "jButton2"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton2ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JSeparator" ) {
+				name: "jSeparator1"
+				"name": "jSeparator1"
+			} )
+			add( new FormComponent( "javax.swing.JSeparator" ) {
+				name: "jSeparator2"
+				"name": "jSeparator2"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton3"
+				"text": new FormMessage( null, "jButton3.text" )
+				"name": "jButton3"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton3ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton4"
+				"text": new FormMessage( null, "jButton4.text" )
+				"name": "jButton4"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton4ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel1"
+				"text": new FormMessage( null, "jLabel1.text" )
+				"name": "jLabel1"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton5"
+				"text": new FormMessage( null, "jButton5.text" )
+				"name": "jButton5"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton5ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "jTextField1"
+				"text": new FormMessage( null, "jTextField1.text" )
+				"name": "jTextField1"
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "jTextField2"
+				"text": new FormMessage( null, "jTextField2.text" )
+				"name": "jTextField2"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel2"
+				"text": new FormMessage( null, "jLabel2.text" )
+				"name": "jLabel2"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton6"
+				"text": new FormMessage( null, "jButton6.text" )
+				"name": "jButton6"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton6ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton7"
+				"text": new FormMessage( null, "jButton7.text" )
+				"name": "jButton7"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton7ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton8"
+				"text": new FormMessage( null, "jButton8.text" )
+				"name": "jButton8"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton8ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton9"
+				"text": new FormMessage( null, "jButton9.text" )
+				"name": "jButton9"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton9ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "jButton10"
+				"text": new FormMessage( null, "jButton10.text" )
+				"name": "jButton10"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jButton10ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel3"
+				"text": new FormMessage( null, "jLabel3.text" )
+				"name": "jLabel3"
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "jTextField3"
+				"text": new FormMessage( null, "jTextField3.text" )
+				"name": "jTextField3"
+			} )
+		} )
+		add( new FormContainer( "javax.swing.JMenuBar", new FormLayoutManager( class javax.swing.JMenuBar ) ) {
+			name: "menuBar"
+			"name": "menuBar"
+			add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+				name: "fileMenu"
+				"text": new FormMessage( null, "fileMenu.text" )
+				"name": "fileMenu"
+				auxiliary() {
+					"JavaCodeGenerator.variableLocal": true
+				}
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "jMenuItem1"
+					"text": new FormMessage( null, "jMenuItem1.text" )
+					"name": "jMenuItem1"
+					addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jMenuItem1ActionPerformed", true ) )
+				} )
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "jMenuItem2"
+					"text": new FormMessage( null, "jMenuItem2.text" )
+					"name": "jMenuItem2"
+					addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "jMenuItem2ActionPerformed", true ) )
+				} )
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "exitMenuItem"
+					"name": "exitMenuItem"
+					auxiliary() {
+						"JavaCodeGenerator.variableLocal": true
+					}
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+				name: "jMenu1"
+				"text": new FormMessage( null, "jMenu1.text" )
+				"name": "jMenu1"
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "reg1"
+					"text": new FormMessage( null, "reg1.text" )
+					"name": "reg1"
+					addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "reg1ActionPerformed", true ) )
+				} )
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "reg2"
+					"text": new FormMessage( null, "reg2.text" )
+					"name": "reg2"
+					addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "reg2ActionPerformed", true ) )
+				} )
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "reg3"
+					"text": new FormMessage( null, "reg3.text" )
+					"name": "reg3"
+					addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "reg3ActionPerformed", true ) )
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+				name: "helpMenu"
+				"text": new FormMessage( null, "helpMenu.text" )
+				"name": "helpMenu"
+				auxiliary() {
+					"JavaCodeGenerator.variableLocal": true
+				}
+				add( new FormComponent( "javax.swing.JMenuItem" ) {
+					name: "aboutMenuItem"
+					"name": "aboutMenuItem"
+					auxiliary() {
+						"JavaCodeGenerator.variableLocal": true
+					}
+				} )
+			} )
+		} )
+		add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+			name: "jScrollPane1"
+			"name": "jScrollPane1"
+			add( new FormComponent( "javax.swing.JTextArea" ) {
+				name: "jTextArea1"
+				"columns": 20
+				"rows": 5
+				"name": "jTextArea1"
+			} )
+		} )
+	}
+}

@@ -1,0 +1,230 @@
+JFDML JFormDesigner: "5.2.0.0.109" Java: "1.7.0_65" encoding: "UTF-8"
+
+new FormModel {
+	"i18n.bundlePackage": "worddistancer.resources"
+	"i18n.bundleName": "WordDistancerView"
+	"i18n.autoExternalize": true
+	"i18n.keyPrefix": "WordDistancerView"
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+			"$horizontalGroup": "par l {seq t {space :p::p, par t {comp jScrollPane4::l::806:x:2, comp jSeparator1::l::806:x:1, seq l {par t {seq {par l {seq l {space :p:8:p, comp jLabel2:::p::p}, comp jScrollPane2::l::213:x}, space :p:10:p}, seq t {comp bTrimList1:::p::p, space ::107:x, comp bOpenList1:::p::p, space s:::p}}, par l {seq {par l {seq {space :p:20:p, comp jLabel3:::p::p}, comp jScrollPane3::::204:x}, space u:p::p}, seq t:::1 {comp bTrimList2:::p::p, space ::98:x, comp bOpenList2:::p::p, space :p:18:p}}, comp jSeparator2:::p::p, space u:p::p, par l {comp cbSame:::p::p, seq l:::1 {par l {seq {par l {comp jLabel1:::p::p, comp jLabel4:::p::p}, space :p:6:p}, comp jLabel7::::64:x:1, comp jLabel5:::p::p:1, comp jLabel6:::p::p:1}, space :::p, par l {comp bStart::t:p::p, seq t {comp tOutput::::238:x:1, space :::p, comp bOpenOutput:::p::p}, comp cbRules::l::289:x:1, comp cbMaxDistance::l::289:x:1, comp cbAlgorithm::l::289:x:1, comp cbMinLength::l::289:x:1}}}}}, space :p::p}}"
+			"$verticalGroup": "par l {seq {space :p::p, par l {comp jSeparator2::::355:x, seq {par b {comp tOutput::b:p::p, comp jLabel1::b:p::p, comp bOpenOutput::b:p::p}, space u:::p, par b {comp cbAlgorithm::b:p::p, comp jLabel4::b:p::p}, space :::p, par b {comp cbMinLength::b:p::p, comp jLabel6::b:p::p}, space :::p, par b {comp cbMaxDistance::b:p::p, comp jLabel5::b:p::p}, space s:::p, par b {comp cbRules::b:p::p, comp jLabel7::b:p::p}, space :p:18:p, comp cbSame:::p::p, space ::147:x, comp bStart:::p::p}, seq l {par b {comp jLabel2::b:p::p, comp jLabel3::b:p::p}, space :::p, par l {comp jScrollPane3::::306:x:1, comp jScrollPane2::l::306:x:1}, space :::p, par b {comp bOpenList1::b:p::p, comp bOpenList2::b:p::p, comp bTrimList1::b:p::p, comp bTrimList2::b:p::p}}}, space u:p::p, comp jSeparator1:::p:10:p, space :::p, comp jScrollPane4:::p:144:p:2, space :::p}}"
+		} ) {
+			name: "mainPanel"
+			"name": "mainPanel"
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane2"
+				"name": "jScrollPane2"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "taList1"
+					"columns": 20
+					"rows": 5
+					"name": "taList1"
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane3"
+				"name": "jScrollPane3"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "taList2"
+					"columns": 20
+					"rows": 5
+					"name": "taList2"
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane4"
+				"name": "jScrollPane4"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "taStatus"
+					"columns": 20
+					"rows": 5
+					"name": "taStatus"
+				} )
+			} )
+			add( new FormComponent( "javax.swing.JSeparator" ) {
+				name: "jSeparator1"
+				"name": "jSeparator1"
+			} )
+			add( new FormComponent( "javax.swing.JSeparator" ) {
+				name: "jSeparator2"
+				"orientation": 1
+				"name": "jSeparator2"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bOpenList2"
+				"text": new FormMessage( null, "bOpenList2.text" )
+				"name": "bOpenList2"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bOpenList2ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bOpenList1"
+				"text": new FormMessage( null, "bOpenList1.text" )
+				"name": "bOpenList1"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bOpenList1ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "tOutput"
+				"text": new FormMessage( null, "tOutput.text" )
+				"name": "tOutput"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bOpenOutput"
+				"text": new FormMessage( null, "bOpenOutput.text" )
+				"name": "bOpenOutput"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bOpenOutputActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel1"
+				"text": new FormMessage( null, "jLabel1.text" )
+				"name": "jLabel1"
+			} )
+			add( new FormComponent( "javax.swing.JCheckBox" ) {
+				name: "cbSame"
+				"text": new FormMessage( null, "cbSame.text" )
+				"name": "cbSame"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "cbSameActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel2"
+				"text": new FormMessage( null, "jLabel2.text" )
+				"name": "jLabel2"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel3"
+				"text": new FormMessage( null, "jLabel3.text" )
+				"name": "jLabel3"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel4"
+				"text": new FormMessage( null, "jLabel4.text" )
+				"name": "jLabel4"
+			} )
+			add( new FormComponent( "javax.swing.JComboBox" ) {
+				name: "cbAlgorithm"
+				"model": new javax.swing.DefaultComboBoxModel {
+					selectedItem: "Levenshtein-Normal"
+					addElement( "Levenshtein-Normal" )
+					addElement( "Levenshtein-TREE" )
+					addElement( "Levenshtein-TREE with VALUE" )
+				}
+				"name": "cbAlgorithm"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bStart"
+				"text": new FormMessage( null, "bStart.text" )
+				"name": "bStart"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bStartActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JComboBox" ) {
+				name: "cbMaxDistance"
+				"model": new javax.swing.DefaultComboBoxModel {
+					selectedItem: "1"
+					addElement( "1" )
+					addElement( "2" )
+					addElement( "3" )
+					addElement( "4" )
+					addElement( "5" )
+					addElement( "6" )
+					addElement( "7" )
+					addElement( "8" )
+				}
+				"name": "cbMaxDistance"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel5"
+				"text": new FormMessage( null, "jLabel5.text" )
+				"name": "jLabel5"
+			} )
+			add( new FormComponent( "javax.swing.JComboBox" ) {
+				name: "cbRules"
+				"model": new javax.swing.DefaultComboBoxModel {
+					selectedItem: "None"
+					addElement( "None" )
+					addElement( "Char 1 same" )
+					addElement( "Char 1/2 same" )
+					addElement( "Char 1/2/3 same" )
+					addElement( "Char 1/2/3/4 same" )
+					addElement( "Char 1/2/3/4/5 same" )
+					addElement( "Char 1 same (ijy/ck/sz)" )
+					addElement( "Char 1/2 same (ijy/ck/sz)" )
+					addElement( "Char 1/2/3 same (ijy/ck/sz)" )
+					addElement( "Char 1/2/3/4 same (ijy/ck/sz)" )
+					addElement( "Char 1/2/3/4/5 same (ijy/ck/sz)" )
+				}
+				"name": "cbRules"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel7"
+				"text": new FormMessage( null, "jLabel7.text" )
+				"name": "jLabel7"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel6"
+				"text": new FormMessage( null, "jLabel6.text" )
+				"name": "jLabel6"
+			} )
+			add( new FormComponent( "javax.swing.JComboBox" ) {
+				name: "cbMinLength"
+				"model": new javax.swing.DefaultComboBoxModel {
+					selectedItem: "0"
+					addElement( "0" )
+					addElement( "1" )
+					addElement( "2" )
+					addElement( "3" )
+					addElement( "4" )
+					addElement( "5" )
+					addElement( "6" )
+					addElement( "7" )
+					addElement( "8" )
+					addElement( "9" )
+					addElement( "10" )
+					addElement( "11" )
+					addElement( "12" )
+					addElement( "13" )
+					addElement( "14" )
+					addElement( "15" )
+					addElement( "16" )
+					addElement( "17" )
+					addElement( "18" )
+					addElement( "19" )
+					addElement( "20" )
+					addElement( "21" )
+					addElement( "22" )
+					addElement( "23" )
+					addElement( "24" )
+					addElement( "25" )
+					addElement( "26" )
+					addElement( "27" )
+					addElement( "28" )
+					addElement( "29" )
+					addElement( "30" )
+					addElement( "31" )
+					addElement( "32" )
+					addElement( "33" )
+					addElement( "34" )
+					addElement( "35" )
+					addElement( "36" )
+					addElement( "37" )
+					addElement( "38" )
+					addElement( "39" )
+					addElement( "40" )
+				}
+				"name": "cbMinLength"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bTrimList1"
+				"text": new FormMessage( null, "bTrimList1.text" )
+				"name": "bTrimList1"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bTrimList1ActionPerformed", true ) )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bTrimList2"
+				"text": new FormMessage( null, "bTrimList2.text" )
+				"name": "bTrimList2"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bTrimList2ActionPerformed", true ) )
+			} )
+		} )
+	}
+}

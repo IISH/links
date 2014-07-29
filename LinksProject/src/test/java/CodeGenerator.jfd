@@ -1,0 +1,111 @@
+JFDML JFormDesigner: "5.2.0.0.109" Java: "1.7.0_65" encoding: "UTF-8"
+
+new FormModel {
+	contentType: "form/swing"
+	root: new FormRoot {
+		"$setComponentNames": true
+		add( new FormWindow( "javax.swing.JFrame", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+			"$horizontalGroup": "par l {seq l {space :::p, par l {comp jScrollPane1::l:p:415:p, comp jLabel1::l:p::p}, space :::p, par l {comp jScrollPane2::l:p:415:p, comp jLabel2::l:p::p}, space :p:10:p}, seq t {space :::x, comp bGenerate:::p::p, space :::p}}"
+			"$verticalGroup": "par l {seq {space :::p, par b {comp jLabel1::b:p::p, comp jLabel2::b:p::p}, space :::p, par l {comp jScrollPane1:::p:401:p, comp jScrollPane2:::p:401:p}, space :::p, comp bGenerate:::p::p, space :::x}}"
+		} ) {
+			name: "this"
+			"defaultCloseOperation": 3
+			"title": "function Generator"
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel1"
+				"text": "XML Functie Omschrijving"
+				"name": "jLabel1"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "jLabel2"
+				"text": "Java Output"
+				"name": "jLabel2"
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane1"
+				"name": "jScrollPane1"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "taIn"
+					"columns": 20
+					"rows": 5
+					"name": "taIn"
+				} )
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "jScrollPane2"
+				"name": "jScrollPane2"
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "taOut"
+					"columns": 20
+					"rows": 5
+					"name": "taOut"
+				} )
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "bGenerate"
+				"text": "jButton1"
+				"name": "bGenerate"
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bGenerateActionPerformed", true ) )
+			} )
+			menuBar: new FormContainer( "javax.swing.JMenuBar", new FormLayoutManager( class javax.swing.JMenuBar ) ) {
+				name: "menuBar"
+				add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+					name: "fileMenu"
+					"text": "File"
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "openMenuItem"
+						"text": "Open"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "saveMenuItem"
+						"text": "Save"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "saveAsMenuItem"
+						"text": "Save As ..."
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "exitMenuItem"
+						"text": "Exit"
+						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "exitMenuItemActionPerformed", true ) )
+					} )
+				} )
+				add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+					name: "editMenu"
+					"text": "Edit"
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "cutMenuItem"
+						"text": "Cut"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "copyMenuItem"
+						"text": "Copy"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "pasteMenuItem"
+						"text": "Paste"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "deleteMenuItem"
+						"text": "Delete"
+					} )
+				} )
+				add( new FormContainer( "javax.swing.JMenu", new FormLayoutManager( class javax.swing.JMenu ) ) {
+					name: "helpMenu"
+					"text": "Help"
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "contentsMenuItem"
+						"text": "Contents"
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "aboutMenuItem"
+						"text": "About"
+					} )
+				} )
+			}
+		}, new FormLayoutConstraints( null ) {
+			"size": new java.awt.Dimension( 875, 520 )
+			"location": new java.awt.Point( 0, 0 )
+		} )
+	}
+}
