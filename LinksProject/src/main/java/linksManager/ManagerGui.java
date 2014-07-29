@@ -2128,7 +2128,7 @@ public class ManagerGui extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-                String timestamp = "28-Jul-2014 10:17";
+                String timestamp = "29-Jul-2014 10:53";
                 System.out.println( "LINKS timestamp: " + timestamp );
 
                 timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");
