@@ -1,11 +1,23 @@
 package moduleMain;
 
-import connectors.*;
-import java.sql.*;
+import java.io.File;
+import java.sql.ResultSet;
+
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import java.io.*;
+
+import connectors.MySqlConnector;
 import general.Functions;
+
+/**
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-29-Jul-2014 Remove hard-code usr's/pwd's
+ * FL-29-Jul-2014 Latest change
+ *
+ */
 
 public class LinksPrematch extends Thread {
 
@@ -24,9 +36,37 @@ public class LinksPrematch extends Thread {
     private java.io.FileWriter writerFirstname;
     private boolean defaultConst = false;
 
-    public LinksPrematch(JTextArea t, JTextField ti, boolean a, boolean b, boolean c, boolean d, boolean e)
-            throws Exception {
-
+    /**
+     * Constructor
+     * called from linksPrematch
+     *
+     * @param url
+     * @param user
+     * @param pass
+     * @param t
+     * @param ti
+     * @param a
+     * @param b
+     * @param c
+     * @param d
+     * @param e
+     * @throws Exception
+     */
+    public LinksPrematch
+    (
+        String url,
+        String user,
+        String pass,
+        JTextArea t,
+        JTextField ti,
+        boolean a,
+        boolean b,
+        boolean c,
+        boolean d,
+        boolean e
+    )
+    throws Exception
+    {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -35,29 +75,32 @@ public class LinksPrematch extends Thread {
         this.t = t;
         this.ti = ti;
 
-        conCleaned =    new MySqlConnector("127.0.0.1", "links_cleaned",     "linksdev", "devlinks");
-        conPrematch =   new MySqlConnector("127.0.0.1", "links_prematch",    "linksdev", "devlinks");
-        conTemp =       new MySqlConnector("127.0.0.1", "links_temp",        "linksdev", "devlinks");
-        conBase =       new MySqlConnector("127.0.0.1", "links_base",        "linksdev", "devlinks");
-        conFrequency =  new MySqlConnector("127.0.0.1", "links_frequency",   "linksdev", "devlinks");
+        conCleaned   = new MySqlConnector( url, "links_cleaned",   user, pass );
+        conPrematch  = new MySqlConnector( url, "links_prematch",  user, pass );
+        conTemp      = new MySqlConnector( url, "links_temp",      user, pass );
+        conBase      = new MySqlConnector( url, "links_base",      user, pass );
+        conFrequency = new MySqlConnector( url, "links_frequency", user, pass );
     }
 
     /**
      * Constructor
+     * called from linksCleaned
+     *
      * @throws Exception 
      */
-    public LinksPrematch(JTextArea t, JTextField ti) throws Exception {
-        conCleaned =    new MySqlConnector("127.0.0.1", "links_cleaned",     "linksdev", "devlinks");
-        conPrematch =   new MySqlConnector("127.0.0.1", "links_prematch",    "linksdev", "devlinks");
-       conTemp =       new MySqlConnector("127.0.0.1", "links_temp",        "linksdev", "devlinks");
-        conBase =       new MySqlConnector("127.0.0.1", "links_base",        "linksdev", "devlinks");
-        conFrequency =  new MySqlConnector("127.0.0.1", "links_frequency",   "linksdev", "devlinks");
+    public LinksPrematch( String url, String user, String pass, JTextArea t, JTextField ti )
+    throws Exception
+    {
+        conCleaned   = new MySqlConnector( url, "links_cleaned",   user, pass );
+        conPrematch  = new MySqlConnector( url, "links_prematch",  user, pass );
+        conTemp      = new MySqlConnector( url, "links_temp",      user, pass );
+        conBase      = new MySqlConnector( url, "links_base",      user, pass );
+        conFrequency = new MySqlConnector( url, "links_frequency", user, pass );
 
         defaultConst = true;
 
         this.t = t;
         this.ti = ti;
-
     }
 
     /**
@@ -66,51 +109,55 @@ public class LinksPrematch extends Thread {
     @Override
     public void run() {
         
-        t.append(Functions.now("yyyy.MM.dd G 'at' hh:mm:ss z"));
+        t.append( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ) );
 
         try {
-            if (a) {
-                t.append("Splitting names...");
+            if( a ) {
+                t.append( "Splitting names..." );
                 {
                     doSplitName();
                 }
-                t.append("Splitting names...OK");
+                t.append( "Splitting names...OK" );
             }
-            if (b) {
-                t.append("Creating Unique name tables...");
+
+            if( b ) {
+                t.append( "Creating Unique name tables..." );
                 {
                     doUniqueNameTables();
                 }
-                t.append("Creating Unique name tables...OK");
+                t.append( "Creating Unique name tables...OK" );
             }
-            if (c) {
-                t.append("Computing Levenshtein...");
+
+            if( c ) {
+                t.append( "Computing Levenshtein..." );
                 {
                     doLevenshtein();
                 }
-                t.append("Computing Levenshtein...OK");
+                t.append( "Computing Levenshtein...OK" );
             }
-            if (d) {
-                t.append("Converting Names to Numbers...");
+
+            if( d ) {
+                t.append( "Converting Names to Numbers..." );
                 {
                     doToNumber();
                 }
-                t.append("Converting Names to Numbers...OK");
+                t.append( "Converting Names to Numbers...OK" );
             }
-            if (e) {
-                t.append("Creating Base Table...");
+
+            if( e ) {
+                t.append( "Creating Base Table..." );
                 {
                     doCreateBaseTable();
                 }
-                t.append("Creating Base Table...OK");
+                t.append( "Creating Base Table...OK" );
             }
             
-            t.append(Functions.now("yyyy.MM.dd G 'at' hh:mm:ss z"));
+            t.append( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ) );
 
             this.stop();
 
-        } catch (Exception e) {
-            t.append(e.getMessage());
+        } catch( Exception e ) {
+            t.append( e.getMessage() );
         }
 
     }

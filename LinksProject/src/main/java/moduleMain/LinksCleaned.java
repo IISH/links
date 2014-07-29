@@ -11,13 +11,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 
@@ -45,7 +43,6 @@ import connectors.MySqlConnector;
 import enumDefinitions.TableType;
 import enumDefinitions.TimeType;
 import linksManager.ManagerGui;
-//import moduleMain.LinksSpecific.*;
 
 
 /**
@@ -56,7 +53,7 @@ import linksManager.ManagerGui;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-23-Jul-2014 Read properties file
  * FL-28-Jul-2014 Timing functions
- * FL-28-Jul-2014 Latest change
+ * FL-29-Jul-2014 Latest change
  *
 if( 1 == 1 ) {
 System.out.println( "EXIT." );
@@ -133,12 +130,12 @@ public class LinksCleaned extends Thread
     private String ref_user = "";
     private String ref_pass = "";
 
-    private int teller = 0;
-    private int bronNr;
-
     private String url  = "";           // links db's access
     private String user = "";
     private String pass = "";
+
+    private int teller = 0;
+    private int bronNr;
 
     private int[] sources = { 10, 225 };
     private String endl = ". OK.";              // ".";
@@ -149,35 +146,37 @@ public class LinksCleaned extends Thread
      * @param ref_url
      * @param ref_user
      * @param ref_pass
-     * @param bronNr
      * @param url
      * @param user
      * @param pass
+     * @param bronNr
      * @param tbLOLClatestOutput
      * @param taLOLCoutput
      * @param dos
      * @param mg
      */
-    public LinksCleaned(
-            String ref_url,
-            String ref_user,
-            String ref_pass,
-            int bronNr,
-            String url,
-            String user,
-            String pass,
-            JTextField tbLOLClatestOutput,
-            JTextArea taLOLCoutput,
-            DoSet dos,
-            ManagerGui mg)
+    public LinksCleaned
+    (
+        String ref_url,
+        String ref_user,
+        String ref_pass,
+        String url,
+        String user,
+        String pass,
+        int bronNr,
+        JTextField tbLOLClatestOutput,
+        JTextArea taLOLCoutput,
+        DoSet dos,
+        ManagerGui mg
+    )
     {
         this.ref_url = ref_url;
         this.ref_user = ref_user;
         this.ref_pass = ref_pass;
-        this.bronNr = bronNr;
         this.url = url;
         this.user = user;
         this.pass = pass;
+        this.bronNr = bronNr;
         this.tbLOLClatestOutput = tbLOLClatestOutput;
         this.taLOLCoutput = taLOLCoutput;
         this.dos = dos;
@@ -286,8 +285,8 @@ public class LinksCleaned extends Thread
                 funcShowMessage( endl, false, true );
 
 
-                //
-                LinksPrematch lpm = new LinksPrematch(taLOLCoutput, tbLOLClatestOutput);
+                // Prematch
+                LinksPrematch lpm = new LinksPrematch( url, user, pass, taLOLCoutput, tbLOLClatestOutput );
 
                 // temp
                 funcShowMessage( "Splitting names", false, false );

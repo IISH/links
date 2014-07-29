@@ -28,390 +28,390 @@ public class WordDistancerView extends FrameView {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    // Generated using JFormDesigner Evaluation license - Fons Laan
-    private void initComponents() {
-        ResourceBundle bundle = ResourceBundle.getBundle("worddistancer.resources.WordDistancerView");
-        mainPanel = new JPanel();
-        jScrollPane2 = new JScrollPane();
-        taList1 = new JTextArea();
-        jScrollPane3 = new JScrollPane();
-        taList2 = new JTextArea();
-        jScrollPane4 = new JScrollPane();
-        taStatus = new JTextArea();
-        jSeparator1 = new JSeparator();
-        jSeparator2 = new JSeparator();
-        bOpenList2 = new JButton();
-        bOpenList1 = new JButton();
-        tOutput = new JTextField();
-        bOpenOutput = new JButton();
-        jLabel1 = new JLabel();
-        cbSame = new JCheckBox();
-        jLabel2 = new JLabel();
-        jLabel3 = new JLabel();
-        jLabel4 = new JLabel();
-        cbAlgorithm = new JComboBox<>();
-        bStart = new JButton();
-        cbMaxDistance = new JComboBox<>();
-        jLabel5 = new JLabel();
-        cbRules = new JComboBox<>();
-        jLabel7 = new JLabel();
-        jLabel6 = new JLabel();
-        cbMinLength = new JComboBox<>();
-        bTrimList1 = new JButton();
-        bTrimList2 = new JButton();
+	// Generated using JFormDesigner Evaluation license - Fons Laan
+	private void initComponents() {
+		ResourceBundle bundle = ResourceBundle.getBundle( "WordDistancerView" );
+		mainPanel = new JPanel();
+		jScrollPane2 = new JScrollPane();
+		taList1 = new JTextArea();
+		jScrollPane3 = new JScrollPane();
+		taList2 = new JTextArea();
+		jScrollPane4 = new JScrollPane();
+		taStatus = new JTextArea();
+		jSeparator1 = new JSeparator();
+		jSeparator2 = new JSeparator();
+		bOpenList2 = new JButton();
+		bOpenList1 = new JButton();
+		tOutput = new JTextField();
+		bOpenOutput = new JButton();
+		jLabel1 = new JLabel();
+		cbSame = new JCheckBox();
+		jLabel2 = new JLabel();
+		jLabel3 = new JLabel();
+		jLabel4 = new JLabel();
+		cbAlgorithm = new JComboBox<>();
+		bStart = new JButton();
+		cbMaxDistance = new JComboBox<>();
+		jLabel5 = new JLabel();
+		cbRules = new JComboBox<>();
+		jLabel7 = new JLabel();
+		jLabel6 = new JLabel();
+		cbMinLength = new JComboBox<>();
+		bTrimList1 = new JButton();
+		bTrimList2 = new JButton();
 
-        //======== mainPanel ========
-        {
-            mainPanel.setName("mainPanel");
+		//======== mainPanel ========
+		{
+			mainPanel.setName("mainPanel");
 
-            // JFormDesigner evaluation mark
-            mainPanel.setBorder(new javax.swing.border.CompoundBorder(
-                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                    "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                    javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                    java.awt.Color.red), mainPanel.getBorder())); mainPanel.addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
+			// JFormDesigner evaluation mark
+			mainPanel.setBorder(new javax.swing.border.CompoundBorder(
+				new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+					"JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+					javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+					java.awt.Color.red), mainPanel.getBorder())); mainPanel.addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
 
 
-            //======== jScrollPane2 ========
-            {
-                jScrollPane2.setName("jScrollPane2");
+			//======== jScrollPane2 ========
+			{
+				jScrollPane2.setName("jScrollPane2");
 
-                //---- taList1 ----
-                taList1.setColumns(20);
-                taList1.setRows(5);
-                taList1.setName("taList1");
-                jScrollPane2.setViewportView(taList1);
-            }
+				//---- taList1 ----
+				taList1.setColumns(20);
+				taList1.setRows(5);
+				taList1.setName("taList1");
+				jScrollPane2.setViewportView(taList1);
+			}
 
-            //======== jScrollPane3 ========
-            {
-                jScrollPane3.setName("jScrollPane3");
+			//======== jScrollPane3 ========
+			{
+				jScrollPane3.setName("jScrollPane3");
 
-                //---- taList2 ----
-                taList2.setColumns(20);
-                taList2.setRows(5);
-                taList2.setName("taList2");
-                jScrollPane3.setViewportView(taList2);
-            }
+				//---- taList2 ----
+				taList2.setColumns(20);
+				taList2.setRows(5);
+				taList2.setName("taList2");
+				jScrollPane3.setViewportView(taList2);
+			}
 
-            //======== jScrollPane4 ========
-            {
-                jScrollPane4.setName("jScrollPane4");
+			//======== jScrollPane4 ========
+			{
+				jScrollPane4.setName("jScrollPane4");
 
-                //---- taStatus ----
-                taStatus.setColumns(20);
-                taStatus.setRows(5);
-                taStatus.setName("taStatus");
-                jScrollPane4.setViewportView(taStatus);
-            }
+				//---- taStatus ----
+				taStatus.setColumns(20);
+				taStatus.setRows(5);
+				taStatus.setName("taStatus");
+				jScrollPane4.setViewportView(taStatus);
+			}
 
-            //---- jSeparator1 ----
-            jSeparator1.setName("jSeparator1");
+			//---- jSeparator1 ----
+			jSeparator1.setName("jSeparator1");
 
-            //---- jSeparator2 ----
-            jSeparator2.setOrientation(SwingConstants.VERTICAL);
-            jSeparator2.setName("jSeparator2");
+			//---- jSeparator2 ----
+			jSeparator2.setOrientation(SwingConstants.VERTICAL);
+			jSeparator2.setName("jSeparator2");
 
-            //---- bOpenList2 ----
-            bOpenList2.setText(bundle.getString("bOpenList2.text"));
-            bOpenList2.setName("bOpenList2");
-            bOpenList2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bOpenList2ActionPerformed(e);
-                }
-            });
+			//---- bOpenList2 ----
+			bOpenList2.setText(bundle.getString("bOpenList2.text"));
+			bOpenList2.setName("bOpenList2");
+			bOpenList2.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bOpenList2ActionPerformed(e);
+				}
+			});
 
-            //---- bOpenList1 ----
-            bOpenList1.setText(bundle.getString("bOpenList1.text"));
-            bOpenList1.setName("bOpenList1");
-            bOpenList1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bOpenList1ActionPerformed(e);
-                }
-            });
+			//---- bOpenList1 ----
+			bOpenList1.setText(bundle.getString("bOpenList1.text"));
+			bOpenList1.setName("bOpenList1");
+			bOpenList1.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bOpenList1ActionPerformed(e);
+				}
+			});
 
-            //---- tOutput ----
-            tOutput.setText(bundle.getString("tOutput.text"));
-            tOutput.setName("tOutput");
+			//---- tOutput ----
+			tOutput.setText(bundle.getString("tOutput.text"));
+			tOutput.setName("tOutput");
 
-            //---- bOpenOutput ----
-            bOpenOutput.setText(bundle.getString("bOpenOutput.text"));
-            bOpenOutput.setName("bOpenOutput");
-            bOpenOutput.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bOpenOutputActionPerformed(e);
-                }
-            });
+			//---- bOpenOutput ----
+			bOpenOutput.setText(bundle.getString("bOpenOutput.text"));
+			bOpenOutput.setName("bOpenOutput");
+			bOpenOutput.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bOpenOutputActionPerformed(e);
+				}
+			});
 
-            //---- jLabel1 ----
-            jLabel1.setText(bundle.getString("jLabel1.text"));
-            jLabel1.setName("jLabel1");
+			//---- jLabel1 ----
+			jLabel1.setText(bundle.getString("jLabel1.text"));
+			jLabel1.setName("jLabel1");
 
-            //---- cbSame ----
-            cbSame.setText(bundle.getString("cbSame.text"));
-            cbSame.setName("cbSame");
-            cbSame.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    cbSameActionPerformed(e);
-                }
-            });
+			//---- cbSame ----
+			cbSame.setText(bundle.getString("cbSame.text"));
+			cbSame.setName("cbSame");
+			cbSame.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					cbSameActionPerformed(e);
+				}
+			});
 
-            //---- jLabel2 ----
-            jLabel2.setText(bundle.getString("jLabel2.text"));
-            jLabel2.setName("jLabel2");
+			//---- jLabel2 ----
+			jLabel2.setText(bundle.getString("jLabel2.text"));
+			jLabel2.setName("jLabel2");
 
-            //---- jLabel3 ----
-            jLabel3.setText(bundle.getString("jLabel3.text"));
-            jLabel3.setName("jLabel3");
+			//---- jLabel3 ----
+			jLabel3.setText(bundle.getString("jLabel3.text"));
+			jLabel3.setName("jLabel3");
 
-            //---- jLabel4 ----
-            jLabel4.setText(bundle.getString("jLabel4.text"));
-            jLabel4.setName("jLabel4");
+			//---- jLabel4 ----
+			jLabel4.setText(bundle.getString("jLabel4.text"));
+			jLabel4.setName("jLabel4");
 
-            //---- cbAlgorithm ----
-            cbAlgorithm.setModel(new DefaultComboBoxModel<>(new String[] {
-                "Levenshtein-Normal",
-                "Levenshtein-TREE",
-                "Levenshtein-TREE with VALUE"
-            }));
-            cbAlgorithm.setName("cbAlgorithm");
+			//---- cbAlgorithm ----
+			cbAlgorithm.setModel(new DefaultComboBoxModel<>(new String[] {
+				"Levenshtein-Normal",
+				"Levenshtein-TREE",
+				"Levenshtein-TREE with VALUE"
+			}));
+			cbAlgorithm.setName("cbAlgorithm");
 
-            //---- bStart ----
-            bStart.setText(bundle.getString("bStart.text"));
-            bStart.setName("bStart");
-            bStart.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bStartActionPerformed(e);
-                }
-            });
+			//---- bStart ----
+			bStart.setText(bundle.getString("bStart.text"));
+			bStart.setName("bStart");
+			bStart.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bStartActionPerformed(e);
+				}
+			});
 
-            //---- cbMaxDistance ----
-            cbMaxDistance.setModel(new DefaultComboBoxModel<>(new String[] {
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8"
-            }));
-            cbMaxDistance.setName("cbMaxDistance");
+			//---- cbMaxDistance ----
+			cbMaxDistance.setModel(new DefaultComboBoxModel<>(new String[] {
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6",
+				"7",
+				"8"
+			}));
+			cbMaxDistance.setName("cbMaxDistance");
 
-            //---- jLabel5 ----
-            jLabel5.setText(bundle.getString("jLabel5.text"));
-            jLabel5.setName("jLabel5");
+			//---- jLabel5 ----
+			jLabel5.setText(bundle.getString("jLabel5.text"));
+			jLabel5.setName("jLabel5");
 
-            //---- cbRules ----
-            cbRules.setModel(new DefaultComboBoxModel<>(new String[] {
-                "None",
-                "Char 1 same",
-                "Char 1/2 same",
-                "Char 1/2/3 same",
-                "Char 1/2/3/4 same",
-                "Char 1/2/3/4/5 same",
-                "Char 1 same (ijy/ck/sz)",
-                "Char 1/2 same (ijy/ck/sz)",
-                "Char 1/2/3 same (ijy/ck/sz)",
-                "Char 1/2/3/4 same (ijy/ck/sz)",
-                "Char 1/2/3/4/5 same (ijy/ck/sz)"
-            }));
-            cbRules.setName("cbRules");
+			//---- cbRules ----
+			cbRules.setModel(new DefaultComboBoxModel<>(new String[] {
+				"None",
+				"Char 1 same",
+				"Char 1/2 same",
+				"Char 1/2/3 same",
+				"Char 1/2/3/4 same",
+				"Char 1/2/3/4/5 same",
+				"Char 1 same (ijy/ck/sz)",
+				"Char 1/2 same (ijy/ck/sz)",
+				"Char 1/2/3 same (ijy/ck/sz)",
+				"Char 1/2/3/4 same (ijy/ck/sz)",
+				"Char 1/2/3/4/5 same (ijy/ck/sz)"
+			}));
+			cbRules.setName("cbRules");
 
-            //---- jLabel7 ----
-            jLabel7.setText(bundle.getString("jLabel7.text"));
-            jLabel7.setName("jLabel7");
+			//---- jLabel7 ----
+			jLabel7.setText(bundle.getString("jLabel7.text"));
+			jLabel7.setName("jLabel7");
 
-            //---- jLabel6 ----
-            jLabel6.setText(bundle.getString("jLabel6.text"));
-            jLabel6.setName("jLabel6");
+			//---- jLabel6 ----
+			jLabel6.setText(bundle.getString("jLabel6.text"));
+			jLabel6.setName("jLabel6");
 
-            //---- cbMinLength ----
-            cbMinLength.setModel(new DefaultComboBoxModel<>(new String[] {
-                "0",
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10",
-                "11",
-                "12",
-                "13",
-                "14",
-                "15",
-                "16",
-                "17",
-                "18",
-                "19",
-                "20",
-                "21",
-                "22",
-                "23",
-                "24",
-                "25",
-                "26",
-                "27",
-                "28",
-                "29",
-                "30",
-                "31",
-                "32",
-                "33",
-                "34",
-                "35",
-                "36",
-                "37",
-                "38",
-                "39",
-                "40"
-            }));
-            cbMinLength.setName("cbMinLength");
+			//---- cbMinLength ----
+			cbMinLength.setModel(new DefaultComboBoxModel<>(new String[] {
+				"0",
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6",
+				"7",
+				"8",
+				"9",
+				"10",
+				"11",
+				"12",
+				"13",
+				"14",
+				"15",
+				"16",
+				"17",
+				"18",
+				"19",
+				"20",
+				"21",
+				"22",
+				"23",
+				"24",
+				"25",
+				"26",
+				"27",
+				"28",
+				"29",
+				"30",
+				"31",
+				"32",
+				"33",
+				"34",
+				"35",
+				"36",
+				"37",
+				"38",
+				"39",
+				"40"
+			}));
+			cbMinLength.setName("cbMinLength");
 
-            //---- bTrimList1 ----
-            bTrimList1.setText(bundle.getString("bTrimList1.text"));
-            bTrimList1.setName("bTrimList1");
-            bTrimList1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bTrimList1ActionPerformed(e);
-                }
-            });
+			//---- bTrimList1 ----
+			bTrimList1.setText(bundle.getString("bTrimList1.text"));
+			bTrimList1.setName("bTrimList1");
+			bTrimList1.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bTrimList1ActionPerformed(e);
+				}
+			});
 
-            //---- bTrimList2 ----
-            bTrimList2.setText(bundle.getString("bTrimList2.text"));
-            bTrimList2.setName("bTrimList2");
-            bTrimList2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    bTrimList2ActionPerformed(e);
-                }
-            });
+			//---- bTrimList2 ----
+			bTrimList2.setText(bundle.getString("bTrimList2.text"));
+			bTrimList2.setName("bTrimList2");
+			bTrimList2.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					bTrimList2ActionPerformed(e);
+				}
+			});
 
-            GroupLayout mainPanelLayout = new GroupLayout(mainPanel);
-            mainPanel.setLayout(mainPanelLayout);
-            mainPanelLayout.setHorizontalGroup(
-                mainPanelLayout.createParallelGroup()
-                    .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane4, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 806, Short.MAX_VALUE)
-                            .addComponent(jSeparator1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 806, Short.MAX_VALUE)
-                            .addGroup(GroupLayout.Alignment.LEADING, mainPanelLayout.createSequentialGroup()
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                    .addGroup(mainPanelLayout.createSequentialGroup()
-                                        .addGroup(mainPanelLayout.createParallelGroup()
-                                            .addGroup(mainPanelLayout.createSequentialGroup()
-                                                .addGap(8, 8, 8)
-                                                .addComponent(jLabel2))
-                                            .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 213, Short.MAX_VALUE))
-                                        .addGap(10, 10, 10))
-                                    .addGroup(mainPanelLayout.createSequentialGroup()
-                                        .addComponent(bTrimList1)
-                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 107, Short.MAX_VALUE)
-                                        .addComponent(bOpenList1)
-                                        .addGap(18, 18, 18)))
-                                .addGroup(mainPanelLayout.createParallelGroup()
-                                    .addGroup(mainPanelLayout.createSequentialGroup()
-                                        .addGroup(mainPanelLayout.createParallelGroup()
-                                            .addGroup(mainPanelLayout.createSequentialGroup()
-                                                .addGap(20, 20, 20)
-                                                .addComponent(jLabel3))
-                                            .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 204, Short.MAX_VALUE))
-                                        .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED))
-                                    .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
-                                        .addComponent(bTrimList2)
-                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 98, Short.MAX_VALUE)
-                                        .addComponent(bOpenList2)
-                                        .addGap(18, 18, 18)))
-                                .addComponent(jSeparator2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup()
-                                    .addComponent(cbSame)
-                                    .addGroup(mainPanelLayout.createSequentialGroup()
-                                        .addGroup(mainPanelLayout.createParallelGroup()
-                                            .addGroup(mainPanelLayout.createSequentialGroup()
-                                                .addGroup(mainPanelLayout.createParallelGroup()
-                                                    .addComponent(jLabel1)
-                                                    .addComponent(jLabel4))
-                                                .addGap(6, 6, 6))
-                                            .addComponent(jLabel7, GroupLayout.DEFAULT_SIZE, 64, Short.MAX_VALUE)
-                                            .addComponent(jLabel5)
-                                            .addComponent(jLabel6))
-                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                        .addGroup(mainPanelLayout.createParallelGroup()
-                                            .addComponent(bStart, GroupLayout.Alignment.TRAILING)
-                                            .addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
-                                                .addComponent(tOutput, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(bOpenOutput))
-                                            .addComponent(cbRules, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
-                                            .addComponent(cbMaxDistance, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
-                                            .addComponent(cbAlgorithm, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
-                                            .addComponent(cbMinLength, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE))))))
-                        .addContainerGap())
-            );
-            mainPanelLayout.setVerticalGroup(
-                mainPanelLayout.createParallelGroup()
-                    .addGroup(mainPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(mainPanelLayout.createParallelGroup()
-                            .addComponent(jSeparator2, GroupLayout.DEFAULT_SIZE, 355, Short.MAX_VALUE)
-                            .addGroup(mainPanelLayout.createSequentialGroup()
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(tOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel1)
-                                    .addComponent(bOpenOutput))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cbAlgorithm, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel4))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cbMinLength, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel6))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cbMaxDistance, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel5))
-                                .addGap(18, 18, 18)
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cbRules, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel7))
-                                .addGap(18, 18, 18)
-                                .addComponent(cbSame)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 147, Short.MAX_VALUE)
-                                .addComponent(bStart))
-                            .addGroup(mainPanelLayout.createSequentialGroup()
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel2)
-                                    .addComponent(jLabel3))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup()
-                                    .addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 306, Short.MAX_VALUE)
-                                    .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 306, Short.MAX_VALUE))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                    .addComponent(bOpenList1)
-                                    .addComponent(bOpenList2)
-                                    .addComponent(bTrimList1)
-                                    .addComponent(bTrimList2))))
-                        .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane4, GroupLayout.PREFERRED_SIZE, 144, GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())
-            );
-        }
+			GroupLayout mainPanelLayout = new GroupLayout(mainPanel);
+			mainPanel.setLayout(mainPanelLayout);
+			mainPanelLayout.setHorizontalGroup(
+				mainPanelLayout.createParallelGroup()
+					.addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
+						.addContainerGap()
+						.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+							.addComponent(jScrollPane4, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 806, Short.MAX_VALUE)
+							.addComponent(jSeparator1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 806, Short.MAX_VALUE)
+							.addGroup(GroupLayout.Alignment.LEADING, mainPanelLayout.createSequentialGroup()
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+									.addGroup(mainPanelLayout.createSequentialGroup()
+										.addGroup(mainPanelLayout.createParallelGroup()
+											.addGroup(mainPanelLayout.createSequentialGroup()
+												.addGap(8, 8, 8)
+												.addComponent(jLabel2))
+											.addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 213, Short.MAX_VALUE))
+										.addGap(10, 10, 10))
+									.addGroup(mainPanelLayout.createSequentialGroup()
+										.addComponent(bTrimList1)
+										.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 107, Short.MAX_VALUE)
+										.addComponent(bOpenList1)
+										.addGap(18, 18, 18)))
+								.addGroup(mainPanelLayout.createParallelGroup()
+									.addGroup(mainPanelLayout.createSequentialGroup()
+										.addGroup(mainPanelLayout.createParallelGroup()
+											.addGroup(mainPanelLayout.createSequentialGroup()
+												.addGap(20, 20, 20)
+												.addComponent(jLabel3))
+											.addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 204, Short.MAX_VALUE))
+										.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED))
+									.addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
+										.addComponent(bTrimList2)
+										.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 98, Short.MAX_VALUE)
+										.addComponent(bOpenList2)
+										.addGap(18, 18, 18)))
+								.addComponent(jSeparator2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+								.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+								.addGroup(mainPanelLayout.createParallelGroup()
+									.addComponent(cbSame)
+									.addGroup(mainPanelLayout.createSequentialGroup()
+										.addGroup(mainPanelLayout.createParallelGroup()
+											.addGroup(mainPanelLayout.createSequentialGroup()
+												.addGroup(mainPanelLayout.createParallelGroup()
+													.addComponent(jLabel1)
+													.addComponent(jLabel4))
+												.addGap(6, 6, 6))
+											.addComponent(jLabel7, GroupLayout.DEFAULT_SIZE, 64, Short.MAX_VALUE)
+											.addComponent(jLabel5)
+											.addComponent(jLabel6))
+										.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+										.addGroup(mainPanelLayout.createParallelGroup()
+											.addComponent(bStart, GroupLayout.Alignment.TRAILING)
+											.addGroup(GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
+												.addComponent(tOutput, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+												.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+												.addComponent(bOpenOutput))
+											.addComponent(cbRules, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
+											.addComponent(cbMaxDistance, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
+											.addComponent(cbAlgorithm, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
+											.addComponent(cbMinLength, GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE))))))
+						.addContainerGap())
+			);
+			mainPanelLayout.setVerticalGroup(
+				mainPanelLayout.createParallelGroup()
+					.addGroup(mainPanelLayout.createSequentialGroup()
+						.addContainerGap()
+						.addGroup(mainPanelLayout.createParallelGroup()
+							.addComponent(jSeparator2, GroupLayout.DEFAULT_SIZE, 355, Short.MAX_VALUE)
+							.addGroup(mainPanelLayout.createSequentialGroup()
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(tOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addComponent(jLabel1)
+									.addComponent(bOpenOutput))
+								.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(cbAlgorithm, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addComponent(jLabel4))
+								.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(cbMinLength, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addComponent(jLabel6))
+								.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(cbMaxDistance, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addComponent(jLabel5))
+								.addGap(18, 18, 18)
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(cbRules, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addComponent(jLabel7))
+								.addGap(18, 18, 18)
+								.addComponent(cbSame)
+								.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 147, Short.MAX_VALUE)
+								.addComponent(bStart))
+							.addGroup(mainPanelLayout.createSequentialGroup()
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(jLabel2)
+									.addComponent(jLabel3))
+								.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+								.addGroup(mainPanelLayout.createParallelGroup()
+									.addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 306, Short.MAX_VALUE)
+									.addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 306, Short.MAX_VALUE))
+								.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+								.addGroup(mainPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+									.addComponent(bOpenList1)
+									.addComponent(bOpenList2)
+									.addComponent(bTrimList1)
+									.addComponent(bTrimList2))))
+						.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+						.addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+						.addComponent(jScrollPane4, GroupLayout.PREFERRED_SIZE, 144, GroupLayout.PREFERRED_SIZE)
+						.addContainerGap())
+			);
+		}
     }// </editor-fold>//GEN-END:initComponents
 
     private void bStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bStartActionPerformed
@@ -566,34 +566,34 @@ public class WordDistancerView extends FrameView {
     }//GEN-LAST:event_bTrimList2ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    // Generated using JFormDesigner Evaluation license - Fons Laan
-    private JPanel mainPanel;
-    private JScrollPane jScrollPane2;
-    private JTextArea taList1;
-    private JScrollPane jScrollPane3;
-    private JTextArea taList2;
-    private JScrollPane jScrollPane4;
-    private JTextArea taStatus;
-    private JSeparator jSeparator1;
-    private JSeparator jSeparator2;
-    private JButton bOpenList2;
-    private JButton bOpenList1;
-    private JTextField tOutput;
-    private JButton bOpenOutput;
-    private JLabel jLabel1;
-    private JCheckBox cbSame;
-    private JLabel jLabel2;
-    private JLabel jLabel3;
-    private JLabel jLabel4;
-    private JComboBox<String> cbAlgorithm;
-    private JButton bStart;
-    private JComboBox<String> cbMaxDistance;
-    private JLabel jLabel5;
-    private JComboBox<String> cbRules;
-    private JLabel jLabel7;
-    private JLabel jLabel6;
-    private JComboBox<String> cbMinLength;
-    private JButton bTrimList1;
-    private JButton bTrimList2;
+	// Generated using JFormDesigner Evaluation license - Fons Laan
+	private JPanel mainPanel;
+	private JScrollPane jScrollPane2;
+	private JTextArea taList1;
+	private JScrollPane jScrollPane3;
+	private JTextArea taList2;
+	private JScrollPane jScrollPane4;
+	private JTextArea taStatus;
+	private JSeparator jSeparator1;
+	private JSeparator jSeparator2;
+	private JButton bOpenList2;
+	private JButton bOpenList1;
+	private JTextField tOutput;
+	private JButton bOpenOutput;
+	private JLabel jLabel1;
+	private JCheckBox cbSame;
+	private JLabel jLabel2;
+	private JLabel jLabel3;
+	private JLabel jLabel4;
+	private JComboBox<String> cbAlgorithm;
+	private JButton bStart;
+	private JComboBox<String> cbMaxDistance;
+	private JLabel jLabel5;
+	private JComboBox<String> cbRules;
+	private JLabel jLabel7;
+	private JLabel jLabel6;
+	private JComboBox<String> cbMinLength;
+	private JButton bTrimList1;
+	private JButton bTrimList2;
     // End of variables declaration//GEN-END:variables
 }
