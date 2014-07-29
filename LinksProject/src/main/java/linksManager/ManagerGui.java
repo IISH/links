@@ -1,25 +1,45 @@
 package linksManager;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.event.*;
-import moduleMain.*;
+import java.util.ArrayList;
+import java.util.Properties;
+
 import javax.swing.*;
-import java.util.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import enumDefinitions.*;
-import dataSet.DoSet;
-
 import connectors.CsvConnector;
+import dataSet.DoSet;
+import enumDefinitions.IndexType;
 
-//test
-import java.util.regex.*;
+import moduleMain.LinksCleaned;
+import moduleMain.LinksInternal;
+import moduleMain.LinksOriginal;
+import moduleMain.LinksPrematch;
+import moduleMain.LinksSpecific;
+
+//import java.util.regex.*;         //test
+
+/**
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-29-Jul-2014 explicit imports
+ * FL-29-Jul-2014 Latest change
+ */
 
 public class ManagerGui extends javax.swing.JFrame {
 
@@ -29,10 +49,6 @@ public class ManagerGui extends javax.swing.JFrame {
     String ref_url;
     String ref_user;
     String ref_pass;
-
-    String url;
-    String user;
-    String pass;
 
     public ManagerGui() {
         String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
@@ -1693,10 +1709,9 @@ public class ManagerGui extends javax.swing.JFrame {
             System.out.println( "mysql_hsnref_username:\t" + ref_user );
             System.out.println( "mysql_hsnref_password:\t" + ref_pass );
 
-            // make them global for calling linksPrematch from linksCleaned
-            url  = properties.getProperty( "mysql_links_hosturl" );
-            user = properties.getProperty( "mysql_links_username" );
-            pass = properties.getProperty( "mysql_links_password" );
+            String url  = properties.getProperty( "mysql_links_hosturl" );
+            String user = properties.getProperty( "mysql_links_username" );
+            String pass = properties.getProperty( "mysql_links_password" );
 
             // copy values into form, tab Cleaned
             tbLOLCurl.setText(  url );
@@ -2057,13 +2072,17 @@ public class ManagerGui extends javax.swing.JFrame {
             bronNr = Integer.parseInt(tbLOLCBronNr.getText());
         }
 
+        String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
+        String db_user = tbLOLCuser.getText();     // from Tab Cleaned
+        String db_pass = tbLOLCpass.getText();     // from Tab Cleaned
+
         LinksCleaned lolc = new LinksCleaned(
              ref_url,
              ref_user,
              ref_pass,
-             url,
-             user,
-             pass,
+             db_url,
+             db_user,
+             db_pass,
              bronNr,
              tbLOLClatestOutput,
              taLOLCoutput,
@@ -2082,9 +2101,9 @@ public class ManagerGui extends javax.swing.JFrame {
 
     private void bnPstartProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bnPstartProcessActionPerformed
 
-        String url  = tbLOLCurl.getText();      // from Tab Cleaned
-        String user = tbLOLCuser.getText();     // from Tab Cleaned
-        String pass = tbLOLCpass.getText();     // from Tab Cleaned
+        String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
+        String db_user = tbLOLCuser.getText();     // from Tab Cleaned
+        String db_pass = tbLOLCpass.getText();     // from Tab Cleaned
 
         boolean a = false;
         boolean b = false;
@@ -2111,9 +2130,9 @@ public class ManagerGui extends javax.swing.JFrame {
         try {
             LinksPrematch lpm = new LinksPrematch
             (
-                url,
-                user,
-                pass,
+                db_url,
+                db_user,
+                db_pass,
                 taPresult,
                 taPinfo,
                 a,
