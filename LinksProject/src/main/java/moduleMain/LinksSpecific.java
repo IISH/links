@@ -1,28 +1,43 @@
 package moduleMain;
 
-import dataSet.*;
-import java.util.*;
+import java.util.Calendar;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.File;
-import javax.swing.*;
-import java.util.regex.*;
-import javax.xml.parsers.*;
-import org.w3c.dom.Document;
-import javax.xml.transform.*;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import javax.swing.filechooser.FileFilter;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 
+import org.w3c.dom.Document;
+
+import dataSet.DateYearMonthDaySet;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * <p/>
+ * FL-30-Jul-2014 Cleanup
  */
 public class LinksSpecific {
 
@@ -245,9 +260,11 @@ public class LinksSpecific {
         return (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0);
     }
 
+
     public static String functieOpmerkingenWaardeNaDubbelePunt(String opmerking) {
         return funcCleanSides(opmerking.split(":")[1].replaceAll(";", ""));
     }
+
 
     public static void addLogToGui(String logText, boolean isMinOnly, JTextField tb, JTextArea ta){
         tb.setText(logText);
@@ -256,7 +273,6 @@ public class LinksSpecific {
         }
     }
 
-    
     
     /**
      * 
@@ -301,7 +317,6 @@ public class LinksSpecific {
 
         return urenText + uren + ":" + minutenText + restmin + ":" + secondenText + restsec;
     }
-
 
 
     /**
@@ -405,7 +420,8 @@ public class LinksSpecific {
         }
         return dymd;
     }
-    
+
+
      /**
      * Decide wich slash to use
      * @return slash to use
@@ -417,27 +433,29 @@ public class LinksSpecific {
             return ("\\");
         }
     }
-    
-        /**
+
+
+    /**
      *
-     * @param file
+     * @param basename
      * @return
      * @throws java.io.IOException
      */
-    public static String getSqlQuery(String file) throws java.io.IOException {
-        byte[] buffer = new byte[(int) new File("resources/SqlQuery/" + file + ".sql").length()];
-        BufferedInputStream f = null;
+    public static String getSqlQuery( String basename ) throws java.io.IOException
+    {
+        String path = "SqlQuery/" + basename + ".sql";
+        StringBuilder query = new StringBuilder();
+
         try {
-            f = new BufferedInputStream(new FileInputStream("resources/SqlQuery/" + file + ".sql"));
-            f.read(buffer);
-        } finally {
-            if (f != null) {
-                try {
-                    f.close();
-                } catch (IOException ignored) {
-                }
+            InputStream in = LinksSpecific.class.getClassLoader().getResourceAsStream(path);
+            BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
+            String line = "";
+            while( (line = reader.readLine()) != null ) {
+                //System.out.println( line );
+                query.append( line );
             }
-        }
-        return new String(buffer);
+        } catch( Exception ex )  { System.out.println( ex.getMessage() ); }
+
+        return query.toString();
     }
 }
