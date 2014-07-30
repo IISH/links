@@ -10,7 +10,7 @@ new FormModel {
 		} ) {
 			name: "this"
 			"defaultCloseOperation": 3
-			"title": "Links Data Manager v. 0.1"
+			"title": "LINKS Data Manager 2.0"
 			"cursor": new java.awt.Cursor( 0 )
 			add( new FormContainer( "javax.swing.JTabbedPane", new FormLayoutManager( class javax.swing.JTabbedPane ) ) {
 				name: "tpMain"
@@ -175,6 +175,7 @@ new FormModel {
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "MAIN"
+					"enabled": false
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq t {space :::p, par t {comp jScrollPane1::l::1097:x, seq t {par l:::p {comp jLabel13::l:::x:1, comp jLabel8::l:p::p, comp jLabel20::l:p::p, comp jLabel9::l:p::p, comp jLabel7::l:p::p:1, comp jLabel12::l:::x:1}, space :::p, par l {comp tfCSVInfo::l::970:x:1, comp tfCSVLineData::l::970:x:1, seq t {par t {comp tfCSVFilterText::::848:x:1, seq l {comp jLabel18:::p::p, space :::p, comp tfCSVFilterIndex::::595:x}, comp tfCSVOutputFile::l::848:x:1, comp tfCSVCsvFile::t::848:x:1}, space u:::p, par l {comp bCSVPathOutpuFile:::p:28:p, par l:l {comp bCSVBeginFilter::t:p:110:p:1, comp bCSVGetHeader::t:p:110:p:1, comp bCSVPath::l:p:28:p}}}}}, comp jLabel2::l:p::p}, space :::p}}"
@@ -282,6 +283,7 @@ new FormModel {
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "PREP: CSV Filter"
+					"enabled": false
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq {space :::p, par l {seq :::1 {comp jLabel3:::p::p, space u:::p, comp tfCTBCsvFiles::::919:x, space :::p, comp bSelectCsvToDbCsvFile:::p:28:p}, seq {par t {comp bCsvToDbStart:::p::p, seq t {par l {comp jLabel15::l:p::p, comp jLabel10::l:p::p, comp jLabel17::l:p::p, comp jLabel16::l:p::p, comp jLabel14::l:p::p, comp jLabel32::l:p::p}, space :::p, par l {comp tfCTDDbPass::l::275:x:1, comp tfCTDDbUser::l::275:x:1, comp tfCTDDbName::l::275:x:1, comp tfCTDDbLocation::l::275:x:1, comp tfCTDPreFix::l::275:x:1, comp tfCTDdelay::l::275:x:1}}, comp rbBebiIndexGeen::l:p::p, comp rbBebiIndexGenlias::l:p::p}, space u:::p, par l {seq l {space :p:58:p, comp jLabel11:::p::p}, comp jScrollPane2::l::655:x:1, comp tfCTDLatestOutput::l::655:x:1, seq l {par l {comp jLabel21::l:p::p, comp jLabel23::l:p::p, comp jLabel22:::p::p}, space :::p, par l {comp pbDTCFile::l::554:x, comp pbDTCTotal::::554:x, comp tfCTDLineNumber::l::554:x:1}}}}}, space :::p}}"
@@ -429,6 +431,7 @@ new FormModel {
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "INTERNAL"
+					"enabled": false
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq l {space :::p, par l {comp jLabel25:::p::p, comp jLabel27::l:p::p, comp jLabel28::l:p::p, comp jLabel29::l:p::p, comp jLabel33::l:p::p, comp jLabel46::l:p::p}, space s:::p, par l {seq {par l {comp tfBILODbPass::l::378:x:1, comp tfBILODbUser::l::378:x:1, comp tfBILODbLocation::l::378:x:1, comp tfBILOProjectName::l::378:x:1, comp tfBILODeleteSource::t::378:x:1, seq t {comp tfBILOdelay::::237:x:1, space :::p, comp bBronInternToLinksOrigineel:::p::p}}, space :p:14:p}, seq {comp cbOrunCleaned:::p:137:p, space :::x}}, par l {comp jScrollPane3::t::550:x:1, comp tfBILOLatestOutput::l::550:x:1, comp jLabel31:::p::p}, space :::p}}"
@@ -526,6 +529,7 @@ new FormModel {
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "ORIGINAL"
+					"enabled": false
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq l {space :::p, par l {seq l {par t {comp cbCdoPreBasicNames:::::x:1, par t:l::p {comp cbCdoNames::l:::x:1, comp cbCdoOpmerkingen::l:::x:1}, comp cbLOLCdoRole::l:p:93:p:1, comp cbCdoJaarLeeftijd::l:::x:1, comp cbCdoRelation::l:p:101:p:1, comp cbLOLCdoSequentie::l:p:91:p:1, comp cbCdoType::l:p:73:p:1, comp cbCdoStaatSex::l:p:113:p:1}, space :::p, par l {comp cbLOLCdoMinMaxDate::l:p::p, par t:l::p {comp tbLOLCuser::l:::x:1, comp tbLOLCpass::l:::x:1, comp tbLOLCurl::l::0:x:1, comp tbLOLCBronNr::l:p:154:p:1}, comp cbLOLCdoMinMaxMarriage::l:p::p, comp cbLOLCdoPartsToFullDate::l:p::p, comp cbCdoDaysSinceBegin::l:p::p:1, seq l {comp cbCdoDates:::p:122:p:1, space :p:67:p, par l:::p {seq {comp cbLOLCdoPostTasks:::p:104:p:1, space :p:10:p}, comp cbCdoPrematch:::::x:1}}}}, comp bnLOLCstartProcess::l:::x:1, seq {par l {comp jLabel44::l:p::p, comp jLabel4::l:p::p, comp jLabel42::l:p::p, comp jLabel43::l:p::p, comp jLabel51::l:p:113:p, comp cbCdoVernieuwen::l:p:155:p:1, comp cbCdoLocations::l:p:162:p:1}, space ::334:x}}, par l {seq {space :p:6:p, comp jLabel45:::p::p}, seq l {space :::p, par l:::p {comp jScrollPane6::::602:x:1, comp tbLOLClatestOutput::::602:x:1}}}, space :p:11:p}}"
@@ -710,7 +714,7 @@ new FormModel {
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq {space :::p, par l {seq t {comp cbPdoCreateBaseTable:::p:261:p:1, space ::729:x, comp bnPstartProcess:::p:107:p:1}, seq {par l {comp cbPdoSplitName::l:p:261:p:1, comp cbPdoUniqueNameTables::l:p:261:p:1, comp cbPdoLevenshtein::l:p:261:p:1, comp cbPdoNameToNo::l:p:261:p:1}, space :0:836:x}, comp taPinfo::l::1097:x, comp jScrollPane7::l::1097:x}, space :::p}}"
-					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, par l {seq l {space :p:71:p, comp bnPstartProcess:::p::p}, seq l {space :::p, comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}}, space u:::p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::467:x, space :::p}}"
+					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, par l {seq l {space :p:71:p, comp bnPstartProcess:::p::p}, seq l {space :::p, comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}}, space u:::p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::465:x, space :::p}}"
 				} ) {
 					name: "jPanel1"
 					"name": "jPanel1"

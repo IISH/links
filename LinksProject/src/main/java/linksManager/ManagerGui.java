@@ -226,7 +226,7 @@ public class ManagerGui extends javax.swing.JFrame {
 
 		//======== this ========
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		setTitle("Links Data Manager v. 0.1");
+		setTitle("LINKS Data Manager 2.0");
 		setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		setName("this");
 		Container contentPane = getContentPane();
@@ -621,6 +621,7 @@ public class ManagerGui extends javax.swing.JFrame {
 				);
 			}
 			tpMain.addTab("MAIN", pMain);
+			tpMain.setEnabledAt(0, false);
 
 			//======== pCsv ========
 			{
@@ -810,6 +811,7 @@ public class ManagerGui extends javax.swing.JFrame {
 				);
 			}
 			tpMain.addTab("PREP: CSV Filter", pCsv);
+			tpMain.setEnabledAt(1, false);
 
 			//======== pCsvToDatabase ========
 			{
@@ -1058,6 +1060,7 @@ public class ManagerGui extends javax.swing.JFrame {
 				);
 			}
 			tpMain.addTab("INTERNAL", pCsvToDatabase);
+			tpMain.setEnabledAt(2, false);
 
 			//======== pBronInternToLinksOrigineel ========
 			{
@@ -1226,6 +1229,7 @@ public class ManagerGui extends javax.swing.JFrame {
 				);
 			}
 			tpMain.addTab("ORIGINAL", pBronInternToLinksOrigineel);
+			tpMain.setEnabledAt(3, false);
 
 			//======== pLOLC ========
 			{
@@ -1610,7 +1614,7 @@ public class ManagerGui extends javax.swing.JFrame {
 							.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 							.addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 467, Short.MAX_VALUE)
+							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
 							.addContainerGap())
 				);
 			}
@@ -2171,7 +2175,7 @@ public class ManagerGui extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-                String timestamp = "29-Jul-2014 10:53";
+                String timestamp = "30-Jul-2014 9:48";
                 System.out.println( "LINKS timestamp: " + timestamp );
 
                 timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");
