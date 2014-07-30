@@ -21,5 +21,5 @@ father_death_max    = links_cleaned.person_c.death_max_days ,
 father_death_loc    = links_cleaned.person_c.death_location 
 WHERE
 links_base.links_base.id_registration = links_cleaned.person_c.id_registration AND
-links_base.links_base.registration_maintype = 1 AND
+links_base.links_base.registration_maintype = 10 AND
 links_cleaned.person_c.role = 3 ;

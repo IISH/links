@@ -1,7 +1,7 @@
 UPDATE links_base.links_base , links_cleaned.person_c
 SET
 partner_id              = links_cleaned.person_c.id_person ,
-partner_familyname_fc   = links_cleaned.person_c.familyname ,
+partner_familyname_fc   = LEFT( links_cleaned.person_c.familyname, 1) ,
 partner_familyname      = links_cleaned.person_c.familyname_no ,
 partner_firstname       = links_cleaned.person_c.firstname ,
 partner_firstname1      = links_cleaned.person_c.firstname1_no ,

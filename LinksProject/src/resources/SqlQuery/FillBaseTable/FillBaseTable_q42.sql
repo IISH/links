@@ -1,4 +1,4 @@
--- mar_bride_mother
+-- birth_child_mother
 UPDATE links_base.links_base , links_cleaned.person_c
 SET
 mother_id           = links_cleaned.person_c.id_person , 
@@ -21,5 +21,5 @@ mother_death_max    = links_cleaned.person_c.death_max_days ,
 mother_death_loc    = links_cleaned.person_c.death_location
 WHERE
 links_base.links_base.id_registration = links_cleaned.person_c.id_registration AND
-links_base.links_base.registration_maintype = 2 AND
-links_cleaned.person_c.role = 5 ;
+links_base.links_base.registration_maintype = 10 AND
+links_cleaned.person_c.role = 2 ;

@@ -1,4 +1,4 @@
--- death_partner_partner
+-- birth_father_partner
 UPDATE links_base.links_base , links_cleaned.person_c
 SET
 partner_id              = links_cleaned.person_c.id_person ,
@@ -21,6 +21,6 @@ partner_death_max       = links_cleaned.person_c.death_max_days ,
 partner_death_loc       = links_cleaned.person_c.death_location
 WHERE
 links_base.links_base.id_registration = links_cleaned.person_c.id_registration AND
-links_base.links_base.registration_maintype = 3 AND
-links_base.links_base.ego_role = 11 AND
-links_cleaned.person_c.role = 10 ;
+links_base.links_base.registration_maintype = 10 AND
+links_cleaned.person_c.role = 2 AND
+links_base.links_base.ego_role = 3;

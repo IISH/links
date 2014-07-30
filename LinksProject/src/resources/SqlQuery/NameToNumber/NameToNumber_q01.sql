@@ -1,6 +1,6 @@
 -- Query 01
-UPDATE person_c, familyname
+UPDATE links_cleaned.person_c, links_frequency.familyname
 SET
-person_c.familyname_no = familyname.id
+links_cleaned.person_c.familyname_no = links_frequency.familyname.id
 WHERE
-person_c.familyname = familyname.name ;
+links_cleaned.person_c.familyname = links_frequency.familyname.name ;

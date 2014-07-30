@@ -1,4 +1,4 @@
--- mar_groom_ego
+-- birth_father_ego
 INSERT INTO links_base.links_base
 (
 id_registration ,
@@ -56,8 +56,8 @@ links_cleaned.person_c.mar_location ,
 links_cleaned.person_c.death_min_days ,
 links_cleaned.person_c.death_max_days ,
 links_cleaned.person_c.death_location ,
-7
+3
 FROM links_cleaned.registration_c , links_cleaned.person_c
 WHERE links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration AND
-links_cleaned.registration_c.registration_maintype = 2 AND
-links_cleaned.person_c.role = 7 ;
+links_cleaned.registration_c.registration_maintype = 10 AND
+links_cleaned.person_c.role = 3 ;

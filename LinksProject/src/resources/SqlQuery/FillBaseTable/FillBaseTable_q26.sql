@@ -2,7 +2,7 @@
 UPDATE links_base.links_base , links_cleaned.person_c
 SET
 father_id           = links_cleaned.person_c.id_person , 
-father_familyname_fc= links_cleaned.person_c.familyname ,
+father_familyname_fc= LEFT( links_cleaned.person_c.familyname, 1) ,
 father_familyname   = links_cleaned.person_c.familyname_no ,
 father_firstname    = links_cleaned.person_c.firstname ,
 father_firstname1   = links_cleaned.person_c.firstname1_no ,
