@@ -1,19 +1,27 @@
 package prematch;
 
-import java.sql.*;
+import java.io.FileWriter;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import connectors.*;
 
-
+import connectors.MySqlConnector;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * <p/>
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-30-Jul-2014 Latest change
  */
-public class Lv extends Thread{
+public class Lv extends Thread
+{
+    private String db_url  = "";           // links db's access
+    private String db_user = "";
+    private String db_pass = "";
 
     private JTextArea taInfo;
     private JTextField tbOutput;
@@ -21,19 +29,38 @@ public class Lv extends Thread{
     private boolean strict;
 
 
-
     /**
+     * Constructor
      *
+     * @param db_url
+     * @param db_user
+     * @param db_pass
      * @param taInfo
      * @param tbOutput
+     * @param table
+     * @param strict
      */
-    public Lv(JTextArea taInfo, JTextField tbOutput, String table, boolean strict) {
+    public Lv
+    (
+        String db_url,
+        String db_user,
+        String db_pass,
+
+        JTextArea taInfo,
+        JTextField tbOutput,
+        String table,
+        boolean strict
+    )
+    {
+        this.db_url  = db_url;
+        this.db_user = db_user;
+        this.db_pass = db_pass;
+
         this.taInfo = taInfo;
         this.tbOutput = tbOutput;
         this.table = table;
         this.strict = strict;
     }
-
 
 
     /**
@@ -43,13 +70,13 @@ public class Lv extends Thread{
     public void run(){
 
         // Run query on Database
-        try {
+        try
+        {
+            MySqlConnector con = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
 
-            MySqlConnector con = new MySqlConnector("127.0.0.1", "links_frequency", "linksdev", "devlinks");
+            ResultSet rs = con.runQueryWithResult( "SELECT id, name FROM " +  table );
 
-            ResultSet rs = con.runQueryWithResult( "SELECT id, name FROM " +  table);
-
-            ArrayList<Integer> id = new ArrayList<Integer>();
+            ArrayList<Integer> id  = new ArrayList<Integer>();
             ArrayList<String> name = new ArrayList<String>();
 
             while(rs.next()){
