@@ -21,9 +21,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 
+
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * <p/>
+ * FL-30-Jul-2014 Latest change
+ *
  */
 public class Functions {
 
@@ -405,7 +410,7 @@ public class Functions {
         }
     }
     
-        /**
+    /**
      *
      * @param file
      * @return
@@ -429,7 +434,8 @@ public class Functions {
         }
         return new String(buffer);
     }
-    
+
+
     /**
      * 
      * 
@@ -443,7 +449,7 @@ public class Functions {
      * now("H:mm:ss:SSS"));
      * now("K:mm a,z"));
      * now("yyyy.MMMMM.dd GGG hh:mm aaa"));
-    * @param dateFormat
+     * @param dateFormat
      * @return 
      */
     public static String now(String dateFormat) {
@@ -451,8 +457,5 @@ public class Functions {
         SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
         return sdf.format(cal.getTime());
     }
-    
-    /**
-     * (Temporary) disabled functions
-     */
+
 }
