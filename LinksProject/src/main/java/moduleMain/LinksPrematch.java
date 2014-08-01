@@ -123,39 +123,67 @@ public class LinksPrematch extends Thread
     @Override
     public void run()
     {
-        //t.append( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ) );
+        String mmss = "";
+        String msg  = "";
         showMessage( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ), false, true );
+
+        long startTotal = System.currentTimeMillis();
 
         try {
             if( bSplitNames ) {
                 showMessage( "Splitting names...", false, true );
-                { doSplitName(); }
-                showMessage( "Splitting names OK.", false, true );
+                long start = System.currentTimeMillis();
+                doSplitName();
+                long stop = System.currentTimeMillis();
+                mmss = Functions.millisec2hms( start, stop );
+                msg = "Splitting names OK " + mmss;
+                showMessage( msg, false, true );
             }
 
             if( bUniqueTables ) {
                 showMessage( "Creating Unique name tables...", false, true );
-                { doUniqueNameTables(); }
-                showMessage( "Creating Unique name tables OK.", false, true );
+                long start = System.currentTimeMillis();
+                doUniqueNameTables();
+                long stop = System.currentTimeMillis();
+                mmss = Functions.millisec2hms( start, stop );
+                msg = "Creating Unique name table OK " + mmss;
+                showMessage( msg, false, true );
             }
 
             if( bLevenshtein ) {
                 showMessage( "Computing Levenshtein...", false, true );
-                { doLevenshtein(); }
-                showMessage( "Computing Levenshtein OK.", false, true );
+                long start = System.currentTimeMillis();
+                doLevenshtein();
+                long stop = System.currentTimeMillis();
+                mmss = Functions.millisec2hms( start, stop );
+                msg = "Computing Levenshtein OK " + mmss;
+                showMessage( msg, false, true );
             }
 
             if( bNamesToNo ) {
                 showMessage( "Converting Names to Numbers...", false, true );
-                { doToNumber(); }
-                showMessage( "Converting Names to Numbers OK.", false, true );
+                long start = System.currentTimeMillis();
+                doToNumber();
+                long stop = System.currentTimeMillis();
+                mmss = Functions.millisec2hms( start, stop );
+                msg = "Converting Names to Numbers OK " + mmss;
+                showMessage( msg, false, true );
             }
 
             if( bBaseTable ) {
                 showMessage( "Creating Base Table...", false, true );
-                { doCreateBaseTable(); }
-                showMessage( "Creating Base Table OK.", false, true );
+                long start = System.currentTimeMillis();
+                doCreateBaseTable();
+                long stop = System.currentTimeMillis();
+                mmss = Functions.millisec2hms( start, stop );
+                msg = "Creating Base Table OK " + mmss;
+                showMessage( msg, false, true );
             }
+
+            long stopTotal = System.currentTimeMillis();
+            mmss = Functions.millisec2hms( startTotal, stopTotal );
+            msg = "Elapsed: " + mmss;
+            showMessage( msg, false, true );
 
             showMessage( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ), false, true );
 
@@ -586,10 +614,8 @@ public class LinksPrematch extends Thread
             //System.out.println( qPath );
             String query = LinksSpecific.getSqlQuery( qPath );
 
-            if( n == 31 ) { System.out.println( query ); }
-
             try {
-                conBase.runQuery(query);
+                conBase.runQuery( query );
             }
             catch( Exception ex ) {
                 showMessage( ex.getMessage(), false, true );

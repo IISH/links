@@ -30,6 +30,8 @@ import moduleMain.LinksOriginal;
 import moduleMain.LinksPrematch;
 import moduleMain.LinksSpecific;
 
+import general.Functions;
+
 //import java.util.regex.*;         //test
 
 /**
@@ -2180,7 +2182,7 @@ public class ManagerGui extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-                String timestamp = "30-Jul-2014 9:48";
+                String timestamp = "01-Jul-2014 15:37";
                 System.out.println( "LINKS timestamp: " + timestamp );
 
                 timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");

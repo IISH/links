@@ -300,7 +300,7 @@ public class Functions {
      * Gebruik deze functie om een datum te controleren en te splitsen
      * De datum kan splitchars bevatten als -, / \ [] etc.
      * Formaat kan zijn: d-M-yyyy or dd-M-yyyy or d-MM-yyyy or dd-MM-yyyy
-     * @param Te controleren datum
+     * @param date to be checked
      * @return een DateYearMonthDay object met datum en evt. fouten
      */
     public static DateYearMonthDaySet devideCheckDate(String date){
@@ -458,4 +458,28 @@ public class Functions {
         return sdf.format(cal.getTime());
     }
 
+
+     public static String millisec2hms( long millisec_start, long millisec_stop ) {
+         long sec = ( millisec_stop - millisec_start ) / 1000;
+         long hour = sec / 3600;
+         long min = sec / 60;
+         long rmin = min - 60 * hour;
+         long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
+
+         String hms = "";
+         if( hour == 0 ) {
+             if( rmin == 0 ) {
+                 if( rsec == 0 ) {
+                     hms = "";  // do not bother to show
+                 }
+                 else {
+                     hms = String.format("[%d sec]", rsec);
+                 }
+             }
+             else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+         }
+         else { hms = String.format( "[%02d:%02d:%02d hh:mm:ss]", hour, rmin, rsec ); }
+
+         return hms;
+    }
 }
