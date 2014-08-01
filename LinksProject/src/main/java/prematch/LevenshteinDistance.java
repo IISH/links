@@ -18,7 +18,7 @@ package prematch;
  */
 
 /**
- * Levenstein edit distance class.
+ * Levenshtein edit distance class.
  */
 public final class LevenshteinDistance implements StringDistance {
 

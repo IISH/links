@@ -19,47 +19,35 @@ import connectors.MySqlConnector;
  */
 public class Lv extends Thread
 {
-    private String db_url  = "";           // links db's access
-    private String db_user = "";
-    private String db_pass = "";
-
-    private JTextArea taInfo;
-    private JTextField tbOutput;
-    private String table;
+    private MySqlConnector db_conn = null;
+    private String db_table;
     private boolean strict;
-
+    private JTextField tbOutput;
+    private JTextArea taInfo;
 
     /**
      * Constructor
      *
-     * @param db_url
-     * @param db_user
-     * @param db_pass
-     * @param taInfo
-     * @param tbOutput
-     * @param table
+     * @param db_conn
+     * @param db_table
      * @param strict
+     * @param tbOutput
+     * @param taInfo
      */
     public Lv
     (
-        String db_url,
-        String db_user,
-        String db_pass,
-
-        JTextArea taInfo,
+        MySqlConnector db_conn,
+        String db_table,
+        boolean strict,
         JTextField tbOutput,
-        String table,
-        boolean strict
+        JTextArea taInfo
     )
     {
-        this.db_url  = db_url;
-        this.db_user = db_user;
-        this.db_pass = db_pass;
-
-        this.taInfo = taInfo;
-        this.tbOutput = tbOutput;
-        this.table = table;
+        this.db_conn = db_conn;
+        this.db_table = db_table;
         this.strict = strict;
+        this.tbOutput = tbOutput;
+        this.taInfo = taInfo;
     }
 
 
@@ -72,23 +60,31 @@ public class Lv extends Thread
         // Run query on Database
         try
         {
-            MySqlConnector con = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
+            System.out.println( "prematch.Lv.run()" );
+            System.out.println( db_conn );
 
-            ResultSet rs = con.runQueryWithResult( "SELECT id, name FROM " +  table );
+            ResultSet rs = null;
+            try {
+                rs = db_conn.runQueryWithResult( "SELECT id, name FROM " + db_table );
+            }
+            catch( Exception ex ) {
+                System.out.println( ex.getMessage() );
+                return;
+            }
 
             ArrayList<Integer> id  = new ArrayList<Integer>();
             ArrayList<String> name = new ArrayList<String>();
 
-            while(rs.next()){
-                id.add( rs.getInt("id") );
-                name.add( rs.getString("name") );
+            while( rs.next() ) {
+                id.add( rs.getInt( "id" ) );
+                name.add( rs.getString( "name" ) );
             }
 
-            taInfo.append(table + "LOADED...\r\n");
+            taInfo.append( db_table + "LOADED...\r\n" );
             
             int size = name.size();
 
-            FileWriter writer = new FileWriter( strict + "_" + table + ".csv");
+            FileWriter writer = new FileWriter( strict + "_" + db_table + ".csv");
 
             // Hulp variabelen
             long timeExpand = 0;
@@ -189,7 +185,7 @@ public class Lv extends Thread
                         }
                     }
                     else{
-                        // levenstein icm met lengte
+                        // levenshtein icm met lengte
                         if( basic < 3 && ld > 1 ){
                             continue;
                         }
