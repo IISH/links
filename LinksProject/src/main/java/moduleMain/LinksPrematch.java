@@ -17,7 +17,7 @@ import general.Functions;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-31-Jul-2014 Latest change
+ * FL-05-Aug-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -125,7 +125,8 @@ public class LinksPrematch extends Thread
     {
         String mmss = "";
         String msg  = "";
-        showMessage( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ), false, true );
+
+        showMessage( "LinksPrematch/run()", false, true );
 
         long startTotal = System.currentTimeMillis();
 
@@ -141,7 +142,7 @@ public class LinksPrematch extends Thread
             }
 
             if( bUniqueTables ) {
-                showMessage( "Creating Unique name tables...", false, true );
+                showMessage( "Creating unique name tables...", false, true );
                 long start = System.currentTimeMillis();
                 doUniqueNameTables();
                 long stop = System.currentTimeMillis();
@@ -185,13 +186,18 @@ public class LinksPrematch extends Thread
             msg = "Elapsed: " + mmss;
             showMessage( msg, false, true );
 
-            showMessage( Functions.now( "yyyy.MM.dd G 'at' hh:mm:ss z" ), false, true );
-
             this.stop();
 
         } catch( Exception ex ) { ta.append( ex.getMessage() ); }
 
     }
+
+
+    //public boolean isSplitNames()   { return bSplitNames; }
+    //public boolean isUniqueTables() { return bUniqueTables; }
+    //public boolean isLevenshtein()  { return bLevenshtein; }
+    //public boolean isNamesToNo()    { return bNamesToNo; }
+    //public boolean isBaseTable()    { return bBaseTable; }
 
 
     /**

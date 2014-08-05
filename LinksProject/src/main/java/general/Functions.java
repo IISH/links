@@ -469,12 +469,7 @@ public class Functions {
          String hms = "";
          if( hour == 0 ) {
              if( rmin == 0 ) {
-                 if( rsec == 0 ) {
-                     hms = "";  // do not bother to show
-                 }
-                 else {
-                     hms = String.format("[%d sec]", rsec);
-                 }
+                 hms = String.format("[%d sec]", rsec);
              }
              else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
          }

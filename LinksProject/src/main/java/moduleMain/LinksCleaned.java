@@ -1,9 +1,5 @@
 package moduleMain;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import java.lang.reflect.Method;
 
 import java.sql.Connection;
@@ -51,15 +47,8 @@ import general.Functions;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-23-Jul-2014 Read properties file
  * FL-28-Jul-2014 Timing functions
- * FL-29-Jul-2014 Latest change
- *
-if( 1 == 1 ) {
-System.out.println( "EXIT." );
-showMessage( "EXIT", false, true );
-return;
-}
+ * FL-05-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
@@ -190,13 +179,14 @@ public class LinksCleaned extends Thread
         System.out.println( "mysql_hsnref_password:\t" + ref_pass );
     }
 
+
     @Override
     /**
      * Begin
      */
     public void run()
     {
-        System.out.println( "LinksCleaned/run()" );
+        showMessage( "LinksCleaned/run()", false, true );
 
         try {
             String mmss = "";
@@ -213,13 +203,18 @@ public class LinksCleaned extends Thread
 
             if( bronNr != 0 ) { setSourceFilters(); }       // Set source filters
 
-            if( dos.isDoRenewData() )
-            {
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoRenewData" );
 
-                funcRenewData();        // Renew Data in Cleaned
-            }
+            if( dos.isDoRenewData() )                       // Remove previous data
+            {
+                long startDoRenewData = System.currentTimeMillis();
+                showMessage( "isDoRenewData", false, true );
+
+                funcRenewData();                            // Renew data in links_cleaned
+
+                elapsedShowMessage( "isDoRenewData", startDoRenewData, System.currentTimeMillis() );
+            } // dos.isDoRenewData
+            else { showMessage( "Skipping isDoRenewData", false, true ); }
+
 
             // Load reports
             showMessage( "Loading report table", false, false );
@@ -229,12 +224,10 @@ public class LinksCleaned extends Thread
             showMessage( endl, false, true );
 
 
-            // basic names TEMP
-            if( dos.isDoPreBasicNames() )
+            if( dos.isDoPreBasicNames() )                   // basic names Temp
             {
-                long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoPreBasicNames" );
+                long startDoPreBasicNames = System.currentTimeMillis();
+                showMessage( "isDoPreBasicNames", false, true );
 
                 // load the ref tables
                 showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
@@ -307,17 +300,44 @@ public class LinksCleaned extends Thread
                 {
                     lpm.doBasicName();
                 }
+                showMessage( endl, false, true );
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoPreBasicNames" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoPreBasicNames", startDoPreBasicNames, System.currentTimeMillis() );
             } // dos.isDoPreBasicNames
+            else { showMessage( "Skipping isDoPreBasicNames", false, true ); }
 
 
-            // Names Section
-            if( dos.isDoNames() )
+            if( dos.isDoRemarks() )                         // Parse Remarks
             {
+                long startDoRemarks = System.currentTimeMillis();
+                showMessage( "isDoRemarks", false, true );
+
+                // load al refs used by remarks Parser
+                showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
+                {
+                    //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
+                    //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
+                }
+                showMessage( endl, false, true );
+
+                runMethod("scanRemarks");
+
+                showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, false );
+                {
+                    //ttalLocation.updateTable();
+                    //ttalOccupation.updateTable();
+                }
+
+                elapsedShowMessage( "isDoRemarks", startDoRemarks, System.currentTimeMillis() );
+            } // dos.isDoRemarks
+            else { showMessage( "Skipping isDoRemarks", false, true ); }
+
+
+            if( dos.isDoNames() )                           // Names
+            {
+                long startDoNames = System.currentTimeMillis();
+                showMessage( "isDoNames", false, true );
+
                 long start = 0;
                 long stop  = 0;
 
@@ -327,14 +347,19 @@ public class LinksCleaned extends Thread
                 // Loading reference tables
                 showMessage( "Loading name reference tables", false, false );
                 {
-                    ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
-                    ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
-                    ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
+                    ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
+                    ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
+                    ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
                 }
                 showMessage( endl, false, true );
 
                 // First name
                 start = System.currentTimeMillis();
+                if( doesTableExist( conTemp, "links_temp", "firstname_t" ) ) {
+                    showMessage( "Deleting table links_temp.firstname_t", false, true );
+                    dropTable( conTemp, "links_temp", "firstname_t" );
+                }
+
                 createTempFirstname();
                 createTempFirstnameFile();
                 String IndexField = "original";
@@ -357,6 +382,11 @@ public class LinksCleaned extends Thread
 
                 // Family name
                 start = System.currentTimeMillis();
+                if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
+                    showMessage( "Deleting table links_temp.familyname_t", false, true );
+                    dropTable( conTemp, "links_temp", "familyname_t" );
+                }
+
                 createTempFamilyname();
                 createTempFamilynameFile();
                 tableName = "familyname";
@@ -401,87 +431,54 @@ public class LinksCleaned extends Thread
                     ttalAlias.updateTable();
                 }
                 showMessage( endl, false, true );
+
+                elapsedShowMessage( "isDoNames", startDoNames, System.currentTimeMillis() );
             } // isDoNames
+            else { showMessage( "Skipping isDoNames", false, true ); }
 
-            // Remarks
-            if( dos.isDoRemarks() )
+
+            if( dos.isDoLocations() )                       // Locations
             {
-                long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoRemarks" );
-
-                // load al refs used by remarks Parser
-                showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
-                {
-                    //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
-                    //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
-                }
-                showMessage( endl, false, true );
-
-                runMethod("scanRemarks");
-
-                showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, false );
-                {
-                    //ttalLocation.updateTable();
-                    //ttalOccupation.updateTable();
-                }
-
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoRemarks" + elapsed;
-                showMessage( msg, false, true );
-            } // dos.isDoRemarks
-
-            // All location functions,
-            if( dos.isDoLocations() )
-            {
-                long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoLocations" );
+                long startDoLocations = System.currentTimeMillis();
+                showMessage( "isDoLocations", false, true );
 
                 showMessage( "Loading reftabel(s): " + "ref_location" + "...", false, false );
                 {
-                    ttalLocation = new TableToArraysSet(conGeneral, conOr, "original", "location");
+                    ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
                 }
                 showMessage( endl, false, true );
 
-                runMethod("funcStandardRegistrationLocation");
-                runMethod("funcStandardBirthLocation");
-                runMethod("funcStandardMarLocation");
-                runMethod("funcStandardDeathLocation");
+                runMethod( "funcStandardRegistrationLocation" );
+                runMethod( "funcStandardBirthLocation" );
+                runMethod( "funcStandardMarLocation" );
+                runMethod( "funcStandardDeathLocation" );
 
                 showMessage( "Updating reftabel(s): " + "ref_location" + "...", false, false );
                 {
                     ttalLocation.updateTable();
                 }
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoLocations" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoLocations", startDoLocations, System.currentTimeMillis() );
             } // isDoLocations
+            else { showMessage( "Skipping isDoLocations", false, true ); }
 
-            // AGE YEAR
-            if( dos.isDoAgeYear() )
+
+            if( dos.isDoAgeYear() )                         // Year Age
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoAgeYear" );
+                showMessage( "isDoAgeYear", false, true );
 
                 runMethod("funcStandardYearAge");
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "sDoAgeYear" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoAgeYear", start, System.currentTimeMillis() );
             } // isDoAgeYear
+            else { showMessage( "Skipping isDoAgeYear", false, true ); }
 
-            // Status Sex
-            if( dos.isDoStatusSex() )
+
+            if( dos.isDoStatusSex() )                       // Status and Sex
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoStatusSex" );
+                showMessage( "isDoStatusSex", false, true );
 
                 showMessage( "Loading reftabel(s): " + "status_sex" + "...", false, false );
                 {
@@ -497,52 +494,40 @@ public class LinksCleaned extends Thread
                     ttalStatusSex.updateTable();
                 }
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoStatusSex" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoStatusSex", start, System.currentTimeMillis() );
             } // isDoStatusSex
+            else { showMessage( "Skipping isDoStatusSex", false, true ); }
 
-            // registration Type
-            if( dos.isDoType() )
+
+            if( dos.isDoType() )                            // Registration Type
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoType" );
+                showMessage( "isDoType", false, true );
 
                 runMethod("funcStandardType");
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoType" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoType", start, System.currentTimeMillis() );
             } // isDoType
+            else { showMessage( "Skipping isDoType", false, true ); }
 
 
-            // ROLE
-            if( dos.isDoRole() )
+            if( dos.isDoRole() )                            // Role
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoRole" );
+                showMessage( "isDoRole", false, true );
 
                 showMessage( "Running funcStandardRole on all sources...", false, false );
                 funcStandardRole();
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoRole" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoRole", start, System.currentTimeMillis() );
             } // isDoRole
+            else { showMessage( "Skipping isDoRole", false, true ); }
 
-            // DATE FUNCTIONS
 
-            // Run date queries
-            if( dos.isDoDates() )
+            if( dos.isDoDates() )                           // dates
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoDates" );
+                showMessage( "isDoDates", false, true );
 
                 showMessage( "Running Date functions on all sources...", false, false );
                 {
@@ -585,43 +570,39 @@ public class LinksCleaned extends Thread
 
                 }
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoDates" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoDates", start, System.currentTimeMillis() );
             } // isDoDates
+            else { showMessage( "Skipping isDoDates", false, true ); }
 
-            if( dos.isDoSequence() )
+
+            if( dos.isDoSequence() )                        // Sequence
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoSequence" );
+                showMessage( "isDoSequence", false, true );
 
                 runMethod("funcStandardSequence");
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoSequence" + elapsed;
+                elapsedShowMessage( "isDoSequence", start, System.currentTimeMillis() );
             } // isDoSequence
+            else { showMessage( "Skipping isDoSequence", false, true ); }
 
-            if( dos.isDoRelation() )
+
+            if( dos.isDoRelation() )                        // Relation
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoRelation" );
+                showMessage( "isDoRelation", false, true );
 
                 runMethod("funcRelation");
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoRelation" + elapsed;
+                elapsedShowMessage( "isDoRelation", start, System.currentTimeMillis() );
             } // isDoRelation
+            else { showMessage( "Skipping isDoRelation", false, true ); }
 
-            if( dos.isDoMinMaxDate() )
+
+            if( dos.isDoMinMaxDate() )                      // Min Max Date
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoMinMaxDate" );
+                showMessage( "isDoMinMaxDate", false, true );
 
                 if (bronFilter.isEmpty()) {
                     for (int i : sources) {
@@ -641,16 +622,15 @@ public class LinksCleaned extends Thread
                     showMessage( endl, false, true );
                 }
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoMinMaxDate" + elapsed;
+                elapsedShowMessage( "isDoMinMaxDate", start, System.currentTimeMillis() );
             } // isDoMinMaxDate
+            else { showMessage( "Skipping isDoMinMaxDate", false, true ); }
 
-            if( dos.isDoMinMaxMarriage() )
+
+            if( dos.isDoMinMaxMarriage() )                  // Min Max Marriage
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoMinMaxMarriage" );
+                showMessage( "isDoMinMaxMarriage", false, true );
 
                 try {
                     // loading ref
@@ -678,55 +658,49 @@ public class LinksCleaned extends Thread
                     showMessage( "An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true );
                 }
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "sisDoMinMaxMarriage" + elapsed;
+                elapsedShowMessage( "isDoMinMaxMarriage", start, System.currentTimeMillis() );
             } // isDoMinMaxMarriage
+            else { showMessage( "Skipping isDoMinMaxMarriage", false, true ); }
 
-            if( dos.isDoPartsToFullDate() )
+
+            if( dos.isDoPartsToFullDate() )                 // Part to Full date
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoPartsToFullDate" );
+                showMessage( "isDoMinMaxMarriage", false, true );
 
                 showMessage( "Running func Part to Date on all sources...", false, false );
                 funcPartsToDate();
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoPartsToFullDate" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoPartsToFullDate", start, System.currentTimeMillis() );
             } // isDoPartsToFullDate
+            else { showMessage( "Skipping isDoPartsToFullDate", false, true ); }
 
-            if( dos.isDoDaysSinceBegin() )
+
+            if( dos.isDoDaysSinceBegin() )                  // Days since begin
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoDaysSinceBegin" );
+                showMessage( "isDoDaysSinceBegin", false, true );
 
                 showMessage( "Running func Days since begin on all sources...", false, false );
                 funcDaysSinceBegin();
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoDaysSinceBegin" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoDaysSinceBegin", start, System.currentTimeMillis() );
             } // isDoDaysSinceBegin
+            else { showMessage( "Skipping isDoDaysSinceBegin", false, true ); }
 
-            if( dos.isDoPostTasks() )
+
+            if( dos.isDoPostTasks() )                       // Post Tasks
             {
                 long start = System.currentTimeMillis();
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoPostTasks" );
+                showMessage( "isDoPostTasks", false, true );
 
                 showMessage( "Running func post tasks all sources...", false, false );
                 funcPostTasks();
 
-                long stop = System.currentTimeMillis();
-                String elapsed = Functions.millisec2hms( start, stop );
-                msg = "isDoPostTasks" + elapsed;
-                showMessage( msg, false, true );
+                elapsedShowMessage( "isDoPostTasks", start, System.currentTimeMillis() );
             } // isDoPostTasks
+            else { showMessage( "Skipping isDoPostTasks", false, true ); }
+
 
             // Close connections
             conOriginal.close();
@@ -736,32 +710,48 @@ public class LinksCleaned extends Thread
             conTemp.close();
 
 
-            if( dos.isDoPrematch() )
+            if( dos.isDoPrematch() )                        // Run PreMatch
             {
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( ts + " dos.isDoPrematch" );
+                long start = System.currentTimeMillis();
+                showMessage( "isDoPrematch", false, true );
 
                 showMessage( "Running PREMATCH...", false, false );
                 mg.firePrematch();
-                showMessage( endl, false, true );
+
+                elapsedShowMessage( "isDoPrematch", start, System.currentTimeMillis() );
             }
+            else { showMessage( "Skipping isDoPrematch", false, true ); }
 
             // Total time
             timeExpand = System.currentTimeMillis() - begintime;
             int iTimeEx = (int) (timeExpand / 1000);
 
             showMessage( "Conversion from Original to Cleaned is done; Total time: " + LinksSpecific.stopWatch(iTimeEx), false, true );
+
         } catch (Exception ex) {
             showMessage( "Error: " + ex.getMessage(), false, true );
         }
+    } // run
+
+
+    /**
+     * @param msg
+     * @param start
+     * @param stop
+     */
+    private void elapsedShowMessage( String msg, long start, long stop )
+    {
+        String elapsed = Functions.millisec2hms( start, stop );
+        showMessage( msg + " " + elapsed, false, true );
     }
+
 
     /**
      * @param MethodName
      * @throws Exception
      */
-    private void runMethod(String MethodName) throws Exception {
-
+    private void runMethod(String MethodName) throws Exception
+    {
         Class[] partypes = new Class[1];
         Object[] argList = new Object[1];
 
@@ -795,19 +785,8 @@ public class LinksCleaned extends Thread
         }
     }
 
-    /**
-     * REMARKS SECTION
-     * This section is not translated to English
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     */
+    /**************************************************************************/
+
     /**
      * @param rs
      * @param rsScanStrings
@@ -1636,81 +1615,6 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * Read properties file
-     * Start the application and specify the property file with a parameter:
-     * java -Dproperties.path="<path-to-properiesfile>" -jar LinksProject-2.0.jar
-     */
-    /*
-    public Properties readProperties()
-    {
-        System.out.println("readProperties()");
-
-        Properties properties = new Properties();
-        InputStream input = null;
-
-        String propertiesPath = System.getProperty( "properties.path" );
-        if( propertiesPath == null ) {
-            showMessage( "No properties file.\nSTOP.", false, true );
-            return properties;
-        }
-        else { System.out.println( "properties path: " + propertiesPath ); }
-
-        try {
-            System.out.println( "gettings properties.path" );
-
-            input = ( propertiesPath == null )
-                    ? getClass().getClassLoader().getResourceAsStream( propertiesPath )
-                    : new FileInputStream( propertiesPath );
-
-            if( input == null ) {
-                System.out.println( "Cannot read: " + propertiesPath + ".\nSTOP.");
-                return properties;
-            }
-            System.out.println( "properties file: " + propertiesPath );
-
-            properties.load( input );
-
-            //get the property values
-            ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
-            ref_user = properties.getProperty( "mysql_hsnref_username" );
-            ref_pass = properties.getProperty( "mysql_hsnref_password" );
-
-            System.out.println( "mysql_hsnref_hosturl:  " + ref_url );
-            System.out.println( "mysql_hsnref_username: " + ref_user );
-            System.out.println( "mysql_hsnref_password: " + ref_pass );
-
-            url  = properties.getProperty( "mysql_links_hosturl" );
-            user = properties.getProperty( "mysql_links_username" );
-            pass = properties.getProperty( "mysql_links_password" );
-
-            System.out.println( "mysql_links_hosturl:  " + url );
-            System.out.println( "mysql_links_username: " + user );
-            System.out.println( "mysql_links_password: " + pass );
-
-            int source_id_first = Integer.parseInt(properties.getProperty("source_id_first"));
-            int source_id_last  = Integer.parseInt(properties.getProperty("source_id_last"));
-
-            System.out.println( "source_id_first: " + source_id_first );
-            System.out.println( "source_id_last:  " + source_id_last );
-          //System.out.println( "sources: " + Arrays.toString( sources ) );     // declared at top
-
-        } catch( IOException ex ) {
-            ex.printStackTrace();
-        } finally {
-            if( input != null ) {
-                try {
-                    input.close();
-                } catch( IOException ex ) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-
-        return properties;
-    }
-    */
-
-    /**
      * clear GUI output text fields
      */
     public void clearTextFields() {
@@ -1783,7 +1687,7 @@ public class LinksCleaned extends Thread
     private void setSourceFilters()
     {
         long start = System.currentTimeMillis();
-        showMessage( "Set source filters for:  + bronNr.", false, true );
+        showMessage( "Set source filters for: " + bronNr, false, true );
 
         bronFilter   = " WHERE id_source = " + bronNr;
         sourceFilter = " WHERE id_source = " + bronNr;
@@ -1795,7 +1699,7 @@ public class LinksCleaned extends Thread
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Set source filters for:  + bronNr OK " + elapsed;
+        String msg = "Set source filters for: " + bronNr + " OK " + elapsed;
         showMessage( msg, false, true );
     }
 
@@ -6080,6 +5984,33 @@ public class LinksCleaned extends Thread
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Removing firstname_t table OK " + elapsed;
         showMessage( msg, false, true );
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    private boolean doesTableExist( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
+    {
+        String query = "SELECT COUNT(*) FROM information_schema.tables"
+                + " WHERE table_schema = '" + db_name + "'"
+                + " AND table_name = '" + table_name + "'";
+
+        ResultSet rs = db_conn.runQueryWithResult( query );
+        rs.first();
+        int count = rs.getInt( "COUNT(*)" );
+        if( count == 1 ) return true;
+        else return false;
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    private void dropTable( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
+    {
+        String query = "DROP TABLE `" + db_name + "`.`" + table_name + "`";
+        db_conn.runQuery( query );
     }
 
 
