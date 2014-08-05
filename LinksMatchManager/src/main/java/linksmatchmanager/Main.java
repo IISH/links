@@ -14,23 +14,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+*/
+
 package linksmatchmanager;
 
-import java.sql.*;
-//import java.util.Arrays;
-//import java.util.ArrayList;
-//import linksmatchmanager.DataSet.QuerySet;
-//import linksmatchmanager.DataSet.NameType;
+import java.sql.Connection;
 import linksmatchmanager.DataSet.QueryGroupSet;
 
 /**
- * This is the Main class 
- * of the MatchManager Process
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-04-Aug-2014 Latest change
+}
  */
-public class Main {
 
+public class Main
+{
     // Global vars
     private static QueryLoader ql;
     private static PrintLogger log;
@@ -49,64 +51,48 @@ public class Main {
      * @param args It is mandatory to use three arguments which are
      * the url, the user and the pass of the database server 
      */
-    public static void main(String[] args) {
-
-        // DEBUG info
-        String ww = "";
+    public static void main(String[] args)
+    {
 
         try {
-            // Load logging
             log = new PrintLogger();
+            log.show( "Links Match Manager 2.0" );
 
-            /* Information about matching software */
-            log.show("Links Match Manager v 0.1 BETA");
-            log.show("For more information about this");
-            log.show("software please contact: oaz");
-            log.show("All rights reserved: IISG -2012");
-            log.show("------------------------------------");
+            // Load arguments; check length
+            if( args.length != 4 ) {
+                log.show( "Invalid argument length, it should be 4" );
+                log.show( "Please starts the Match Manager as follows:" );
+                log.show( "java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>" );
 
-            /* Load arguments */
-            // check length
-            if (args.length != 4) {
-                log.show("Invalid argument length, it should be 4");
-                log.show("please use the following patern to start this sofware");
-                log.show("linksmatchmanager.jar url user pass maxThreads (without '-')");
-
-                // Stop program
-                return;
+                return;     // Stop program
             }
 
             // Load instances
-            String url  = args[0];
-            String user = args[1];
-            String pass = args[2];
-            String max  = args[3];
+            String url  = args[ 0 ];
+            String user = args[ 1 ];
+            String pass = args[ 2 ];
+            String max  = args[ 3 ];
 
-            /* Match process begins */
-            log.show("Matching process started.");
+            log.show( "Matching process started." );
+            ProcessManager pm = new ProcessManager( Integer.parseInt( max ) );
 
-            ProcessManager pm = new ProcessManager(Integer.parseInt(max));
+            /* Create database connections*/
+            conMatch = General.getConnection( url, "links_match", user, pass );
+            conBase  = General.getConnection( url, "links_base",  user, pass );
 
-            /* Create database conections*/
-            conMatch = General.getConnection(url, "links_match", user, pass);
-            conBase = General.getConnection(url, "links_base", user, pass);
-
-            // Set read only
-            conBase.setReadOnly(true);
+            conBase.setReadOnly( true );                    // Set read only
 
             /** 
-             * Run Query Generator to generate queries
-             * as input we use the rocords from the 
-             * match_process table in the links_match db
+             * Run Query Generator to generate queries.
+             * As input we use the records from the match_process table in the links_match db
              */
-            QueryGenerator mis = new QueryGenerator(conMatch);
+            QueryGenerator mis = new QueryGenerator( conMatch );
 
             // TEST LINE: Print queries to check 
             // System.out.println(mis.printToString());
 
             /* Frequency In this stadium we do not use the frequencies */
             // log.show("Loading Frequency tables");
-
 
             // 
             // Create instance
@@ -115,10 +101,16 @@ public class Main {
             // Load the frequencies
             // fl.load();
 
+
+            int misSize = mis.is.getSize();
+            System.out.printf( "size: %s\n", misSize  );
+
             /**
              * Loop through records in match_process
              */
-            for (int i = 0; i < mis.is.getSize(); i++) {
+            for( int i = 0; i < mis.is.getSize(); i++ )
+            {
+                System.out.printf( "i: %d\n", i );
 
                 /**
                  * Create a new prematch variants object 
@@ -191,8 +183,10 @@ public class Main {
 
                 }
             }
-        } catch (Exception e) {
-            System.out.println("LinksMatchManager Error: " + e.getMessage() + "WW: " + ww);
+            log.show( "Matching process ended." );
+
+        } catch( Exception ex ) {
+            System.out.println( "LinksMatchManager Error: " + ex.getMessage() );
         }
     }
 }
