@@ -528,8 +528,8 @@ new FormModel {
 					"title": "ORIGINAL"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq l {space :::p, par l {seq l {par t {comp cbCdoPreBasicNames:::::x:1, par t:l::p {comp cbCdoNames::l:::x:1, comp cbCdoOpmerkingen::l:::x:1}, comp cbLOLCdoRole::l:p:93:p:1, comp cbCdoJaarLeeftijd::l:::x:1, comp cbCdoRelation::l:p:101:p:1, comp cbLOLCdoSequentie::l:p:91:p:1, comp cbCdoType::l:p:73:p:1, comp cbCdoStaatSex::l:p:113:p:1}, space :::p, par l {comp cbLOLCdoMinMaxDate::l:p::p, par t:l::p {comp tbLOLCuser::l:::x:1, comp tbLOLCpass::l:::x:1, comp tbLOLCurl::l::0:x:1, comp tbLOLCBronNr::l:p:154:p:1}, comp cbLOLCdoMinMaxMarriage::l:p::p, comp cbLOLCdoPartsToFullDate::l:p::p, comp cbCdoDaysSinceBegin::l:p::p:1, seq l {comp cbCdoDates:::p:122:p:1, space :p:67:p, par l:::p {seq {comp cbLOLCdoPostTasks:::p:104:p:1, space :p:10:p}, comp cbCdoPrematch:::::x:1}}}}, comp bnLOLCstartProcess::l:::x:1, seq {par l {comp jLabel44::l:p::p, comp jLabel4::l:p::p, comp jLabel42::l:p::p, comp jLabel43::l:p::p, comp jLabel51::l:p:113:p, comp cbCdoVernieuwen::l:p:155:p:1, comp cbCdoLocations::l:p:162:p:1}, space ::334:x}}, par l {seq {space :p:6:p, comp jLabel45:::p::p}, seq l {space :::p, par l:::p {comp jScrollPane6::::602:x:1, comp tbLOLClatestOutput::::602:x:1}}}, space :p:11:p}}"
-					"$verticalGroup": "par l {seq l {space :::p, par t {comp jLabel44::t:p::p, par b:t {comp tbLOLCBronNr::b:p::p, comp jLabel45::b:p::p}}, space :::p, par b {comp jLabel4::b:p::p, comp tbLOLCurl::b:p::p, comp tbLOLClatestOutput::b:p::p}, space :p:6:p, par l {seq {par b {comp jLabel42::b:p::p, comp tbLOLCuser::b:p::p}, space :::p, par b {comp jLabel43::b:p::p, comp tbLOLCpass::b:p::p}, space :p:29:p, comp jLabel51:::p::p, space u:::p, par b {comp cbCdoVernieuwen::b:p::p, comp cbLOLCdoPostTasks::b:p::p, comp cbCdoDates::b:p::p}, space :::p, comp cbCdoPrematch:::p::p, space :::x, comp cbCdoPreBasicNames:::p::p, space :::p, comp cbCdoOpmerkingen:::p::p, space :::p, comp cbCdoNames:::p::p, space :p:118:p, comp cbCdoLocations:::p::p, space :p:46:p, comp cbCdoStaatSex:::p::p, space :p:2:p, comp cbCdoType:::p::p, space u:::p, par b {comp cbLOLCdoMinMaxDate::b:p::p, comp cbLOLCdoSequentie::b:p::p}, space u:::p, par b {comp cbLOLCdoMinMaxMarriage::b:p::p, comp cbCdoRelation::b:p::p}, space :::p, par b {comp cbLOLCdoPartsToFullDate::b:p::p, comp cbCdoJaarLeeftijd::b:p::p}, space :::p, par b {comp cbCdoDaysSinceBegin::b:p::p, comp cbLOLCdoRole::b:p::p}, space :p:5:p, comp bnLOLCstartProcess:::p::p}, comp jScrollPane6:::::x:1}, space :p:584:p}}"
+					"$horizontalGroup": "par l {seq l {space :::p, par l {comp bnLOLCstartProcess::l:::x:1, seq t {par t {comp jLabel51::l::464:x, seq t {space :0:0:x, par l:::p {comp cbCdoPrematch::l::200:x:1, comp cbLOLCdoPostTasks::l::200:x:1, comp cbCdoDaysSinceBegin::l::200:x:1}}, seq l {par t:::p {comp cbCdoVernieuwen::l::236:x:1, comp cbCdoOpmerkingen::::236:x:1, comp cbCdoJaarLeeftijd::l::236:x:1, comp cbLOLCdoRole::l::236:x:1, comp cbCdoRelation::::236:x:1, comp cbLOLCdoSequentie::::236:x:1, comp cbCdoType::::236:x:1, comp cbCdoStaatSex::::236:x:1, comp cbCdoLocations::l::236:x:1, comp cbCdoNames::l::236:x:1, comp cbCdoPreBasicNames::::236:x:1}, space ::28:x, par l {comp cbLOLCdoPartsToFullDate::t:p:200:p, comp cbLOLCdoMinMaxMarriage::t:p:200:p, comp cbLOLCdoMinMaxDate::t:p:200:p, comp cbCdoDates::t:p:200:p:1}}, seq t {par l {comp jLabel4::l::180:x, comp jLabel42::l::180:x, comp jLabel43::t::180:x, comp jLabel44::l::180:x}, space :p:27:p, par l:::p {comp tbLOLCurl::t::257:x:1, comp tbLOLCuser::t::257:x:1, comp tbLOLCpass::::257:x:1, comp tbLOLCBronNr::::257:x:1}}, seq l {par t:::p {comp label3:::::x, comp label1::l:::x, comp label2::l:::x}, space :22:22:p, par l {comp tbLOLCrefurl::::257:x, comp tbLOLCrefuser::::257:x, comp tbLOLCrefpass::::257:x}}}, space :26:26:p}}, par l {seq {space :p:6:p, comp jLabel45:::p::p}, seq l {space :::p, par l {comp tbLOLClatestOutput:::p:602:p:1, comp jScrollPane6:::::x:1}}}, space :p:11:p}}"
+					"$verticalGroup": "par l {seq l {space :::p, par l {seq l {space :p:1:p, comp jLabel45:::p::p}, comp jLabel44::l:p::p, comp tbLOLCBronNr:::p:19:p}, par l {seq l {space :::p, comp tbLOLClatestOutput:::p::p, space :p:8:p, comp jScrollPane6::::565:x:1}, seq l {space :p:12:p, par b {comp jLabel4::b:p::p, comp tbLOLCurl::b:p::p}, space :::p, par b {comp jLabel42::b:p::p, comp tbLOLCuser::b:p::p}, space :::p, par l {comp jLabel43:::p:17:p, comp tbLOLCpass:::p::p}, space u:::p, par b {comp label1::b:p::p, comp tbLOLCrefurl::b:p::p}, space :::p, par b {comp tbLOLCrefuser::b:p::p, comp label2::b:p::p}, space :::p, par l {comp tbLOLCrefpass:::p::p, comp label3:::p::p}, space ::86:x, comp jLabel51:::p::p, space u:::p, par b {comp cbCdoVernieuwen::b:p::p, comp cbCdoDates::b:p::p}, space :::p, par b {comp cbLOLCdoMinMaxDate::b:p::p, comp cbCdoPreBasicNames::b:p::p}, space u:::p, par b {comp cbLOLCdoMinMaxMarriage::b:p::p, comp cbCdoOpmerkingen::b:p::p}, space u:::p, par b {comp cbLOLCdoPartsToFullDate::b:p::p, comp cbCdoNames::b:p::p}, space u:::p, par b {comp cbCdoLocations::b:p::p, comp cbCdoDaysSinceBegin::b:p::p}, space u:::p, comp cbCdoStaatSex:::p::p, space u:::p, comp cbCdoType:::p::p, space u:::p, comp cbLOLCdoSequentie:::p::p, space u:::p, comp cbCdoRelation:::p::p, space u:::p, par b {comp cbCdoJaarLeeftijd::b:p::p, comp cbLOLCdoPostTasks::b:p::p}, space :::p, par b {comp cbLOLCdoRole::b:p::p, comp cbCdoPrematch::b:p::p}, space s:::p, comp bnLOLCstartProcess:::p::p}}, space :::p}}"
 				} ) {
 					name: "pLOLC"
 					"name": "pLOLC"
@@ -539,7 +539,7 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel4"
-						"text": "Database Url"
+						"text": "Links Database URL:"
 						"name": "jLabel4"
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
@@ -552,12 +552,12 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel42"
-						"text": "User"
+						"text": "Links DB Username:"
 						"name": "jLabel42"
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel43"
-						"text": "Pass"
+						"text": "Links DB Password:"
 						"name": "jLabel43"
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
@@ -566,12 +566,12 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel44"
-						"text": "Bron nr."
+						"text": "Source No:"
 						"name": "jLabel44"
 					} )
 					add( new FormComponent( "javax.swing.JButton" ) {
 						name: "bnLOLCstartProcess"
-						"text": "Start Process"
+						"text": "Start Cleaning"
 						"name": "bnLOLCstartProcess"
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bnLOLCstartProcessActionPerformed", true ) )
 					} )
@@ -627,7 +627,7 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoJaarLeeftijd"
 						"selected": true
-						"text": "Jaar Leeftijd"
+						"text": "Year Age"
 						"name": "cbCdoJaarLeeftijd"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
@@ -644,8 +644,7 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbLOLCdoSequentie"
-						"selected": true
-						"text": "Sequentie"
+						"text": "Sequence"
 						"name": "cbLOLCdoSequentie"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
@@ -692,12 +691,12 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbLOLCdoPostTasks"
 						"selected": true
-						"text": "POST TASKS"
+						"text": "Post Tasks"
 						"name": "cbLOLCdoPostTasks"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoPrematch"
-						"text": "RUN PREMATCH"
+						"text": "Run PreMatch"
 						"name": "cbCdoPrematch"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
@@ -705,43 +704,64 @@ new FormModel {
 						"text": "Basic names Temp"
 						"name": "cbCdoPreBasicNames"
 					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "tbLOLCrefurl"
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "tbLOLCrefuser"
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "tbLOLCrefpass"
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "label1"
+						"text": "Reference Database URL:"
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "label2"
+						"text": "Reference DB Username:"
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "label3"
+						"text": "Reference DB Password:"
+					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "CLEANED"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq {space :::p, par l {seq t {comp cbPdoCreateBaseTable:::p:261:p:1, space ::729:x, comp bnPstartProcess:::p:107:p:1}, seq {par l {comp cbPdoSplitName::l:p:261:p:1, comp cbPdoUniqueNameTables::l:p:261:p:1, comp cbPdoLevenshtein::l:p:261:p:1, comp cbPdoNameToNo::l:p:261:p:1}, space :0:836:x}, comp taPinfo::l::1097:x, comp jScrollPane7::l::1097:x}, space :::p}}"
-					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, par l {seq l {space :p:71:p, comp bnPstartProcess:::p::p}, seq l {space :::p, comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}}, space u:::p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::465:x, space :::p}}"
+					"$horizontalGroup": "par l {seq {space :::p, par l {comp taPinfo::l::1097:x, comp jScrollPane7::l::1097:x, seq {par l {comp cbPdoSplitName::l:p:261:p:1, comp cbPdoUniqueNameTables::l:p:261:p:1, comp cbPdoLevenshtein::l:p:261:p:1, comp cbPdoNameToNo::l:p:261:p:1}, space :0:0:x}, seq l {comp cbPdoCreateBaseTable:::p:261:p:1, space ::641:x, comp bnPstartProcess:::p:195:p:1}}, space :::p}}"
+					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, space :::p, par l {seq {comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}, seq {space :p:71:p, comp bnPstartProcess:::p::p}}, space :p:12:p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::466:x, space :::p}}"
 				} ) {
 					name: "jPanel1"
 					"name": "jPanel1"
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoUniqueNameTables"
-						"text": "UNIQUE TABLES"
+						"text": "Unique Tables"
 						"name": "cbPdoUniqueNameTables"
 						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoLevenshtein"
-						"text": "LEVENSHTEIN"
+						"text": "Levenshtein"
 						"name": "cbPdoLevenshtein"
 						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoCreateBaseTable"
-						"text": "BASE TABLE"
+						"text": "Base Table"
 						"name": "cbPdoCreateBaseTable"
 						"selected": true
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "cbPdoCreateBaseTableActionPerformed", true ) )
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoSplitName"
-						"text": "SPLIT NAMES"
+						"text": "Split Names"
 						"name": "cbPdoSplitName"
 						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JButton" ) {
 						name: "bnPstartProcess"
-						"text": "START"
+						"text": "Start PreMatching"
 						"name": "bnPstartProcess"
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "bnPstartProcessActionPerformed", true ) )
 					} )
@@ -757,7 +777,7 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoNameToNo"
-						"text": "NAME TO NO"
+						"text": "Name to Number"
 						"name": "cbPdoNameToNo"
 						"selected": true
 					} )
