@@ -13,12 +13,15 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import connectors.CsvConnector;
 import dataSet.DoSet;
-import enumDefinitions.IndexType;
+import enumdefinitions.IndexType;
 
 import modulemain.LinksCleaned;
 import modulemain.LinksInternal;
@@ -37,12 +40,13 @@ import general.Functions;
  * <p/>
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
- * FL-05-Aug-2014 Latest change
+ * FL-08-Aug-2014 Latest change
  */
 
-public class ManagerGui extends javax.swing.JFrame {
+public class ManagerGui extends javax.swing.JFrame
+{
+    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
 
-    // Instances of used objects
     Document doc;
 
     public ManagerGui() {
@@ -2272,20 +2276,24 @@ public class ManagerGui extends javax.swing.JFrame {
      * Main method, to start Gui manager
      * @param args
      */
-    public static void main( String args[] ) {
+    public static void main( String args[] )
+    {
+        logger.info( "ManagerGui/main()" );
+
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-                String timestamp = "05-Aug-2014 12:24";
-                System.out.println( "LINKS timestamp: " + timestamp );
+            String timestamp = "08-Aug-2014 15:15";
+            System.out.println( "LINKS timestamp: " + timestamp );
+            logger.info( "LINKS timestamp: " + timestamp );
 
-                timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");
-                System.out.println( "Start at: " + timestamp );
+            timestamp = LinksSpecific.getTimeStamp2("yyyy.MM.dd-HH:mm:ss");
+            System.out.println( "Start at: " + timestamp );
 
-                timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.println( timestamp + " ManagerGui/main/run()" );
+            timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+            System.out.println( timestamp + " ManagerGui/main/run()" );
 
-                new ManagerGui().setVisible(true);
+            new ManagerGui().setVisible(true);
             }
         });
     }

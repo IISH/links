@@ -1,6 +1,6 @@
 package dataSet;
 
-import moduleMain.LinksSpecific;
+import modulemain.LinksSpecific;
 
 /**
  *

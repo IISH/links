@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import dataSet.ActRoleSet;
 import dataSet.Ages;
 import dataSet.ArrayListNonCase;
@@ -36,9 +39,9 @@ import dataSet.RelationSet;
 import dataSet.TableToArraysSet;
 
 import connectors.MySqlConnector;
-import enumDefinitions.TableType;
-import enumDefinitions.TimeType;
-import linksManager.ManagerGui;
+import enumdefinitions.TableType;
+import enumdefinitions.TimeType;
+import linksmanager.ManagerGui;
 import general.Functions;
 
 /**
@@ -52,6 +55,8 @@ import general.Functions;
  */
 public class LinksCleaned extends Thread
 {
+    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
+
     /**
      * Table to Array Sets for the
      */
@@ -187,6 +192,7 @@ public class LinksCleaned extends Thread
     public void run()
     {
         showMessage( "LinksCleaned/run()", false, true );
+        logger.info( "LinksCleaned/run()" );
 
         try {
             String mmss = "";
@@ -1590,6 +1596,7 @@ public class LinksCleaned extends Thread
                 String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
                 System.out.printf( "%s ", ts );
                 taLOLCoutput.append( ts + " " );
+                logger.info( logText );
             }
 
             System.out.printf( "%s%s", logText, newLineToken );
@@ -1632,16 +1639,28 @@ public class LinksCleaned extends Thread
     throws Exception
     {
         long start = System.currentTimeMillis();
-        showMessage( "Connecting to databases.", false, true );
+        showMessage( "Connecting to databases:", false, true );
 
-        conOr       = new MySqlConnector( ref_url, "links_general", ref_user, ref_pass );
-        
+        showMessage( "links_general (ref)", false, true );
+        conOr = new MySqlConnector( ref_url, "links_general", ref_user, ref_pass );
+
+        showMessage( "links_original", false, true );
         conOriginal = new MySqlConnector( url, "links_original", user, pass );
-        conLog      = new MySqlConnector( url, "links_logs",     user, pass );
-        conCleaned  = new MySqlConnector( url, "links_cleaned",  user, pass );
-        conGeneral  = new MySqlConnector( url, "links_general",  user, pass );
-        conTemp     = new MySqlConnector( url, "links_temp",     user, pass );
-        
+
+        showMessage( "links_logs", false, true );
+        conLog = new MySqlConnector( url, "links_logs", user, pass );
+
+        showMessage( "links_cleaned", false, true );
+        conCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
+
+        showMessage( "links_general", false, true );
+        conGeneral = new MySqlConnector( url, "links_general", user, pass );
+
+        showMessage( "links_temp", false, true );
+        conTemp = new MySqlConnector( url, "links_temp", user, pass );
+
+
+
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Connecting to databases OK " + elapsed;

@@ -19,7 +19,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 package linksmatchmanager;
 
 import java.sql.Connection;
+import java.util.Properties;
+
+//import general.Functions;
+//import linksutils.*;
 import linksmatchmanager.DataSet.QueryGroupSet;
+
 
 /**
  * @author Omar Azouguagh
@@ -72,6 +77,9 @@ public class Main
             String user = args[ 1 ];
             String pass = args[ 2 ];
             String max  = args[ 3 ];
+
+            //Properties properties = Functions.getProperties();  // Read properties file
+
 
             log.show( "Matching process started." );
             ProcessManager pm = new ProcessManager( Integer.parseInt( max ) );

@@ -4,7 +4,7 @@ import java.sql.*;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import java.util.ArrayList;
-import moduleMain.LinksSpecific;
+import modulemain.LinksSpecific;
 import connectors.*;
 
 /**

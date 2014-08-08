@@ -20,7 +20,7 @@ package modulemain;
 import connectors.*;
 import javax.swing.JTextField;
 import javax.swing.JTextArea;
-import linksManager.ManagerGui;
+import linksmanager.ManagerGui;
 
 /**
  * 

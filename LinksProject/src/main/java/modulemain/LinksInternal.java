@@ -24,7 +24,7 @@ import java.io.FileInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import javax.swing.JProgressBar;
-import enumDefinitions.IndexType;
+import enumdefinitions.IndexType;
 import java.io.FileWriter;
 
 /**

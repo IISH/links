@@ -1,33 +1,48 @@
 package general;
 
-import dataSet.*;
-import java.util.*;
-import java.io.File;
-import javax.swing.*;
-import java.util.regex.*;
-import javax.xml.parsers.*;
-import java.io.IOException;
-import org.w3c.dom.Document;
-import javax.xml.transform.*;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import java.io.FileInputStream;
-import javax.xml.transform.dom.*;
 import java.io.BufferedInputStream;
-import javax.xml.transform.stream.*;
-import javax.swing.filechooser.FileFilter;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.util.Calendar;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+
 import java.text.SimpleDateFormat;
 
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.JFileChooser;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.Result;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import java.util.Calendar;
+
+import org.w3c.dom.Document;
+
+import dataSet.DateYearMonthDaySet;
+import modulemain.LinksSpecific;
 
 /**
  * @author Omar Azouguagh
  * @author Fons Laan
  *
  * <p/>
- * FL-30-Jul-2014 Latest change
+ * FL-05-Aug-2014 Latest change
  *
  */
 public class Functions {
@@ -476,5 +491,55 @@ public class Functions {
          else { hms = String.format( "[%02d:%02d:%02d hh:mm:ss]", hour, rmin, rsec ); }
 
          return hms;
+    }
+
+
+    /**
+     * Read properties file
+     * Start the application and specify the property file with a parameter:
+     * java -Dproperties.path="<path-to-properiesfile>" -jar LinksProject-2.0.jar
+     * @return Properties
+     */
+    public static Properties getProperties() {
+        String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+        System.out.println( timestamp + " readProperties()" );
+
+        Properties properties = new Properties();
+        InputStream input = null;
+
+        String propertiesPath = System.getProperty( "properties.path" );
+        if( propertiesPath == null ) {
+            System.out.println( "No properties file." );
+            return properties;
+        } else {
+            System.out.println( "properties path: " + propertiesPath );
+        }
+
+        try {
+            System.out.println( "gettings properties.path" );
+
+            input = new FileInputStream(propertiesPath);
+
+            if( input == null ) {
+                System.out.println( "Cannot read: " + propertiesPath + "." );
+                return properties;
+            }
+            System.out.println( "properties file: " + propertiesPath );
+
+            properties.load( input );
+
+        } catch( IOException ex ) {
+            ex.printStackTrace();
+        } finally {
+            if( input != null ) {
+                try {
+                    input.close();
+                } catch( IOException ex ) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        return properties;
     }
 }

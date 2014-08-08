@@ -8,7 +8,7 @@ package dataSet;
 import java.sql.*;
 import connectors.*;
 import java.util.*;
-import moduleMain.LinksSpecific;
+import modulemain.LinksSpecific;
 
 public class TableToArraysSet {
 
