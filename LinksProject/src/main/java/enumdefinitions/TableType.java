@@ -3,13 +3,12 @@
  * and open the template in the editor.
  */
 
-package enumDefinitions;
+package enumdefinitions;
 
 /**
  *
  * @author oaz
  */
-public enum IndexType {
-    GENLIAS ,
-    NONE
+public enum TableType {
+    PERSON , REGISTRATION;
 }

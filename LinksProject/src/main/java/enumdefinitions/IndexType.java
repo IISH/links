@@ -3,16 +3,13 @@
  * and open the template in the editor.
  */
 
-package enumDefinitions;
+package enumdefinitions;
 
 /**
  *
  * @author oaz
  */
-public enum MatchIndex {
-
-    BIR ,   // Birth
-    MAR ,   // Marriage
-    DEA     // Death
-
+public enum IndexType {
+    GENLIAS ,
+    NONE
 }

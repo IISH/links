@@ -1,4 +1,4 @@
-package moduleMain;
+package modulemain;
 
 import java.io.File;
 import java.sql.ResultSet;

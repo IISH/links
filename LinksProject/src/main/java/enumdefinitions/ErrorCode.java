@@ -1,4 +1,4 @@
-package enumDefinitions;
+package enumdefinitions;
 
 /**
  *

@@ -1,4 +1,4 @@
-package moduleMain;
+package modulemain;
 
 import java.lang.reflect.Method;
 

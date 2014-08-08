@@ -539,7 +539,7 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel4"
-						"text": "Links Database URL:"
+						"text": "Links Databases URL:"
 						"name": "jLabel4"
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
@@ -552,12 +552,12 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel42"
-						"text": "Links DB Username:"
+						"text": "Links DBs Username:"
 						"name": "jLabel42"
 					} )
 					add( new FormComponent( "javax.swing.JLabel" ) {
 						name: "jLabel43"
-						"text": "Links DB Password:"
+						"text": "Links DBs Password:"
 						"name": "jLabel43"
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
@@ -730,7 +730,7 @@ new FormModel {
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq {space :::p, par l {comp taPinfo::l::1097:x, comp jScrollPane7::l::1097:x, seq {par l {comp cbPdoSplitName::l:p:261:p:1, comp cbPdoUniqueNameTables::l:p:261:p:1, comp cbPdoLevenshtein::l:p:261:p:1, comp cbPdoNameToNo::l:p:261:p:1}, space :0:0:x}, seq l {comp cbPdoCreateBaseTable:::p:261:p:1, space ::641:x, comp bnPstartProcess:::p:195:p:1}}, space :::p}}"
-					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, space :::p, par l {seq {comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}, seq {space :p:71:p, comp bnPstartProcess:::p::p}}, space :p:12:p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::466:x, space :::p}}"
+					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, space :::p, par l {seq {comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNameToNo:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p}, seq {space :p:71:p, comp bnPstartProcess:::p::p}}, space :p:12:p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::465:x, space :::p}}"
 				} ) {
 					name: "jPanel1"
 					"name": "jPanel1"

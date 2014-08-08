@@ -1,14 +1,10 @@
-package linksManager;
+package linksmanager;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.Properties;
@@ -24,11 +20,11 @@ import connectors.CsvConnector;
 import dataSet.DoSet;
 import enumDefinitions.IndexType;
 
-import moduleMain.LinksCleaned;
-import moduleMain.LinksInternal;
-import moduleMain.LinksOriginal;
-import moduleMain.LinksPrematch;
-import moduleMain.LinksSpecific;
+import modulemain.LinksCleaned;
+import modulemain.LinksInternal;
+import modulemain.LinksOriginal;
+import modulemain.LinksPrematch;
+import modulemain.LinksSpecific;
 
 import general.Functions;
 
@@ -64,7 +60,8 @@ public class ManagerGui extends javax.swing.JFrame {
         tpMain.setEnabledAt( 2, false );
         tpMain.setEnabledAt( 3, false );
 
-        Properties properties = getProperties();   // Read properties file
+        Properties properties = Functions.getProperties();  // Read properties file
+        loadProperties( properties );                       // fill GUI fields
     }
 
     @SuppressWarnings("unchecked")
@@ -1249,7 +1246,7 @@ public class ManagerGui extends javax.swing.JFrame {
 				tbLOLCurl.setName("tbLOLCurl");
 
 				//---- jLabel4 ----
-				jLabel4.setText("Links Database URL:");
+				jLabel4.setText("Links Databases URL:");
 				jLabel4.setName("jLabel4");
 
 				//---- tbLOLCuser ----
@@ -1259,11 +1256,11 @@ public class ManagerGui extends javax.swing.JFrame {
 				tbLOLCpass.setName("tbLOLCpass");
 
 				//---- jLabel42 ----
-				jLabel42.setText("Links DB Username:");
+				jLabel42.setText("Links DBs Username:");
 				jLabel42.setName("jLabel42");
 
 				//---- jLabel43 ----
-				jLabel43.setText("Links DB Password:");
+				jLabel43.setText("Links DBs Password:");
 				jLabel43.setName("jLabel43");
 
 				//---- tbLOLCBronNr ----
@@ -1671,7 +1668,7 @@ public class ManagerGui extends javax.swing.JFrame {
 							.addGap(12, 12, 12)
 							.addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 466, Short.MAX_VALUE)
+							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
 							.addContainerGap())
 				);
 			}
@@ -1703,7 +1700,7 @@ public class ManagerGui extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void createDomProject() {
-        doc = moduleMain.LinksSpecific.createDomDocument();
+        doc = modulemain.LinksSpecific.createDomDocument();
         Element element = doc.createElement("projects");
         doc.appendChild(element);
     }
@@ -1730,8 +1727,49 @@ public class ManagerGui extends javax.swing.JFrame {
      * java -Dproperties.path="<path-to-properiesfile>" -jar LinksProject-2.0.jar
      * @return Properties
      */
-    public Properties getProperties()
+    public void loadProperties( Properties properties )
     {
+            String ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
+            String ref_user = properties.getProperty( "mysql_hsnref_username" );
+            String ref_pass = properties.getProperty( "mysql_hsnref_password" );
+
+            // copy values into form, tab Cleaned
+            tbLOLCrefurl.setText(  ref_url );
+            tbLOLCrefuser.setText( ref_user );
+            tbLOLCrefpass.setText( ref_pass );
+
+            System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
+            System.out.println( "mysql_hsnref_username:\t" + ref_user );
+            System.out.println( "mysql_hsnref_password:\t" + ref_pass );
+
+            String url  = properties.getProperty( "mysql_links_hosturl" );
+            String user = properties.getProperty( "mysql_links_username" );
+            String pass = properties.getProperty( "mysql_links_password" );
+
+            // copy values into form, tab Cleaned
+            tbLOLCurl.setText(  url );
+            tbLOLCuser.setText( user );
+            tbLOLCpass.setText( pass );
+
+            System.out.println( "mysql_links_hosturl:\t"  + url );
+            System.out.println( "mysql_links_username:\t" + user );
+            System.out.println( "mysql_links_password:\t" + pass );
+
+            int source_id_first = 0;
+            String source_id_first_str = properties.getProperty( "source_id_first" ) ;
+            if( source_id_first_str != null ) { source_id_first = Integer.parseInt( source_id_first_str ); }
+
+            int source_id_last = 0;
+            String source_id_last_str = properties.getProperty( "source_id_last" );
+            if( source_id_last_str != null ) { source_id_last = Integer.parseInt( source_id_last_str ); }
+
+            if( !( source_id_first == 0 && source_id_last == 0 ) ) {
+                System.out.println("source_id_first: " + source_id_first);
+                System.out.println("source_id_last:  " + source_id_last);
+            }
+
+
+        /*
         String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
         System.out.println( timestamp + " readProperties()" );
 
@@ -1812,6 +1850,7 @@ public class ManagerGui extends javax.swing.JFrame {
         }
 
         return properties;
+        */
     }
 
 
