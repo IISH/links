@@ -29,7 +29,7 @@
                             <transformers>
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>linksManager.ManagerGui</mainClass>
+                                    <mainClass>linksmanager.ManagerGui</mainClass>
                                 </transformer>
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
