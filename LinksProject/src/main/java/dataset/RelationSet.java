@@ -1,4 +1,4 @@
-package dataSet;
+package dataset;
 
 public class RelationSet {
 

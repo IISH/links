@@ -1,7 +1,7 @@
 /**
  * DataSet
  */
-package dataSet;
+package dataset;
 
 /**
  * DevinedMinMaxDatum dataset

@@ -24,19 +24,19 @@ import javax.swing.JTextField;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import dataSet.ActRoleSet;
-import dataSet.Ages;
-import dataSet.ArrayListNonCase;
-import dataSet.DateYearMonthDaySet;
-import dataSet.DevinedMinMaxDatumSet;
-import dataSet.DoSet;
-import dataSet.MarriageYearPersonsSet;
-import dataSet.MinMaxDateSet;
-import dataSet.MinMaxYearSet;
-import dataSet.PersonC;
-import dataSet.RegistrationC;
-import dataSet.RelationSet;
-import dataSet.TableToArraysSet;
+import dataset.ActRoleSet;
+import dataset.Ages;
+import dataset.ArrayListNonCase;
+import dataset.DateYearMonthDaySet;
+import dataset.DevinedMinMaxDatumSet;
+import dataset.DoSet;
+import dataset.MarriageYearPersonsSet;
+import dataset.MinMaxDateSet;
+import dataset.MinMaxYearSet;
+import dataset.PersonC;
+import dataset.RegistrationC;
+import dataset.RelationSet;
+import dataset.TableToArraysSet;
 
 import connectors.MySqlConnector;
 import enumdefinitions.TableType;
@@ -123,6 +123,7 @@ public class LinksCleaned extends Thread
     private String ref_url  = "";       // reference db access
     private String ref_user = "";
     private String ref_pass = "";
+    private String ref_db   = "";
 
     private String url  = "";           // links db's access
     private String user = "";
@@ -140,6 +141,7 @@ public class LinksCleaned extends Thread
      * @param ref_url
      * @param ref_user
      * @param ref_pass
+     * @param ref_db
      * @param url
      * @param user
      * @param pass
@@ -154,6 +156,7 @@ public class LinksCleaned extends Thread
         String ref_url,
         String ref_user,
         String ref_pass,
+        String ref_db,
         String url,
         String user,
         String pass,
@@ -164,12 +167,15 @@ public class LinksCleaned extends Thread
         ManagerGui mg
     )
     {
-        this.ref_url = ref_url;
+        this.ref_url  = ref_url;
         this.ref_user = ref_user;
         this.ref_pass = ref_pass;
-        this.url = url;
+        this.ref_db   = ref_db;
+
+        this.url  = url;
         this.user = user;
         this.pass = pass;
+
         this.bronNr = bronNr;
         this.tbLOLClatestOutput = tbLOLClatestOutput;
         this.taLOLCoutput = taLOLCoutput;
@@ -182,6 +188,7 @@ public class LinksCleaned extends Thread
         System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
         System.out.println( "mysql_hsnref_username:\t" + ref_user );
         System.out.println( "mysql_hsnref_password:\t" + ref_pass );
+        System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
     }
 
 
@@ -1641,8 +1648,10 @@ public class LinksCleaned extends Thread
         long start = System.currentTimeMillis();
         showMessage( "Connecting to databases:", false, true );
 
-        showMessage( "links_general (ref)", false, true );
-        conOr = new MySqlConnector( ref_url, "links_general", ref_user, ref_pass );
+        //showMessage( "links_general (ref)", false, true );
+        //conOr = new MySqlConnector( ref_url, "links_general", ref_user, ref_pass );
+        showMessage( ref_db + " (ref)", false, true );
+        conOr = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
         showMessage( "links_original", false, true );
         conOriginal = new MySqlConnector( url, "links_original", user, pass );
@@ -2070,7 +2079,7 @@ public class LinksCleaned extends Thread
      */
     private String funcStandardAlias(int id, String id_souce, String name) throws Exception {
 
-        dataSet.ArrayListNonCase ag = ttalAlias.getArray("original");
+        dataset.ArrayListNonCase ag = ttalAlias.getArray("original");
 
         // to lowercase
         name = name.toLowerCase();

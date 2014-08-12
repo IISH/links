@@ -3,14 +3,31 @@
  * Copyright
  *
  */
-package dataSet;
+package dataset;
 
-import java.sql.*;
-import connectors.*;
-import java.util.*;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import connectors.MySqlConnector;
 import modulemain.LinksSpecific;
 
-public class TableToArraysSet {
+/**
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-11-Aug-2014 Latest change
+ */
+public class TableToArraysSet
+{
+    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
 
     private ArrayList<ArrayListNonCase> column = new ArrayList<ArrayListNonCase>();
     private ArrayList<String> columnName = new ArrayList<String>();
@@ -28,25 +45,31 @@ public class TableToArraysSet {
 
     /**
      * Constructor to load table into ArrayLists
-     * @param conn
+     * @param con
+     * @param con_or
+     * @param IndexField
      * @param tableName
      */
-    public TableToArraysSet(MySqlConnector con, MySqlConnector con_or, String IndexField, String tableName) throws Exception {
-
+    public TableToArraysSet( MySqlConnector con, MySqlConnector con_or, String IndexField, String tableName )
+    throws Exception
+    {
         this.tableName = tableName;
         this.con = con;
         this.con_or = con_or;
 
+        logger.info( "TableToArraysSet, table: " + tableName + " , index: " + IndexField );
 
-        if (IndexField.isEmpty()) {
-            rs = this.con.runQueryWithResult("SELECT * FROM ref_" + tableName);
-        } else {
-            rs = this.con.runQueryWithResult("SELECT * FROM ref_" + tableName + " ORDER BY " + IndexField + " ASC");
-        }
+        String query = "";
+        if( IndexField.isEmpty() )
+        { query = "SELECT * FROM ref_" + tableName; }
+        else
+        { query = "SELECT * FROM ref_" + tableName + " ORDER BY " + IndexField + " ASC"; }
+        logger.info( "TableToArraysSet, query: " + query );
 
-
+        rs = this.con.runQueryWithResult( query );
         ResultSetMetaData rsmd = rs.getMetaData();
         int numCols = rsmd.getColumnCount();
+        logger.info( "TableToArraysSet, numCols: " + numCols );
 
         for (int i = 1; i <= numCols; i++) {
 
@@ -119,9 +142,11 @@ public class TableToArraysSet {
         rs.close();
         rs = null;
 
-        // Do extra sort
-        if (!IndexField.isEmpty()) {
 
+        // Do extra sort
+        if( !IndexField.isEmpty() )
+        {
+            logger.info( "TableToArraysSet: extra sort" );
             // Sort by Java 
             Collections.sort(column.get(columnName.indexOf("original")));
 
@@ -146,7 +171,9 @@ public class TableToArraysSet {
                 }
             }
         }
+        logger.info( "TableToArraysSet: end" );
     }
+
 
     /**
      *

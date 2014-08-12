@@ -30,7 +30,7 @@ import javax.swing.JTextField;
 
 import org.w3c.dom.Document;
 
-import dataSet.DateYearMonthDaySet;
+import dataset.DateYearMonthDaySet;
 
 /**
  * @author Omar Azouguagh
@@ -328,7 +328,7 @@ public class LinksSpecific {
      */
     public static DateYearMonthDaySet devideCheckDate(String date){
 
-        dataSet.DateYearMonthDaySet dymd = new dataSet.DateYearMonthDaySet();
+        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet();
 
         if(date == null || date.isEmpty() ){
             dymd.setYear( 0 ) ;

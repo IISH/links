@@ -34,7 +34,7 @@ import java.util.Calendar;
 
 import org.w3c.dom.Document;
 
-import dataSet.DateYearMonthDaySet;
+import dataset.DateYearMonthDaySet;
 import modulemain.LinksSpecific;
 
 /**
@@ -320,7 +320,7 @@ public class Functions {
      */
     public static DateYearMonthDaySet devideCheckDate(String date){
 
-        dataSet.DateYearMonthDaySet dymd = new dataSet.DateYearMonthDaySet();
+        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet();
 
         if(date == null || date.isEmpty() ){
             dymd.setYear( 0 ) ;

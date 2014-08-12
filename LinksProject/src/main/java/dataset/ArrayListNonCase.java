@@ -2,7 +2,7 @@
  *
  * @author oaz
  */
-package dataSet;
+package dataset;
 
 import java.util.*;
 

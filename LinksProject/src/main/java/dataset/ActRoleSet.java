@@ -1,4 +1,4 @@
-package dataSet;
+package dataset;
 
 import java.util.*;
 import java.sql.*;
