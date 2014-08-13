@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import connectors.MySqlConnector;
+
 import modulemain.LinksSpecific;
 
 /**
@@ -23,7 +24,9 @@ import modulemain.LinksSpecific;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-11-Aug-2014 Latest change
+ * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
+ *                created by Omar.
+ * FL-13-Aug-2014 Latest change
  */
 public class TableToArraysSet
 {

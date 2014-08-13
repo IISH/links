@@ -1,11 +1,15 @@
 /**
  *
- * @author oaz
+ * @author Omar Azouguagh
  */
 package dataset;
 
 import java.util.*;
 
+/**
+ * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
+ *                created by Omar.
+ */
 public class ArrayListNonCase<E> extends AbstractList<E>
         implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 {

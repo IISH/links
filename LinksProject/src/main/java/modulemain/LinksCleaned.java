@@ -2,6 +2,9 @@ package modulemain;
 
 import java.lang.reflect.Method;
 
+import java.io.File;
+import java.io.FileWriter;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -51,7 +54,7 @@ import general.Functions;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
- * FL-05-Aug-2014 Latest change
+ * FL-13-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
@@ -116,8 +119,8 @@ public class LinksCleaned extends Thread
     private ArrayList<Integer> hpDeceasedWeek = new ArrayList<Integer>();
     private ArrayList<Integer> hpDeceasedDay = new ArrayList<Integer>();
 
-    private java.io.FileWriter writerFamilyname;
-    private java.io.FileWriter writerFirstname;
+    private FileWriter writerFamilyname;
+    private FileWriter writerFirstname;
     private ManagerGui mg;
 
     private String ref_url  = "";       // reference db access
@@ -245,19 +248,24 @@ public class LinksCleaned extends Thread
                 // load the ref tables
                 showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
                 {
-                    // ttalFirstname = new TableToArraysSet(conGeneral, "original", "firstname");
-                    // ttalFamilyname = new TableToArraysSet(conGeneral, "original", "familyname");
-                    ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
-                    ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
-                    ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
+                    //ttalFirstname  = new TableToArraysSet( conGeneral, "original", "firstname" );
+                    //ttalFamilyname = new TableToArraysSet( conGeneral, "original", "familyname" );
+                    ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
+                    ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
+                    ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
                 }
                 showMessage( endl, false, true );
 
-                // run name functions
+                // Firstname
+                if( doesTableExist( conTemp, "links_temp", "firstname_t" ) ) {
+                    showMessage( "Deleting table links_temp.firstname_t", false, true );
+                    dropTable( conTemp, "links_temp", "firstname_t" );
+                }
+
                 createTempFirstname();
                 createTempFirstnameFile();
-                ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
-                runMethod("funcStandardFirstname");
+                ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
+                runMethod( "funcStandardFirstname" );
                 ttalFirstname.updateTable();
                 ttalFirstname.free();
                 writerFirstname.close();
@@ -266,11 +274,16 @@ public class LinksCleaned extends Thread
                 removeFirstnameFile();
                 removeFirstnameTable();
 
-                //removeFamilynameTable();
+                // Familyname
+                if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
+                    showMessage( "Deleting table links_temp.familyname_t", false, true );
+                    dropTable( conTemp, "links_temp", "familyname_t" );
+                }
+
                 createTempFamilyname();
                 createTempFamilynameFile();
-                ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
-                runMethod("funcStandardFamilyname");
+                ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
+                runMethod( "funcStandardFamilyname" );
                 ttalFamilyname.updateTable();
                 ttalFamilyname.free();
                 writerFamilyname.close();
@@ -378,13 +391,13 @@ public class LinksCleaned extends Thread
                 String IndexField = "original";
                 String tableName = "firstname";
                 showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
-                ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
+                ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
                 stop = System.currentTimeMillis();
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "TableToArraysSet OK " + mmss;
                 showMessage( msg, false, true );
 
-                runMethod("funcStandardFirstname");
+                runMethod( "funcStandardFirstname" );
                 ttalFirstname.updateTable();
                 ttalFirstname.free();
                 writerFirstname.close();
@@ -404,13 +417,13 @@ public class LinksCleaned extends Thread
                 createTempFamilynameFile();
                 tableName = "familyname";
                 showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
-                ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
+                ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
                 stop = System.currentTimeMillis();
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "TableToArraysSet OK " + mmss;
                 showMessage( msg, false, true );
 
-                runMethod("funcStandardFamilyname");
+                runMethod( "funcStandardFamilyname" );
                 ttalFamilyname.updateTable();
                 ttalFamilyname.free();
                 writerFamilyname.close();
@@ -431,10 +444,10 @@ public class LinksCleaned extends Thread
                 showMessage( endl, false, true );
 
                 // Run prepiece
-                runMethod("funcStandardPrepiece");
+                runMethod( "funcStandardPrepiece" );
 
                 // Run suffix
-                runMethod("funcStandardSuffix");
+                runMethod( "funcStandardSuffix" );
 
                 // Update reference
                 showMessage( "Updating names reference tables...", false, false );
@@ -481,7 +494,7 @@ public class LinksCleaned extends Thread
                 long start = System.currentTimeMillis();
                 showMessage( "isDoAgeYear", false, true );
 
-                runMethod("funcStandardYearAge");
+                runMethod( "funcStandardYearAge" );
 
                 elapsedShowMessage( "isDoAgeYear", start, System.currentTimeMillis() );
             } // isDoAgeYear
@@ -495,12 +508,12 @@ public class LinksCleaned extends Thread
 
                 showMessage( "Loading reftabel(s): " + "status_sex" + "...", false, false );
                 {
-                    ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
+                    ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
                 }
                 showMessage( endl, false, true );
 
-                runMethod("funcStandardSex");
-                runMethod("funcStandardStatusSex");
+                runMethod( "funcStandardSex" );
+                runMethod( "funcStandardStatusSex" );
 
                 showMessage( "Updating reftabel(s): " + "status_sex" + "...", false, false );
                 {
@@ -517,7 +530,7 @@ public class LinksCleaned extends Thread
                 long start = System.currentTimeMillis();
                 showMessage( "isDoType", false, true );
 
-                runMethod("funcStandardType");
+                runMethod( "funcStandardType" );
 
                 elapsedShowMessage( "isDoType", start, System.currentTimeMillis() );
             } // isDoType
@@ -545,21 +558,21 @@ public class LinksCleaned extends Thread
                 showMessage( "Running Date functions on all sources...", false, false );
                 {
                     // Clean dates
-                    runMethod("funcStandardRegistrationDate");
+                    runMethod( "funcStandardRegistrationDate" );
 
                     // Clean
-                    funcStandardDate("birth");
-                    funcStandardDate("mar");
-                    funcStandardDate("death");
+                    funcStandardDate( "birth" );
+                    funcStandardDate( "mar" );
+                    funcStandardDate( "death" );
 
                     // Fill empty dates with register dates
                     funcFlagBirthDate();
                     funcFlagMarriageDate();
                     funcFlagDeathDate();
 
-                    funcStandardFlaggedDate("birth");
-                    funcStandardFlaggedDate("mar");
-                    funcStandardFlaggedDate("death");
+                    funcStandardFlaggedDate( "birth" );
+                    funcStandardFlaggedDate( "mar" );
+                    funcStandardFlaggedDate( "death" );
 
                     funcMinMaxCorrectDate();
 
@@ -575,11 +588,11 @@ public class LinksCleaned extends Thread
                     String q4 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 3 AND p.role = 10;";
                     String q5 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 7 AND p.role = 10;";
 
-                    conCleaned.runQuery(q1);
-                    conCleaned.runQuery(q2);
-                    conCleaned.runQuery(q3);
-                    conCleaned.runQuery(q4);
-                    conCleaned.runQuery(q5);
+                    conCleaned.runQuery( q1 );
+                    conCleaned.runQuery( q2 );
+                    conCleaned.runQuery( q3 );
+                    conCleaned.runQuery( q4 );
+                    conCleaned.runQuery( q5 );
 
                 }
 
@@ -593,7 +606,7 @@ public class LinksCleaned extends Thread
                 long start = System.currentTimeMillis();
                 showMessage( "isDoSequence", false, true );
 
-                runMethod("funcStandardSequence");
+                runMethod( "funcStandardSequence" );
 
                 elapsedShowMessage( "isDoSequence", start, System.currentTimeMillis() );
             } // isDoSequence
@@ -605,7 +618,7 @@ public class LinksCleaned extends Thread
                 long start = System.currentTimeMillis();
                 showMessage( "isDoRelation", false, true );
 
-                runMethod("funcRelation");
+                runMethod( "funcRelation" );
 
                 elapsedShowMessage( "isDoRelation", start, System.currentTimeMillis() );
             } // isDoRelation
@@ -621,16 +634,16 @@ public class LinksCleaned extends Thread
                     for (int i : sources) {
                         showMessage( "Running funMinMaxDateMain for source: " + i + "...", false, false );
                         {
-                            funcFillMinMaxArrays("" + i);
-                            funMinMaxDateMain("" + i);
+                            funcFillMinMaxArrays( "" + i );
+                            funMinMaxDateMain( "" + i );
                         }
                         showMessage( endl, false, true );
                     }
                 } else {
                     showMessage( "Running funMinMaxDateMain...", false, false );
                     {
-                        funcFillMinMaxArrays("" + this.bronNr);
-                        funMinMaxDateMain("");
+                        funcFillMinMaxArrays( "" + this.bronNr );
+                        funMinMaxDateMain( "" );
                     }
                     showMessage( endl, false, true );
                 }
@@ -647,15 +660,15 @@ public class LinksCleaned extends Thread
 
                 try {
                     // loading ref
-                    ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
+                    ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
 
-                    if (bronFilter.isEmpty()) {
-
-                        for (int i : sources) {
-
+                    if( bronFilter.isEmpty() )
+                    {
+                        for( int i : sources )
+                        {
                             showMessage( "Running funcMinMaxMarriageYear for source: " + i + "...", false, false );
                             {
-                                funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
+                                funcMinMaxMarriageYear( funcSetMarriageYear( i + "" ), refMinMaxMarriageYear );
                             }
                             showMessage( endl, false, true );
                         }
@@ -663,11 +676,11 @@ public class LinksCleaned extends Thread
                     } else {
                         showMessage( "Running funcMinMaxMarriageYear...", false, false );
                         {
-                            funcMinMaxMarriageYear(funcSetMarriageYear(this.bronNr + ""), refMinMaxMarriageYear);
+                            funcMinMaxMarriageYear( funcSetMarriageYear( this.bronNr + "" ), refMinMaxMarriageYear );
                         }
                         showMessage( endl, false, true );
                     }
-                } catch (Exception e) {
+                } catch( Exception e ) {
                     showMessage( "An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true );
                 }
 
@@ -5811,9 +5824,12 @@ public class LinksCleaned extends Thread
     private void createTempFamilynameFile() throws Exception
     {
         long start = System.currentTimeMillis();
-        showMessage( "Creating familyname_t csv", false, true );
+        String fname = "familyname_t.csv";
+        showMessage( "Creating " + fname, false, true );
 
-        writerFamilyname = new java.io.FileWriter( "familyname_t.csv" );
+        File f = new File( fname );
+        if( f.exists() ) { showMessage( "File existed", false, true ); }
+        else { writerFamilyname = new FileWriter( fname ); }
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
@@ -5926,13 +5942,16 @@ public class LinksCleaned extends Thread
     private void createTempFirstnameFile() throws Exception
     {
         long start = System.currentTimeMillis();
-        showMessage( "Creating firstname_t csv", false, true );
+        String fname = "firstname_t.csv";
+        showMessage( "Creating " + fname, false, true );
 
-        writerFirstname = new java.io.FileWriter( "firstname_t.csv" );
+        File f = new File( fname );
+        if( f.exists() ) { showMessage( "File existed", false, true ); }
+        else { writerFirstname = new FileWriter( fname ); }
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating firstname_t csv OK " + elapsed;
+        String msg = "Creating " + fname + " OK " + elapsed;
         showMessage( msg, false, true );
     }
 
@@ -5965,8 +5984,8 @@ public class LinksCleaned extends Thread
         showMessage( "Moving first names from temp table to person_c...", false, true );
         {
             String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
-                    + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
-                    + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
+                + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
+                + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
 
             conTemp.runQuery( query );
         }
@@ -5986,7 +6005,7 @@ public class LinksCleaned extends Thread
         long start = System.currentTimeMillis();
         showMessage( "Removing firstname_t csv file", false, true );
         {
-            java.io.File f = new java.io.File( "firstname_t.csv" );
+            File f = new File( "firstname_t.csv" );
             f.delete();
         }
 
@@ -6027,6 +6046,8 @@ public class LinksCleaned extends Thread
         ResultSet rs = db_conn.runQueryWithResult( query );
         rs.first();
         int count = rs.getInt( "COUNT(*)" );
+        //showMessage( "doesTableExist: " + db_name + " " + table_name + " : " + count, false, true );
+
         if( count == 1 ) return true;
         else return false;
     }
