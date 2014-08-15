@@ -26,12 +26,10 @@ import modulemain.LinksSpecific;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
- * FL-13-Aug-2014 Latest change
+ * FL-15-Aug-2014 Latest change
  */
 public class TableToArraysSet
 {
-    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
-
     private ArrayList<ArrayListNonCase> column = new ArrayList<ArrayListNonCase>();
     private ArrayList<String> columnName = new ArrayList<String>();
     
@@ -60,19 +58,19 @@ public class TableToArraysSet
         this.con = con;
         this.con_or = con_or;
 
-        logger.info( "TableToArraysSet, table: " + tableName + " , index: " + IndexField );
+        System.out.println("TableToArraysSet, table: " + tableName + " , index: " + IndexField);
 
         String query = "";
         if( IndexField.isEmpty() )
         { query = "SELECT * FROM ref_" + tableName; }
         else
         { query = "SELECT * FROM ref_" + tableName + " ORDER BY " + IndexField + " ASC"; }
-        logger.info( "TableToArraysSet, query: " + query );
+        System.out.println("TableToArraysSet, query: " + query);
 
         rs = this.con.runQueryWithResult( query );
         ResultSetMetaData rsmd = rs.getMetaData();
         int numCols = rsmd.getColumnCount();
-        logger.info( "TableToArraysSet, numCols: " + numCols );
+        System.out.println("TableToArraysSet, numCols: " + numCols);
 
         for (int i = 1; i <= numCols; i++) {
 
@@ -149,7 +147,7 @@ public class TableToArraysSet
         // Do extra sort
         if( !IndexField.isEmpty() )
         {
-            logger.info( "TableToArraysSet: extra sort" );
+            System.out.println("TableToArraysSet: extra sort");
             // Sort by Java 
             Collections.sort(column.get(columnName.indexOf("original")));
 
@@ -174,7 +172,7 @@ public class TableToArraysSet
                 }
             }
         }
-        logger.info( "TableToArraysSet: end" );
+        System.out.println("TableToArraysSet: end");
     }
 
 
@@ -182,10 +180,11 @@ public class TableToArraysSet
      *
      * @param newValue
      */
-    public void addOriginal(String newValue) {
+    public void addOriginal(String newValue)
+    {
+        //System.out.println( "TableToArraysSet/addOriginal" );
 
         // add standardcode
-
 
         for (int i = 0; i < columnNew.size(); i++) {
 
@@ -215,12 +214,16 @@ public class TableToArraysSet
         }
     }
 
+
     /**
      *
      * @param newValue
      * @param standardCode
      */
-    public void addOriginalWithCode(String newValue, String standardCode) {
+    public void addOriginalWithCode(String newValue, String standardCode)
+    {
+        //System.out.println( "TableToArraysSet/addOriginalWithCode" );
+
         // add nieuwcode
         for (int i = 0; i < columnNew.size(); i++) {
 
@@ -236,12 +239,15 @@ public class TableToArraysSet
         }
     }
 
+
     /**
      *
      * @param value
      * @return
      */
-    public boolean originalExists(String value) {
+    public boolean originalExists(String value)
+    {
+        //System.out.println( "TableToArraysSet/originalExists" );
 
         int index = Collections.binarySearch(column.get(columnName.indexOf("original")), value);
 
@@ -259,14 +265,18 @@ public class TableToArraysSet
         return false;
     }
 
+
     /**
      *
      * @param value
      * @return
      */
     public String getStandardCodeByOriginal(String value) throws Exception {
+        //System.out.println( "TableToArraysSet/" );
+
         return getColumnByOriginal("standard_code", value);
     }
+
 
     /**
      *
@@ -274,8 +284,11 @@ public class TableToArraysSet
      * @return
      */
     public String getStandardByOriginal(String value) throws Exception {
+        //System.out.println( "TableToArraysSet/getStandardByOriginal" );
+
         return getColumnByOriginal("standard", value);
     }
+
 
     /**
      *
@@ -283,7 +296,10 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getColumnByOriginal(String name, String value) throws Exception {
+    public String getColumnByOriginal(String name, String value)
+    throws Exception
+    {
+        //System.out.println( "TableToArraysSet/getColumnByOriginal" );
 
         int index = Collections.binarySearch(column.get(columnName.indexOf("original")), value);
 
@@ -307,6 +323,7 @@ public class TableToArraysSet
         throw new Exception("Original Index Error");
     }
 
+
     /**
      *
      * @param columnToGet
@@ -314,7 +331,9 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getColumnByColumn(String columnToGet, String name, String value) {
+    public String getColumnByColumn(String columnToGet, String name, String value)
+    {
+        //System.out.println( "TableToArraysSet/getColumnByColumn" );
 
         String valuel = value.toLowerCase();
         int io = columnName.indexOf(columnToGet);
@@ -323,7 +342,10 @@ public class TableToArraysSet
         return column.get(in).get(column.get(io).indexOf(valuel)).toString();
     }
 
-    public String getColumnByColumnInt(String columnToGet, String name, int value) {
+
+    public String getColumnByColumnInt(String columnToGet, String name, int value)
+    {
+        //System.out.println( "TableToArraysSet/getColumnByColumnInt" );
 
         int io = columnName.indexOf(columnToGet);
         int in = columnName.indexOf(name);
@@ -331,14 +353,18 @@ public class TableToArraysSet
         return column.get(in).get(column.get(io).indexOf(value)).toString();
     }
 
+
     /**
      *
      * @param index
      * @return
      */
     public String getOriginalByIndex(int index) {
+        //System.out.println( "TableToArraysSet/getOriginalByIndex" );
+
         return column.get(columnName.indexOf("original")).get(index).toString();
     }
+
 
     /**
      *
@@ -346,22 +372,31 @@ public class TableToArraysSet
      * @return
      */
     public ArrayListNonCase getArray(String cName) {
+        //System.out.println( "TableToArraysSet/getArray" );
+
         return column.get(columnName.indexOf(cName));
     }
+
 
     /**
      *
      * @return
      */
     public int countRows() {
+        //System.out.println( "TableToArraysSet/countRows" );
+
         return column.get(columnName.indexOf("original")).size();
     }
+
 
     /**
      *
      * @throws Exception
      */
-    public void updateTable() throws Exception {
+    public void updateTable() throws Exception
+    {
+        //System.out.println( "TableToArraysSet/updateTable" );
+
         for (int i = 0; i < columnNew.get(columnNameNew.indexOf("original")).size(); i++) {
             String[] fields = {"original", "standard_code"};
             String[] values = {LinksSpecific.funcPrepareForMysql(columnNew.get(columnNameNew.indexOf("original")).get(i).toString()), "x"};
@@ -369,11 +404,14 @@ public class TableToArraysSet
         }
     }
 
+
     /**
      *
      * @throws Exception
      */
     public void updateTableWithCode() throws Exception {
+        //System.out.println( "TableToArraysSet/updateTableWithCode" );
+
         for (int i = 0; i < columnNew.get(0).size(); i++) {
             String[] fields = {"original", "standard_code"};
             String[] values = {LinksSpecific.funcPrepareForMysql(
@@ -383,10 +421,13 @@ public class TableToArraysSet
         }
     }
 
+
     /**
-     * This function cleanes the used ArrayLists in this Class
+     * This function clears the used ArrayLists in this Class
      */
-    public void free() {
+    public void free()
+    {
+        //System.out.println( "TableToArraysSet/free" );
 
         for (int i = 0; i < column.size(); i++) {
             column.get(i).clear();

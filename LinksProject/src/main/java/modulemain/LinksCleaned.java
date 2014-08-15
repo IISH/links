@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -54,11 +55,13 @@ import general.Functions;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
- * FL-13-Aug-2014 Latest change
+ * FL-15-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
     static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
+
+    //static final general.PrintLogger plog;
 
     /**
      * Table to Array Sets for the
@@ -90,6 +93,7 @@ public class LinksCleaned extends Thread
     private MySqlConnector conOriginal;
     private MySqlConnector conTemp;
     private MySqlConnector conOr;
+
     private Runtime r = Runtime.getRuntime();
     private String tempTableName;
     private DoSet dos;
@@ -97,6 +101,7 @@ public class LinksCleaned extends Thread
     private final static String SC_X = "x";
     private final static String SC_N = "n";
     private final static String SC_Y = "y";
+
     // old links_base
     private ArrayList<Integer> hpChildRegistration = new ArrayList<Integer>();
     private ArrayList<Integer> hpChildAge = new ArrayList<Integer>();
@@ -119,8 +124,9 @@ public class LinksCleaned extends Thread
     private ArrayList<Integer> hpDeceasedWeek = new ArrayList<Integer>();
     private ArrayList<Integer> hpDeceasedDay = new ArrayList<Integer>();
 
-    private FileWriter writerFamilyname;
     private FileWriter writerFirstname;
+    private FileWriter writerFamilyname;
+
     private ManagerGui mg;
 
     private String ref_url  = "";       // reference db access
@@ -138,6 +144,8 @@ public class LinksCleaned extends Thread
     private int[] sources = { 10, 225 };
     private String endl = ". OK.";              // ".";
 
+    private general.PrintLogger plog;
+
     /**
      * Constructor
      *
@@ -152,6 +160,7 @@ public class LinksCleaned extends Thread
      * @param tbLOLClatestOutput
      * @param taLOLCoutput
      * @param dos
+     * @param plog
      * @param mg
      */
     public LinksCleaned
@@ -167,6 +176,7 @@ public class LinksCleaned extends Thread
         JTextField tbLOLClatestOutput,
         JTextArea taLOLCoutput,
         DoSet dos,
+        general.PrintLogger plog,
         ManagerGui mg
     )
     {
@@ -183,9 +193,10 @@ public class LinksCleaned extends Thread
         this.tbLOLClatestOutput = tbLOLClatestOutput;
         this.taLOLCoutput = taLOLCoutput;
         this.dos = dos;
+        this.plog = plog;
         this.mg = mg;
 
-        String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
         System.out.println( timestamp + "  linksCleaned()" );
 
         System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
@@ -202,9 +213,14 @@ public class LinksCleaned extends Thread
     public void run()
     {
         showMessage( "LinksCleaned/run()", false, true );
-        logger.info( "LinksCleaned/run()" );
+        //logger.info( "LinksCleaned/run()" );
+
+        //try { plog = new general.PrintLogger(); }
+        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         try {
+            plog.show( "Links Match Manager 2.0" );
+
             String mmss = "";
             String msg  = "";
             String   ts = "";                                 // timestamp
@@ -265,7 +281,11 @@ public class LinksCleaned extends Thread
                 createTempFirstname();
                 createTempFirstnameFile();
                 ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
+
+                System.out.println( "before" );
                 runMethod( "funcStandardFirstname" );
+                System.out.println( "after" );
+
                 ttalFirstname.updateTable();
                 ttalFirstname.free();
                 writerFirstname.close();
@@ -367,7 +387,7 @@ public class LinksCleaned extends Thread
                 long start = 0;
                 long stop  = 0;
 
-                ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
                 System.out.println( ts + " dos.isDoNames" );
 
                 // Loading reference tables
@@ -408,6 +428,7 @@ public class LinksCleaned extends Thread
 
                 // Family name
                 start = System.currentTimeMillis();
+
                 if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
                     showMessage( "Deleting table links_temp.familyname_t", false, true );
                     dropTable( conTemp, "links_temp", "familyname_t" );
@@ -432,6 +453,8 @@ public class LinksCleaned extends Thread
                 removeFamilynameFile();
                 removeFamilynameTable();
 
+                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
+
                 // Delete empty records
                 funcDeleteRows();
 
@@ -443,11 +466,15 @@ public class LinksCleaned extends Thread
                 }
                 showMessage( endl, false, true );
 
+                if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    //
+
                 // Run prepiece
                 runMethod( "funcStandardPrepiece" );
 
                 // Run suffix
                 runMethod( "funcStandardSuffix" );
+
+                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Update reference
                 showMessage( "Updating names reference tables...", false, false );
@@ -462,6 +489,7 @@ public class LinksCleaned extends Thread
             } // isDoNames
             else { showMessage( "Skipping isDoNames", false, true ); }
 
+            //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
             if( dos.isDoLocations() )                       // Locations
             {
@@ -784,9 +812,9 @@ public class LinksCleaned extends Thread
         partypes[0] = String.class;
 
         // source 1 by 1
-        if (bronFilter.isEmpty())
+        if( bronFilter.isEmpty() )
         {
-            for (int i : sources) {
+            for( int i : sources ) {
                 showMessage( "Running " + MethodName + " for source: " + i + "...", false, false );
 
                 argList[0] = i + "";
@@ -796,8 +824,10 @@ public class LinksCleaned extends Thread
                 m.invoke(this, argList);
 
                 showMessage( endl, false, true );
+                System.out.println( "" + i );
             }
-        } else
+        }
+        else
         {
             showMessage( "Running " + MethodName + "...", false, false );
 
@@ -1613,14 +1643,19 @@ public class LinksCleaned extends Thread
             }
 
             if( logText != endl ) {
-                String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-                System.out.printf( "%s ", ts );
+                String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+
                 taLOLCoutput.append( ts + " " );
-                logger.info( logText );
+                // System.out.printf( "%s ", ts );
+                //logger.info( logText );
+                try { plog.show( logText ); }
+                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
             }
 
-            System.out.printf( "%s%s", logText, newLineToken );
             taLOLCoutput.append( logText + newLineToken );
+            //System.out.printf( "%s%s", logText, newLineToken );
+            try { plog.show( logText ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
     }
 
@@ -1645,7 +1680,7 @@ public class LinksCleaned extends Thread
      * clear GUI output text fields
      */
     public void clearTextFields() {
-        String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
         System.out.println( timestamp + " clearTextFields()" );
 
         tbLOLClatestOutput.setText( "" );
@@ -5828,8 +5863,8 @@ public class LinksCleaned extends Thread
         showMessage( "Creating " + fname, false, true );
 
         File f = new File( fname );
-        if( f.exists() ) { showMessage( "File existed", false, true ); }
-        else { writerFamilyname = new FileWriter( fname ); }
+        if( f.exists() ) { f.delete(); }
+        writerFamilyname = new FileWriter( fname );
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
@@ -5946,8 +5981,8 @@ public class LinksCleaned extends Thread
         showMessage( "Creating " + fname, false, true );
 
         File f = new File( fname );
-        if( f.exists() ) { showMessage( "File existed", false, true ); }
-        else { writerFirstname = new FileWriter( fname ); }
+        if( f.exists() ) { f.delete(); }
+        writerFirstname = new FileWriter( fname );
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );

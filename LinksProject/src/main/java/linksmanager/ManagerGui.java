@@ -10,7 +10,6 @@ import java.awt.event.KeyEvent;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -38,6 +37,7 @@ import javax.swing.event.ListSelectionListener;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.status.StatusLogger;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -63,18 +63,23 @@ import general.Functions;
  * <p/>
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
- * FL-12-Aug-2014 Latest change
+ * FL-15-Aug-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
 {
-    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
+    //static final Logger logger = LogManager.getLogger( ManagerGui.class.getName() );
+    //protected final static Logger logger = StatusLogger.getLogger();
+    static final Logger logger = LogManager.getLogger( "links" );        // "links" name specified in log4j.xml
+
+    static general.PrintLogger plog = null;
 
     Document doc;
 
-    public ManagerGui() {
-        String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-        System.out.println( timestamp + " ManagerGui/ManagerGui()" );
+    public ManagerGui()
+    {
+        //String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+        //System.out.println( timestamp + " ManagerGui/ManagerGui()" );
 
         setLookAndFeel();
         createDomProject();
@@ -2234,6 +2239,7 @@ public class ManagerGui extends javax.swing.JFrame
              tbLOLClatestOutput,
              taLOLCoutput,
              dos,
+             plog,
              this);
         lolc.start();
     }//GEN-LAST:event_bnLOLCstartProcessActionPerformed
@@ -2316,20 +2322,34 @@ public class ManagerGui extends javax.swing.JFrame
      */
     public static void main( String args[] )
     {
-        logger.info( "ManagerGui/main()" );
+        try { logger.info( "ManagerGui/main()" ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+
+        try {
+            plog = new general.PrintLogger();
+            plog.show( "ManagerGui/main()" );
+        }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp = "13-Aug-2014 16:48";
-            System.out.println( "LINKS timestamp: " + timestamp );
-            logger.info( "LINKS timestamp: " + timestamp );
+            String timestamp1 = "13-Aug-2014 16:48";
+            //System.out.println( "LINKS timestamp: " + timestamp1 );
+            //logger.info( "LINKS timestamp: " + timestamp1 );
 
-            timestamp = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
-            System.out.println( "Start at: " + timestamp );
+            String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+            //System.out.println( "Start at: " + timestamp2 );
 
-            timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
-            System.out.println( timestamp + " ManagerGui/main/run()" );
+            //timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+            //System.out.println( timestamp + " ManagerGui/main/run()" );
+
+            try {
+                plog.show( "LINKS timestamp: " + timestamp1 );
+                plog.show( "Start at: " + timestamp2 );
+                plog.show( "ManagerGui/main/run()" );
+            }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
             new ManagerGui().setVisible(true);
             }

@@ -42,7 +42,7 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * <p/>
- * FL-05-Aug-2014 Latest change
+ * FL-15-Aug-2014 Latest change
  *
  */
 public class Functions {
@@ -458,7 +458,7 @@ public class Functions {
      * now("yyyyMMdd"));
      * now("dd.MM.yy"));
      * now("MM/dd/yy"));
-     * now("yyyy.MM.dd G 'at' hh:mm:ss z"));
+     * now("yyyy.MM.dd G 'at' HH:mm:ss z"));
      * now("EEE, MMM d, ''yy"));
      * now("h:mm a"));
      * now("H:mm:ss:SSS"));
@@ -488,7 +488,7 @@ public class Functions {
              }
              else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
          }
-         else { hms = String.format( "[%02d:%02d:%02d hh:mm:ss]", hour, rmin, rsec ); }
+         else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
 
          return hms;
     }
@@ -501,7 +501,7 @@ public class Functions {
      * @return Properties
      */
     public static Properties getProperties() {
-        String timestamp = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
         System.out.println( timestamp + " readProperties()" );
 
         Properties properties = new Properties();

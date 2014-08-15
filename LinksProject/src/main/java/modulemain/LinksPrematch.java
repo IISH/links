@@ -17,7 +17,7 @@ import general.Functions;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-05-Aug-2014 Latest change
+ * FL-15-Aug-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -216,7 +216,7 @@ public class LinksPrematch extends Thread
             }
 
             if( logText != endl ) {
-                String ts = LinksSpecific.getTimeStamp2( "hh:mm:ss" );
+                String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
                 System.out.printf( "%s ", ts );
                 ta.append( ts + " " );
             }
