@@ -458,6 +458,8 @@ public class LinksCleaned extends Thread
                 // Delete empty records
                 funcDeleteRows();
 
+                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // TO DO ...
+
                 // Names to lowercase
                 showMessage( "Converting names to lowercase", false, false );
                 {
@@ -466,7 +468,7 @@ public class LinksCleaned extends Thread
                 }
                 showMessage( endl, false, true );
 
-                if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    //
+                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Run prepiece
                 runMethod( "funcStandardPrepiece" );
