@@ -55,13 +55,11 @@ import general.Functions;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
- * FL-15-Aug-2014 Latest change
+ * FL-18-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
     static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
-
-    //static final general.PrintLogger plog;
 
     /**
      * Table to Array Sets for the
@@ -139,9 +137,15 @@ public class LinksCleaned extends Thread
     private String pass = "";
 
     private int teller = 0;
-    private int bronNr;
+    private int sourceId;
 
-    private int[] sources = { 10, 225 };
+    //private int[] sources = { 10, 225 };      // Oegstgeest is already 231 !
+    //private int[] sources = { 10, 999 };      // put in GUI or preferences file
+    //private int[] sources;                      // fill with source_ids from links_original.person_o
+    private int[] sources;                      // only needed as global by runMethod()
+    //private int source_id_first =  10;
+    //private int source_id_last  = 999;
+
     private String endl = ". OK.";              // ".";
 
     private general.PrintLogger plog;
@@ -156,7 +160,7 @@ public class LinksCleaned extends Thread
      * @param url
      * @param user
      * @param pass
-     * @param bronNr
+     * @param sourceId
      * @param tbLOLClatestOutput
      * @param taLOLCoutput
      * @param dos
@@ -172,7 +176,7 @@ public class LinksCleaned extends Thread
         String url,
         String user,
         String pass,
-        int bronNr,
+        int sourceId,
         JTextField tbLOLClatestOutput,
         JTextArea taLOLCoutput,
         DoSet dos,
@@ -180,6 +184,8 @@ public class LinksCleaned extends Thread
         ManagerGui mg
     )
     {
+        this.sourceId = sourceId;
+
         this.ref_url  = ref_url;
         this.ref_user = ref_user;
         this.ref_pass = ref_pass;
@@ -189,7 +195,6 @@ public class LinksCleaned extends Thread
         this.user = user;
         this.pass = pass;
 
-        this.bronNr = bronNr;
         this.tbLOLClatestOutput = tbLOLClatestOutput;
         this.taLOLCoutput = taLOLCoutput;
         this.dos = dos;
@@ -213,17 +218,13 @@ public class LinksCleaned extends Thread
     public void run()
     {
         showMessage( "LinksCleaned/run()", false, true );
-        //logger.info( "LinksCleaned/run()" );
-
-        //try { plog = new general.PrintLogger(); }
-        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         try {
             plog.show( "Links Match Manager 2.0" );
 
             String mmss = "";
             String msg  = "";
-            String   ts = "";                                 // timestamp
+            String   ts = "";                               // timestamp
 
             long timeExpand = 0;
             long begintime = System.currentTimeMillis();
@@ -231,9 +232,18 @@ public class LinksCleaned extends Thread
 
             clearTextFields();                              // Clear output text fields on form
             connectToDatabases();                           // Connect to Databases
-            createLogTable();                               // Create log table
+            createLogTable();                               // Create log table with timestamp
 
-            if( bronNr != 0 ) { setSourceFilters(); }       // Set source filters
+            sources = getOrigSourceIds();                   // sets sources from links_original.registration_o
+
+            if( sourceId == 0 ) {
+                showMessage( "Processing source ids: ", false, true );
+                String s = "";
+                for( int i : sources ) { s = s + i + " "; }
+                showMessage( s, false, true );
+            }
+
+            if( sourceId != 0 ) { setSourceFilters(); }     // Set source filters
 
 
             if( dos.isDoRenewData() )                       // Remove previous data
@@ -248,7 +258,8 @@ public class LinksCleaned extends Thread
             else { showMessage( "Skipping isDoRenewData", false, true ); }
 
 
-            // Load reports
+            // links_general.ref_report contains 75 error definitions,
+            // to be used when the normalization encounters errors
             showMessage( "Loading report table", false, false );
             {
                 ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
@@ -256,7 +267,7 @@ public class LinksCleaned extends Thread
             showMessage( endl, false, true );
 
 
-            if( dos.isDoPreBasicNames() )                   // basic names Temp
+            if( dos.isDoPreBasicNames() )                   // Basic names Temp
             {
                 long startDoPreBasicNames = System.currentTimeMillis();
                 showMessage( "isDoPreBasicNames", false, true );
@@ -278,7 +289,7 @@ public class LinksCleaned extends Thread
                     dropTable( conTemp, "links_temp", "firstname_t" );
                 }
 
-                createTempFirstname();
+                createTempFirstnameTable();
                 createTempFirstnameFile();
                 ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
 
@@ -300,7 +311,7 @@ public class LinksCleaned extends Thread
                     dropTable( conTemp, "links_temp", "familyname_t" );
                 }
 
-                createTempFamilyname();
+                createTempFamilynameTable();
                 createTempFamilynameFile();
                 ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
                 runMethod( "funcStandardFamilyname" );
@@ -406,7 +417,7 @@ public class LinksCleaned extends Thread
                     dropTable( conTemp, "links_temp", "firstname_t" );
                 }
 
-                createTempFirstname();
+                createTempFirstnameTable();
                 createTempFirstnameFile();
                 String IndexField = "original";
                 String tableName = "firstname";
@@ -434,7 +445,7 @@ public class LinksCleaned extends Thread
                     dropTable( conTemp, "links_temp", "familyname_t" );
                 }
 
-                createTempFamilyname();
+                createTempFamilynameTable();
                 createTempFamilynameFile();
                 tableName = "familyname";
                 showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
@@ -454,11 +465,10 @@ public class LinksCleaned extends Thread
                 removeFamilynameTable();
 
                 //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
-
-                // Delete empty records
-                funcDeleteRows();
-
-                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // TO DO ...
+                // KM: Do not delete here.
+                showMessage( "Skipping deleting empty links_cleaned.person_c records.", false, true );
+                //funcDeleteRows();               // Delete records with empty firstname and empty familyname
+                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Names to lowercase
                 showMessage( "Converting names to lowercase", false, false );
@@ -468,7 +478,6 @@ public class LinksCleaned extends Thread
                 }
                 showMessage( endl, false, true );
 
-                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Run prepiece
                 runMethod( "funcStandardPrepiece" );
@@ -476,7 +485,6 @@ public class LinksCleaned extends Thread
                 // Run suffix
                 runMethod( "funcStandardSuffix" );
 
-                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Update reference
                 showMessage( "Updating names reference tables...", false, false );
@@ -491,7 +499,6 @@ public class LinksCleaned extends Thread
             } // isDoNames
             else { showMessage( "Skipping isDoNames", false, true ); }
 
-            //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
             if( dos.isDoLocations() )                       // Locations
             {
@@ -580,7 +587,7 @@ public class LinksCleaned extends Thread
             else { showMessage( "Skipping isDoRole", false, true ); }
 
 
-            if( dos.isDoDates() )                           // dates
+            if( dos.isDoDates() )                           // Dates
             {
                 long start = System.currentTimeMillis();
                 showMessage( "isDoDates", false, true );
@@ -672,7 +679,7 @@ public class LinksCleaned extends Thread
                 } else {
                     showMessage( "Running funMinMaxDateMain...", false, false );
                     {
-                        funcFillMinMaxArrays( "" + this.bronNr );
+                        funcFillMinMaxArrays( "" + this.sourceId );
                         funMinMaxDateMain( "" );
                     }
                     showMessage( endl, false, true );
@@ -706,7 +713,7 @@ public class LinksCleaned extends Thread
                     } else {
                         showMessage( "Running funcMinMaxMarriageYear...", false, false );
                         {
-                            funcMinMaxMarriageYear( funcSetMarriageYear( this.bronNr + "" ), refMinMaxMarriageYear );
+                            funcMinMaxMarriageYear( funcSetMarriageYear( this.sourceId + "" ), refMinMaxMarriageYear );
                         }
                         showMessage( endl, false, true );
                     }
@@ -719,7 +726,7 @@ public class LinksCleaned extends Thread
             else { showMessage( "Skipping isDoMinMaxMarriage", false, true ); }
 
 
-            if( dos.isDoPartsToFullDate() )                 // Part to Full date
+            if( dos.isDoPartsToFullDate() )                 // Parts to Full date
             {
                 long start = System.currentTimeMillis();
                 showMessage( "isDoMinMaxMarriage", false, true );
@@ -788,6 +795,46 @@ public class LinksCleaned extends Thread
             showMessage( "Error: " + ex.getMessage(), false, true );
         }
     } // run
+
+
+    /**
+     * Read distinct source ids from links_original.registration_o
+     */
+    private int[] getOrigSourceIds()
+    {
+        //sources = null;
+
+        ArrayList< String > ids = new ArrayList();
+        String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( query );
+            rs.first();
+            for( ;; ) {
+                String id = rs.getString( "id_source" );
+                if( id == null || id == "" ) { break; }
+                else {
+                    //System.out.printf( "id: %s\n", id );
+                    ids.add(id);
+                    rs.next();
+                }
+            }
+        }
+        catch( Exception ex ) {
+            if( ex.getMessage() != "After end of result set" ) {
+                //System.out.printf("'%s'\n", ex.getMessage());
+            }
+        }
+        //System.out.println( ids );
+
+        int[] idsInt = new int[ ids.size() ];
+        int i = 0;
+        for( String id : ids ) {
+            //System.out.println( id );
+            idsInt[ i ] = Integer.parseInt(id);
+            i += 1;
+        }
+        return idsInt;
+    } // getOrigSourceIds
 
 
     /**
@@ -1486,7 +1533,7 @@ public class LinksCleaned extends Thread
 
         // Maak logtabel aan met resterende opmekingen
         String createQuery = ""
-                + "CREATE TABLE IF NOT EXISTS `links_logs`.`log_rest_remarks_" + bronNr + bronnr + "_" + tempTableName + "` (  "
+                + "CREATE TABLE IF NOT EXISTS `links_logs`.`log_rest_remarks_" + sourceId + bronnr + "_" + tempTableName + "` (  "
                 + "`id_log` INT NOT NULL AUTO_INCREMENT , "
                 + "`registration_maintype` VARCHAR(3) NULL , "
                 + "`content` VARCHAR(500) NULL , "
@@ -1516,7 +1563,7 @@ public class LinksCleaned extends Thread
         // eventuele quotes vervangen
         String cleanKey = LinksSpecific.funcPrepareForMysql(key.toString());
         String[] data = {cleanKey.substring(0, cleanKey.indexOf(":")), cleanKey.substring((cleanKey.indexOf(":") + 1)), value.toString()};
-        conLog.insertIntoTable("log_rest_remarks_" + bronNr + bronnr + "_" + tempTableName, velden, data);
+        conLog.insertIntoTable("log_rest_remarks_" + sourceId + bronnr + "_" + tempTableName, velden, data);
         
         }
         
@@ -1695,7 +1742,6 @@ public class LinksCleaned extends Thread
     private void connectToDatabases()
     throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Connecting to databases:", false, true );
 
         //showMessage( "links_general (ref)", false, true );
@@ -1717,20 +1763,13 @@ public class LinksCleaned extends Thread
 
         showMessage( "links_temp", false, true );
         conTemp = new MySqlConnector( url, "links_temp", user, pass );
-
-
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Connecting to databases OK " + elapsed;
-        showMessage( msg, false, true );
     }
+
 
     private void createLogTable()
     throws Exception
     {
-        long start = System.currentTimeMillis();
-        showMessage( "Creating logging table.", false, true );
+        showMessage( "Creating logging table.", false, false );
 
         String query = ""
             + " CREATE  TABLE `links_logs`.`log" + tempTableName + "` ("
@@ -1753,10 +1792,7 @@ public class LinksCleaned extends Thread
 
         conLog.runQuery( query );
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating logging table OK " + elapsed;
-        showMessage( msg, false, true );
+        showMessage( endl, false, true );
     }
 
     /**
@@ -1764,21 +1800,17 @@ public class LinksCleaned extends Thread
      */
     private void setSourceFilters()
     {
-        long start = System.currentTimeMillis();
-        showMessage( "Set source filters for: " + bronNr, false, true );
+        showMessage( "Set source filters for: " + sourceId, false, false );
 
-        bronFilter   = " WHERE id_source = " + bronNr;
-        sourceFilter = " WHERE id_source = " + bronNr;
+        bronFilter   = " WHERE id_source = " + sourceId;
+        sourceFilter = " WHERE id_source = " + sourceId;
 
-        bronFilterCleanPers     = " WHERE person_c.id_source = "       + bronNr;
-        bronFilterOrigineelPers = " WHERE person_o.id_source = "       + bronNr;
-        bronFilterCleanReg      = " WHERE registration_c.id_source = " + bronNr;
-        bronFilterOrigineelReg  = " WHERE registration_o.id_source = " + bronNr;
+        bronFilterCleanPers     = " WHERE person_c.id_source = "       + sourceId;
+        bronFilterOrigineelPers = " WHERE person_o.id_source = "       + sourceId;
+        bronFilterCleanReg      = " WHERE registration_c.id_source = " + sourceId;
+        bronFilterOrigineelReg  = " WHERE registration_o.id_source = " + sourceId;
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Set source filters for: " + bronNr + " OK " + elapsed;
-        showMessage( msg, false, true );
+        showMessage( endl, false, true );
     }
 
 
@@ -1804,7 +1836,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , firstname FROM person_o" + bronFilter + "";
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -2259,7 +2291,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , familyname FROM person_o" + bronFilter;
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -2462,7 +2494,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , prefix FROM person_o" + bronFilter + " AND prefix <> ''";
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceNo + " AND prefix <> ''";
                 id_source = sourceNo;
@@ -2602,7 +2634,7 @@ public class LinksCleaned extends Thread
 
             if (bronnrsourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , suffix FROM person_o" + bronFilter + " AND suffix <> ''";
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + bronnrsourceNo + " AND suffix <> ''";
                 id_source = bronnrsourceNo;
@@ -2703,7 +2735,7 @@ public class LinksCleaned extends Thread
 
         if (sourceNo.isEmpty()) {
             startQuery = "SELECT id_registration , registration_location FROM registration_o" + bronFilter;
-            id_source = this.bronNr + "";
+            id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceNo;
             id_source = sourceNo;
@@ -2729,7 +2761,7 @@ public class LinksCleaned extends Thread
 
         if (sourceNo.isEmpty()) {
             startQuery = "SELECT id_person , birth_location FROM person_o" + bronFilter + " AND birth_location <> ''";
-            id_source = this.bronNr + "";
+            id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceNo + " AND birth_location <> ''";
             id_source = sourceNo;
@@ -2754,7 +2786,7 @@ public class LinksCleaned extends Thread
 
         if (sourceNo.isEmpty()) {
             startQuery = "SELECT id_person , mar_location FROM person_o" + bronFilter + " AND mar_location <> ''";
-            id_source = this.bronNr + "";
+            id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceNo + " AND mar_location <> ''";
             id_source = sourceNo;
@@ -2778,7 +2810,7 @@ public class LinksCleaned extends Thread
 
         if (sourceNo.isEmpty()) {
             startQuery = "SELECT id_person , death_location FROM person_o" + bronFilter + " AND death_location <> ''";
-            id_source = this.bronNr + "";
+            id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceNo + " AND death_location <> ''";
             id_source = sourceNo;
@@ -2922,7 +2954,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , sex FROM person_o" + bronFilter;
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -3009,7 +3041,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , sex , civil_status FROM person_o" + bronFilter + " and civil_status is not null ";
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -3157,7 +3189,7 @@ public class LinksCleaned extends Thread
     
     if (sourceNo.isEmpty()) {
     startQuery = "SELECT id_registration , registration_type FROM registration_o" + bronFilter;
-    id_source = this.bronNr + "";
+    id_source = this.sourceId + "";
     } else {
     startQuery = "SELECT id_registration , registration_type FROM registration_o WHERE id_source = " + sourceNo;
     id_source = sourceNo;
@@ -3246,7 +3278,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + bronFilter;
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -3340,7 +3372,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_registration , registration_date FROM registration_o" + bronFilter;
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -3915,7 +3947,7 @@ public class LinksCleaned extends Thread
 
             if (sourceNo.isEmpty()) {
                 startQuery = "SELECT id_person , age_year FROM person_o" + bronFilter;
-                id_source = this.bronNr + "";
+                id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , age_year FROM person_o WHERE id_source = " + sourceNo;
                 id_source = sourceNo;
@@ -4147,7 +4179,7 @@ public class LinksCleaned extends Thread
 
                 startQuery = "SELECT id_registration , id_person, role, sex FROM person_c " + bronFilter + " ORDER BY id_registration";
 
-                idSource = this.bronNr + "";
+                idSource = this.sourceId + "";
 
             } // per source
             else {
@@ -4317,9 +4349,9 @@ public class LinksCleaned extends Thread
             // Source from GUI
             if (sourceNo.isEmpty()) {
 
-                startQuery += " AND links_cleaned.person_c.id_source = " + this.bronNr;
+                startQuery += " AND links_cleaned.person_c.id_source = " + this.sourceId;
 
-                idSource = this.bronNr + "";
+                idSource = this.sourceId + "";
 
             } // per source
             else {
@@ -5836,22 +5868,18 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFamilyname() throws Exception
+    private void createTempFamilynameTable() throws Exception
     {
-        long start = System.currentTimeMillis();
-        showMessage( "Creating familyname_t table", false, true );
+        showMessage( "Creating familyname_t table", false, false );
 
         String query = "CREATE  TABLE links_temp.familyname_t ("
-                + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " familyname VARCHAR(80) NULL ,"
-                + " PRIMARY KEY (person_id) );";
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " familyname VARCHAR(80) NULL ,"
+            + " PRIMARY KEY (person_id) );";
 
         conTemp.runQuery( query );
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating familyname_t table OK " + elapsed;
-        showMessage( msg, false, true );
+        showMessage( endl, false, true );
     }
 
 
@@ -5954,22 +5982,18 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFirstname() throws Exception
+    private void createTempFirstnameTable() throws Exception
     {
-        long start = System.currentTimeMillis();
-        showMessage( "Creating firstname_t table", false, true );
+        showMessage( "Creating firstname_t table", false, false );
 
         String query = "CREATE  TABLE links_temp.firstname_t ("
-                + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " firstname VARCHAR(80) NULL ,"
-                + " PRIMARY KEY (person_id) );";
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " firstname VARCHAR(80) NULL ,"
+            + " PRIMARY KEY (person_id) );";
 
         conTemp.runQuery( query );
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating firstname_t table OK " + elapsed;
-        showMessage( msg, false, true );
+        showMessage( endl, false, true );
     }
 
 
@@ -6154,7 +6178,10 @@ public class LinksCleaned extends Thread
     }
 
 
-    private void funcDeleteRows() throws Exception {
+    private void funcDeleteRows()
+    throws Exception
+    {
+        showMessage( "funcDeleteRows() deleting empty links_cleaned.person_c records.", false, true );
         String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
         conCleaned.runQuery( q1 );
     }

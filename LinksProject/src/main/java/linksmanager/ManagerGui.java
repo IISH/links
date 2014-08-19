@@ -10,6 +10,7 @@ import java.awt.event.KeyEvent;
 
 import java.util.ArrayList;
 import java.util.Properties;
+import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -63,7 +64,7 @@ import general.Functions;
  * <p/>
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
- * FL-15-Aug-2014 Latest change
+ * FL-18-Aug-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -222,7 +223,7 @@ public class ManagerGui extends javax.swing.JFrame
 		tbLOLCpass = new JTextField();
 		jLabel42 = new JLabel();
 		jLabel43 = new JLabel();
-		tbLOLCBronNr = new JTextField();
+		tbLOLCSourceId = new JTextField();
 		jLabel44 = new JLabel();
 		bnLOLCstartProcess = new JButton();
 		jScrollPane6 = new JScrollPane();
@@ -1289,11 +1290,11 @@ public class ManagerGui extends javax.swing.JFrame
 				jLabel43.setText("Links DBs Password:");
 				jLabel43.setName("jLabel43");
 
-				//---- tbLOLCBronNr ----
-				tbLOLCBronNr.setName("tbLOLCBronNr");
+				//---- tbLOLCSourceId ----
+				tbLOLCSourceId.setName("tbLOLCBronNr");
 
 				//---- jLabel44 ----
-				jLabel44.setText("Source No:");
+				jLabel44.setText("Source Id:");
 				jLabel44.setName("jLabel44");
 
 				//---- bnLOLCstartProcess ----
@@ -1453,7 +1454,7 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
+										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 464, Short.MAX_VALUE)
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGap(0, 0, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
@@ -1473,7 +1474,7 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
@@ -1481,16 +1482,16 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
+												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
 											.addGap(27, 27, 27)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
 												.addComponent(tbLOLCuser, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
 												.addComponent(tbLOLCpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCBronNr, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)))
+												.addComponent(tbLOLCSourceId, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)))
 										.addGroup(GroupLayout.Alignment.LEADING, pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
@@ -1500,10 +1501,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))))
 									.addGap(26, 26, 26)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1525,7 +1526,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGap(1, 1, 1)
 									.addComponent(jLabel45))
 								.addComponent(jLabel44)
-								.addComponent(tbLOLCBronNr, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE))
+								.addComponent(tbLOLCSourceId, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -1561,7 +1562,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
 									.addComponent(jLabel51)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1766,6 +1767,12 @@ public class ManagerGui extends javax.swing.JFrame
      */
     public void loadProperties( Properties properties )
     {
+        String sourceId = properties.getProperty( "tbLOLCSourceId" );
+        if( sourceId == null ) { sourceId = ""; }
+        if( sourceId == "" ) { System.out.println( "sourceId not specified" ); }
+        else { System.out.println( "sourceId: " + sourceId ); }
+        tbLOLCSourceId.setText( sourceId );
+
         String ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
         String ref_user = properties.getProperty( "mysql_hsnref_username" );
         String ref_pass = properties.getProperty( "mysql_hsnref_password" );
@@ -1795,18 +1802,6 @@ public class ManagerGui extends javax.swing.JFrame
         System.out.println( "mysql_links_username:\t" + user );
         System.out.println( "mysql_links_password:\t" + pass );
 
-        int source_id_first = 0;
-        String source_id_first_str = properties.getProperty( "source_id_first" ) ;
-        if( source_id_first_str != null ) { source_id_first = Integer.parseInt( source_id_first_str ); }
-
-        int source_id_last = 0;
-        String source_id_last_str = properties.getProperty( "source_id_last" );
-        if( source_id_last_str != null ) { source_id_last = Integer.parseInt( source_id_last_str ); }
-
-        if( !( source_id_first == 0 && source_id_last == 0 ) ) {
-            System.out.println( "source_id_first: " + source_id_first );
-            System.out.println( "source_id_last:  " + source_id_last );
-        }
 
         // Remove previous data ?
         String doRefreshData = properties.getProperty( "doRefreshData" );
@@ -2213,9 +2208,9 @@ public class ManagerGui extends javax.swing.JFrame
         if (cbCdoPreBasicNames.isSelected()) {
             dos.setDoPreBasicNames(true);
         }
-        int bronNr = 0;
-        if (!tbLOLCBronNr.getText().isEmpty()) {
-            bronNr = Integer.parseInt(tbLOLCBronNr.getText());
+        int sourceId = 0;
+        if (!tbLOLCSourceId.getText().isEmpty()) {
+            sourceId = Integer.parseInt(tbLOLCSourceId.getText());
         }
 
         String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
@@ -2235,7 +2230,7 @@ public class ManagerGui extends javax.swing.JFrame
              db_url,
              db_user,
              db_pass,
-             bronNr,
+             sourceId,
              tbLOLClatestOutput,
              taLOLCoutput,
              dos,
@@ -2334,7 +2329,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "13-Aug-2014 16:48";
+            String timestamp1 = "19-Aug-2014 15:08";
             //System.out.println( "LINKS timestamp: " + timestamp1 );
             //logger.info( "LINKS timestamp: " + timestamp1 );
 
@@ -2479,7 +2474,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JTextField tbLOLCpass;
 	private JLabel jLabel42;
 	private JLabel jLabel43;
-	private JTextField tbLOLCBronNr;
+	private JTextField tbLOLCSourceId;
 	private JLabel jLabel44;
 	private JButton bnLOLCstartProcess;
 	private JScrollPane jScrollPane6;
