@@ -19,11 +19,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 package dataset;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * <p/>
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-20-Aug-2014 Occupation added
  */
-public class DoSet {
-
+public class DoSet
+{
+    private boolean doOccupation;
     private boolean doRenewData;
     private boolean doRemarks;
     private boolean doStatusSex;
@@ -43,8 +48,23 @@ public class DoSet {
     private boolean doNames;
     private boolean doDates;
 
+
     /**
-     *
+     * @return
+     */
+    public boolean isDoOccupation() {
+        return doOccupation;
+    }
+
+    /**
+     * @param doOccupation
+     */
+    public void setDoOccupation(boolean doOccupation) {
+        this.doOccupation = doOccupation;
+    }
+
+
+    /**
      * @return
      */
     public boolean isDoAgeYear() {
@@ -52,15 +72,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doAgeYear
      */
     public void setDoAgeYear(boolean doAgeYear) {
         this.doAgeYear = doAgeYear;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoDates() {
@@ -68,15 +87,14 @@ public class DoSet {
     }
 
     /**
-     *
-     * @param doBirthDate
+     * @param doDates
      */
     public void setDoDates(boolean doDates) {
         this.doDates = doDates;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoLocations() {
@@ -84,15 +102,14 @@ public class DoSet {
     }
 
     /**
-     *
-     * @param doBirthLocation
+     * @param doLocations
      */
     public void setDoLocations(boolean doLocations) {
         this.doLocations = doLocations;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoDaysSinceBegin() {
@@ -100,15 +117,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doDaysSinceBegin
      */
     public void setDoDaysSinceBegin(boolean doDaysSinceBegin) {
         this.doDaysSinceBegin = doDaysSinceBegin;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoNames() {
@@ -116,15 +132,14 @@ public class DoSet {
     }
 
     /**
-     *
-     * @param doFamilyName
+     * @param doNames
      */
     public void setDoNames(boolean doNames) {
         this.doNames = doNames;
     }
-    
+
+
     /**
-     *
      * @return
      */
     public boolean isDoMinMaxDate() {
@@ -132,15 +147,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doMinMaxDate
      */
     public void setDoMinMaxDate(boolean doMinMaxDate) {
         this.doMinMaxDate = doMinMaxDate;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoMinMaxMarriage() {
@@ -148,15 +162,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doMinMaxMarriage
      */
     public void setDoMinMaxMarriage(boolean doMinMaxMarriage) {
         this.doMinMaxMarriage = doMinMaxMarriage;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoPartsToFullDate() {
@@ -164,15 +177,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doPartsToFullDate
      */
     public void setDoPartsToFullDate(boolean doPartsToFullDate) {
         this.doPartsToFullDate = doPartsToFullDate;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoRelation() {
@@ -180,15 +192,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doRelation
      */
     public void setDoRelation(boolean doRelation) {
         this.doRelation = doRelation;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoRemarks() {
@@ -196,15 +207,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doRemarks
      */
     public void setDoRemarks(boolean doRemarks) {
         this.doRemarks = doRemarks;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoRenewData() {
@@ -212,15 +222,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doRenewData
      */
     public void setDoRenewData(boolean doRenewData) {
         this.doRenewData = doRenewData;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoSequence() {
@@ -228,12 +237,12 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doSequence
      */
     public void setDoSequence(boolean doSequence) {
         this.doSequence = doSequence;
     }
+
 
     /**
      *
@@ -251,8 +260,8 @@ public class DoSet {
         this.doStatusSex = doStatusSex;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoType() {
@@ -260,15 +269,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doType
      */
     public void setDoType(boolean doType) {
         this.doType = doType;
     }
 
+
     /**
-     * 
      * @return
      */
     public boolean isDoRole() {
@@ -276,15 +284,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doRole
      */
     public void setDoRole(boolean doRole) {
         this.doRole = doRole;
     }
 
+
     /**
-     *
      * @return
      */
     public boolean isDoPostTasks() {
@@ -292,15 +299,14 @@ public class DoSet {
     }
 
     /**
-     *
      * @param doPostTasks
      */
     public void setDoPostTasks(boolean doPostTasks) {
         this.doPostTasks = doPostTasks;
     }
 
+
     /**
-     * 
      * @return
      */
     public boolean isDoPrematch() {
@@ -308,15 +314,14 @@ public class DoSet {
     }
 
     /**
-     * 
      * @param doPrematch
      */
     public void setDoPrematch(boolean doPrematch) {
         this.doPrematch = doPrematch;
     }
 
+
     /**
-     * 
      * @param doPreBasicNames 
      */
     public void setDoPreBasicNames(boolean doPreBasicNames) {
@@ -324,10 +329,10 @@ public class DoSet {
     }
 
     /**
-     * 
      * @return 
      */
     public boolean isDoPreBasicNames() {
         return doPreBasicNames;
     }
 }
+

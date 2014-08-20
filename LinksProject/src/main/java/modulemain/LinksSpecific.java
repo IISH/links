@@ -99,7 +99,7 @@ public class LinksSpecific {
 
 
     /**
-     * 
+     * Remove leading and trailing " and space from string
      * @param line
      * @return
      */

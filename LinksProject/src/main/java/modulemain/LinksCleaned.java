@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -55,11 +54,11 @@ import general.Functions;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
- * FL-18-Aug-2014 Latest change
+ * FL-20-Aug-2014 Occupation added
+ * FL-20-Aug-2014 Latest change
  */
-public class LinksCleaned extends Thread
-{
-    static final Logger logger = LogManager.getLogger( "links" );   // "links" name specified in log4j.xml
+public class LinksCleaned extends Thread {
+    static final Logger logger = LogManager.getLogger("links");   // "links" name specified in log4j.xml
 
     /**
      * Table to Array Sets for the
@@ -127,12 +126,12 @@ public class LinksCleaned extends Thread
 
     private ManagerGui mg;
 
-    private String ref_url  = "";       // reference db access
+    private String ref_url = "";       // reference db access
     private String ref_user = "";
     private String ref_pass = "";
-    private String ref_db   = "";
+    private String ref_db = "";
 
-    private String url  = "";           // links db's access
+    private String url = "";           // links db's access
     private String user = "";
     private String pass = "";
 
@@ -169,29 +168,28 @@ public class LinksCleaned extends Thread
      */
     public LinksCleaned
     (
-        String ref_url,
-        String ref_user,
-        String ref_pass,
-        String ref_db,
-        String url,
-        String user,
-        String pass,
-        int sourceId,
-        JTextField tbLOLClatestOutput,
-        JTextArea taLOLCoutput,
-        DoSet dos,
-        general.PrintLogger plog,
-        ManagerGui mg
-    )
-    {
+            String ref_url,
+            String ref_user,
+            String ref_pass,
+            String ref_db,
+            String url,
+            String user,
+            String pass,
+            int sourceId,
+            JTextField tbLOLClatestOutput,
+            JTextArea taLOLCoutput,
+            DoSet dos,
+            general.PrintLogger plog,
+            ManagerGui mg
+    ) {
         this.sourceId = sourceId;
 
-        this.ref_url  = ref_url;
+        this.ref_url = ref_url;
         this.ref_user = ref_user;
         this.ref_pass = ref_pass;
-        this.ref_db   = ref_db;
+        this.ref_db = ref_db;
 
-        this.url  = url;
+        this.url = url;
         this.user = user;
         this.pass = pass;
 
@@ -201,13 +199,13 @@ public class LinksCleaned extends Thread
         this.plog = plog;
         this.mg = mg;
 
-        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-        System.out.println( timestamp + "  linksCleaned()" );
+        String timestamp = LinksSpecific.getTimeStamp2("HH:mm:ss");
+        System.out.println(timestamp + "  linksCleaned()");
 
-        System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
-        System.out.println( "mysql_hsnref_username:\t" + ref_user );
-        System.out.println( "mysql_hsnref_password:\t" + ref_pass );
-        System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
+        System.out.println("mysql_hsnref_hosturl:\t" + ref_url);
+        System.out.println("mysql_hsnref_username:\t" + ref_user);
+        System.out.println("mysql_hsnref_password:\t" + ref_pass);
+        System.out.println("mysql_hsnref_dbname:\t" + ref_db);
     }
 
 
@@ -215,16 +213,15 @@ public class LinksCleaned extends Thread
     /**
      * Begin
      */
-    public void run()
-    {
-        showMessage( "LinksCleaned/run()", false, true );
+    public void run() {
+        showMessage("LinksCleaned/run()", false, true);
 
         try {
-            plog.show( "Links Match Manager 2.0" );
+            plog.show("Links Match Manager 2.0");
 
             String mmss = "";
-            String msg  = "";
-            String   ts = "";                               // timestamp
+            String msg = "";
+            String ts = "";                               // timestamp
 
             long timeExpand = 0;
             long begintime = System.currentTimeMillis();
@@ -236,199 +233,74 @@ public class LinksCleaned extends Thread
 
             sources = getOrigSourceIds();                   // sets sources from links_original.registration_o
 
-            if( sourceId == 0 ) {
-                showMessage( "Processing source ids: ", false, true );
+            if (sourceId == 0) {
+                showMessage("Processing source ids: ", false, true);
                 String s = "";
-                for( int i : sources ) { s = s + i + " "; }
-                showMessage( s, false, true );
+                for (int i : sources) {
+                    s = s + i + " ";
+                }
+                showMessage(s, false, true);
             }
 
-            if( sourceId != 0 ) { setSourceFilters(); }     // Set source filters
-
-
-            if( dos.isDoRenewData() )                       // Remove previous data
-            {
-                long startDoRenewData = System.currentTimeMillis();
-                showMessage( "isDoRenewData", false, true );
-
-                funcRenewData();                            // Renew data in links_cleaned
-
-                elapsedShowMessage( "isDoRenewData", startDoRenewData, System.currentTimeMillis() );
-            } // dos.isDoRenewData
-            else { showMessage( "Skipping isDoRenewData", false, true ); }
-
+            if (sourceId != 0) {
+                setSourceFilters();
+            }     // Set source filters
 
             // links_general.ref_report contains 75 error definitions,
             // to be used when the normalization encounters errors
-            showMessage( "Loading report table", false, false );
+            showMessage("Loading report table", false, true);
             {
-                ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
+                ttalReport = new TableToArraysSet(conGeneral, conOr, "", "report");
             }
-            showMessage( endl, false, true );
+
+            renewData( dos.isDoRenewData() );               // GUI cb: Remove previous data
+
+            preBasicNames( dos.isDoPreBasicNames() );       // GUI cb: Basic names temp
+
+            doRemarks( dos.isDoRemarks() );                 // GUI cb: Parse remarks
 
 
-            if( dos.isDoPreBasicNames() )                   // Basic names Temp
-            {
-                long startDoPreBasicNames = System.currentTimeMillis();
-                showMessage( "isDoPreBasicNames", false, true );
-
-                // load the ref tables
-                showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
-                {
-                    //ttalFirstname  = new TableToArraysSet( conGeneral, "original", "firstname" );
-                    //ttalFamilyname = new TableToArraysSet( conGeneral, "original", "familyname" );
-                    ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
-                    ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
-                    ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
-                }
-                showMessage( endl, false, true );
-
-                // Firstname
-                if( doesTableExist( conTemp, "links_temp", "firstname_t" ) ) {
-                    showMessage( "Deleting table links_temp.firstname_t", false, true );
-                    dropTable( conTemp, "links_temp", "firstname_t" );
-                }
-
-                createTempFirstnameTable();
-                createTempFirstnameFile();
-                ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
-
-                System.out.println( "before" );
-                runMethod( "funcStandardFirstname" );
-                System.out.println( "after" );
-
-                ttalFirstname.updateTable();
-                ttalFirstname.free();
-                writerFirstname.close();
-                loadFirstnameToTable();
-                updateFirstnameToPersonC();
-                removeFirstnameFile();
-                removeFirstnameTable();
-
-                // Familyname
-                if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
-                    showMessage( "Deleting table links_temp.familyname_t", false, true );
-                    dropTable( conTemp, "links_temp", "familyname_t" );
-                }
-
-                createTempFamilynameTable();
-                createTempFamilynameFile();
-                ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
-                runMethod( "funcStandardFamilyname" );
-                ttalFamilyname.updateTable();
-                ttalFamilyname.free();
-                writerFamilyname.close();
-                loadFamilynameToTable();
-                updateFamilynameToPersonC();
-                removeFamilynameFile();
-                removeFamilynameTable();
-
-                // Update other tables
-                ttalPrepiece.updateTable();
-                ttalSuffix.updateTable();
-                ttalPrepiece.free();
-                ttalSuffix.free();
 
 
-                showMessage( "Converting names to lowercase", false, false );
-                {
-                    String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
-                    conCleaned.runQuery(qLower);
-                }
-                showMessage( endl, false, true );
-
-
-                // Prematch
-                LinksPrematch lpm = new LinksPrematch( url, user, pass, taLOLCoutput, tbLOLClatestOutput );
-
-                // temp
-                showMessage( "Splitting names", false, false );
-                {
-                    lpm.doSplitName();
-                }
-                showMessage( endl, false, true );
-
-                showMessage( "Creating unique name tables", false, false );
-                {
-                    lpm.doUniqueNameTablesTemp();
-                }
-
-                showMessage( "Basic names tables", false, false );
-                {
-                    lpm.doBasicName();
-                }
-                showMessage( endl, false, true );
-
-                elapsedShowMessage( "isDoPreBasicNames", startDoPreBasicNames, System.currentTimeMillis() );
-            } // dos.isDoPreBasicNames
-            else { showMessage( "Skipping isDoPreBasicNames", false, true ); }
-
-
-            if( dos.isDoRemarks() )                         // Parse Remarks
-            {
-                long startDoRemarks = System.currentTimeMillis();
-                showMessage( "isDoRemarks", false, true );
-
-                // load al refs used by remarks Parser
-                showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
-                {
-                    //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
-                    //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
-                }
-                showMessage( endl, false, true );
-
-                runMethod("scanRemarks");
-
-                showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, false );
-                {
-                    //ttalLocation.updateTable();
-                    //ttalOccupation.updateTable();
-                }
-
-                elapsedShowMessage( "isDoRemarks", startDoRemarks, System.currentTimeMillis() );
-            } // dos.isDoRemarks
-            else { showMessage( "Skipping isDoRemarks", false, true ); }
-
-
-            if( dos.isDoNames() )                           // Names
+            if (dos.isDoNames())                           // Names
             {
                 long startDoNames = System.currentTimeMillis();
-                showMessage( "isDoNames", false, true );
+                showMessage("isDoNames", false, true);
 
                 long start = 0;
-                long stop  = 0;
+                long stop = 0;
 
-                ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-                System.out.println( ts + " dos.isDoNames" );
+                ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
+                System.out.println(ts + " dos.isDoNames");
 
                 // Loading reference tables
-                showMessage( "Loading name reference tables", false, false );
+                showMessage("Loading name reference tables", false, false);
                 {
-                    ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
-                    ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
-                    ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
+                    ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
+                    ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
+                    ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
                 }
-                showMessage( endl, false, true );
+                showMessage(endl, false, true);
 
                 // First name
                 start = System.currentTimeMillis();
-                if( doesTableExist( conTemp, "links_temp", "firstname_t" ) ) {
-                    showMessage( "Deleting table links_temp.firstname_t", false, true );
-                    dropTable( conTemp, "links_temp", "firstname_t" );
+                if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
+                    showMessage("Deleting table links_temp.firstname_t", false, true);
+                    dropTable(conTemp, "links_temp", "firstname_t");
                 }
 
                 createTempFirstnameTable();
                 createTempFirstnameFile();
                 String IndexField = "original";
                 String tableName = "firstname";
-                showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
-                ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
+                showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
+                ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
                 stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
+                mmss = Functions.millisec2hms(start, stop);
                 msg = "TableToArraysSet OK " + mmss;
-                showMessage( msg, false, true );
+                showMessage(msg, false, true);
 
-                runMethod( "funcStandardFirstname" );
+                runMethod("standardFirstname");
                 ttalFirstname.updateTable();
                 ttalFirstname.free();
                 writerFirstname.close();
@@ -440,22 +312,22 @@ public class LinksCleaned extends Thread
                 // Family name
                 start = System.currentTimeMillis();
 
-                if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
-                    showMessage( "Deleting table links_temp.familyname_t", false, true );
-                    dropTable( conTemp, "links_temp", "familyname_t" );
+                if (doesTableExist(conTemp, "links_temp", "familyname_t")) {
+                    showMessage("Deleting table links_temp.familyname_t", false, true);
+                    dropTable(conTemp, "links_temp", "familyname_t");
                 }
 
                 createTempFamilynameTable();
                 createTempFamilynameFile();
                 tableName = "familyname";
-                showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
-                ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
+                showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
+                ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
                 stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
+                mmss = Functions.millisec2hms(start, stop);
                 msg = "TableToArraysSet OK " + mmss;
-                showMessage( msg, false, true );
+                showMessage(msg, false, true);
 
-                runMethod( "funcStandardFamilyname" );
+                runMethod("standardFamilyname");
                 ttalFamilyname.updateTable();
                 ttalFamilyname.free();
                 writerFamilyname.close();
@@ -466,150 +338,175 @@ public class LinksCleaned extends Thread
 
                 //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
                 // KM: Do not delete here.
-                showMessage( "Skipping deleting empty links_cleaned.person_c records.", false, true );
+                showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
                 //funcDeleteRows();               // Delete records with empty firstname and empty familyname
                 //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
                 // Names to lowercase
-                showMessage( "Converting names to lowercase", false, false );
+                showMessage("Converting names to lowercase", false, false);
                 {
                     String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
                     conCleaned.runQuery(qLower);
                 }
-                showMessage( endl, false, true );
+                showMessage(endl, false, true);
 
 
                 // Run prepiece
-                runMethod( "funcStandardPrepiece" );
+                runMethod("standardPrepiece");
 
                 // Run suffix
-                runMethod( "funcStandardSuffix" );
+                runMethod("standardSuffix");
 
 
                 // Update reference
-                showMessage( "Updating names reference tables...", false, false );
+                showMessage("Updating names reference tables...", false, false);
                 {
                     ttalPrepiece.updateTable();
                     ttalSuffix.updateTable();
                     ttalAlias.updateTable();
                 }
-                showMessage( endl, false, true );
+                showMessage(endl, false, true);
 
-                elapsedShowMessage( "isDoNames", startDoNames, System.currentTimeMillis() );
+                elapsedShowMessage("isDoNames", startDoNames, System.currentTimeMillis());
             } // isDoNames
-            else { showMessage( "Skipping isDoNames", false, true ); }
+            else {
+                showMessage("Skipping isDoNames", false, true);
+            }
 
 
-            if( dos.isDoLocations() )                       // Locations
+            if (dos.isDoLocations())                       // Locations
             {
                 long startDoLocations = System.currentTimeMillis();
-                showMessage( "isDoLocations", false, true );
+                showMessage("isDoLocations", false, true);
 
-                showMessage( "Loading reftabel(s): " + "ref_location" + "...", false, false );
+                showMessage("Loading reftabel(s): " + "ref_location" + "...", false, false);
                 {
-                    ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
+                    ttalLocation = new TableToArraysSet(conGeneral, conOr, "original", "location");
                 }
-                showMessage( endl, false, true );
+                showMessage(endl, false, true);
 
-                runMethod( "funcStandardRegistrationLocation" );
-                runMethod( "funcStandardBirthLocation" );
-                runMethod( "funcStandardMarLocation" );
-                runMethod( "funcStandardDeathLocation" );
+                runMethod("standardRegistrationLocation");
+                runMethod("standardBirthLocation");
+                runMethod("standardMarLocation");
+                runMethod("standardDeathLocation");
 
-                showMessage( "Updating reftabel(s): " + "ref_location" + "...", false, false );
+                showMessage("Updating reftabel(s): " + "ref_location" + "...", false, false);
                 {
                     ttalLocation.updateTable();
                 }
 
-                elapsedShowMessage( "isDoLocations", startDoLocations, System.currentTimeMillis() );
+                elapsedShowMessage("isDoLocations", startDoLocations, System.currentTimeMillis());
             } // isDoLocations
-            else { showMessage( "Skipping isDoLocations", false, true ); }
+            else {
+                showMessage("Skipping isDoLocations", false, true);
+            }
 
 
-            if( dos.isDoAgeYear() )                         // Year Age
+            if (dos.isDoAgeYear())                         // Year Age
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoAgeYear", false, true );
+                showMessage("isDoAgeYear", false, true);
 
-                runMethod( "funcStandardYearAge" );
+                runMethod("standardYearAge");
 
-                elapsedShowMessage( "isDoAgeYear", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoAgeYear", start, System.currentTimeMillis());
             } // isDoAgeYear
-            else { showMessage( "Skipping isDoAgeYear", false, true ); }
+            else {
+                showMessage("Skipping isDoAgeYear", false, true);
+            }
 
 
-            if( dos.isDoStatusSex() )                       // Status and Sex
+            if (dos.isDoStatusSex())                       // Status and Sex
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoStatusSex", false, true );
+                showMessage("isDoStatusSex", false, true);
 
-                showMessage( "Loading reftabel(s): " + "status_sex" + "...", false, false );
+                showMessage("Loading reftabel(s): " + "status_sex" + "...", false, false);
                 {
-                    ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
+                    ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
                 }
-                showMessage( endl, false, true );
+                showMessage(endl, false, true);
 
-                runMethod( "funcStandardSex" );
-                runMethod( "funcStandardStatusSex" );
+                runMethod("standardSex");
+                runMethod("standardStatusSex");
 
-                showMessage( "Updating reftabel(s): " + "status_sex" + "...", false, false );
+                showMessage("Updating reftabel(s): " + "status_sex" + "...", false, false);
                 {
                     ttalStatusSex.updateTable();
                 }
 
-                elapsedShowMessage( "isDoStatusSex", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoStatusSex", start, System.currentTimeMillis());
             } // isDoStatusSex
-            else { showMessage( "Skipping isDoStatusSex", false, true ); }
+            else {
+                showMessage("Skipping isDoStatusSex", false, true);
+            }
 
 
-            if( dos.isDoType() )                            // Registration Type
+            if (dos.isDoType())                            // Registration Type
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoType", false, true );
+                showMessage("isDoType", false, true);
 
-                runMethod( "funcStandardType" );
+                runMethod("standardType");
 
-                elapsedShowMessage( "isDoType", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoType", start, System.currentTimeMillis());
             } // isDoType
-            else { showMessage( "Skipping isDoType", false, true ); }
+            else {
+                showMessage("Skipping isDoType", false, true);
+            }
 
 
-            if( dos.isDoRole() )                            // Role
+            if (dos.isDoRole())                            // Role
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoRole", false, true );
+                showMessage("isDoRole", false, true);
 
-                showMessage( "Running funcStandardRole on all sources...", false, false );
-                funcStandardRole();
+                showMessage("Running standardRole on all sources...", false, false);
+                standardRole();
 
-                elapsedShowMessage( "isDoRole", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoRole", start, System.currentTimeMillis());
             } // isDoRole
-            else { showMessage( "Skipping isDoRole", false, true ); }
+            else {
+                showMessage("Skipping isDoRole", false, true);
+            }
 
 
-            if( dos.isDoDates() )                           // Dates
+            if (dos.isDoOccupation())                      // Occupation
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoDates", false, true );
+                showMessage("isDoOccupation", false, true);
 
-                showMessage( "Running Date functions on all sources...", false, false );
+
+                elapsedShowMessage("isDoOccupation", start, System.currentTimeMillis());
+            } // isDoProfession
+            else {
+                showMessage("Skipping isDoOccupation", false, true);
+            }
+
+
+            if (dos.isDoDates())                           // Dates
+            {
+                long start = System.currentTimeMillis();
+                showMessage("isDoDates", false, true);
+
+                showMessage("Running Date functions on all sources...", false, false);
                 {
                     // Clean dates
-                    runMethod( "funcStandardRegistrationDate" );
+                    runMethod("standardRegistrationDate");
 
                     // Clean
-                    funcStandardDate( "birth" );
-                    funcStandardDate( "mar" );
-                    funcStandardDate( "death" );
+                    standardDate("birth");
+                    standardDate("mar");
+                    standardDate("death");
 
                     // Fill empty dates with register dates
                     funcFlagBirthDate();
                     funcFlagMarriageDate();
                     funcFlagDeathDate();
 
-                    funcStandardFlaggedDate( "birth" );
-                    funcStandardFlaggedDate( "mar" );
-                    funcStandardFlaggedDate( "death" );
+                    standardFlaggedDate("birth");
+                    standardFlaggedDate("mar");
+                    standardFlaggedDate("death");
 
                     funcMinMaxCorrectDate();
 
@@ -625,144 +522,158 @@ public class LinksCleaned extends Thread
                     String q4 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 3 AND p.role = 10;";
                     String q5 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 7 AND p.role = 10;";
 
-                    conCleaned.runQuery( q1 );
-                    conCleaned.runQuery( q2 );
-                    conCleaned.runQuery( q3 );
-                    conCleaned.runQuery( q4 );
-                    conCleaned.runQuery( q5 );
+                    conCleaned.runQuery(q1);
+                    conCleaned.runQuery(q2);
+                    conCleaned.runQuery(q3);
+                    conCleaned.runQuery(q4);
+                    conCleaned.runQuery(q5);
 
                 }
 
-                elapsedShowMessage( "isDoDates", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoDates", start, System.currentTimeMillis());
             } // isDoDates
-            else { showMessage( "Skipping isDoDates", false, true ); }
+            else {
+                showMessage("Skipping isDoDates", false, true);
+            }
 
 
-            if( dos.isDoSequence() )                        // Sequence
+            if (dos.isDoSequence())                        // Sequence
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoSequence", false, true );
+                showMessage("isDoSequence", false, true);
 
-                runMethod( "funcStandardSequence" );
+                runMethod("standardSequence");
 
-                elapsedShowMessage( "isDoSequence", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoSequence", start, System.currentTimeMillis());
             } // isDoSequence
-            else { showMessage( "Skipping isDoSequence", false, true ); }
+            else {
+                showMessage("Skipping isDoSequence", false, true);
+            }
 
 
-            if( dos.isDoRelation() )                        // Relation
+            if (dos.isDoRelation())                        // Relation
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoRelation", false, true );
+                showMessage("isDoRelation", false, true);
 
-                runMethod( "funcRelation" );
+                runMethod("funcRelation");
 
-                elapsedShowMessage( "isDoRelation", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoRelation", start, System.currentTimeMillis());
             } // isDoRelation
-            else { showMessage( "Skipping isDoRelation", false, true ); }
+            else {
+                showMessage("Skipping isDoRelation", false, true);
+            }
 
 
-            if( dos.isDoMinMaxDate() )                      // Min Max Date
+            if (dos.isDoMinMaxDate())                      // Min Max Date
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoMinMaxDate", false, true );
+                showMessage("isDoMinMaxDate", false, true);
 
                 if (bronFilter.isEmpty()) {
                     for (int i : sources) {
-                        showMessage( "Running funMinMaxDateMain for source: " + i + "...", false, false );
+                        showMessage("Running funMinMaxDateMain for source: " + i + "...", false, false);
                         {
-                            funcFillMinMaxArrays( "" + i );
-                            funMinMaxDateMain( "" + i );
+                            funcFillMinMaxArrays("" + i);
+                            funMinMaxDateMain("" + i);
                         }
-                        showMessage( endl, false, true );
+                        showMessage(endl, false, true);
                     }
                 } else {
-                    showMessage( "Running funMinMaxDateMain...", false, false );
+                    showMessage("Running funMinMaxDateMain...", false, false);
                     {
-                        funcFillMinMaxArrays( "" + this.sourceId );
-                        funMinMaxDateMain( "" );
+                        funcFillMinMaxArrays("" + this.sourceId);
+                        funMinMaxDateMain("");
                     }
-                    showMessage( endl, false, true );
+                    showMessage(endl, false, true);
                 }
 
-                elapsedShowMessage( "isDoMinMaxDate", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoMinMaxDate", start, System.currentTimeMillis());
             } // isDoMinMaxDate
-            else { showMessage( "Skipping isDoMinMaxDate", false, true ); }
+            else {
+                showMessage("Skipping isDoMinMaxDate", false, true);
+            }
 
 
-            if( dos.isDoMinMaxMarriage() )                  // Min Max Marriage
+            if (dos.isDoMinMaxMarriage())                  // Min Max Marriage
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoMinMaxMarriage", false, true );
+                showMessage("isDoMinMaxMarriage", false, true);
 
                 try {
                     // loading ref
-                    ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
+                    ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
 
-                    if( bronFilter.isEmpty() )
-                    {
-                        for( int i : sources )
-                        {
-                            showMessage( "Running funcMinMaxMarriageYear for source: " + i + "...", false, false );
+                    if (bronFilter.isEmpty()) {
+                        for (int i : sources) {
+                            showMessage("Running funcMinMaxMarriageYear for source: " + i + "...", false, false);
                             {
-                                funcMinMaxMarriageYear( funcSetMarriageYear( i + "" ), refMinMaxMarriageYear );
+                                funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
                             }
-                            showMessage( endl, false, true );
+                            showMessage(endl, false, true);
                         }
 
                     } else {
-                        showMessage( "Running funcMinMaxMarriageYear...", false, false );
+                        showMessage("Running funcMinMaxMarriageYear...", false, false);
                         {
-                            funcMinMaxMarriageYear( funcSetMarriageYear( this.sourceId + "" ), refMinMaxMarriageYear );
+                            funcMinMaxMarriageYear(funcSetMarriageYear(this.sourceId + ""), refMinMaxMarriageYear);
                         }
-                        showMessage( endl, false, true );
+                        showMessage(endl, false, true);
                     }
-                } catch( Exception e ) {
-                    showMessage( "An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true );
+                } catch (Exception e) {
+                    showMessage("An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true);
                 }
 
-                elapsedShowMessage( "isDoMinMaxMarriage", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoMinMaxMarriage", start, System.currentTimeMillis());
             } // isDoMinMaxMarriage
-            else { showMessage( "Skipping isDoMinMaxMarriage", false, true ); }
+            else {
+                showMessage("Skipping isDoMinMaxMarriage", false, true);
+            }
 
 
-            if( dos.isDoPartsToFullDate() )                 // Parts to Full date
+            if (dos.isDoPartsToFullDate())                 // Parts to Full date
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoMinMaxMarriage", false, true );
+                showMessage("isDoMinMaxMarriage", false, true);
 
-                showMessage( "Running func Part to Date on all sources...", false, false );
+                showMessage("Running func Part to Date on all sources...", false, false);
                 funcPartsToDate();
 
-                elapsedShowMessage( "isDoPartsToFullDate", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoPartsToFullDate", start, System.currentTimeMillis());
             } // isDoPartsToFullDate
-            else { showMessage( "Skipping isDoPartsToFullDate", false, true ); }
+            else {
+                showMessage("Skipping isDoPartsToFullDate", false, true);
+            }
 
 
-            if( dos.isDoDaysSinceBegin() )                  // Days since begin
+            if (dos.isDoDaysSinceBegin())                  // Days since begin
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoDaysSinceBegin", false, true );
+                showMessage("isDoDaysSinceBegin", false, true);
 
-                showMessage( "Running func Days since begin on all sources...", false, false );
+                showMessage("Running func Days since begin on all sources...", false, false);
                 funcDaysSinceBegin();
 
-                elapsedShowMessage( "isDoDaysSinceBegin", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoDaysSinceBegin", start, System.currentTimeMillis());
             } // isDoDaysSinceBegin
-            else { showMessage( "Skipping isDoDaysSinceBegin", false, true ); }
+            else {
+                showMessage("Skipping isDoDaysSinceBegin", false, true);
+            }
 
 
-            if( dos.isDoPostTasks() )                       // Post Tasks
+            if (dos.isDoPostTasks())                       // Post Tasks
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoPostTasks", false, true );
+                showMessage("isDoPostTasks", false, true);
 
-                showMessage( "Running func post tasks all sources...", false, false );
+                showMessage("Running func post tasks all sources...", false, false);
                 funcPostTasks();
 
-                elapsedShowMessage( "isDoPostTasks", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoPostTasks", start, System.currentTimeMillis());
             } // isDoPostTasks
-            else { showMessage( "Skipping isDoPostTasks", false, true ); }
+            else {
+                showMessage("Skipping isDoPostTasks", false, true);
+            }
 
 
             // Close connections
@@ -773,32 +684,229 @@ public class LinksCleaned extends Thread
             conTemp.close();
 
 
-            if( dos.isDoPrematch() )                        // Run PreMatch
+            if (dos.isDoPrematch())                        // Run PreMatch
             {
                 long start = System.currentTimeMillis();
-                showMessage( "isDoPrematch", false, true );
+                showMessage("isDoPrematch", false, true);
 
-                showMessage( "Running PREMATCH...", false, false );
+                showMessage("Running PREMATCH...", false, false);
                 mg.firePrematch();
 
-                elapsedShowMessage( "isDoPrematch", start, System.currentTimeMillis() );
+                elapsedShowMessage("isDoPrematch", start, System.currentTimeMillis());
+            } else {
+                showMessage("Skipping isDoPrematch", false, true);
             }
-            else { showMessage( "Skipping isDoPrematch", false, true ); }
 
             // Total time
             timeExpand = System.currentTimeMillis() - begintime;
             int iTimeEx = (int) (timeExpand / 1000);
 
-            showMessage( "Conversion from Original to Cleaned is done; Total time: " + LinksSpecific.stopWatch(iTimeEx), false, true );
+            showMessage("Conversion from Original to Cleaned is done; Total time: " + LinksSpecific.stopWatch(iTimeEx), false, true);
 
         } catch (Exception ex) {
-            showMessage( "Error: " + ex.getMessage(), false, true );
+            showMessage("Error: " + ex.getMessage(), false, true);
         }
     } // run
 
 
+     /*---< functions corresponding to GUI Cleaning options >-----------------*/
+
+    /**
+     * @param go
+     * @throws Exception
+     */
+    private void renewData(boolean go) throws Exception {
+        if( !go ) {
+            showMessage( "Skipping renewData", false, true );
+            return;
+        }
+
+        long startDoRenewData = System.currentTimeMillis();
+        showMessage( "renewData", false, true );
+
+        // Delete existing data
+        // Create queries
+        String deletePerson = "DELETE FROM person_c" + bronFilter;
+        String deleteRegistration = "DELETE FROM registration_c" + bronFilter;
+
+        // Execute queries
+        showMessage("Deleting previous data", false, true);
+        conCleaned.runQuery(deletePerson);
+        conCleaned.runQuery(deleteRegistration);
+
+        // Copy links_original data to links_cleaned
+        // Create queries
+        showMessage("Copying person keys to links_cleaned", false, true);
+        String keysPerson = ""
+                + "INSERT INTO links_cleaned.person_c ( "
+                + "id_person , id_registration , id_source , id_person_o ) "
+                + " SELECT id_person , id_registration , id_source , id_person_o "
+                + "FROM links_original.person_o" + bronFilterOrigineelPers;
+
+        showMessage("Copying registration keys to links_cleaned", false, true);
+        String keysRegistration = ""
+                + "INSERT INTO links_cleaned.registration_c ("
+                + "id_registration, id_source, id_orig_registration, registration_maintype, registration_seq ) "
+                + "SELECT id_registration, id_source, id_orig_registration, registration_maintype, registration_seq "
+                + "FROM links_original.registration_o" + bronFilterOrigineelReg;
+
+        // Execute queries
+        conCleaned.runQuery(keysPerson);
+        conCleaned.runQuery(keysRegistration);
+
+        elapsedShowMessage( "renewData", startDoRenewData, System.currentTimeMillis() );
+    } // renewData
+
+
+    /**
+     * @param go
+     * @throws Exception
+     */
+    private void preBasicNames( boolean go ) throws Exception {
+        if( !go ) {
+            showMessage( "Skipping preBasicNames", false, true );
+            return;
+        }
+
+        long startDoPreBasicNames = System.currentTimeMillis();
+        showMessage( "preBasicNames", false, true );
+
+        // load the ref tables
+        showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
+        {
+            //ttalFirstname  = new TableToArraysSet( conGeneral, "original", "firstname" );
+            //ttalFamilyname = new TableToArraysSet( conGeneral, "original", "familyname" );
+            ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
+            ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
+            ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
+        }
+        showMessage( endl, false, true );
+
+        // Firstname
+        if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
+            showMessage("Deleting table links_temp.firstname_t", false, true);
+            dropTable(conTemp, "links_temp", "firstname_t");
+        }
+
+        createTempFirstnameTable();
+        createTempFirstnameFile();
+        ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
+
+        System.out.println("before");
+        runMethod("standardFirstname");
+        System.out.println("after");
+
+        ttalFirstname.updateTable();
+        ttalFirstname.free();
+        writerFirstname.close();
+        loadFirstnameToTable();
+        updateFirstnameToPersonC();
+        removeFirstnameFile();
+        removeFirstnameTable();
+
+        // Familyname
+        if (doesTableExist(conTemp, "links_temp", "familyname_t")) {
+            showMessage("Deleting table links_temp.familyname_t", false, true);
+            dropTable(conTemp, "links_temp", "familyname_t");
+        }
+
+        createTempFamilynameTable();
+        createTempFamilynameFile();
+        ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
+        runMethod("standardFamilyname");
+        ttalFamilyname.updateTable();
+        ttalFamilyname.free();
+        writerFamilyname.close();
+        loadFamilynameToTable();
+        updateFamilynameToPersonC();
+        removeFamilynameFile();
+        removeFamilynameTable();
+
+        // Update other tables
+        ttalPrepiece.updateTable();
+        ttalSuffix.updateTable();
+        ttalPrepiece.free();
+        ttalSuffix.free();
+
+        showMessage("Converting names to lowercase", false, false);
+        {
+            String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
+            conCleaned.runQuery(qLower);
+        }
+        showMessage(endl, false, true);
+
+        // Prematch
+        LinksPrematch lpm = new LinksPrematch(url, user, pass, taLOLCoutput, tbLOLClatestOutput);
+
+        // temp
+        showMessage("Splitting names", false, false);
+        {
+            lpm.doSplitName();
+        }
+        showMessage(endl, false, true);
+
+        showMessage("Creating unique name tables", false, false);
+        {
+            lpm.doUniqueNameTablesTemp();
+        }
+
+        showMessage("Basic names tables", false, false);
+        {
+            lpm.doBasicName();
+        }
+        showMessage(endl, false, true);
+
+        elapsedShowMessage( "preBasicNames", startDoPreBasicNames, System.currentTimeMillis() );
+    } // preBasicNames
+
+
+        /**
+     * @param go
+     * @throws Exception
+     */
+    private void doRemarks( boolean go ) throws Exception
+    {
+        if( !go ) {
+            showMessage( "Skipping doRemarks", false, true );
+            return;
+        }
+
+        long startDoRemarks = System.currentTimeMillis();
+        showMessage("isDoRemarks", false, true);
+
+        // load al refs used by remarks Parser
+        showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
+        {
+            //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
+            //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
+        }
+        showMessage( endl, false, true );
+
+        runMethod( "scanRemarks" );
+
+        showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, false );
+        {
+            //ttalLocation.updateTable();
+            //ttalOccupation.updateTable();
+        }
+
+        elapsedShowMessage( "doRemarks", startDoRemarks, System.currentTimeMillis() );
+    } // doRemarks
+
+
+
+
+
+
+
+
+
+
+     /*---<                                                 >-----------------*/
+
     /**
      * Read distinct source ids from links_original.registration_o
+     * @return
      */
     private int[] getOrigSourceIds()
     {
@@ -1580,43 +1688,6 @@ public class LinksCleaned extends Thread
      * ...
      */
 
-    /**
-     * @throws Exception
-     */
-    private void funcRenewData() throws Exception
-    {
-        showMessage( "Renewing data for links_cleaned", false, true );
-
-        // Delete existing data
-        // Create queries
-        String deletePerson = "DELETE FROM person_c" + bronFilter;
-        String deleteRegistration = "DELETE FROM registration_c" + bronFilter;
-
-        // Execute queries
-        showMessage( "Deleting previous data", false, true );
-        conCleaned.runQuery(deletePerson);
-        conCleaned.runQuery(deleteRegistration);
-
-        // Copy links_original data to links_cleaned
-        // Create queries
-        showMessage( "Copying person keys to links_cleaned", false, true );
-        String keysPerson = ""
-                + "INSERT INTO links_cleaned.person_c ( "
-                + "id_person , id_registration , id_source , id_person_o ) "
-                + " SELECT id_person , id_registration , id_source , id_person_o "
-                + "FROM links_original.person_o" + bronFilterOrigineelPers;
-
-        showMessage( "Copying registration keys to links_cleaned", false, true );
-        String keysRegistration = ""
-                + "INSERT INTO links_cleaned.registration_c ("
-                + "id_registration, id_source, id_orig_registration, registration_maintype, registration_seq ) "
-                + "SELECT id_registration, id_source, id_orig_registration, registration_maintype, registration_seq "
-                + "FROM links_original.registration_o" + bronFilterOrigineelReg;
-
-        // Execute queries
-        conCleaned.runQuery( keysPerson );
-        conCleaned.runQuery( keysRegistration );
-    }
 
     /**
      * @param id
@@ -1769,7 +1840,7 @@ public class LinksCleaned extends Thread
     private void createLogTable()
     throws Exception
     {
-        showMessage( "Creating logging table.", false, false );
+        showMessage( "Creating logging table.", false, true );
 
         String query = ""
             + " CREATE  TABLE `links_logs`.`log" + tempTableName + "` ("
@@ -1792,7 +1863,6 @@ public class LinksCleaned extends Thread
 
         conLog.runQuery( query );
 
-        showMessage( endl, false, true );
     }
 
     /**
@@ -1800,7 +1870,7 @@ public class LinksCleaned extends Thread
      */
     private void setSourceFilters()
     {
-        showMessage( "Set source filters for: " + sourceId, false, false );
+        showMessage( "Set source filters for: " + sourceId, false, true );
 
         bronFilter   = " WHERE id_source = " + sourceId;
         sourceFilter = " WHERE id_source = " + sourceId;
@@ -1810,7 +1880,6 @@ public class LinksCleaned extends Thread
         bronFilterCleanReg      = " WHERE registration_c.id_source = " + sourceId;
         bronFilterOrigineelReg  = " WHERE registration_o.id_source = " + sourceId;
 
-        showMessage( endl, false, true );
     }
 
 
@@ -1818,7 +1887,7 @@ public class LinksCleaned extends Thread
      * @param sourceNo
      * @throws Exception
      */
-    public void funcStandardFirstname(String sourceNo) {
+    public void standardFirstname(String sourceNo) {
 
         int counter = 0;
         int step = 10000;
@@ -1905,7 +1974,7 @@ public class LinksCleaned extends Thread
 //                    }
 
                     // Check name on aliasses
-                    String nameNoAlias = funcStandardAlias(id_person, id_source, firstname);
+                    String nameNoAlias = standardAlias(id_person, id_source, firstname);
 
                     // Check on serried spaces
                     // Split name on spaces
@@ -2159,7 +2228,7 @@ public class LinksCleaned extends Thread
      * @param name
      * @return
      */
-    private String funcStandardAlias(int id, String id_souce, String name) throws Exception {
+    private String standardAlias(int id, String id_souce, String name) throws Exception {
 
         dataset.ArrayListNonCase ag = ttalAlias.getArray("original");
 
@@ -2278,7 +2347,7 @@ public class LinksCleaned extends Thread
      * @param sourceNo
      * @throws Exception
      */
-    public void funcStandardFamilyname(String sourceNo) {
+    public void standardFamilyname(String sourceNo) {
 
         int counter = 0;
         int step = 10000;
@@ -2400,7 +2469,7 @@ public class LinksCleaned extends Thread
                         }
 
                         // Ckeck on Aliasses
-                        String nameNoAlias = funcStandardAlias(id_person, id_source, nameNoPrePiece);
+                        String nameNoAlias = standardAlias(id_person, id_source, nameNoPrePiece);
 
                         // Check on suffix
                         ArrayListNonCase sfxO = ttalSuffix.getArray("original");
@@ -2463,7 +2532,7 @@ public class LinksCleaned extends Thread
 
                         }
                     }
-                } // Familynaem empty
+                } // Familyname empty
                 else {
 
                     // EC 1001
@@ -2475,13 +2544,14 @@ public class LinksCleaned extends Thread
         } catch (Exception e) {
             showMessage(counter + " An error occured while cleaning familyname: " + e.getMessage(), false, true);
         }
-    }
+    } // standardFamilyname
+
 
     /**
      * @param sourceNo
      * @throws Exception
      */
-    public void funcStandardPrepiece(String sourceNo) {
+    public void standardPrepiece(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -2622,7 +2692,7 @@ public class LinksCleaned extends Thread
     /**
      * @param bronnrsourceNo
      */
-    public void funcStandardSuffix(String bronnrsourceNo) {
+    public void standardSuffix(String bronnrsourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -2728,7 +2798,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardRegistrationLocation(String sourceNo) {
+    public void standardRegistrationLocation(String sourceNo) {
 
         String startQuery;
         String id_source;
@@ -2744,8 +2814,8 @@ public class LinksCleaned extends Thread
         try {
             ResultSet rs = conOriginal.runQueryWithResult(startQuery);
 
-            // Call funcStandardLocation
-            funcStandardLocation(rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION);
+            // Call standardLocation
+            standardLocation(rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION);
         } catch (Exception e) {
             showMessage(e.getMessage(), false, true);
         }
@@ -2754,7 +2824,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardBirthLocation(String sourceNo) {
+    public void standardBirthLocation(String sourceNo) {
 
         String startQuery;
         String id_source;
@@ -2770,7 +2840,7 @@ public class LinksCleaned extends Thread
         try {
             ResultSet rs = conOriginal.runQueryWithResult(startQuery);
 
-            funcStandardLocation(rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON);
+            standardLocation(rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON);
         } catch (Exception e) {
             showMessage(e.getMessage(), false, true);
         }
@@ -2779,7 +2849,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardMarLocation(String sourceNo) {
+    public void standardMarLocation(String sourceNo) {
 
         String startQuery;
         String id_source;
@@ -2794,7 +2864,7 @@ public class LinksCleaned extends Thread
 
         try {
             ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            funcStandardLocation(rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON);
+            standardLocation(rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON);
         } catch (Exception e) {
             showMessage(e.getMessage(), false, true);
         }
@@ -2803,7 +2873,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardDeathLocation(String sourceNo) {
+    public void standardDeathLocation(String sourceNo) {
 
         String startQuery;
         String id_source;
@@ -2818,7 +2888,7 @@ public class LinksCleaned extends Thread
 
         try {
             ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            funcStandardLocation(rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON);
+            standardLocation(rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON);
         } catch (Exception e) {
             showMessage(e.getMessage(), false, true);
         }
@@ -2832,7 +2902,7 @@ public class LinksCleaned extends Thread
      * @param id_source
      * @param tt
      */
-    private void funcStandardLocation(ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt) throws Exception {
+    private void standardLocation(ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt) throws Exception {
 
         int counter = 0;
         int step = 1000;
@@ -2941,7 +3011,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardSex(String sourceNo) {
+    public void standardSex(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -3029,7 +3099,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardStatusSex(String sourceNo) {
+    public void standardStatusSex(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -3155,7 +3225,7 @@ public class LinksCleaned extends Thread
     }
 
     //ROLE
-    private void funcStandardRole() {
+    private void standardRole() {
 
         String query = " UPDATE links_original.person_o, links_cleaned.person_c, links_general.ref_role "
                 + "SET "
@@ -3166,7 +3236,7 @@ public class LinksCleaned extends Thread
         try {
             conCleaned.runQuery(query);
         } catch (Exception e) {
-            showMessage("An error occured while running funcStandardRole: " + e.getMessage(), false, true);
+            showMessage("An error occured while running standardRole: " + e.getMessage(), false, true);
         }
 
 
@@ -3176,7 +3246,7 @@ public class LinksCleaned extends Thread
      * @param sourceNo
      */
     /*
-    public void funcStandardType(String sourceNo) {
+    public void standardType(String sourceNo) {
     
     int counter = 0;
     int step = 1000;
@@ -3265,7 +3335,7 @@ public class LinksCleaned extends Thread
     }
     }
      */
-    public void funcStandardType(String sourceNo) {
+    public void standardType(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -3359,7 +3429,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardRegistrationDate(String sourceNo) {
+    public void standardRegistrationDate(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -3437,7 +3507,7 @@ public class LinksCleaned extends Thread
     /**
      * @param type
      */
-    public void funcStandardDate(String type) {
+    public void standardDate(String type) {
 
         // Step vars
         int counter = 0;
@@ -3654,7 +3724,7 @@ public class LinksCleaned extends Thread
     /**
      * @param type
      */
-    public void funcStandardFlaggedDate(String type) {
+    public void standardFlaggedDate(String type) {
 
         // Step vars
         int counter = 0;
@@ -3934,7 +4004,7 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceNo
      */
-    public void funcStandardYearAge(String sourceNo) {
+    public void standardYearAge(String sourceNo) {
 
         int counter = 0;
         int step = 1000;
@@ -3992,7 +4062,7 @@ public class LinksCleaned extends Thread
      * @param SourceNo
      * @throws Exception
      */
-    public void funcStandardSequence(String SourceNo) throws Exception {
+    public void standardSequence(String SourceNo) throws Exception {
 
         int counter = 0;
         int step = 1000;

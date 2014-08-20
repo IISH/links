@@ -64,7 +64,8 @@ import general.Functions;
  * <p/>
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
- * FL-19-Aug-2014 Latest change
+ * FL-20-Aug-2014 Occupation added
+ * FL-20-Aug-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -257,7 +258,7 @@ public class ManagerGui extends javax.swing.JFrame
 		label3 = new JLabel();
 		label4 = new JLabel();
 		tbLOLCrefdb = new JTextField();
-		cbCdoProfession = new JCheckBox();
+		cbCdoOccupation = new JCheckBox();
 		jPanel1 = new JPanel();
 		cbPdoUniqueNameTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
@@ -1445,9 +1446,9 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- tbLOLCrefdb ----
 				tbLOLCrefdb.setName("tbLOLCrefdb");
 
-				//---- cbCdoProfession ----
-				cbCdoProfession.setText("Profession");
-				cbCdoProfession.setName("cbCdoProfession");
+				//---- cbCdoOccupation ----
+				cbCdoOccupation.setText("Occupation");
+				cbCdoOccupation.setName("cbCdoOccupation");
 
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
@@ -1459,7 +1460,7 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
+										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 464, Short.MAX_VALUE)
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGap(0, 0, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
@@ -1478,20 +1479,20 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoMinMaxDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbCdoProfession)))
+												.addComponent(cbCdoOccupation)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
+												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
 											.addGap(27, 27, 27)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
@@ -1507,10 +1508,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))))
 									.addGap(26, 26, 26)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1568,12 +1569,12 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
 									.addComponent(jLabel51)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoRefreshData)
-										.addComponent(cbCdoProfession))
+										.addComponent(cbCdoOccupation))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoPreBasicNames)
@@ -1921,13 +1922,13 @@ public class ManagerGui extends javax.swing.JFrame
             }
         }
 
-        // Profession
-        String doProfession = properties.getProperty( "doProfession" );
-        if( doProfession != null ) {
-            if (doProfession.equals("true")) {
-                cbCdoProfession.setSelected(true);
+        // Occupation
+        String doOccupation = properties.getProperty( "doOccupation" );
+        if( doOccupation != null ) {
+            if (doOccupation.equals("true")) {
+                cbCdoOccupation.setSelected(true);
             } else {
-                cbCdoProfession.setSelected(false);
+                cbCdoOccupation.setSelected(false);
             }
         }
 
@@ -2261,60 +2262,44 @@ public class ManagerGui extends javax.swing.JFrame
         // new DoSet
         DoSet dos = new DoSet();
 
-        // check selection
-        if( cbCdoRefreshData.isSelected() ) { dos.setDoRenewData(true); }       // Remove previous data
+        if( cbCdoOccupation.isSelected() ) { dos.setDoOccupation(true); }
+
+        if( cbCdoRefreshData.isSelected() ) { dos.setDoRenewData(true); }
         
-        if (cbCdoNames.isSelected()) {
-            dos.setDoNames(true);
-        }
-        if (cbCdoDates.isSelected()) {
-            dos.setDoDates(true);
-        }
-        if (cbCdoRemarks.isSelected()) {
-            dos.setDoRemarks(true);
-        }
-        if (cbCdoStatusSex.isSelected()) {
-            dos.setDoStatusSex(true);
-        }
-        if (cbCdoYearAge.isSelected()) {
-            dos.setDoAgeYear(true);
-        }
-        if (cbCdoLocations.isSelected()) {
-            dos.setDoLocations(true);
-        }
-        if (cbCdoType.isSelected()) {
-            dos.setDoType(true);
-        }
-        if (cbLOLCdoSequence.isSelected()) {
-            dos.setDoSequence(true);
-        }
-        if (cbLOLCdoPartsToFullDate.isSelected()) {
-            dos.setDoPartsToFullDate(true);
-        }
-        if (cbCdoDaysSinceBegin.isSelected()) {
-            dos.setDoDaysSinceBegin(true);
-        }
-        if (cbLOLCdoMinMaxDate.isSelected()) {
-            dos.setDoMinMaxDate(true);
-        }
-        if (cbLOLCdoMinMaxMarriage.isSelected()) {
-            dos.setDoMinMaxMarriage(true);
-        }
-        if (cbCdoRelation.isSelected()) {
-            dos.setDoRelation(true);
-        }
-        if (cbLOLCdoRole.isSelected()) {
-            dos.setDoRole(true);
-        }
-        if (cbLOLCdoPostTasks.isSelected()) {
-            dos.setDoPostTasks(true);
-        }
-        if (cbCdoPrematch.isSelected()) {
-            dos.setDoPrematch(true);
-        }
-        if (cbCdoPreBasicNames.isSelected()) {
-            dos.setDoPreBasicNames(true);
-        }
+        if (cbCdoNames.isSelected()) { dos.setDoNames(true); }
+
+        if (cbCdoDates.isSelected()) { dos.setDoDates(true); }
+
+        if (cbCdoRemarks.isSelected()) { dos.setDoRemarks(true); }
+
+        if (cbCdoStatusSex.isSelected()) { dos.setDoStatusSex(true); }
+
+        if (cbCdoYearAge.isSelected()) { dos.setDoAgeYear(true); }
+
+        if (cbCdoLocations.isSelected()) { dos.setDoLocations(true); }
+
+        if (cbCdoType.isSelected()) { dos.setDoType(true); }
+
+        if (cbLOLCdoSequence.isSelected()) { dos.setDoSequence(true); }
+
+        if (cbLOLCdoPartsToFullDate.isSelected()) { dos.setDoPartsToFullDate(true); }
+
+        if (cbCdoDaysSinceBegin.isSelected()) { dos.setDoDaysSinceBegin(true); }
+
+        if (cbLOLCdoMinMaxDate.isSelected()) { dos.setDoMinMaxDate(true); }
+
+        if (cbLOLCdoMinMaxMarriage.isSelected()) { dos.setDoMinMaxMarriage(true); }
+
+        if (cbCdoRelation.isSelected()) { dos.setDoRelation(true); }
+
+        if (cbLOLCdoRole.isSelected()) { dos.setDoRole(true); }
+
+        if (cbLOLCdoPostTasks.isSelected()) { dos.setDoPostTasks(true); }
+
+        if (cbCdoPrematch.isSelected()) { dos.setDoPrematch(true); }
+
+        if (cbCdoPreBasicNames.isSelected()) { dos.setDoPreBasicNames(true); }
+
         int sourceId = 0;
         if (!tbLOLCSourceId.getText().isEmpty()) {
             sourceId = Integer.parseInt(tbLOLCSourceId.getText());
@@ -2366,21 +2351,15 @@ public class ManagerGui extends javax.swing.JFrame
         boolean doNamesToNo    = false;
         boolean doBaseTable    = false;
 
-        if( cbPdoSplitName.isSelected() ) {
-            doSplitNames = true;
-        }
-        if( cbPdoUniqueNameTables.isSelected() ) {
-            doUniqueTables = true;
-        }
-        if( cbPdoLevenshtein.isSelected() ) {
-            doLevenshtein = true;
-        }
-        if( cbPdoNameToNo.isSelected() ) {
-            doNamesToNo = true;
-        }
-        if( cbPdoCreateBaseTable.isSelected() ) {
-            doBaseTable = true;
-        }
+        if( cbPdoSplitName.isSelected() ) { doSplitNames = true; }
+
+        if( cbPdoUniqueNameTables.isSelected() ) { doUniqueTables = true; }
+
+        if( cbPdoLevenshtein.isSelected() ) { doLevenshtein = true; }
+
+        if( cbPdoNameToNo.isSelected() ) { doNamesToNo = true; }
+
+        if( cbPdoCreateBaseTable.isSelected() ) { doBaseTable = true; }
 
         try {
             LinksPrematch lpm = new LinksPrematch
@@ -2436,7 +2415,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "19-Aug-2014 15:08";
+            String timestamp1 = "20-Aug-2014 11:09";
             //System.out.println( "LINKS timestamp: " + timestamp1 );
             //logger.info( "LINKS timestamp: " + timestamp1 );
 
@@ -2615,7 +2594,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JLabel label3;
 	private JLabel label4;
 	private JTextField tbLOLCrefdb;
-	private JCheckBox cbCdoProfession;
+	private JCheckBox cbCdoOccupation;
 	private JPanel jPanel1;
 	private JCheckBox cbPdoUniqueNameTables;
 	private JCheckBox cbPdoLevenshtein;
