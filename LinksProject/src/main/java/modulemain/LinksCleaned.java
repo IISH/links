@@ -55,24 +55,23 @@ import general.Functions;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-20-Aug-2014 Latest change
+ * FL-21-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread {
     static final Logger logger = LogManager.getLogger("links");   // "links" name specified in log4j.xml
 
-    /**
-     * Table to Array Sets for the
-     */
-    private TableToArraysSet ttalOccupation;
-    private TableToArraysSet ttalFirstname;
-    private TableToArraysSet ttalFamilyname;
-    private TableToArraysSet ttalRegistration;
-    private TableToArraysSet ttalLocation;
-    private TableToArraysSet ttalStatusSex;
-    private TableToArraysSet ttalPrepiece;
-    private TableToArraysSet ttalSuffix;
+    // Table to Array Sets
     private TableToArraysSet ttalAlias;
+    private TableToArraysSet ttalFamilyname;
+    private TableToArraysSet ttalFirstname;
+    private TableToArraysSet ttalLocation;
+    private TableToArraysSet ttalOccupation;
+    private TableToArraysSet ttalPrepiece;
+    private TableToArraysSet ttalStatusSex;
+    private TableToArraysSet ttalSuffix;
+    private TableToArraysSet ttalRegistration;
     private TableToArraysSet ttalReport;
+
 
     private JTextField tbLOLClatestOutput;
     private JTextArea taLOLCoutput;
@@ -199,13 +198,13 @@ public class LinksCleaned extends Thread {
         this.plog = plog;
         this.mg = mg;
 
-        String timestamp = LinksSpecific.getTimeStamp2("HH:mm:ss");
-        System.out.println(timestamp + "  linksCleaned()");
+        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+        System.out.println( timestamp + "  linksCleaned()" );
 
-        System.out.println("mysql_hsnref_hosturl:\t" + ref_url);
-        System.out.println("mysql_hsnref_username:\t" + ref_user);
-        System.out.println("mysql_hsnref_password:\t" + ref_pass);
-        System.out.println("mysql_hsnref_dbname:\t" + ref_db);
+        System.out.println( "mysql_hsnref_hosturl:\t" + ref_url );
+        System.out.println( "mysql_hsnref_username:\t" + ref_user );
+        System.out.println( "mysql_hsnref_password:\t" + ref_pass );
+        System.out.println( "mysql_hsnref_dbname:\t" + ref_db );
     }
 
 
@@ -213,489 +212,83 @@ public class LinksCleaned extends Thread {
     /**
      * Begin
      */
-    public void run() {
-        showMessage("LinksCleaned/run()", false, true);
+    public void run()
+    {
+        showMessage( "LinksCleaned/run()", false, true );
 
         try {
-            plog.show("Links Match Manager 2.0");
-
-            String mmss = "";
-            String msg = "";
-            String ts = "";                               // timestamp
+            plog.show( "Links Match Manager 2.0" );
 
             long timeExpand = 0;
             long begintime = System.currentTimeMillis();
             tempTableName = LinksSpecific.getTimeStamp();
 
-            clearTextFields();                              // Clear output text fields on form
-            connectToDatabases();                           // Connect to Databases
-            createLogTable();                               // Create log table with timestamp
+            clearTextFields();                                  // Clear output text fields on form
+            connectToDatabases();                               // Connect to Databases
+            createLogTable();                                   // Create log table with timestamp
 
-            sources = getOrigSourceIds();                   // sets sources from links_original.registration_o
+            sources = getOrigSourceIds();                       // get source ids from links_original.registration_o
 
-            if (sourceId == 0) {
-                showMessage("Processing source ids: ", false, true);
+            if( sourceId == 0 ) {
+                showMessage( "Processing source ids: ", false, true );
                 String s = "";
-                for (int i : sources) {
-                    s = s + i + " ";
-                }
-                showMessage(s, false, true);
+                for( int i : sources ) { s = s + i + " "; }
+                showMessage( s, false, true );
             }
 
-            if (sourceId != 0) {
-                setSourceFilters();
-            }     // Set source filters
+            if( sourceId != 0 ) { setSourceFilters(); }         // Set source filters
 
             // links_general.ref_report contains 75 error definitions,
             // to be used when the normalization encounters errors
-            showMessage("Loading report table", false, true);
+            showMessage( "Loading report table", false, true );
             {
-                ttalReport = new TableToArraysSet(conGeneral, conOr, "", "report");
+                ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
             }
 
-            renewData( dos.isDoRenewData() );               // GUI cb: Remove previous data
-
-            preBasicNames( dos.isDoPreBasicNames() );       // GUI cb: Basic names temp
-
-            doRemarks( dos.isDoRemarks() );                 // GUI cb: Parse remarks
-
-
-
-
-            if (dos.isDoNames())                           // Names
-            {
-                long startDoNames = System.currentTimeMillis();
-                showMessage("isDoNames", false, true);
-
-                long start = 0;
-                long stop = 0;
-
-                ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
-                System.out.println(ts + " dos.isDoNames");
-
-                // Loading reference tables
-                showMessage("Loading name reference tables", false, false);
-                {
-                    ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
-                    ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
-                    ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
-                }
-                showMessage(endl, false, true);
-
-                // First name
-                start = System.currentTimeMillis();
-                if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
-                    showMessage("Deleting table links_temp.firstname_t", false, true);
-                    dropTable(conTemp, "links_temp", "firstname_t");
-                }
-
-                createTempFirstnameTable();
-                createTempFirstnameFile();
-                String IndexField = "original";
-                String tableName = "firstname";
-                showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
-                ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
-                stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms(start, stop);
-                msg = "TableToArraysSet OK " + mmss;
-                showMessage(msg, false, true);
-
-                runMethod("standardFirstname");
-                ttalFirstname.updateTable();
-                ttalFirstname.free();
-                writerFirstname.close();
-                loadFirstnameToTable();
-                updateFirstnameToPersonC();
-                removeFirstnameFile();
-                removeFirstnameTable();
-
-                // Family name
-                start = System.currentTimeMillis();
-
-                if (doesTableExist(conTemp, "links_temp", "familyname_t")) {
-                    showMessage("Deleting table links_temp.familyname_t", false, true);
-                    dropTable(conTemp, "links_temp", "familyname_t");
-                }
-
-                createTempFamilynameTable();
-                createTempFamilynameFile();
-                tableName = "familyname";
-                showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
-                ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
-                stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms(start, stop);
-                msg = "TableToArraysSet OK " + mmss;
-                showMessage(msg, false, true);
-
-                runMethod("standardFamilyname");
-                ttalFamilyname.updateTable();
-                ttalFamilyname.free();
-                writerFamilyname.close();
-                loadFamilynameToTable();
-                updateFamilynameToPersonC();
-                removeFamilynameFile();
-                removeFamilynameTable();
-
-                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
-                // KM: Do not delete here.
-                showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
-                //funcDeleteRows();               // Delete records with empty firstname and empty familyname
-                //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
-
-                // Names to lowercase
-                showMessage("Converting names to lowercase", false, false);
-                {
-                    String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
-                    conCleaned.runQuery(qLower);
-                }
-                showMessage(endl, false, true);
-
-
-                // Run prepiece
-                runMethod("standardPrepiece");
-
-                // Run suffix
-                runMethod("standardSuffix");
+            doRenewData( dos.isDoRenewData() );                   // GUI cb: Remove previous data
 
+            doPreBasicNames( dos.isDoPreBasicNames() );           // GUI cb: Basic names temp
 
-                // Update reference
-                showMessage("Updating names reference tables...", false, false);
-                {
-                    ttalPrepiece.updateTable();
-                    ttalSuffix.updateTable();
-                    ttalAlias.updateTable();
-                }
-                showMessage(endl, false, true);
-
-                elapsedShowMessage("isDoNames", startDoNames, System.currentTimeMillis());
-            } // isDoNames
-            else {
-                showMessage("Skipping isDoNames", false, true);
-            }
+            doRemarks( dos.isDoRemarks() );                     // GUI cb: Parse remarks
 
+            doNames( dos.isDoNames() );                         // GUI cb: Names
 
-            if (dos.isDoLocations())                       // Locations
-            {
-                long startDoLocations = System.currentTimeMillis();
-                showMessage("isDoLocations", false, true);
+            doLocations( dos.isDoLocations() );                 // GUI cb: Locations
 
-                showMessage("Loading reftabel(s): " + "ref_location" + "...", false, false);
-                {
-                    ttalLocation = new TableToArraysSet(conGeneral, conOr, "original", "location");
-                }
-                showMessage(endl, false, true);
+            doStatusSex( dos.isDoStatusSex() );                 // GUI cb: Satus and Sex
 
-                runMethod("standardRegistrationLocation");
-                runMethod("standardBirthLocation");
-                runMethod("standardMarLocation");
-                runMethod("standardDeathLocation");
+            doType( dos.isDoType() );                           // GUI cb: Registration Type
 
-                showMessage("Updating reftabel(s): " + "ref_location" + "...", false, false);
-                {
-                    ttalLocation.updateTable();
-                }
+            doSequence( dos.isDoSequence() );                   // GUI cb: Sequence
 
-                elapsedShowMessage("isDoLocations", startDoLocations, System.currentTimeMillis());
-            } // isDoLocations
-            else {
-                showMessage("Skipping isDoLocations", false, true);
-            }
+            doRelation( dos.isDoRelation() );                   // GUI cb: Relation
 
+            doAgeYear( dos.isDoAgeYear() );                     // GUI cb: Year Age
 
-            if (dos.isDoAgeYear())                         // Year Age
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoAgeYear", false, true);
-
-                runMethod("standardYearAge");
+            doRole( dos.isDoRole() );                           // GUI cb: Role
 
-                elapsedShowMessage("isDoAgeYear", start, System.currentTimeMillis());
-            } // isDoAgeYear
-            else {
-                showMessage("Skipping isDoAgeYear", false, true);
-            }
+            doOccupation( dos.isDoOccupation() );               // GUI cb: Occupation
 
+            doDates( dos.isDoDates() );                         // GUI cb: Dates
 
-            if (dos.isDoStatusSex())                       // Status and Sex
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoStatusSex", false, true);
+            doMinMaxDate( dos.isDoMinMaxDate() );               // GUI cb: Min Max Date
 
-                showMessage("Loading reftabel(s): " + "status_sex" + "...", false, false);
-                {
-                    ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
-                }
-                showMessage(endl, false, true);
-
-                runMethod("standardSex");
-                runMethod("standardStatusSex");
+            doMinMaxMarriage( dos.isDoMinMaxMarriage() );       // GUI cb: Min Max Marriage
 
-                showMessage("Updating reftabel(s): " + "status_sex" + "...", false, false);
-                {
-                    ttalStatusSex.updateTable();
-                }
-
-                elapsedShowMessage("isDoStatusSex", start, System.currentTimeMillis());
-            } // isDoStatusSex
-            else {
-                showMessage("Skipping isDoStatusSex", false, true);
-            }
+            doPartsToFullDate( dos.isDoPartsToFullDate() );     // GUI cb: Parts to Full Date
 
+            doDaysSinceBegin( dos.isDoDaysSinceBegin() );       // GUI cb: Days since begin
 
-            if (dos.isDoType())                            // Registration Type
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoType", false, true);
+            doPostTasks( dos.isDoPostTasks() );                 // GUI cb: Post Tasks
 
-                runMethod("standardType");
-
-                elapsedShowMessage("isDoType", start, System.currentTimeMillis());
-            } // isDoType
-            else {
-                showMessage("Skipping isDoType", false, true);
-            }
-
-
-            if (dos.isDoRole())                            // Role
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoRole", false, true);
-
-                showMessage("Running standardRole on all sources...", false, false);
-                standardRole();
-
-                elapsedShowMessage("isDoRole", start, System.currentTimeMillis());
-            } // isDoRole
-            else {
-                showMessage("Skipping isDoRole", false, true);
-            }
-
-
-            if (dos.isDoOccupation())                      // Occupation
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoOccupation", false, true);
-
-
-                elapsedShowMessage("isDoOccupation", start, System.currentTimeMillis());
-            } // isDoProfession
-            else {
-                showMessage("Skipping isDoOccupation", false, true);
-            }
-
-
-            if (dos.isDoDates())                           // Dates
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoDates", false, true);
-
-                showMessage("Running Date functions on all sources...", false, false);
-                {
-                    // Clean dates
-                    runMethod("standardRegistrationDate");
-
-                    // Clean
-                    standardDate("birth");
-                    standardDate("mar");
-                    standardDate("death");
-
-                    // Fill empty dates with register dates
-                    funcFlagBirthDate();
-                    funcFlagMarriageDate();
-                    funcFlagDeathDate();
-
-                    standardFlaggedDate("birth");
-                    standardFlaggedDate("mar");
-                    standardFlaggedDate("death");
-
-                    funcMinMaxCorrectDate();
-
-                    funcCompleteMinMaxBirth();
-                    funcCompleteMinMaxMar();
-
-                    funcSetcomplete();
-
-                    // extra function to correct registration data
-                    String q1 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.birth_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 1 AND p.role = 1;";
-                    String q2 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 4;";
-                    String q3 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 7;";
-                    String q4 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 3 AND p.role = 10;";
-                    String q5 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 7 AND p.role = 10;";
-
-                    conCleaned.runQuery(q1);
-                    conCleaned.runQuery(q2);
-                    conCleaned.runQuery(q3);
-                    conCleaned.runQuery(q4);
-                    conCleaned.runQuery(q5);
-
-                }
-
-                elapsedShowMessage("isDoDates", start, System.currentTimeMillis());
-            } // isDoDates
-            else {
-                showMessage("Skipping isDoDates", false, true);
-            }
-
-
-            if (dos.isDoSequence())                        // Sequence
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoSequence", false, true);
-
-                runMethod("standardSequence");
-
-                elapsedShowMessage("isDoSequence", start, System.currentTimeMillis());
-            } // isDoSequence
-            else {
-                showMessage("Skipping isDoSequence", false, true);
-            }
-
-
-            if (dos.isDoRelation())                        // Relation
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoRelation", false, true);
-
-                runMethod("funcRelation");
-
-                elapsedShowMessage("isDoRelation", start, System.currentTimeMillis());
-            } // isDoRelation
-            else {
-                showMessage("Skipping isDoRelation", false, true);
-            }
-
-
-            if (dos.isDoMinMaxDate())                      // Min Max Date
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoMinMaxDate", false, true);
-
-                if (bronFilter.isEmpty()) {
-                    for (int i : sources) {
-                        showMessage("Running funMinMaxDateMain for source: " + i + "...", false, false);
-                        {
-                            funcFillMinMaxArrays("" + i);
-                            funMinMaxDateMain("" + i);
-                        }
-                        showMessage(endl, false, true);
-                    }
-                } else {
-                    showMessage("Running funMinMaxDateMain...", false, false);
-                    {
-                        funcFillMinMaxArrays("" + this.sourceId);
-                        funMinMaxDateMain("");
-                    }
-                    showMessage(endl, false, true);
-                }
-
-                elapsedShowMessage("isDoMinMaxDate", start, System.currentTimeMillis());
-            } // isDoMinMaxDate
-            else {
-                showMessage("Skipping isDoMinMaxDate", false, true);
-            }
-
-
-            if (dos.isDoMinMaxMarriage())                  // Min Max Marriage
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoMinMaxMarriage", false, true);
-
-                try {
-                    // loading ref
-                    ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
-
-                    if (bronFilter.isEmpty()) {
-                        for (int i : sources) {
-                            showMessage("Running funcMinMaxMarriageYear for source: " + i + "...", false, false);
-                            {
-                                funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
-                            }
-                            showMessage(endl, false, true);
-                        }
-
-                    } else {
-                        showMessage("Running funcMinMaxMarriageYear...", false, false);
-                        {
-                            funcMinMaxMarriageYear(funcSetMarriageYear(this.sourceId + ""), refMinMaxMarriageYear);
-                        }
-                        showMessage(endl, false, true);
-                    }
-                } catch (Exception e) {
-                    showMessage("An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true);
-                }
-
-                elapsedShowMessage("isDoMinMaxMarriage", start, System.currentTimeMillis());
-            } // isDoMinMaxMarriage
-            else {
-                showMessage("Skipping isDoMinMaxMarriage", false, true);
-            }
-
-
-            if (dos.isDoPartsToFullDate())                 // Parts to Full date
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoMinMaxMarriage", false, true);
-
-                showMessage("Running func Part to Date on all sources...", false, false);
-                funcPartsToDate();
-
-                elapsedShowMessage("isDoPartsToFullDate", start, System.currentTimeMillis());
-            } // isDoPartsToFullDate
-            else {
-                showMessage("Skipping isDoPartsToFullDate", false, true);
-            }
-
-
-            if (dos.isDoDaysSinceBegin())                  // Days since begin
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoDaysSinceBegin", false, true);
-
-                showMessage("Running func Days since begin on all sources...", false, false);
-                funcDaysSinceBegin();
-
-                elapsedShowMessage("isDoDaysSinceBegin", start, System.currentTimeMillis());
-            } // isDoDaysSinceBegin
-            else {
-                showMessage("Skipping isDoDaysSinceBegin", false, true);
-            }
-
-
-            if (dos.isDoPostTasks())                       // Post Tasks
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoPostTasks", false, true);
-
-                showMessage("Running func post tasks all sources...", false, false);
-                funcPostTasks();
-
-                elapsedShowMessage("isDoPostTasks", start, System.currentTimeMillis());
-            } // isDoPostTasks
-            else {
-                showMessage("Skipping isDoPostTasks", false, true);
-            }
-
-
-            // Close connections
+            // Close db connections
             conOriginal.close();
             conLog.close();
             conCleaned.close();
             conGeneral.close();
             conTemp.close();
 
-
-            if (dos.isDoPrematch())                        // Run PreMatch
-            {
-                long start = System.currentTimeMillis();
-                showMessage("isDoPrematch", false, true);
-
-                showMessage("Running PREMATCH...", false, false);
-                mg.firePrematch();
-
-                elapsedShowMessage("isDoPrematch", start, System.currentTimeMillis());
-            } else {
-                showMessage("Skipping isDoPrematch", false, true);
-            }
+            doPrematch( dos.isDoPrematch() );                   // GUI cb: Run PreMatch
 
             // Total time
             timeExpand = System.currentTimeMillis() - begintime;
@@ -712,17 +305,20 @@ public class LinksCleaned extends Thread {
      /*---< functions corresponding to GUI Cleaning options >-----------------*/
 
     /**
+     * Remove previous data
      * @param go
      * @throws Exception
      */
-    private void renewData(boolean go) throws Exception {
+    private void doRenewData(boolean go) throws Exception
+    {
+        String funcname = "doRenewData";
         if( !go ) {
-            showMessage( "Skipping renewData", false, true );
+            showMessage( "Skipping " + funcname, false, true );
             return;
         }
 
-        long startDoRenewData = System.currentTimeMillis();
-        showMessage( "renewData", false, true );
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
 
         // Delete existing data
         // Create queries
@@ -738,38 +334,41 @@ public class LinksCleaned extends Thread {
         // Create queries
         showMessage("Copying person keys to links_cleaned", false, true);
         String keysPerson = ""
-                + "INSERT INTO links_cleaned.person_c ( "
-                + "id_person , id_registration , id_source , id_person_o ) "
-                + " SELECT id_person , id_registration , id_source , id_person_o "
-                + "FROM links_original.person_o" + bronFilterOrigineelPers;
+            + "INSERT INTO links_cleaned.person_c ( "
+            + "id_person , id_registration , id_source , id_person_o ) "
+            + " SELECT id_person , id_registration , id_source , id_person_o "
+            + "FROM links_original.person_o" + bronFilterOrigineelPers;
 
         showMessage("Copying registration keys to links_cleaned", false, true);
         String keysRegistration = ""
-                + "INSERT INTO links_cleaned.registration_c ("
-                + "id_registration, id_source, id_orig_registration, registration_maintype, registration_seq ) "
-                + "SELECT id_registration, id_source, id_orig_registration, registration_maintype, registration_seq "
-                + "FROM links_original.registration_o" + bronFilterOrigineelReg;
+            + "INSERT INTO links_cleaned.registration_c ("
+            + "id_registration, id_source, id_orig_registration, registration_maintype, registration_seq ) "
+            + "SELECT id_registration, id_source, id_orig_registration, registration_maintype, registration_seq "
+            + "FROM links_original.registration_o" + bronFilterOrigineelReg;
 
         // Execute queries
-        conCleaned.runQuery(keysPerson);
-        conCleaned.runQuery(keysRegistration);
+        conCleaned.runQuery( keysPerson );
+        conCleaned.runQuery( keysRegistration );
 
-        elapsedShowMessage( "renewData", startDoRenewData, System.currentTimeMillis() );
-    } // renewData
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doRenewData
 
 
     /**
+     * Basic names temp
      * @param go
      * @throws Exception
      */
-    private void preBasicNames( boolean go ) throws Exception {
+    private void doPreBasicNames( boolean go ) throws Exception
+    {
+        String funcname = "doPreBasicNames";
         if( !go ) {
-            showMessage( "Skipping preBasicNames", false, true );
+            showMessage( "Skipping " + funcname, false, true );
             return;
         }
 
-        long startDoPreBasicNames = System.currentTimeMillis();
-        showMessage( "preBasicNames", false, true );
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
 
         // load the ref tables
         showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
@@ -856,25 +455,27 @@ public class LinksCleaned extends Thread {
         }
         showMessage(endl, false, true);
 
-        elapsedShowMessage( "preBasicNames", startDoPreBasicNames, System.currentTimeMillis() );
-    } // preBasicNames
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doPreBasicNames
 
 
-        /**
+    /**
+     * Parse remarks
      * @param go
      * @throws Exception
      */
     private void doRemarks( boolean go ) throws Exception
     {
+        String funcname = "doRemarks";
         if( !go ) {
-            showMessage( "Skipping doRemarks", false, true );
+            showMessage( "Skipping " + funcname, false, true );
             return;
         }
 
-        long startDoRemarks = System.currentTimeMillis();
-        showMessage("isDoRemarks", false, true);
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
 
-        // load al refs used by remarks Parser
+        // load all refs used by remarks Parser
         showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
         {
             //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
@@ -884,25 +485,2542 @@ public class LinksCleaned extends Thread {
 
         runMethod( "scanRemarks" );
 
-        showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, false );
+        showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, true );
         {
             //ttalLocation.updateTable();
             //ttalOccupation.updateTable();
         }
 
-        elapsedShowMessage( "doRemarks", startDoRemarks, System.currentTimeMillis() );
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRemarks
 
 
+    /**
+     * Names
+     * @param go
+     * @throws Exception
+     */
+    private void doNames( boolean go ) throws Exception
+    {
+        String funcname = "doNames";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        String mmss = "";
+        String msg = "";
+        String ts = "";                               // timestamp
+
+        long start = 0;
+        long stop = 0;
+
+        ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
+        System.out.println(ts + " dos.isDoNames");
+
+        // Loading reference tables
+        showMessage("Loading name reference tables", false, false);
+        {
+            ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
+            ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
+            ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
+        }
+        showMessage(endl, false, true);
+
+        // First name
+        start = System.currentTimeMillis();
+        if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
+            showMessage("Deleting table links_temp.firstname_t", false, true);
+            dropTable(conTemp, "links_temp", "firstname_t");
+        }
+
+        createTempFirstnameTable();
+        createTempFirstnameFile();
+        String IndexField = "original";
+        String tableName = "firstname";
+        showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
+        ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
+        stop = System.currentTimeMillis();
+        mmss = Functions.millisec2hms(start, stop);
+        msg = "TableToArraysSet OK " + mmss;
+        showMessage(msg, false, true);
+
+        runMethod("standardFirstname");
+        ttalFirstname.updateTable();
+        ttalFirstname.free();
+        writerFirstname.close();
+        loadFirstnameToTable();
+        updateFirstnameToPersonC();
+        removeFirstnameFile();
+        removeFirstnameTable();
+
+        // Family name
+        start = System.currentTimeMillis();
+
+        if (doesTableExist(conTemp, "links_temp", "familyname_t")) {
+            showMessage("Deleting table links_temp.familyname_t", false, true);
+            dropTable(conTemp, "links_temp", "familyname_t");
+        }
+
+        createTempFamilynameTable();
+        createTempFamilynameFile();
+        tableName = "familyname";
+        showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
+        ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
+        stop = System.currentTimeMillis();
+        mmss = Functions.millisec2hms(start, stop);
+        msg = "TableToArraysSet OK " + mmss;
+        showMessage(msg, false, true);
+
+        runMethod("standardFamilyname");
+        ttalFamilyname.updateTable();
+        ttalFamilyname.free();
+        writerFamilyname.close();
+        loadFamilynameToTable();
+        updateFamilynameToPersonC();
+        removeFamilynameFile();
+        removeFamilynameTable();
+
+        //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
+        // KM: Do not delete here.
+        showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
+        //funcDeleteRows();               // Delete records with empty firstname and empty familyname
+        //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
+
+        // Names to lowercase
+        showMessage("Converting names to lowercase", false, false);
+        {
+            String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
+            conCleaned.runQuery(qLower);
+        }
+        showMessage(endl, false, true);
+
+        runMethod( "standardPrepiece" );
+        runMethod( "standardSuffix" );
+
+        // Update reference
+        showMessage("Updating names reference tables...", false, false);
+        {
+            ttalPrepiece.updateTable();
+            ttalSuffix.updateTable();
+            ttalAlias.updateTable();
+        }
+        showMessage(endl, false, true);
+
+
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doNames
+
+
+    /**
+     * Locations
+     * @param go
+     * @throws Exception
+     */
+    private void doLocations( boolean go ) throws Exception
+    {
+        String funcname = "doLocations";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Loading reftabel(s): " + "ref_location" + "...", false, false );
+        {
+            ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
+        }
+        showMessage(endl, false, true);
+
+        runMethod( "standardRegistrationLocation" );
+        runMethod( "standardBirthLocation" );
+        runMethod( "standardMarLocation" );
+        runMethod( "standardDeathLocation" );
+
+        showMessage( "Updating reftabel(s): " + "ref_location" + "...", false, true );
+        {
+            ttalLocation.updateTable();
+        }
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doLocations
+
+
+    /**
+     * Status and Sex
+     * @param go
+     * @throws Exception
+     */
+    private void doStatusSex( boolean go ) throws Exception
+    {
+        String funcname = "doStatusSex";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Loading ref tabel: " + "status_sex", false, false );
+        {
+            ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
+        }
+        showMessage( endl, false, true );
+
+        runMethod( "standardSex" );
+        runMethod( "standardStatusSex" );
+
+        showMessage( "Updating reftabel(s): " + "status_sex" + "...", false, true );
+        {
+            ttalStatusSex.updateTable();
+        }
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doStatusSex
+
+
+    /**
+     * Registration Type
+     * @param go
+     * @throws Exception
+     */
+    private void doType( boolean go ) throws Exception
+    {
+        String funcname = "doType";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        runMethod( "standardType" );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doType
+
+
+    /**
+     * Sequence
+     * @param go
+     * @throws Exception
+     */
+    private void doSequence( boolean go ) throws Exception
+    {
+        String funcname = "doSequence";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        runMethod( "standardSequence" );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doSequence
+
+
+    /**
+     * Relation
+     * @param go
+     * @throws Exception
+     */
+    private void doRelation( boolean go ) throws Exception
+    {
+        String funcname = "doRelation";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        runMethod( "funcRelation" );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doRelation
+
+
+    /**
+     * Year Age
+     * @param go
+     * @throws Exception
+     */
+    private void doAgeYear( boolean go ) throws Exception
+    {
+        String funcname = "doAgeYear";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        runMethod( "standardYearAge" );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doAgeYear
+
+
+    /**
+     * Role
+     * @param go
+     * @throws Exception
+     */
+    private void doRole( boolean go ) throws Exception
+    {
+        String funcname = "doRole";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Running standardRole on all sources...", false, true );
+        standardRole();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doRole
+
+
+    /**
+     * Occupation
+     * @param go
+     * @throws Exception
+     */
+    private void doOccupation( boolean go ) throws Exception
+    {
+        String funcname = "doOccupation";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Loading ref tabel: " + "occupation", false, false );
+        {
+            ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
+        }
+        showMessage( endl, false, true );
+
+        runMethod( "standardOccupation" );
+
+        // updating ref table(s)? see standardSex
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doOccupation
+
+
+    /**
+     * Dates
+     * @param go
+     * @throws Exception
+     */
+    private void doDates( boolean go ) throws Exception
+    {
+        String funcname = "doDates";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Running Date functions on all sources...", false, true );
+
+        // Clean dates
+        runMethod( "standardRegistrationDate" );
+
+        // Clean
+        standardDate( "birth" );
+        standardDate( "mar" );
+        standardDate( "death" );
+
+        // Fill empty dates with register dates
+        funcFlagBirthDate();
+        funcFlagMarriageDate();
+        funcFlagDeathDate();
+
+        standardFlaggedDate( "birth" );
+        standardFlaggedDate( "mar" );
+        standardFlaggedDate( "death" );
+
+        funcMinMaxCorrectDate();
+
+        funcCompleteMinMaxBirth();
+        funcCompleteMinMaxMar();
+
+        funcSetcomplete();
+
+        // extra function to correct registration data
+        String q1 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.birth_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 1 AND p.role = 1;";
+        String q2 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 4;";
+        String q3 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 7;";
+        String q4 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 3 AND p.role = 10;";
+        String q5 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 7 AND p.role = 10;";
+
+        conCleaned.runQuery(q1);
+        conCleaned.runQuery(q2);
+        conCleaned.runQuery(q3);
+        conCleaned.runQuery(q4);
+        conCleaned.runQuery(q5);
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doDates
+
+
+    /**
+     * Min Max Date
+     * @param go
+     * @throws Exception
+     */
+    private void doMinMaxDate( boolean go ) throws Exception
+    {
+        String funcname = "MinMaxDate";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        if (bronFilter.isEmpty()) {
+            for (int i : sources) {
+                showMessage("Running funMinMaxDateMain for source: " + i + "...", false, false);
+                {
+                    funcFillMinMaxArrays("" + i);
+                    funMinMaxDateMain("" + i);
+                }
+                showMessage(endl, false, true);
+            }
+        } else {
+            showMessage("Running funMinMaxDateMain...", false, false);
+            {
+                funcFillMinMaxArrays("" + this.sourceId);
+                funMinMaxDateMain("");
+            }
+            showMessage(endl, false, true);
+        }
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doMinMaxDate
+
+
+    /**
+     * Min Max Marriage
+     * @param go
+     * @throws Exception
+     */
+    private void doMinMaxMarriage( boolean go ) throws Exception
+    {
+        String funcname = "doMinMaxMarriage";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        try {
+            // loading ref
+            ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
+
+            if (bronFilter.isEmpty()) {
+                for (int i : sources) {
+                    showMessage("Running funcMinMaxMarriageYear for source: " + i + "...", false, false);
+                    {
+                        funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
+                    }
+                    showMessage(endl, false, true);
+                }
+
+            } else {
+                showMessage("Running funcMinMaxMarriageYear...", false, false);
+                {
+                    funcMinMaxMarriageYear(funcSetMarriageYear(this.sourceId + ""), refMinMaxMarriageYear);
+                }
+                showMessage(endl, false, true);
+            }
+        } catch (Exception e) {
+            showMessage("An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true);
+        }
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doMinMaxMarriage
+
+
+    /**
+     * Parts to Full Date
+     * @param go
+     * @throws Exception
+     */
+    private void doPartsToFullDate( boolean go ) throws Exception
+    {
+        String funcname = "doPartsToFullDate";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage("Running func Part to Date on all sources...", false, true );
+        funcPartsToDate();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doPartsToFullDate
+
+
+    /**
+     * Days since begin
+     * @param go
+     * @throws Exception
+     */
+    private void doDaysSinceBegin( boolean go ) throws Exception
+    {
+        String funcname = "doDaysSinceBegin";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage("Running func Days since begin on all sources...", false, false);
+        funcDaysSinceBegin();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doDaysSinceBegin
+
+
+    /**
+     * Post Tasks
+     * @param go
+     * @throws Exception
+     */
+    private void doPostTasks( boolean go ) throws Exception
+    {
+        String funcname = "doPostTasks";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage( "Running func post tasks all sources...", false, true );
+        funcPostTasks();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doPostTasks
+
+
+    /**
+     * Run PreMatch
+     * @param go
+     * @throws Exception
+     */
+    private void doPrematch( boolean go ) throws Exception
+    {
+        String funcname = "doPrematch";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        showMessage("Running PREMATCH...", false, false);
+        mg.firePrematch();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doPrematch
+
+
+     /*---< Standardizing functions >-----------------------------------------*/
+
+    /**
+     * @param id
+     * @param id_souce
+     * @param name
+     * @return
+     */
+    private String standardAlias( int id, String id_souce, String name ) throws Exception
+    {
+        dataset.ArrayListNonCase ag = ttalAlias.getArray("original");
+
+        // to lowercase
+        name = name.toLowerCase();
+
+        for (Object ags : ag) {
+
+            String keyword = " " + ags.toString().toLowerCase() + " ";
+
+            if (name.contains(" " + keyword + " ")) {
+
+                // EC 17
+                funcAddtoReportPerson(id, id_souce, 17, name);
+
+                // prepare on braces
+                if (keyword.contains("\\(") || keyword.contains("\\(")) {
+
+                    keyword = keyword.replaceAll("\\(", "").replaceAll("\\)", "");
+                }
+
+                String[] names = name.toLowerCase().split(keyword, 2);
+
+                /*
+                we must clean the name because of the braces used in aliassen
+                 */
+
+                // Set alias
+                PersonC.updateQuery("alias", LinksSpecific.funcCleanSides(funcCleanNaam(names[1])), id);
+
+                return LinksSpecific.funcCleanSides(funcCleanNaam(names[0]));
+            }
+        }
+        return name;
+    } // standardAlias
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardBirthLocation( String sourceNo )
+    {
+        String startQuery;
+        String id_source;
+
+        if (sourceNo.isEmpty()) {
+            startQuery = "SELECT id_person , birth_location FROM person_o" + bronFilter + " AND birth_location <> ''";
+            id_source = this.sourceId + "";
+        } else {
+            startQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceNo + " AND birth_location <> ''";
+            id_source = sourceNo;
+        }
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+
+            standardLocation(rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON);
+        } catch (Exception e) {
+            showMessage(e.getMessage(), false, true);
+        }
+    } // standardBirthLocation
+
+
+    /**
+     * @param type
+     */
+    public void standardDate( String type )
+    {
+        // Step vars
+        int counter = 0;
+        int step = 10000;
+        int stepstate = step;
+
+        try {
+            String startQuery;
+
+            startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_o WHERE " + type + "_date is not null";
+
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+
+            while (rs.next()) {
+
+                // GUI info
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rs.getInt("id_person");
+                int id_source = rs.getInt("id_source");
+                String date = rs.getString(type + "_date");
+
+                if (date.isEmpty()) {
+                    continue;
+                }
+
+                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
+
+                if (dymd.isValidDate()) {
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + dymd.getDay() + "-" + dymd.getMonth() + "-" + dymd.getYear() + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
+                            + "person_c." + type + "_date_valid = 1 "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                } else {
+
+                    // EC 211
+                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
+
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + date + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                }
+            }
+            rs = null;
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning " + type + " date: " + e.getMessage(), false, true);
+        }
+    } // standardDate
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardDeathLocation( String sourceNo )
+    {
+        String startQuery;
+        String id_source;
+
+        if (sourceNo.isEmpty()) {
+            startQuery = "SELECT id_person , death_location FROM person_o" + bronFilter + " AND death_location <> ''";
+            id_source = this.sourceId + "";
+        } else {
+            startQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceNo + " AND death_location <> ''";
+            id_source = sourceNo;
+        }
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+            standardLocation(rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON);
+        } catch (Exception e) {
+            showMessage(e.getMessage(), false, true);
+        }
+    } // standardDeathLocation
+
+
+    /**
+     * @param sourceNo
+     * @throws Exception
+     */
+    public void standardFirstname( String sourceNo )
+    {
+        int counter = 0;
+        int step = 10000;
+        int stepstate = step;
+        String id_source;
+
+        try {
+
+            // create connection
+
+            Connection con = getConnection("links_original");
+            con.isReadOnly();
+
+            String startQuery;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , firstname FROM person_o" + bronFilter + "";
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            // startQuery = "SELECT id_person , firstname FROM person_o" + " WHERE id_source = 115";
+
+            ResultSet rsFirstName = con.createStatement().executeQuery(startQuery);
+            con.createStatement().close();
+            // con.createStatement().close();
+
+//            rsFirstName.setFetchSize(100000);
+//           while (rsFirstName.next()) {
+////
+////
+//////                int id_person = rsFirstName.getInt("id_person");
+//////                String firstname = rsFirstName.getString("firstname");
+//            }
+
+//            // close
+//            int iets = 0;
+//            rsFirstName = con.createStatement().executeQuery("SELECT 0;");
+//            con.createStatement().close();
+//            rsFirstName.close();
+//            rsFirstName = null;
+//
+//            con.close();
+//            System.gc();
+
+
+            // get total
+            rsFirstName.last();
+
+            int total = rsFirstName.getRow();
+
+            rsFirstName.beforeFirst();
+
+            while (rsFirstName.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + " of " + total, true, true);
+                    stepstate += step;
+                }
+
+
+//                if (counter == 97253 ){
+//                    int bla = 0;
+//                    bla++;
+//                }
+
+
+                int id_person = rsFirstName.getInt("id_person");
+                String firstname = rsFirstName.getString("firstname");
+
+                // Is firstname empty?
+                if (firstname != null && !firstname.isEmpty()) {
+
+                    // clean name
+                    firstname = funcCleanFirstName(firstname);
+
+                    firstname = firstname.toLowerCase();
+
+//                    if (id_person == 9363889) {
+//                        int iets = 9;
+//                    }
+
+                    // Check name on aliasses
+                    String nameNoAlias = standardAlias(id_person, id_source, firstname);
+
+                    // Check on serried spaces
+                    // Split name on spaces
+                    String[] names = nameNoAlias.split(" ");
+                    boolean spaces = false;
+
+                    ArrayList<String> preList = new ArrayList<String>();
+                    ArrayList<String> postList = new ArrayList<String>();
+
+                    for (String n : names) {
+                        if (n.isEmpty()) {
+                            spaces = true;
+                        } else { // add to list
+                            preList.add(n);
+                        }
+                    }
+
+                    // EC
+                    if (spaces) {
+                        funcAddtoReportPerson(id_person, id_source, 1103, "");
+                    }
+
+                    // loop through names
+                    for (int i = 0; i < preList.size(); i++) {
+
+                        // Does this aprt exists in ref_name?
+                        if (ttalFirstname.originalExists(preList.get(i))) {
+
+                            // Check the standard code
+                            String standard_code = ttalFirstname.getStandardCodeByOriginal(preList.get(i));
+                            if (standard_code.equals(SC_Y)) {
+                                postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
+                            } else if (standard_code.equals(SC_I)) { // EC 1100
+                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
+                                postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
+                            } else if (standard_code.equals(SC_N)) { // EC 1105
+                                funcAddtoReportPerson(id_person, id_source, 1105, preList.get(i));
+                            } else if (standard_code.equals(SC_X)) { // EC 1109
+                                funcAddtoReportPerson(id_person, id_source, 1109, preList.get(i));
+                                postList.add(preList.get(i));
+                            } else {// EC 1100
+                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
+                            }
+                        } // name does not exists in ref_firtname
+                        else {
+
+                            // check on invalid token
+                            String nameNoInvalidChars = funcCleanNaam(preList.get(i));
+
+                            // name contains invalid chars ?
+                            if (!preList.get(i).equalsIgnoreCase(nameNoInvalidChars)) {
+
+                                // EC 1104
+                                funcAddtoReportPerson(id_person, id_source, 1104, preList.get(i));
+
+                                // Check if name exists in ref
+                                // Does this aprt exists in ref_name?
+                                if (ttalFirstname.originalExists(nameNoInvalidChars)) {
+                                    // Check the standard code
+                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoInvalidChars);
+                                    if (standard_code.equals(SC_Y)) {
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
+                                    } else if (standard_code.equals(SC_I)) { // EC 1100
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
+                                    } else if (standard_code.equals(SC_N)) { // EC 1105
+                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoInvalidChars);
+                                    } else if (standard_code.equals(SC_X)) { // EC 1109
+                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoInvalidChars);
+                                        postList.add(nameNoInvalidChars);
+                                    } else { // EC 1100, standard_code not invalid
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
+                                    }
+
+                                    // continue
+                                    continue;
+                                }
+
+                                // check if it ends witch suffix
+                                // Check on suffix
+                                ArrayListNonCase sfxO = ttalSuffix.getArray("original");
+                                ArrayListNonCase sfxSc = ttalSuffix.getArray("standard_code");
+
+                                for (int j = 0; j < sfxO.size(); j++) {
+
+                                    if (nameNoInvalidChars.endsWith(" " + sfxO.get(j).toString())
+                                            && sfxSc.get(j).toString().equals(SC_Y)) {
+
+                                        // EC 1106
+                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
+
+                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll(" " + sfxO.get(j).toString(), "");
+
+                                        // Set suffix
+                                        String query = PersonC.updateQuery("suffix", sfxO.get(j).toString(), id_person);
+
+                                        conCleaned.runQuery(query);
+                                    }
+                                }
+
+                                // check ref_prepiece
+                                String nameNoPieces = funcNamePrepiece(nameNoInvalidChars, id_person);
+
+                                if (!nameNoPieces.equals(nameNoInvalidChars)) {
+
+                                    // EC 1107
+                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
+
+                                }
+
+                                // last check on ref
+                                if (ttalFirstname.originalExists(nameNoPieces)) {
+                                    // Check the standard code
+                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
+                                    if (standard_code.equals(SC_Y)) {
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
+                                    } else if (standard_code.equals(SC_I)) { // EC 1100
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
+                                    } else if (standard_code.equals(SC_N)) { // EC 1105
+                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
+                                    } else if (standard_code.equals(SC_X)) { // EC 1109
+                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
+                                        postList.add(nameNoPieces);
+                                    } else { // EC 1100, standard_code not invalid
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                    }
+                                } else {
+                                    // name must be added to ref_firstname with standard_code x
+                                    // Also add name to postlist
+                                    ttalFirstname.addOriginal(nameNoPieces);
+                                    postList.add(nameNoPieces);
+                                }
+
+
+                            } else { // no invalid token
+
+                                // check if it ends witch suffix
+                                // Check on suffix
+                                ArrayListNonCase sfxO = ttalSuffix.getArray("original");
+                                ArrayListNonCase sfxSc = ttalSuffix.getArray("standard_code");
+
+                                for (int j = 0; j < sfxO.size(); j++) {
+
+                                    if (nameNoInvalidChars.equalsIgnoreCase(sfxO.get(j).toString())
+                                            && sfxSc.get(j).toString().equals(SC_Y)) {
+
+                                        // EC 1106
+                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
+
+                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll(sfxO.get(j).toString(), "");
+
+                                        // Set suffix
+                                        String query = PersonC.updateQuery("suffix", sfxO.get(j).toString(), id_person);
+
+                                        conCleaned.runQuery(query);
+                                    }
+                                }
+
+                                // check ref_prepiece
+                                String nameNoPieces = funcNamePrepiece(nameNoInvalidChars, id_person);
+
+                                if (!nameNoPieces.equals(nameNoInvalidChars)) {
+
+                                    // EC 1107
+                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
+
+                                }
+
+                                // last check on ref
+                                if (ttalFirstname.originalExists(nameNoPieces)) {
+                                    // Check the standard code
+                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
+                                    if (standard_code.equals(SC_Y)) {
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
+                                    } else if (standard_code.equals(SC_I)) { // EC 1100
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
+                                    } else if (standard_code.equals(SC_N)) { // EC 1105
+                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
+                                    } else if (standard_code.equals(SC_X)) { // EC 1109
+                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
+                                        postList.add(nameNoPieces);
+                                    } else { // EC 1100, standard_code not invalid
+                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                    }
+                                } else {
+                                    // name must be added to ref_firstname with standard_code x
+                                    // Also add name to postlist
+                                    ttalFirstname.addOriginal(nameNoPieces);
+                                    postList.add(nameNoPieces);
+                                }
+                            }
+                        }
+                    }
+
+                    // Write all parts to Person POSTLIST
+                    String vn = "";
+
+                    for (int i = 0; i < postList.size(); i++) {
+
+                        vn += postList.get(i);
+
+                        // posible space
+                        if (i != (postList.size() - 1)) {
+                            vn += " ";
+                        }
+                    }
+
+                    // if vn not empty wrtie to vn
+                    if (!vn.isEmpty()) {
+
+                        //String query = PersonC.updateQuery("firstname", vn, id_person);
+
+                        //conCleaned.runQuery(query);
+
+                        writerFirstname.write(id_person + "," + vn.trim().toLowerCase() + "\n");
+
+                    }
+
+                    preList.clear();
+                    postList.clear();
+                    preList = null;
+                    postList = null;
+                } else {
+
+                    // First name is empty, EC 1101
+                    funcAddtoReportPerson(id_person, id_source, 1101, "");
+                }
+
+                // close this
+                id_person = 0;
+                firstname = null;
+            }
+
+            // TODO: empty resultset
+            //rsFirstName = con.createStatement().executeQuery("SELECT 0;");
+
+            rsFirstName.close();
+            con.close();
+
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Firstname: " + e.getMessage(), false, true);
+        }
+    } // standardFirstname
+
+
+    /**
+     * @param sourceNo
+     * @throws Exception
+     */
+    public void standardFamilyname( String sourceNo )
+    {
+        int counter = 0;
+        int step = 10000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , familyname FROM person_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+
+            // create connection
+            Connection con = getConnection("links_original");
+            con.isReadOnly();
+
+            // Read family names from table
+            ResultSet rsFamilyname = con.createStatement().executeQuery(startQuery);
+            con.createStatement().close();
+
+            // get total
+            rsFamilyname.last();
+
+            int total = rsFamilyname.getRow();
+
+            rsFamilyname.beforeFirst();
+
+            while (rsFamilyname.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + " of " + total, true, true);
+                    stepstate += step;
+                }
+
+                // Get family name
+                String familyname = rsFamilyname.getString("familyname");
+                int id_person = rsFamilyname.getInt("id_person");
+
+                // Check is Familyname is not empty or null
+                if (familyname != null && !familyname.isEmpty()) {
+
+                    familyname = funcCleanFamilyname(familyname);
+
+                    familyname = familyname.toLowerCase();
+
+                    // Familienaam in ref_familyname ?
+                    if (ttalFamilyname.originalExists(familyname)) {
+
+                        // get standard_code
+                        String standard_code = ttalFamilyname.getStandardCodeByOriginal(familyname);
+
+                        // Check the standard code
+                        if (standard_code.equals(SC_Y)) {
+
+                            writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
+
+                        } else if (standard_code.equals(SC_I)) {
+
+                            // EC 1000
+                            funcAddtoReportPerson(id_person, id_source, 1000, familyname);
+
+                            writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
+
+                        } else if (standard_code.equals(SC_N)) {
+
+                            // EC 1005
+                            funcAddtoReportPerson(id_person, id_source, 1005, familyname);
+                        } else if (standard_code.equals(SC_X)) {
+
+                            // EC 1009
+                            funcAddtoReportPerson(id_person, id_source, 1009, familyname);
+
+                            writerFamilyname.write(id_person + "," + familyname.toLowerCase() + "\n");
+                        } else {
+
+                            // EC 1010
+                            funcAddtoReportPerson(id_person, id_source, 1010, familyname);
+                        }
+                    } // Familyname does not exists in ref_familyname
+                    else {
+
+                        // EC 1002
+                        funcAddtoReportPerson(id_person, id_source, 1002, familyname);
+
+                        String nameNoSerriedSpaces = familyname.replaceAll(" [ ]+", " ");
+
+                        // Family name contains two or more serried spaces?
+                        if (!nameNoSerriedSpaces.equalsIgnoreCase(familyname)) {
+
+                            // EC 1003
+                            funcAddtoReportPerson(id_person, id_source, 1003, familyname);
+                        }
+
+                        String nameNoInvalidChars = funcCleanNaam(nameNoSerriedSpaces);
+
+                        // Family name contains invalid chars ?
+                        if (!nameNoSerriedSpaces.equalsIgnoreCase(nameNoInvalidChars)) {
+
+                            // EC 1004
+                            funcAddtoReportPerson(id_person, id_source, 1004, familyname);
+                        }
+
+                        // check if name has prepieces
+                        String nameNoPrePiece = funcNamePrepiece(nameNoInvalidChars, id_person);
+
+                        // Family name contains invalid chars ?
+                        if (!nameNoPrePiece.equalsIgnoreCase(nameNoInvalidChars)) {
+
+                            // EC 1008
+                            funcAddtoReportPerson(id_person, id_source, 1008, familyname);
+                        }
+
+                        // Ckeck on Aliasses
+                        String nameNoAlias = standardAlias(id_person, id_source, nameNoPrePiece);
+
+                        // Check on suffix
+                        ArrayListNonCase sfxO = ttalSuffix.getArray("original");
+
+                        for (int i = 0; i < sfxO.size(); i++) {
+
+                            if (nameNoAlias.endsWith(" " + sfxO.get(i).toString())) {
+
+                                // EC 1006
+                                funcAddtoReportPerson(id_person, id_source, 1006, nameNoAlias);
+
+                                nameNoAlias = nameNoAlias.replaceAll(" " + sfxO.get(i).toString(), "");
+
+                                // Set alias
+                                PersonC.updateQuery("suffix", sfxO.get(i).toString(), id_person);
+                            }
+                        }
+
+                        // Clean name one more time
+                        String nameNoSuffix = LinksSpecific.funcCleanSides(nameNoAlias);
+
+                        // Check name in original
+                        if (ttalFamilyname.originalExists(nameNoSuffix)) {
+
+                            // get standard_code
+                            String standard_code = ttalFamilyname.getStandardCodeByOriginal(nameNoSuffix);
+
+                            // Check the standard code
+                            if (standard_code.equals(SC_Y)) {
+
+                                writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
+                            } else if (standard_code.equals(SC_I)) {
+
+                                // EC 1000
+                                funcAddtoReportPerson(id_person, id_source, 1000, nameNoSuffix);
+
+                                writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
+                            } else if (standard_code.equals(SC_N)) {
+
+                                // EC 1005
+                                funcAddtoReportPerson(id_person, id_source, 1005, nameNoSuffix);
+                            } else if (standard_code.equals(SC_X)) {
+
+                                // EC 1009
+                                funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
+
+                                writerFamilyname.write(id_person + "," + nameNoSuffix.toLowerCase() + "\n");
+                            } else {
+                                // EC 1010
+                                funcAddtoReportPerson(id_person, id_source, 1010, nameNoSuffix);
+                            }
+                        } else {
+                            // Familie is nieuw en wordt toegevoegd
+                            ttalFamilyname.addOriginal(nameNoSuffix);
+
+                            // EC 1009
+                            funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
+
+                            writerFamilyname.write(id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n");
+
+                        }
+                    }
+                } // Familyname empty
+                else {
+
+                    // EC 1001
+                    funcAddtoReportPerson(id_person, id_source, 1001, "");
+                }
+            }
+            con.close();
+            rsFamilyname.close();
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning familyname: " + e.getMessage(), false, true);
+        }
+    } // standardFamilyname
+
+
+    /**
+     * @param type
+     */
+    public void standardFlaggedDate( String type )
+    {
+        // Step vars
+        int counter = 0;
+        int step = 10000;
+        int stepstate = step;
+
+        try {
+            String startQuery;
+
+            startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_c WHERE ( ( " + type + "_date_flag = 2 ) OR ( " + type + "_date_flag = 3 ) ) AND " + type + "_date is not null";
+
+            ResultSet rs = conCleaned.runQueryWithResult(startQuery);
+
+            while (rs.next()) {
+
+                // GUI info
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rs.getInt("id_person");
+                int id_source = rs.getInt("id_source");
+                String date = rs.getString(type + "_date");
+
+                if (date.isEmpty()) {
+                    continue;
+                }
+
+                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
+
+                if (dymd.isValidDate()) {
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + date + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
+                            + "person_c." + type + "_date_valid = 1 "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                } else {
+
+                    // EC 211
+                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
+
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + date + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                }
+            }
+            rs = null;
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning " + type + " flagged date: " + e.getMessage(), false, true);
+        }
+    } // standardFlaggedDate
+
+
+    /**
+     * @param rs
+     * @param idFieldO
+     * @param locationFieldO
+     * @param locationFieldC
+     * @param id_source
+     * @param tt
+     */
+    private void standardLocation( ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
+    throws Exception
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+            while (rs.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id = rs.getInt(idFieldO);
+                String location = rs.getString(locationFieldO);
+
+                if (location != null && !location.isEmpty()) {
+
+                    location = location.toLowerCase();
+
+                    if (ttalLocation.originalExists(location)) {
+
+                        String nieuwCode = ttalLocation.getStandardCodeByOriginal(location);
+
+                        if (nieuwCode == null ? SC_X == null : (nieuwCode.equals(SC_X))) {
+
+                            // EC 91
+                            if (tt == TableType.REGISTRATION) {
+                                funcAddtoReportRegistration(id, id_source, 91, location);
+                                String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
+                                conCleaned.runQuery(query);
+                            } else {
+                                funcAddtoReportPerson(id, id_source, 91, location);
+                                String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
+                                conCleaned.runQuery(query);
+                            }
+                        } else if (nieuwCode == null ? SC_N == null : nieuwCode.equals(SC_N)) {
+
+                            // EC 93
+                            if (tt == TableType.REGISTRATION) {
+                                funcAddtoReportRegistration(id, id_source, 91, location);
+                            } else {
+                                funcAddtoReportPerson(id, id_source, 93, location);
+                            }
+                        } else if (nieuwCode == null ? SC_I == null : nieuwCode.equals(SC_I)) {
+
+                            // EC 95
+                            if (tt == TableType.REGISTRATION) {
+                                funcAddtoReportRegistration(id, id_source, 95, location);
+                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
+                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
+                                conCleaned.runQuery(query);
+                            } else {
+                                funcAddtoReportPerson(id, id_source, 95, location);
+                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
+                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
+                                conCleaned.runQuery(query);
+                            }
+
+                            String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
+
+                        } else if (nieuwCode == null ? SC_Y == null : nieuwCode.equals(SC_Y)) {
+
+                            if (tt == TableType.REGISTRATION) {
+                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
+                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
+                                conCleaned.runQuery(query);
+                            } else {
+                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
+                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
+                                conCleaned.runQuery(query);
+                            }
+
+
+                        } else {
+
+                            // EC 99
+                            if (tt == TableType.REGISTRATION) {
+                                funcAddtoReportRegistration(id, id_source, 99, location);
+                            } else {
+                                funcAddtoReportPerson(id, id_source, 99, location);
+                            }
+                        }
+                    } else {
+
+                        // EC 91
+                        if (tt == TableType.REGISTRATION) {
+                            funcAddtoReportRegistration(id, id_source, 91, location);
+                            String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
+                            conCleaned.runQuery(query);
+                        } else {
+                            funcAddtoReportPerson(id, id_source, 91, location);
+                            String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
+                            conCleaned.runQuery(query);
+                        }
+                        ttalLocation.addOriginal(location);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new Exception(counter + " An error occured while cleaning Location: " + e.getMessage());
+        }
+    } // standardLocation
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardMarLocation( String sourceNo )
+    {
+        String startQuery;
+        String id_source;
+
+        if (sourceNo.isEmpty()) {
+            startQuery = "SELECT id_person , mar_location FROM person_o" + bronFilter + " AND mar_location <> ''";
+            id_source = this.sourceId + "";
+        } else {
+            startQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceNo + " AND mar_location <> ''";
+            id_source = sourceNo;
+        }
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+            standardLocation(rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON);
+        } catch (Exception e) {
+            showMessage(e.getMessage(), false, true);
+        }
+    } // standardMarLocation
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardOccupation( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+        int empty = 0;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if( sourceNo.isEmpty() ) {
+                startQuery = "SELECT id_person , occupation FROM person_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            // Get occupation
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+
+            while( rs.next() )
+            {
+                counter++;
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
+                    stepstate += step;
+                }
+
+                int id_person = rs.getInt( "id_person" );
+                String occupation = rs.getString( "occupation" );
+
+
+                if( occupation == null || occupation == "" ) { empty += 1; }
+                //else { System.out.printf( "%d %s: %d: %s: %s\n", counter, "id_person", id_person, "occupation", occupation ); }
+
+
+                //...
 
 
 
 
+            }
+            showMessage( counter + " persons, " + empty + " without occupation" , false, true );
+
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while cleaning Occupation: " + ex.getMessage(), false, true );
+        }
+    } // standardOccupation
 
 
+    /**
+     * @param sourceNo
+     * @throws Exception
+     */
+    public void standardPrepiece( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , prefix FROM person_o" + bronFilter + " AND prefix <> ''";
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceNo + " AND prefix <> ''";
+                id_source = sourceNo;
+            }
+
+            // create connection
+            Connection con = getConnection("links_original");
+            con.isReadOnly();
+
+            // Read family names from table
+            ResultSet rsPrepiece = con.createStatement().executeQuery(startQuery);
+            con.createStatement().close();
+
+            // Get count
+            rsPrepiece.last();
+
+            int count = rsPrepiece.getRow();
+
+            rsPrepiece.beforeFirst();
+
+            while (rsPrepiece.next()) {
+
+                // Create lists
+                String listPF = "";
+                String listTO = "";
+                String listTN = "";
+
+                counter++;
+
+                if (counter == stepstate) {
+                    showMessage(counter + " of " + count, true, true);
+                    stepstate += step;
+                }
+
+                // test
+                if (counter != 398798) {
+                    continue;
+                }
+
+                int id_person = rsPrepiece.getInt("id_person");
+                String prepiece = rsPrepiece.getString("prefix").toLowerCase();
+
+                // clean
+                prepiece = funcCleanNaam(prepiece);
+
+                // Split prefix
+                String[] prefixes = prepiece.split(" ");
+
+                for (String part : prefixes) {
+
+                    // Does Prefix exists in ref table
+                    if (ttalPrepiece.originalExists(part)) {
+
+                        String standard_code = ttalPrepiece.getStandardCodeByOriginal(part);
+                        String prefix = ttalPrepiece.getColumnByOriginal("prefix", part);
+                        String title_noble = ttalPrepiece.getColumnByOriginal("title_noble", part);
+                        String title_other = ttalPrepiece.getColumnByOriginal("title_other", part);
+
+                        // standard code x
+                        if (standard_code.equals(SC_X)) {
+                            // EC 81
+                            funcAddtoReportPerson(id_person, id_source, 81, part);
+
+                            listPF += part + " ";
+                        } else if (standard_code.equals(SC_N)) {
+                            // EC 83
+                            funcAddtoReportPerson(id_person, id_source, 83, part);
+                        } else if (standard_code.equals(SC_I)) {
+
+                            // EC 85
+                            funcAddtoReportPerson(id_person, id_source, 85, part);
+
+                            if (prefix != null && !prefix.isEmpty()) {
+                                listPF += prefix + " ";
+                            } else if (title_noble != null && !title_noble.isEmpty()) {
+                                listTN += title_noble + " ";
+                            } else if (title_other != null && !title_other.isEmpty()) {
+                                listTO += title_other + " ";
+                            }
+                        } else if (standard_code.equals(SC_Y)) {
+
+                            if (prefix != null && !prefix.isEmpty()) {
+                                listPF += prefix + " ";
+                            } else if (title_noble != null && !title_noble.isEmpty()) {
+                                listTN += title_noble + " ";
+                            } else if (title_other != null && !title_other.isEmpty()) {
+                                listTO += title_other + " ";
+                            }
+                        } else {
+                            // Standard_code invalid
+                            funcAddtoReportPerson(id_person, id_source, 89, part);
+                        }
+                    } else { // Prefix not in ref
+                        funcAddtoReportPerson(id_person, id_source, 81, part);
+
+                        // Add Prefix
+                        ttalPrepiece.addOriginal(part);
+
+                        // Add to list
+                        listPF += part + " ";
+
+                    }
+                }
+
+                // write lists to person_c
+                if (!listTN.isEmpty()) {
+                    conCleaned.runQuery(PersonC.updateQuery("title_noble", listTN.substring(0, (listTN.length() - 1)), id_person));
+                }
+                if (!listTO.isEmpty()) {
+                    conCleaned.runQuery(PersonC.updateQuery("title_other", listTO.substring(0, (listTO.length() - 1)), id_person));
+                }
+                if (!listPF.isEmpty()) {
+                    conCleaned.runQuery(PersonC.updateQuery("prefix", listPF.substring(0, (listPF.length() - 1)), id_person));
+                }
+            }
+
+            // Free Resources
+            rsPrepiece.close();
+            con.close();
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Prepiece: " + e.getMessage(), false, true);
+        }
+    } // standardPrepiece
 
 
-     /*---<                                                 >-----------------*/
+    /**
+     * @param sourceNo
+     */
+    public void standardRegistrationDate( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_registration , registration_date FROM registration_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+
+            while (rs.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                // Get Opmerking
+                int id_registration = rs.getInt("id_registration");
+                String registration_date = rs.getString("registration_date");
+
+                if (registration_date == null) {
+
+                    // EC 202
+                    funcAddtoReportRegistration(id_registration, id_source, 202, "");
+
+                    continue;
+                }
+
+                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(registration_date);
+
+                if (dymd.isValidDate()) {
+
+                    String query = "UPDATE registration_c"
+                            + " SET registration_c.registration_date = '" + registration_date + "' , "
+                            + "registration_c.registration_day = " + dymd.getDay() + " , "
+                            + "registration_c.registration_month = " + dymd.getMonth() + " , "
+                            + "registration_c.registration_year = " + dymd.getYear()
+                            + " WHERE registration_c.id_registration = " + id_registration;
+
+                    conCleaned.runQuery(query);
+                } // Error occured
+                else {
+
+                    // EC 201
+                    funcAddtoReportRegistration(id_registration, id_source, 201, dymd.getReports());
+
+                    String query = "UPDATE registration_c"
+                            + " SET registration_c.registration_date = '" + registration_date + "' , "
+                            + "registration_c.registration_day = " + dymd.getDay() + " , "
+                            + "registration_c.registration_month = " + dymd.getMonth() + " , "
+                            + "registration_c.registration_year = " + dymd.getYear()
+                            + " WHERE registration_c.id_registration = " + id_registration;
+
+                    conCleaned.runQuery(query);
+                }
+            }
+            rs = null;
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Registration date: " + e.getMessage(), false, true);
+        }
+    } // standardRegistrationDate
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardRegistrationLocation( String sourceNo )
+    {
+        String startQuery;
+        String id_source;
+
+        if (sourceNo.isEmpty()) {
+            startQuery = "SELECT id_registration , registration_location FROM registration_o" + bronFilter;
+            id_source = this.sourceId + "";
+        } else {
+            startQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceNo;
+            id_source = sourceNo;
+        }
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+
+            // Call standardLocation
+            standardLocation(rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION);
+        } catch (Exception e) {
+            showMessage(e.getMessage(), false, true);
+        }
+    } // standardRegistrationLocation
+
+
+    private void standardRole()
+    {
+        String query = " UPDATE links_original.person_o, links_cleaned.person_c, links_general.ref_role "
+                + "SET "
+                + "links_cleaned.person_c.role = links_general.ref_role.role_nr "
+                + "WHERE links_original.person_o.role = links_general.ref_role.original AND "
+                + "links_original.person_o.id_person = links_cleaned.person_c.id_person; ";
+
+        try {
+            conCleaned.runQuery(query);
+        } catch (Exception e) {
+            showMessage("An error occured while running standardRole: " + e.getMessage(), false, true);
+        }
+    } // standardRole
+
+
+    /**
+     * @param SourceNo
+     * @throws Exception
+     */
+    public void standardSequence( String SourceNo) throws Exception
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+
+            if (SourceNo.isEmpty()) {
+
+                startQuery = ""
+                        + "SELECT "
+                        + "id_registration , "
+                        + "registration_maintype , "
+                        + "registration_location_no , "
+                        + "registration_year , "
+                        + "registration_month , "
+                        + "registration_seq , "
+                        + "id_source "
+                        + "FROM "
+                        + "links_cleaned.registration_c "
+                        + sourceFilter + " AND "
+                        + "registration_location_no is not null AND "
+                        + "registration_year     is not null AND "
+                        + "registration_month    is not null "
+                        + "ORDER BY "
+                        + "registration_maintype , "
+                        + "registration_location_no , "
+                        + "registration_year , "
+                        + "registration_month , "
+                        + "registration_seq ";
+
+            } else {
+                startQuery = ""
+                        + "SELECT "
+                        + "id_registration , "
+                        + "registration_maintype , "
+                        + "registration_location_no , "
+                        + "registration_year , "
+                        + "registration_month , "
+                        + "registration_seq , "
+                        + "id_source "
+                        + "FROM "
+                        + "links_cleaned.registration_c "
+                        + "WHERE id_source = " + SourceNo + " AND "
+                        + "registration_location_no is not null AND "
+                        + "registration_year     is not null AND "
+                        + "registration_month    is not null "
+                        + "ORDER BY "
+                        + "registration_maintype , "
+                        + "registration_location_no , "
+                        + "registration_year , "
+                        + "registration_month , "
+                        + "registration_seq";
+            }
+
+
+            ResultSet rs = conCleaned.runQueryWithResult(startQuery);
+
+            // Read first entry
+            if (rs.next() == false) {
+                return;
+            }
+
+            int previousId = rs.getInt("id_registration");
+            int previousNo = -1;
+            int previousMt = rs.getInt("registration_maintype");
+            int previousLc = rs.getInt("registration_location_no");
+            int previousYr = rs.getInt("registration_year");
+            int previousMn = rs.getInt("registration_month");
+            String id_source = rs.getString("id_source");
+
+            if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
+                // EC 111
+                funcAddtoReportRegistration(previousId, id_source, 111, "");
+            } else { // Present
+                // Is is numeric
+                try {
+
+                    previousNo = Integer.parseInt(rs.getString("registration_seq"));
+
+                } catch (Exception e) {
+                    // EC 112
+                    funcAddtoReportRegistration(previousId, id_source, 112, rs.getString("registration_seq"));
+                }
+            }
+            while (rs.next()) {
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int nummer;
+
+                // Is reg_seq present ?
+                if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
+
+                    // EC 111
+                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 111, "");
+                    continue;
+                }
+                // Is is numeric ?
+                try {
+                    nummer = Integer.parseInt(rs.getString("registration_seq"));
+                } catch (Exception e) {
+                    // EC 112
+                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 112, rs.getString("registration_seq"));
+
+                    // Set values
+                    previousId = rs.getInt("id_registration");
+                    previousMt = rs.getInt("registration_maintype");
+                    previousLc = rs.getInt("registration_location_no");
+                    previousYr = rs.getInt("registration_year");
+                    previousMn = rs.getInt("registration_month");
+
+                    continue;
+                }
+
+                int verschil = nummer - previousNo;
+
+                if (verschil == 0 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
+                    // EC 113
+                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq"));
+                } else if (verschil > 1 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
+                    // EC 114
+                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq"));
+                }
+
+                // Set values
+                previousId = rs.getInt("id_registration");
+                previousNo = nummer;
+                previousMt = rs.getInt("registration_maintype");
+                previousLc = rs.getInt("registration_location_no");
+                previousYr = rs.getInt("registration_year");
+                previousMn = rs.getInt("registration_month");
+            }
+        } catch (Exception e) {
+
+            showMessage(counter + " An error occured while checking sequence: " + e.getMessage(), false, true);
+        }
+    } // standardSequence
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardSex( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , sex FROM person_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            // Get gender
+            ResultSet rsGeslacht = conOriginal.runQueryWithResult(startQuery);
+
+            while (rsGeslacht.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rsGeslacht.getInt("id_person");
+                String sex = rsGeslacht.getString("sex");
+
+                // Check presence of the gender
+                if (sex != null && !sex.isEmpty()) {
+
+                    // Check presence in
+                    if (ttalStatusSex.originalExists(sex)) {
+
+                        String nieuwCode = ttalStatusSex.getStandardCodeByOriginal(sex);
+
+                        if (nieuwCode.equals(SC_X)) {
+
+                            // EC 31
+                            funcAddtoReportPerson(id_person, id_source, 31, sex);
+
+                            String query = PersonC.updateQuery("sex", sex, id_person);
+                            conCleaned.runQuery(query);
+                        } else if (nieuwCode.equals(SC_N)) {
+                            // EC 33
+                            funcAddtoReportPerson(id_person, id_source, 33, sex);
+                        } else if (nieuwCode.equals(SC_I)) {
+
+                            // EC 35
+                            funcAddtoReportPerson(id_person, id_source, 35, sex);
+
+                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
+                            conCleaned.runQuery(query);
+                        } else if (nieuwCode.equals(SC_Y)) {
+
+                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
+                            conCleaned.runQuery(query);
+                        } else {
+                            // Invalid standard code
+                            // EC 39
+                            funcAddtoReportPerson(id_person, id_source, 39, sex);
+                        }
+                    } else {
+
+                        // EC 33
+                        funcAddtoReportPerson(id_person, id_source, 31, sex);
+
+                        // Add new Sex
+                        ttalStatusSex.addOriginal(sex);
+
+                        String query = PersonC.updateQuery("sex", sex, id_person);
+                        conCleaned.runQuery(query);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Sex: " + e.getMessage(), false, true);
+        }
+    } // standardSex
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardStatusSex( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , sex , civil_status FROM person_o" + bronFilter + " and civil_status is not null ";
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            ResultSet rsStaat = conOriginal.runQueryWithResult(startQuery);
+
+            while (rsStaat.next()) {
+
+                counter++;
+
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+
+                int id_person = rsStaat.getInt("id_person");
+                String sex = rsStaat.getString("sex");
+                String civil_status = rsStaat.getString("civil_status");
+
+                if (civil_status != null && !civil_status.isEmpty()) {
+
+                    // Check ref
+                    if (ttalStatusSex.originalExists(civil_status)) {
+
+                        String nieuwCode = this.ttalStatusSex.getStandardCodeByOriginal(civil_status);
+
+                        if (nieuwCode.equals(SC_X)) {
+
+                            // EC 61
+                            funcAddtoReportPerson(id_person, id_source, 61, civil_status);
+
+                            String query = PersonC.updateQuery("civil_status", civil_status, id_person);
+                            conCleaned.runQuery(query);
+                        } else if (nieuwCode.equals(SC_N)) {
+                            // EC 63
+                            funcAddtoReportPerson(id_person, id_source, 63, civil_status);
+                        } else if (nieuwCode.equals(SC_I)) {
+
+                            // EC 65
+                            funcAddtoReportPerson(id_person, id_source, 65, civil_status);
+
+                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
+                            conCleaned.runQuery(query);
+
+                            // Extra check on sex
+                            if (sex != null && !sex.isEmpty()) {
+
+                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
+                                    // EC 68
+                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
+                                }
+                            } // Sex is empty
+                            else {
+
+                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
+                                conCleaned.runQuery(geslachtQuery);
+
+                            }
+
+                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
+                            conCleaned.runQuery(geslachtQuery);
+
+                        } else if (nieuwCode.equals(SC_Y)) {
+
+
+                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
+                            conCleaned.runQuery(query);
+
+                            // Extra check on sex
+                            if (sex != null && !sex.isEmpty()) {
+
+                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
+                                    // EC 68
+                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
+                                }
+                            } // Sex is empty
+                            else {
+
+                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
+                                conCleaned.runQuery(geslachtQuery);
+
+                            }
+
+                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
+                            conCleaned.runQuery(geslachtQuery);
+                        } else {
+
+                            // Invalid SC
+                            // EC 69
+                            funcAddtoReportPerson(id_person, id_source, 69, civil_status);
+                        }
+                    } // add to ref
+                    else {
+                        // EC 61
+                        funcAddtoReportPerson(id_person, id_source, 61, civil_status);
+
+                        // Add new Status
+                        ttalStatusSex.addOriginal(civil_status);
+
+                        // Write to Person
+                        String query = PersonC.updateQuery("civil_status", civil_status, id_person);
+                        conCleaned.runQuery(query);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Civil Status: " + e.getMessage(), false, true);
+        }
+    } // standardStatusSex
+
+
+    /**
+     * @param bronnrsourceNo
+     */
+    public void standardSuffix( String bronnrsourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+            String startQuery;
+            String id_source;
+
+            if (bronnrsourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , suffix FROM person_o" + bronFilter + " AND suffix <> ''";
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + bronnrsourceNo + " AND suffix <> ''";
+                id_source = bronnrsourceNo;
+            }
+
+            // create connection
+            Connection con = getConnection("links_original");
+            con.isReadOnly();
+
+            // Read family names from table
+            ResultSet rsSuffix = con.createStatement().executeQuery(startQuery);
+            con.createStatement().close();
+
+            // Get count
+            rsSuffix.last();
+
+            int count = rsSuffix.getRow();
+
+            rsSuffix.beforeFirst();
+
+            while (rsSuffix.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + " of " + count, true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rsSuffix.getInt("id_person");
+                String suffix = rsSuffix.getString("suffix").toLowerCase();
+
+                suffix = funcCleanNaam(suffix);
+
+                // Controleer of deze voorkomt in ref tabel
+                if (ttalSuffix.originalExists(suffix)) {
+
+                    String standard_code = ttalSuffix.getStandardCodeByOriginal(suffix);
+
+                    if (standard_code.equals(SC_X)) {
+
+                        // EC 71
+                        funcAddtoReportPerson(id_person, id_source, 71, suffix);
+
+                        String query = PersonC.updateQuery("suffix", suffix, id_person);
+                        conCleaned.runQuery(query);
+                    } else if (standard_code.equals(SC_N)) {
+
+                        // EC 73
+                        funcAddtoReportPerson(id_person, id_source, 73, suffix);
+
+                    } else if (standard_code.equals(SC_I)) {
+
+                        // EC 74
+                        funcAddtoReportPerson(id_person, id_source, 75, suffix);
+
+                        String query = PersonC.updateQuery("suffix", suffix, id_person);
+                        conCleaned.runQuery(query);
+
+                    } else if (standard_code.equals(SC_Y)) {
+
+                        String query = PersonC.updateQuery("suffix", suffix, id_person);
+                        conCleaned.runQuery(query);
+                    } else {
+
+                        // EC 75
+                        funcAddtoReportPerson(id_person, id_source, 79, suffix);
+                    }
+                } // Standard code x
+                else {
+
+                    // EC 71
+                    funcAddtoReportPerson(id_person, id_source, 71, suffix);
+
+                    ttalSuffix.addOriginal(suffix);
+
+                    String query = PersonC.updateQuery("suffix", suffix, id_person);
+                    conCleaned.runQuery(query);
+
+                }
+            }
+
+            // Free resources
+            rsSuffix.close();
+            con.close();
+
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Suffix: " + e.getMessage(), false, true);
+        }
+    } // standardSuffix
+
+
+    /**
+     * @param sourceNo
+     */
+    /*
+    public void standardType(String sourceNo) {
+
+    int counter = 0;
+    int step = 1000;
+    int stepstate = step;
+
+    try {
+
+    String startQuery;
+    String id_source;
+
+    if (sourceNo.isEmpty()) {
+    startQuery = "SELECT id_registration , registration_type FROM registration_o" + bronFilter;
+    id_source = this.sourceId + "";
+    } else {
+    startQuery = "SELECT id_registration , registration_type FROM registration_o WHERE id_source = " + sourceNo;
+    id_source = sourceNo;
+    }
+
+    // Get types
+    ResultSet type = conOriginal.runQueryWithResult(startQuery);
+
+    while (type.next()) {
+
+    counter++;
+    if (counter == stepstate) {
+    showMessage(counter + "", true, true);
+    stepstate += step;
+    }
+
+    int id_registration = type.getInt("id_registration");
+    String registration_type = type.getString("registration_type").toLowerCase();
+
+    // check is it is empty
+    if (registration_type != null && !registration_type.isEmpty()) {
+
+    // check ref
+    if (ttalRegistration.originalExists(registration_type)) {
+
+    String nieuwCode = ttalRegistration.getStandardCodeByOriginal(registration_type);
+
+    if (nieuwCode.equals(SC_X)) {
+
+    // EC 51
+    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+
+    String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
+    conCleaned.runQuery(query);
+    } else if (nieuwCode.equals(SC_N)) {
+    // EC 53
+    funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
+    } else if (nieuwCode.equals(SC_I)) {
+
+    // EC 55
+    funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
+
+    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
+    conCleaned.runQuery(query);
+
+    } else if (nieuwCode.equals(SC_Y)) {
+
+    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
+    conCleaned.runQuery(query);
+    } else {
+
+    // invalid SC
+    // EC 59
+    funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
+    }
+    } // standardcode x
+    else {
+
+    // EC 51
+    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+
+    // add to ref
+    ttalRegistration.addOriginal(registration_type);
+
+    // update person
+    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 20 ? registration_type : registration_type.substring(0, 20), id_registration);
+    conCleaned.runQuery(query);
+    }
+    }
+    }
+    } catch (Exception e) {
+    showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
+    }
+    }
+     */
+    public void standardType( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            // Get types node-152.dev.socialhistoryservices.org
+            ResultSet type = conOriginal.runQueryWithResult(startQuery);
+
+            while (type.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_registration = type.getInt("id_registration");
+                int registration_maintype = type.getInt("registration_maintype");
+                String registration_type = type.getString("registration_type") != null ? type.getString("registration_type").toLowerCase() : "";
+
+                // check ref database
+                ResultSet ref = conGeneral.runQueryWithResult("SELECT * FROM ref_registration WHERE main_type = " + registration_maintype + " AND original = '" + registration_type + "'");
+
+                // check ref
+                if (ref.next()) {
+
+                    String nieuwCode = ref.getString("standard_code").toLowerCase();
+
+                    if (nieuwCode.equals(SC_X)) {
+
+                        // EC 51
+                        funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+
+                        String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
+
+                        conCleaned.runQuery(query);
+                    } else if (nieuwCode.equals(SC_N)) {
+                        // EC 53
+                        funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
+                    } else if (nieuwCode.equals(SC_I)) {
+
+                        // EC 55
+                        funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
+
+                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
+
+                        conCleaned.runQuery(query);
+
+                    } else if (nieuwCode.equals(SC_Y)) {
+
+                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
+                        conCleaned.runQuery(query);
+                    } else {
+
+                        // invalid SC
+                        // EC 59
+                        funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
+                    }
+                } // standardcode x
+                else {
+
+                    // EC 51
+                    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+
+                    // add to ref
+                    conGeneral.runQuery("INSERT INTO ref_registration(original, main_type, standard_code) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')");
+
+                    // update person
+                    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration);
+                    conCleaned.runQuery(query);
+                }
+            }
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
+        }
+    } // standardType
+
+
+    /**
+     * @param sourceNo
+     */
+    public void standardYearAge( String sourceNo )
+    {
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        try {
+
+            String startQuery;
+            String id_source;
+
+            if (sourceNo.isEmpty()) {
+                startQuery = "SELECT id_person , age_year FROM person_o" + bronFilter;
+                id_source = this.sourceId + "";
+            } else {
+                startQuery = "SELECT id_person , age_year FROM person_o WHERE id_source = " + sourceNo;
+                id_source = sourceNo;
+            }
+
+            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+
+            while (rs.next()) {
+
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rs.getInt("id_person");
+                int year_age = rs.getInt("age_year");
+
+                // check if null
+                if (year_age != 0) {
+
+                    if ((year_age > 0) && (year_age < 115)) {
+                        String query = "UPDATE person_c"
+                                + " SET person_c.age_year = '" + year_age + "'"
+                                + " WHERE person_c.id_person = " + id_person;
+
+                        conCleaned.runQuery(query);
+                    } else {
+                        // EC 241
+                        funcAddtoReportPerson(id_person, id_source, 241, year_age + "");
+                    }
+                }
+            }
+            rs.close();
+            rs = null;
+        } catch (Exception e) {
+            showMessage(counter + " An error occured while cleaning Age Year: " + e.getMessage(), false, true);
+        }
+    } // standardYearAge
+
+     /*---< end Standardizing functions >------------------------------------*/
+
 
     /**
      * Read distinct source ids from links_original.registration_o
@@ -954,7 +3072,7 @@ public class LinksCleaned extends Thread {
     {
         String elapsed = Functions.millisec2hms( start, stop );
         showMessage( msg + " " + elapsed, false, true );
-    }
+    } // elapsedShowMessage
 
 
     /**
@@ -996,7 +3114,8 @@ public class LinksCleaned extends Thread {
 
             showMessage( endl, false, true );
         }
-    }
+    } // runMethod
+
 
     /**************************************************************************/
 
@@ -1399,8 +3518,8 @@ public class LinksCleaned extends Thread {
         }
 
         return cache;
+    } // functieParseRemarks
 
-    }
 
     private String functieOpmerkingenBeroep(String id_registratie, String bron, String value) throws Exception {
 
@@ -1411,7 +3530,8 @@ public class LinksCleaned extends Thread {
 
         // return event. bewerkte beroep
         return nieuweBeroep;
-    }
+    } // functieOpmerkingenBeroep
+
 
     private String functieOpmerkingenTeLocatie(String currentPart) {
         String[] locationRaw = currentPart.split("te");
@@ -1424,7 +3544,8 @@ public class LinksCleaned extends Thread {
         } else {
             return "";
         }
-    }
+    } // functieOpmerkingenTeLocatie
+
 
     private String functieOpmerkingenLocatie(String value) throws Exception {
         String locatie = LinksSpecific.functieOpmerkingenWaardeNaDubbelePunt(value);
@@ -1434,7 +3555,8 @@ public class LinksCleaned extends Thread {
 
         // return event. bewerkte beroep
         return nieuweLocatie;
-    }
+    } // functieOpmerkingenLocatie
+
 
     private HashMap functieOpmerkingenGebDatOverl(String currentPart) {
         String cleanValue = currentPart.replaceAll("[G|g]eboren", "");
@@ -1464,7 +3586,8 @@ public class LinksCleaned extends Thread {
 
         //return
         return values;
-    }
+    } // functieOpmerkingenGebDatOverl
+
 
     private HashMap functieOpmerkingenLocatieEnDatum(String currentPart) throws Exception {
         String cleanValue = LinksSpecific.functieOpmerkingenWaardeNaDubbelePunt(currentPart);
@@ -1500,7 +3623,8 @@ public class LinksCleaned extends Thread {
 
         //return
         return values;
-    }
+    } // functieOpmerkingenLocatieEnDatum
+
 
     // Verwerk in de lijst, en geef evt. ander beroep terug
     private String functieVeldBeroep(String id_registratie, String id_bron, String beroepTemp) throws Exception {
@@ -1556,7 +3680,8 @@ public class LinksCleaned extends Thread {
             }
         }
         return "";
-    }
+    } // functieVeldBeroep
+
 
     // Verwerk in de lijst, en geef evt. ander locatie terug
     private String functieVeldLocatie(String locatieTemp) throws Exception {
@@ -1589,7 +3714,8 @@ public class LinksCleaned extends Thread {
             }
         }
         return "";
-    }
+    } // functieVeldLocatie
+
 
     private String devideValueDate(String valueToDevide) {
 
@@ -1601,7 +3727,8 @@ public class LinksCleaned extends Thread {
         String onlyData = valueToDevide.replaceAll("[0-9]+-[0-9]+-[0-9]+", "");
 
         return onlyData + "$" + date;
-    }
+    } // devideValueDate
+
 
     /**
      * @throws Exception
@@ -1681,12 +3808,7 @@ public class LinksCleaned extends Thread {
         rs = null;
 
         showMessage( endl, false, true );
-    }
-
-    /**
-     * This section contains help functions
-     * ...
-     */
+    } // scanRemarks
 
 
     /**
@@ -1716,7 +3838,8 @@ public class LinksCleaned extends Thread {
                 + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
 
         conLog.runQuery(query);
-    }
+    } // funcAddtoReportRegistration
+
 
     /**
      * @param id
@@ -1745,7 +3868,8 @@ public class LinksCleaned extends Thread {
                 + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
 
         conLog.runQuery(query);
-    }
+    } // funcAddtoReportPerson
+
 
     /**
      * @param logText
@@ -1777,7 +3901,8 @@ public class LinksCleaned extends Thread {
             try { plog.show( logText ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
-    }
+    } // showMessage
+
 
     /**
      * @param name
@@ -1785,15 +3910,15 @@ public class LinksCleaned extends Thread {
      */
     private String funcCleanNaam(String name) {
         return name.replaceAll("[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "");
-    }
+    } // funcCleanNaam
 
     private String funcCleanFirstName(String name) {
         return name.replaceAll("[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "");
-    }
+    } // funcCleanFirstName
 
     private String funcCleanFamilyname(String name) {
         return name.replaceAll("[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " ");
-    }
+    } // funcCleanFamilyname
 
 
     /**
@@ -1805,7 +3930,8 @@ public class LinksCleaned extends Thread {
 
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
-    }
+    } // clearTextFields
+
 
     /**
      * @throws Exception
@@ -1834,7 +3960,7 @@ public class LinksCleaned extends Thread {
 
         showMessage( "links_temp", false, true );
         conTemp = new MySqlConnector( url, "links_temp", user, pass );
-    }
+    } // connectToDatabases
 
 
     private void createLogTable()
@@ -1863,7 +3989,8 @@ public class LinksCleaned extends Thread {
 
         conLog.runQuery( query );
 
-    }
+    } // createLogTable
+
 
     /**
      * TODO clean this, bron -> source everywhere
@@ -1880,390 +4007,8 @@ public class LinksCleaned extends Thread {
         bronFilterCleanReg      = " WHERE registration_c.id_source = " + sourceId;
         bronFilterOrigineelReg  = " WHERE registration_o.id_source = " + sourceId;
 
-    }
+    } // setSourceFilters
 
-
-    /**
-     * @param sourceNo
-     * @throws Exception
-     */
-    public void standardFirstname(String sourceNo) {
-
-        int counter = 0;
-        int step = 10000;
-        int stepstate = step;
-        String id_source;
-
-        try {
-
-            // create connection
-
-            Connection con = getConnection("links_original");
-            con.isReadOnly();
-
-            String startQuery;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , firstname FROM person_o" + bronFilter + "";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            // startQuery = "SELECT id_person , firstname FROM person_o" + " WHERE id_source = 115";
-
-            ResultSet rsFirstName = con.createStatement().executeQuery(startQuery);
-            con.createStatement().close();
-            // con.createStatement().close();
-
-//            rsFirstName.setFetchSize(100000);
-//           while (rsFirstName.next()) {
-////
-////              
-//////                int id_person = rsFirstName.getInt("id_person");
-//////                String firstname = rsFirstName.getString("firstname");
-//            }
-
-//            // close 
-//            int iets = 0;
-//            rsFirstName = con.createStatement().executeQuery("SELECT 0;");
-//            con.createStatement().close();
-//            rsFirstName.close();
-//            rsFirstName = null;
-//            
-//            con.close();
-//            System.gc();
-
-
-            // get total
-            rsFirstName.last();
-
-            int total = rsFirstName.getRow();
-
-            rsFirstName.beforeFirst();
-
-            while (rsFirstName.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + total, true, true);
-                    stepstate += step;
-                }
-
-
-//                if (counter == 97253 ){
-//                    int bla = 0;
-//                    bla++;
-//                }
-
-
-                int id_person = rsFirstName.getInt("id_person");
-                String firstname = rsFirstName.getString("firstname");
-
-                // Is firstname empty?
-                if (firstname != null && !firstname.isEmpty()) {
-
-                    // clean name
-                    firstname = funcCleanFirstName(firstname);
-
-                    firstname = firstname.toLowerCase();
-
-//                    if (id_person == 9363889) {
-//                        int iets = 9;
-//                    }
-
-                    // Check name on aliasses
-                    String nameNoAlias = standardAlias(id_person, id_source, firstname);
-
-                    // Check on serried spaces
-                    // Split name on spaces
-                    String[] names = nameNoAlias.split(" ");
-                    boolean spaces = false;
-
-                    ArrayList<String> preList = new ArrayList<String>();
-                    ArrayList<String> postList = new ArrayList<String>();
-
-                    for (String n : names) {
-                        if (n.isEmpty()) {
-                            spaces = true;
-                        } else { // add to list
-                            preList.add(n);
-                        }
-                    }
-
-                    // EC
-                    if (spaces) {
-                        funcAddtoReportPerson(id_person, id_source, 1103, "");
-                    }
-
-                    // loop through names
-                    for (int i = 0; i < preList.size(); i++) {
-
-                        // Does this aprt exists in ref_name?
-                        if (ttalFirstname.originalExists(preList.get(i))) {
-
-                            // Check the standard code
-                            String standard_code = ttalFirstname.getStandardCodeByOriginal(preList.get(i));
-                            if (standard_code.equals(SC_Y)) {
-                                postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
-                            } else if (standard_code.equals(SC_I)) { // EC 1100
-                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
-                                postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
-                            } else if (standard_code.equals(SC_N)) { // EC 1105
-                                funcAddtoReportPerson(id_person, id_source, 1105, preList.get(i));
-                            } else if (standard_code.equals(SC_X)) { // EC 1109
-                                funcAddtoReportPerson(id_person, id_source, 1109, preList.get(i));
-                                postList.add(preList.get(i));
-                            } else {// EC 1100
-                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
-                            }
-                        } // name does not exists in ref_firtname
-                        else {
-
-                            // check on invalid token
-                            String nameNoInvalidChars = funcCleanNaam(preList.get(i));
-
-                            // name contains invalid chars ?
-                            if (!preList.get(i).equalsIgnoreCase(nameNoInvalidChars)) {
-
-                                // EC 1104
-                                funcAddtoReportPerson(id_person, id_source, 1104, preList.get(i));
-
-                                // Check if name exists in ref
-                                // Does this aprt exists in ref_name?
-                                if (ttalFirstname.originalExists(nameNoInvalidChars)) {
-                                    // Check the standard code
-                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoInvalidChars);
-                                    if (standard_code.equals(SC_Y)) {
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
-                                    } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoInvalidChars);
-                                    } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoInvalidChars);
-                                        postList.add(nameNoInvalidChars);
-                                    } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
-                                    }
-
-                                    // continue
-                                    continue;
-                                }
-
-                                // check if it ends witch suffix
-                                // Check on suffix
-                                ArrayListNonCase sfxO = ttalSuffix.getArray("original");
-                                ArrayListNonCase sfxSc = ttalSuffix.getArray("standard_code");
-
-                                for (int j = 0; j < sfxO.size(); j++) {
-
-                                    if (nameNoInvalidChars.endsWith(" " + sfxO.get(j).toString())
-                                            && sfxSc.get(j).toString().equals(SC_Y)) {
-
-                                        // EC 1106
-                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
-
-                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll(" " + sfxO.get(j).toString(), "");
-
-                                        // Set suffix
-                                        String query = PersonC.updateQuery("suffix", sfxO.get(j).toString(), id_person);
-
-                                        conCleaned.runQuery(query);
-                                    }
-                                }
-
-                                // check ref_prepiece
-                                String nameNoPieces = funcNamePrepiece(nameNoInvalidChars, id_person);
-
-                                if (!nameNoPieces.equals(nameNoInvalidChars)) {
-
-                                    // EC 1107
-                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
-
-                                }
-
-                                // last check on ref
-                                if (ttalFirstname.originalExists(nameNoPieces)) {
-                                    // Check the standard code
-                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
-                                    if (standard_code.equals(SC_Y)) {
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
-                                    } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
-                                        postList.add(nameNoPieces);
-                                    } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
-                                    }
-                                } else {
-                                    // name must be added to ref_firstname with standard_code x
-                                    // Also add name to postlist
-                                    ttalFirstname.addOriginal(nameNoPieces);
-                                    postList.add(nameNoPieces);
-                                }
-
-
-                            } else { // no invalid token
-
-                                // check if it ends witch suffix
-                                // Check on suffix
-                                ArrayListNonCase sfxO = ttalSuffix.getArray("original");
-                                ArrayListNonCase sfxSc = ttalSuffix.getArray("standard_code");
-
-                                for (int j = 0; j < sfxO.size(); j++) {
-
-                                    if (nameNoInvalidChars.equalsIgnoreCase(sfxO.get(j).toString())
-                                            && sfxSc.get(j).toString().equals(SC_Y)) {
-
-                                        // EC 1106
-                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
-
-                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll(sfxO.get(j).toString(), "");
-
-                                        // Set suffix
-                                        String query = PersonC.updateQuery("suffix", sfxO.get(j).toString(), id_person);
-
-                                        conCleaned.runQuery(query);
-                                    }
-                                }
-
-                                // check ref_prepiece
-                                String nameNoPieces = funcNamePrepiece(nameNoInvalidChars, id_person);
-
-                                if (!nameNoPieces.equals(nameNoInvalidChars)) {
-
-                                    // EC 1107
-                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
-
-                                }
-
-                                // last check on ref
-                                if (ttalFirstname.originalExists(nameNoPieces)) {
-                                    // Check the standard code
-                                    String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
-                                    if (standard_code.equals(SC_Y)) {
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
-                                        postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
-                                    } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
-                                        postList.add(nameNoPieces);
-                                    } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
-                                    }
-                                } else {
-                                    // name must be added to ref_firstname with standard_code x
-                                    // Also add name to postlist
-                                    ttalFirstname.addOriginal(nameNoPieces);
-                                    postList.add(nameNoPieces);
-                                }
-                            }
-                        }
-                    }
-
-                    // Write all parts to Person POSTLIST
-                    String vn = "";
-
-                    for (int i = 0; i < postList.size(); i++) {
-
-                        vn += postList.get(i);
-
-                        // posible space
-                        if (i != (postList.size() - 1)) {
-                            vn += " ";
-                        }
-                    }
-
-                    // if vn not empty wrtie to vn
-                    if (!vn.isEmpty()) {
-
-                        //String query = PersonC.updateQuery("firstname", vn, id_person);
-
-                        //conCleaned.runQuery(query);
-
-                        writerFirstname.write(id_person + "," + vn.trim().toLowerCase() + "\n");
-
-                    }
-
-                    preList.clear();
-                    postList.clear();
-                    preList = null;
-                    postList = null;
-                } else {
-
-                    // First name is empty, EC 1101
-                    funcAddtoReportPerson(id_person, id_source, 1101, "");
-                }
-
-                // close this
-                id_person = 0;
-                firstname = null;
-            }
-
-            // TODO: empty resultset
-            //rsFirstName = con.createStatement().executeQuery("SELECT 0;");
-
-            rsFirstName.close();
-            con.close();
-
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Firstname: " + e.getMessage(), false, true);
-        }
-    }
-
-
-    /**
-     * @param id
-     * @param id_souce
-     * @param name
-     * @return
-     */
-    private String standardAlias(int id, String id_souce, String name) throws Exception {
-
-        dataset.ArrayListNonCase ag = ttalAlias.getArray("original");
-
-        // to lowercase
-        name = name.toLowerCase();
-
-        for (Object ags : ag) {
-
-            String keyword = " " + ags.toString().toLowerCase() + " ";
-
-            if (name.contains(" " + keyword + " ")) {
-
-                // EC 17
-                funcAddtoReportPerson(id, id_souce, 17, name);
-
-                // prepare on braces
-                if (keyword.contains("\\(") || keyword.contains("\\(")) {
-
-                    keyword = keyword.replaceAll("\\(", "").replaceAll("\\)", "");
-                }
-
-                String[] names = name.toLowerCase().split(keyword, 2);
-
-                /*
-                we must clean the name because of the braces used in aliassen
-                 */
-
-                // Set alias
-                PersonC.updateQuery("alias", LinksSpecific.funcCleanSides(funcCleanNaam(names[1])), id);
-
-                return LinksSpecific.funcCleanSides(funcCleanNaam(names[0]));
-            }
-        }
-        return name;
-    }
 
     /**
      * @param name
@@ -2340,1238 +4085,8 @@ public class LinksCleaned extends Thread {
         }
 
         return fullName;
-    }
+    } // funcNamePrepiece
 
-
-    /**
-     * @param sourceNo
-     * @throws Exception
-     */
-    public void standardFamilyname(String sourceNo) {
-
-        int counter = 0;
-        int step = 10000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , familyname FROM person_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-
-            // create connection
-            Connection con = getConnection("links_original");
-            con.isReadOnly();
-
-            // Read family names from table
-            ResultSet rsFamilyname = con.createStatement().executeQuery(startQuery);
-            con.createStatement().close();
-
-            // get total
-            rsFamilyname.last();
-
-            int total = rsFamilyname.getRow();
-
-            rsFamilyname.beforeFirst();
-
-            while (rsFamilyname.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + total, true, true);
-                    stepstate += step;
-                }
-
-                // Get family name
-                String familyname = rsFamilyname.getString("familyname");
-                int id_person = rsFamilyname.getInt("id_person");
-
-                // Check is Familyname is not empty or null
-                if (familyname != null && !familyname.isEmpty()) {
-
-                    familyname = funcCleanFamilyname(familyname);
-
-                    familyname = familyname.toLowerCase();
-
-                    // Familienaam in ref_familyname ?
-                    if (ttalFamilyname.originalExists(familyname)) {
-
-                        // get standard_code
-                        String standard_code = ttalFamilyname.getStandardCodeByOriginal(familyname);
-
-                        // Check the standard code
-                        if (standard_code.equals(SC_Y)) {
-
-                            writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
-
-                        } else if (standard_code.equals(SC_I)) {
-
-                            // EC 1000
-                            funcAddtoReportPerson(id_person, id_source, 1000, familyname);
-
-                            writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
-
-                        } else if (standard_code.equals(SC_N)) {
-
-                            // EC 1005
-                            funcAddtoReportPerson(id_person, id_source, 1005, familyname);
-                        } else if (standard_code.equals(SC_X)) {
-
-                            // EC 1009
-                            funcAddtoReportPerson(id_person, id_source, 1009, familyname);
-
-                            writerFamilyname.write(id_person + "," + familyname.toLowerCase() + "\n");
-                        } else {
-
-                            // EC 1010
-                            funcAddtoReportPerson(id_person, id_source, 1010, familyname);
-                        }
-                    } // Familyname does not exists in ref_familyname
-                    else {
-
-                        // EC 1002
-                        funcAddtoReportPerson(id_person, id_source, 1002, familyname);
-
-                        String nameNoSerriedSpaces = familyname.replaceAll(" [ ]+", " ");
-
-                        // Family name contains two or more serried spaces?
-                        if (!nameNoSerriedSpaces.equalsIgnoreCase(familyname)) {
-
-                            // EC 1003
-                            funcAddtoReportPerson(id_person, id_source, 1003, familyname);
-                        }
-
-                        String nameNoInvalidChars = funcCleanNaam(nameNoSerriedSpaces);
-
-                        // Family name contains invalid chars ?
-                        if (!nameNoSerriedSpaces.equalsIgnoreCase(nameNoInvalidChars)) {
-
-                            // EC 1004
-                            funcAddtoReportPerson(id_person, id_source, 1004, familyname);
-                        }
-
-                        // check if name has prepieces
-                        String nameNoPrePiece = funcNamePrepiece(nameNoInvalidChars, id_person);
-
-                        // Family name contains invalid chars ?
-                        if (!nameNoPrePiece.equalsIgnoreCase(nameNoInvalidChars)) {
-
-                            // EC 1008
-                            funcAddtoReportPerson(id_person, id_source, 1008, familyname);
-                        }
-
-                        // Ckeck on Aliasses
-                        String nameNoAlias = standardAlias(id_person, id_source, nameNoPrePiece);
-
-                        // Check on suffix
-                        ArrayListNonCase sfxO = ttalSuffix.getArray("original");
-
-                        for (int i = 0; i < sfxO.size(); i++) {
-
-                            if (nameNoAlias.endsWith(" " + sfxO.get(i).toString())) {
-
-                                // EC 1006
-                                funcAddtoReportPerson(id_person, id_source, 1006, nameNoAlias);
-
-                                nameNoAlias = nameNoAlias.replaceAll(" " + sfxO.get(i).toString(), "");
-
-                                // Set alias
-                                PersonC.updateQuery("suffix", sfxO.get(i).toString(), id_person);
-                            }
-                        }
-
-                        // Clean name one more time
-                        String nameNoSuffix = LinksSpecific.funcCleanSides(nameNoAlias);
-
-                        // Check name in original
-                        if (ttalFamilyname.originalExists(nameNoSuffix)) {
-
-                            // get standard_code
-                            String standard_code = ttalFamilyname.getStandardCodeByOriginal(nameNoSuffix);
-
-                            // Check the standard code
-                            if (standard_code.equals(SC_Y)) {
-
-                                writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
-                            } else if (standard_code.equals(SC_I)) {
-
-                                // EC 1000
-                                funcAddtoReportPerson(id_person, id_source, 1000, nameNoSuffix);
-
-                                writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
-                            } else if (standard_code.equals(SC_N)) {
-
-                                // EC 1005
-                                funcAddtoReportPerson(id_person, id_source, 1005, nameNoSuffix);
-                            } else if (standard_code.equals(SC_X)) {
-
-                                // EC 1009
-                                funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
-
-                                writerFamilyname.write(id_person + "," + nameNoSuffix.toLowerCase() + "\n");
-                            } else {
-                                // EC 1010
-                                funcAddtoReportPerson(id_person, id_source, 1010, nameNoSuffix);
-                            }
-                        } else {
-                            // Familie is nieuw en wordt toegevoegd
-                            ttalFamilyname.addOriginal(nameNoSuffix);
-
-                            // EC 1009
-                            funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
-
-                            writerFamilyname.write(id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n");
-
-                        }
-                    }
-                } // Familyname empty
-                else {
-
-                    // EC 1001
-                    funcAddtoReportPerson(id_person, id_source, 1001, "");
-                }
-            }
-            con.close();
-            rsFamilyname.close();
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning familyname: " + e.getMessage(), false, true);
-        }
-    } // standardFamilyname
-
-
-    /**
-     * @param sourceNo
-     * @throws Exception
-     */
-    public void standardPrepiece(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , prefix FROM person_o" + bronFilter + " AND prefix <> ''";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceNo + " AND prefix <> ''";
-                id_source = sourceNo;
-            }
-
-            // create connection
-            Connection con = getConnection("links_original");
-            con.isReadOnly();
-
-            // Read family names from table
-            ResultSet rsPrepiece = con.createStatement().executeQuery(startQuery);
-            con.createStatement().close();
-
-            // Get count
-            rsPrepiece.last();
-
-            int count = rsPrepiece.getRow();
-
-            rsPrepiece.beforeFirst();
-
-            while (rsPrepiece.next()) {
-
-                // Create lists
-                String listPF = "";
-                String listTO = "";
-                String listTN = "";
-
-                counter++;
-
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + count, true, true);
-                    stepstate += step;
-                }
-
-                // test
-                if (counter != 398798) {
-                    continue;
-                }
-
-                int id_person = rsPrepiece.getInt("id_person");
-                String prepiece = rsPrepiece.getString("prefix").toLowerCase();
-
-                // clean 
-                prepiece = funcCleanNaam(prepiece);
-
-                // Split prefix
-                String[] prefixes = prepiece.split(" ");
-
-                for (String part : prefixes) {
-
-                    // Does Prefix exists in ref table
-                    if (ttalPrepiece.originalExists(part)) {
-
-                        String standard_code = ttalPrepiece.getStandardCodeByOriginal(part);
-                        String prefix = ttalPrepiece.getColumnByOriginal("prefix", part);
-                        String title_noble = ttalPrepiece.getColumnByOriginal("title_noble", part);
-                        String title_other = ttalPrepiece.getColumnByOriginal("title_other", part);
-
-                        // standard code x
-                        if (standard_code.equals(SC_X)) {
-                            // EC 81
-                            funcAddtoReportPerson(id_person, id_source, 81, part);
-
-                            listPF += part + " ";
-                        } else if (standard_code.equals(SC_N)) {
-                            // EC 83
-                            funcAddtoReportPerson(id_person, id_source, 83, part);
-                        } else if (standard_code.equals(SC_I)) {
-
-                            // EC 85
-                            funcAddtoReportPerson(id_person, id_source, 85, part);
-
-                            if (prefix != null && !prefix.isEmpty()) {
-                                listPF += prefix + " ";
-                            } else if (title_noble != null && !title_noble.isEmpty()) {
-                                listTN += title_noble + " ";
-                            } else if (title_other != null && !title_other.isEmpty()) {
-                                listTO += title_other + " ";
-                            }
-                        } else if (standard_code.equals(SC_Y)) {
-
-                            if (prefix != null && !prefix.isEmpty()) {
-                                listPF += prefix + " ";
-                            } else if (title_noble != null && !title_noble.isEmpty()) {
-                                listTN += title_noble + " ";
-                            } else if (title_other != null && !title_other.isEmpty()) {
-                                listTO += title_other + " ";
-                            }
-                        } else {
-                            // Standard_code invalid
-                            funcAddtoReportPerson(id_person, id_source, 89, part);
-                        }
-                    } else { // Prefix not in ref
-                        funcAddtoReportPerson(id_person, id_source, 81, part);
-
-                        // Add Prefix
-                        ttalPrepiece.addOriginal(part);
-
-                        // Add to list
-                        listPF += part + " ";
-
-                    }
-                }
-
-                // write lists to person_c
-                if (!listTN.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("title_noble", listTN.substring(0, (listTN.length() - 1)), id_person));
-                }
-                if (!listTO.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("title_other", listTO.substring(0, (listTO.length() - 1)), id_person));
-                }
-                if (!listPF.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("prefix", listPF.substring(0, (listPF.length() - 1)), id_person));
-                }
-            }
-
-            // Free Resources
-            rsPrepiece.close();
-            con.close();
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Prepiece: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param bronnrsourceNo
-     */
-    public void standardSuffix(String bronnrsourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-            String startQuery;
-            String id_source;
-
-            if (bronnrsourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , suffix FROM person_o" + bronFilter + " AND suffix <> ''";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + bronnrsourceNo + " AND suffix <> ''";
-                id_source = bronnrsourceNo;
-            }
-
-            // create connection
-            Connection con = getConnection("links_original");
-            con.isReadOnly();
-
-            // Read family names from table
-            ResultSet rsSuffix = con.createStatement().executeQuery(startQuery);
-            con.createStatement().close();
-
-            // Get count
-            rsSuffix.last();
-
-            int count = rsSuffix.getRow();
-
-            rsSuffix.beforeFirst();
-
-            while (rsSuffix.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + count, true, true);
-                    stepstate += step;
-                }
-
-                int id_person = rsSuffix.getInt("id_person");
-                String suffix = rsSuffix.getString("suffix").toLowerCase();
-
-                suffix = funcCleanNaam(suffix);
-
-                // Controleer of deze voorkomt in ref tabel
-                if (ttalSuffix.originalExists(suffix)) {
-
-                    String standard_code = ttalSuffix.getStandardCodeByOriginal(suffix);
-
-                    if (standard_code.equals(SC_X)) {
-
-                        // EC 71
-                        funcAddtoReportPerson(id_person, id_source, 71, suffix);
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-                    } else if (standard_code.equals(SC_N)) {
-
-                        // EC 73
-                        funcAddtoReportPerson(id_person, id_source, 73, suffix);
-
-                    } else if (standard_code.equals(SC_I)) {
-
-                        // EC 74
-                        funcAddtoReportPerson(id_person, id_source, 75, suffix);
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-
-                    } else if (standard_code.equals(SC_Y)) {
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-                    } else {
-
-                        // EC 75
-                        funcAddtoReportPerson(id_person, id_source, 79, suffix);
-                    }
-                } // Standard code x
-                else {
-
-                    // EC 71
-                    funcAddtoReportPerson(id_person, id_source, 71, suffix);
-
-                    ttalSuffix.addOriginal(suffix);
-
-                    String query = PersonC.updateQuery("suffix", suffix, id_person);
-                    conCleaned.runQuery(query);
-
-                }
-            }
-
-            // Free resources
-            rsSuffix.close();
-            con.close();
-
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Suffix: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardRegistrationLocation(String sourceNo) {
-
-        String startQuery;
-        String id_source;
-
-        if (sourceNo.isEmpty()) {
-            startQuery = "SELECT id_registration , registration_location FROM registration_o" + bronFilter;
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceNo;
-            id_source = sourceNo;
-        }
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-
-            // Call standardLocation
-            standardLocation(rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardBirthLocation(String sourceNo) {
-
-        String startQuery;
-        String id_source;
-
-        if (sourceNo.isEmpty()) {
-            startQuery = "SELECT id_person , birth_location FROM person_o" + bronFilter + " AND birth_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceNo + " AND birth_location <> ''";
-            id_source = sourceNo;
-        }
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-
-            standardLocation(rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardMarLocation(String sourceNo) {
-
-        String startQuery;
-        String id_source;
-
-        if (sourceNo.isEmpty()) {
-            startQuery = "SELECT id_person , mar_location FROM person_o" + bronFilter + " AND mar_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceNo + " AND mar_location <> ''";
-            id_source = sourceNo;
-        }
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            standardLocation(rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardDeathLocation(String sourceNo) {
-
-        String startQuery;
-        String id_source;
-
-        if (sourceNo.isEmpty()) {
-            startQuery = "SELECT id_person , death_location FROM person_o" + bronFilter + " AND death_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceNo + " AND death_location <> ''";
-            id_source = sourceNo;
-        }
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            standardLocation(rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param rs
-     * @param idFieldO
-     * @param locationFieldO
-     * @param locationFieldC
-     * @param id_source
-     * @param tt
-     */
-    private void standardLocation(ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt) throws Exception {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-            while (rs.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id = rs.getInt(idFieldO);
-                String location = rs.getString(locationFieldO);
-
-                if (location != null && !location.isEmpty()) {
-
-                    location = location.toLowerCase();
-
-                    if (ttalLocation.originalExists(location)) {
-
-                        String nieuwCode = ttalLocation.getStandardCodeByOriginal(location);
-
-                        if (nieuwCode == null ? SC_X == null : (nieuwCode.equals(SC_X))) {
-
-                            // EC 91
-                            if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 91, location);
-                                String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
-                                conCleaned.runQuery(query);
-                            } else {
-                                funcAddtoReportPerson(id, id_source, 91, location);
-                                String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
-                                conCleaned.runQuery(query);
-                            }
-                        } else if (nieuwCode == null ? SC_N == null : nieuwCode.equals(SC_N)) {
-
-                            // EC 93
-                            if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 91, location);
-                            } else {
-                                funcAddtoReportPerson(id, id_source, 93, location);
-                            }
-                        } else if (nieuwCode == null ? SC_I == null : nieuwCode.equals(SC_I)) {
-
-                            // EC 95
-                            if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 95, location);
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
-                            } else {
-                                funcAddtoReportPerson(id, id_source, 95, location);
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
-                            }
-
-                            String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-
-                        } else if (nieuwCode == null ? SC_Y == null : nieuwCode.equals(SC_Y)) {
-
-                            if (tt == TableType.REGISTRATION) {
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
-                            } else {
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
-                            }
-
-
-                        } else {
-
-                            // EC 99
-                            if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 99, location);
-                            } else {
-                                funcAddtoReportPerson(id, id_source, 99, location);
-                            }
-                        }
-                    } else {
-
-                        // EC 91
-                        if (tt == TableType.REGISTRATION) {
-                            funcAddtoReportRegistration(id, id_source, 91, location);
-                            String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
-                            conCleaned.runQuery(query);
-                        } else {
-                            funcAddtoReportPerson(id, id_source, 91, location);
-                            String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
-                            conCleaned.runQuery(query);
-                        }
-                        ttalLocation.addOriginal(location);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new Exception(counter + " An error occured while cleaning Location: " + e.getMessage());
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardSex(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , sex FROM person_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            // Get gender
-            ResultSet rsGeslacht = conOriginal.runQueryWithResult(startQuery);
-
-            while (rsGeslacht.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id_person = rsGeslacht.getInt("id_person");
-                String sex = rsGeslacht.getString("sex");
-
-                // Check presence of the gender
-                if (sex != null && !sex.isEmpty()) {
-
-                    // Check presence in
-                    if (ttalStatusSex.originalExists(sex)) {
-
-                        String nieuwCode = ttalStatusSex.getStandardCodeByOriginal(sex);
-
-                        if (nieuwCode.equals(SC_X)) {
-
-                            // EC 31
-                            funcAddtoReportPerson(id_person, id_source, 31, sex);
-
-                            String query = PersonC.updateQuery("sex", sex, id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_N)) {
-                            // EC 33
-                            funcAddtoReportPerson(id_person, id_source, 33, sex);
-                        } else if (nieuwCode.equals(SC_I)) {
-
-                            // EC 35
-                            funcAddtoReportPerson(id_person, id_source, 35, sex);
-
-                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_Y)) {
-
-                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
-                            conCleaned.runQuery(query);
-                        } else {
-                            // Invalid standard code
-                            // EC 39
-                            funcAddtoReportPerson(id_person, id_source, 39, sex);
-                        }
-                    } else {
-
-                        // EC 33
-                        funcAddtoReportPerson(id_person, id_source, 31, sex);
-
-                        // Add new Sex
-                        ttalStatusSex.addOriginal(sex);
-
-                        String query = PersonC.updateQuery("sex", sex, id_person);
-                        conCleaned.runQuery(query);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Sex: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardStatusSex(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , sex , civil_status FROM person_o" + bronFilter + " and civil_status is not null ";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rsStaat = conOriginal.runQueryWithResult(startQuery);
-
-            while (rsStaat.next()) {
-
-                counter++;
-
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-
-                int id_person = rsStaat.getInt("id_person");
-                String sex = rsStaat.getString("sex");
-                String civil_status = rsStaat.getString("civil_status");
-
-                if (civil_status != null && !civil_status.isEmpty()) {
-
-                    // Check ref
-                    if (ttalStatusSex.originalExists(civil_status)) {
-
-                        String nieuwCode = this.ttalStatusSex.getStandardCodeByOriginal(civil_status);
-
-                        if (nieuwCode.equals(SC_X)) {
-
-                            // EC 61
-                            funcAddtoReportPerson(id_person, id_source, 61, civil_status);
-
-                            String query = PersonC.updateQuery("civil_status", civil_status, id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_N)) {
-                            // EC 63
-                            funcAddtoReportPerson(id_person, id_source, 63, civil_status);
-                        } else if (nieuwCode.equals(SC_I)) {
-
-                            // EC 65
-                            funcAddtoReportPerson(id_person, id_source, 65, civil_status);
-
-                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(query);
-
-                            // Extra check on sex
-                            if (sex != null && !sex.isEmpty()) {
-
-                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
-                                    // EC 68
-                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
-                                }
-                            } // Sex is empty
-                            else {
-
-                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
-                                conCleaned.runQuery(geslachtQuery);
-
-                            }
-
-                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(geslachtQuery);
-
-                        } else if (nieuwCode.equals(SC_Y)) {
-
-
-                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(query);
-
-                            // Extra check on sex
-                            if (sex != null && !sex.isEmpty()) {
-
-                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
-                                    // EC 68
-                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
-                                }
-                            } // Sex is empty
-                            else {
-
-                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
-                                conCleaned.runQuery(geslachtQuery);
-
-                            }
-
-                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(geslachtQuery);
-                        } else {
-
-                            // Invalid SC
-                            // EC 69
-                            funcAddtoReportPerson(id_person, id_source, 69, civil_status);
-                        }
-                    } // add to ref
-                    else {
-                        // EC 61
-                        funcAddtoReportPerson(id_person, id_source, 61, civil_status);
-
-                        // Add new Status
-                        ttalStatusSex.addOriginal(civil_status);
-
-                        // Write to Person
-                        String query = PersonC.updateQuery("civil_status", civil_status, id_person);
-                        conCleaned.runQuery(query);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Civil Status: " + e.getMessage(), false, true);
-        }
-    }
-
-    //ROLE
-    private void standardRole() {
-
-        String query = " UPDATE links_original.person_o, links_cleaned.person_c, links_general.ref_role "
-                + "SET "
-                + "links_cleaned.person_c.role = links_general.ref_role.role_nr "
-                + "WHERE links_original.person_o.role = links_general.ref_role.original AND "
-                + "links_original.person_o.id_person = links_cleaned.person_c.id_person; ";
-
-        try {
-            conCleaned.runQuery(query);
-        } catch (Exception e) {
-            showMessage("An error occured while running standardRole: " + e.getMessage(), false, true);
-        }
-
-
-    }
-
-    /**
-     * @param sourceNo
-     */
-    /*
-    public void standardType(String sourceNo) {
-    
-    int counter = 0;
-    int step = 1000;
-    int stepstate = step;
-    
-    try {
-    
-    String startQuery;
-    String id_source;
-    
-    if (sourceNo.isEmpty()) {
-    startQuery = "SELECT id_registration , registration_type FROM registration_o" + bronFilter;
-    id_source = this.sourceId + "";
-    } else {
-    startQuery = "SELECT id_registration , registration_type FROM registration_o WHERE id_source = " + sourceNo;
-    id_source = sourceNo;
-    }
-    
-    // Get types
-    ResultSet type = conOriginal.runQueryWithResult(startQuery);
-    
-    while (type.next()) {
-    
-    counter++;
-    if (counter == stepstate) {
-    showMessage(counter + "", true, true);
-    stepstate += step;
-    }
-    
-    int id_registration = type.getInt("id_registration");
-    String registration_type = type.getString("registration_type").toLowerCase();
-    
-    // check is it is empty
-    if (registration_type != null && !registration_type.isEmpty()) {
-    
-    // check ref
-    if (ttalRegistration.originalExists(registration_type)) {
-    
-    String nieuwCode = ttalRegistration.getStandardCodeByOriginal(registration_type);
-    
-    if (nieuwCode.equals(SC_X)) {
-    
-    // EC 51
-    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
-    
-    String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
-    conCleaned.runQuery(query);
-    } else if (nieuwCode.equals(SC_N)) {
-    // EC 53
-    funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
-    } else if (nieuwCode.equals(SC_I)) {
-    
-    // EC 55
-    funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
-    
-    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
-    conCleaned.runQuery(query);
-    
-    } else if (nieuwCode.equals(SC_Y)) {
-    
-    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
-    conCleaned.runQuery(query);
-    } else {
-    
-    // invalid SC
-    // EC 59
-    funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
-    }
-    } // standardcode x
-    else {
-    
-    // EC 51
-    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
-    
-    // add to ref
-    ttalRegistration.addOriginal(registration_type);
-    
-    // update person
-    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 20 ? registration_type : registration_type.substring(0, 20), id_registration);
-    conCleaned.runQuery(query);
-    }
-    }
-    }
-    } catch (Exception e) {
-    showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
-    }
-    }
-     */
-    public void standardType(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            // Get types node-152.dev.socialhistoryservices.org
-            ResultSet type = conOriginal.runQueryWithResult(startQuery);
-
-            while (type.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id_registration = type.getInt("id_registration");
-                int registration_maintype = type.getInt("registration_maintype");
-                String registration_type = type.getString("registration_type") != null ? type.getString("registration_type").toLowerCase() : "";
-
-                // check ref database
-                ResultSet ref = conGeneral.runQueryWithResult("SELECT * FROM ref_registration WHERE main_type = " + registration_maintype + " AND original = '" + registration_type + "'");
-
-                // check ref
-                if (ref.next()) {
-
-                    String nieuwCode = ref.getString("standard_code").toLowerCase();
-
-                    if (nieuwCode.equals(SC_X)) {
-
-                        // EC 51
-                        funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
-
-                        String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
-
-                        conCleaned.runQuery(query);
-                    } else if (nieuwCode.equals(SC_N)) {
-                        // EC 53
-                        funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
-                    } else if (nieuwCode.equals(SC_I)) {
-
-                        // EC 55
-                        funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
-
-                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
-
-                        conCleaned.runQuery(query);
-
-                    } else if (nieuwCode.equals(SC_Y)) {
-
-                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
-                        conCleaned.runQuery(query);
-                    } else {
-
-                        // invalid SC
-                        // EC 59
-                        funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
-                    }
-                } // standardcode x
-                else {
-
-                    // EC 51
-                    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
-
-                    // add to ref
-                    conGeneral.runQuery("INSERT INTO ref_registration(original, main_type, standard_code) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')");
-
-                    // update person
-                    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration);
-                    conCleaned.runQuery(query);
-                }
-            }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param sourceNo
-     */
-    public void standardRegistrationDate(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_registration , registration_date FROM registration_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-
-            while (rs.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                // Get Opmerking
-                int id_registration = rs.getInt("id_registration");
-                String registration_date = rs.getString("registration_date");
-
-                if (registration_date == null) {
-
-                    // EC 202
-                    funcAddtoReportRegistration(id_registration, id_source, 202, "");
-
-                    continue;
-                }
-
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(registration_date);
-
-                if (dymd.isValidDate()) {
-
-                    String query = "UPDATE registration_c"
-                            + " SET registration_c.registration_date = '" + registration_date + "' , "
-                            + "registration_c.registration_day = " + dymd.getDay() + " , "
-                            + "registration_c.registration_month = " + dymd.getMonth() + " , "
-                            + "registration_c.registration_year = " + dymd.getYear()
-                            + " WHERE registration_c.id_registration = " + id_registration;
-
-                    conCleaned.runQuery(query);
-                } // Error occured
-                else {
-
-                    // EC 201
-                    funcAddtoReportRegistration(id_registration, id_source, 201, dymd.getReports());
-
-                    String query = "UPDATE registration_c"
-                            + " SET registration_c.registration_date = '" + registration_date + "' , "
-                            + "registration_c.registration_day = " + dymd.getDay() + " , "
-                            + "registration_c.registration_month = " + dymd.getMonth() + " , "
-                            + "registration_c.registration_year = " + dymd.getYear()
-                            + " WHERE registration_c.id_registration = " + id_registration;
-
-                    conCleaned.runQuery(query);
-                }
-            }
-            rs = null;
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Registration date: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param type
-     */
-    public void standardDate(String type) {
-
-        // Step vars
-        int counter = 0;
-        int step = 10000;
-        int stepstate = step;
-
-        try {
-            String startQuery;
-
-            startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_o WHERE " + type + "_date is not null";
-
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-
-            while (rs.next()) {
-
-                // GUI info
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id_person = rs.getInt("id_person");
-                int id_source = rs.getInt("id_source");
-                String date = rs.getString(type + "_date");
-
-                if (date.isEmpty()) {
-                    continue;
-                }
-
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
-
-                if (dymd.isValidDate()) {
-                    String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + dymd.getDay() + "-" + dymd.getMonth() + "-" + dymd.getYear() + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
-                            + "person_c." + type + "_date_valid = 1 "
-                            + "WHERE person_c.id_person = " + id_person;
-
-                    conCleaned.runQuery(query);
-                } else {
-
-                    // EC 211
-                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
-
-                    String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + date + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " "
-                            + "WHERE person_c.id_person = " + id_person;
-
-                    conCleaned.runQuery(query);
-                }
-            }
-            rs = null;
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning " + type + " date: " + e.getMessage(), false, true);
-        }
-    }
 
     /**
      *
@@ -3619,7 +4134,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage("An error occured while flagging Birth date: " + e.getMessage(), false, true);
         }
-    }
+    } // funcFlagBirthDate
+
 
     /**
      *
@@ -3670,7 +4186,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage("An error occured while flagging Marriage date: " + e.getMessage(), false, true);
         }
-    }
+    } // funcFlagMarriageDate
+
 
     /**
      *
@@ -3719,76 +4236,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage("An error occured while flagging Death date: " + e.getMessage(), false, true);
         }
-    }
+    } // funcFlagDeathDate
 
-    /**
-     * @param type
-     */
-    public void standardFlaggedDate(String type) {
-
-        // Step vars
-        int counter = 0;
-        int step = 10000;
-        int stepstate = step;
-
-        try {
-            String startQuery;
-
-            startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_c WHERE ( ( " + type + "_date_flag = 2 ) OR ( " + type + "_date_flag = 3 ) ) AND " + type + "_date is not null";
-
-            ResultSet rs = conCleaned.runQueryWithResult(startQuery);
-
-            while (rs.next()) {
-
-                // GUI info
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id_person = rs.getInt("id_person");
-                int id_source = rs.getInt("id_source");
-                String date = rs.getString(type + "_date");
-
-                if (date.isEmpty()) {
-                    continue;
-                }
-
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
-
-                if (dymd.isValidDate()) {
-                    String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + date + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
-                            + "person_c." + type + "_date_valid = 1 "
-                            + "WHERE person_c.id_person = " + id_person;
-
-                    conCleaned.runQuery(query);
-                } else {
-
-                    // EC 211
-                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
-
-                    String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + date + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " "
-                            + "WHERE person_c.id_person = " + id_person;
-
-                    conCleaned.runQuery(query);
-                }
-            }
-            rs = null;
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning " + type + " flagged date: " + e.getMessage(), false, true);
-        }
-    }
 
     /**
      * @throws Exception
@@ -3840,7 +4289,8 @@ public class LinksCleaned extends Thread {
         conCleaned.runQuery(q1);
         conCleaned.runQuery(q2);
         conCleaned.runQuery(q3);
-    }
+    } // funcMinMaxCorrectDate
+
 
     /**
      * @throws Exception
@@ -3887,7 +4337,8 @@ public class LinksCleaned extends Thread {
 
         conCleaned.runQuery(q1);
         conCleaned.runQuery(q2);
-    }
+    } // funcCompleteMinMaxBirth
+
 
     /**
      * @throws Exception
@@ -3984,7 +4435,8 @@ public class LinksCleaned extends Thread {
         conCleaned.runQuery(q2);
         conCleaned.runQuery(q3);
         conCleaned.runQuery(q4);
-    }
+    } // funcCompleteMinMaxMar
+
 
     private void funcSetcomplete() throws Exception {
 
@@ -3999,228 +4451,13 @@ public class LinksCleaned extends Thread {
 
         conCleaned.runQuery(q);
 
-    }
+    } // funcSetcomplete
+
+
 
     /**
-     * @param sourceNo
-     */
-    public void standardYearAge(String sourceNo) {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , age_year FROM person_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , age_year FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-
-            while (rs.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int id_person = rs.getInt("id_person");
-                int year_age = rs.getInt("age_year");
-
-                // check if null
-                if (year_age != 0) {
-
-                    if ((year_age > 0) && (year_age < 115)) {
-                        String query = "UPDATE person_c"
-                                + " SET person_c.age_year = '" + year_age + "'"
-                                + " WHERE person_c.id_person = " + id_person;
-
-                        conCleaned.runQuery(query);
-                    } else {
-                        // EC 241
-                        funcAddtoReportPerson(id_person, id_source, 241, year_age + "");
-                    }
-                }
-            }
-            rs.close();
-            rs = null;
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Age Year: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     * @param SourceNo
-     * @throws Exception
-     */
-    public void standardSequence(String SourceNo) throws Exception {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        try {
-
-            String startQuery;
-
-            if (SourceNo.isEmpty()) {
-
-                startQuery = ""
-                        + "SELECT "
-                        + "id_registration , "
-                        + "registration_maintype , "
-                        + "registration_location_no , "
-                        + "registration_year , "
-                        + "registration_month , "
-                        + "registration_seq , "
-                        + "id_source "
-                        + "FROM "
-                        + "links_cleaned.registration_c "
-                        + sourceFilter + " AND "
-                        + "registration_location_no is not null AND "
-                        + "registration_year     is not null AND "
-                        + "registration_month    is not null "
-                        + "ORDER BY "
-                        + "registration_maintype , "
-                        + "registration_location_no , "
-                        + "registration_year , "
-                        + "registration_month , "
-                        + "registration_seq ";
-
-            } else {
-                startQuery = ""
-                        + "SELECT "
-                        + "id_registration , "
-                        + "registration_maintype , "
-                        + "registration_location_no , "
-                        + "registration_year , "
-                        + "registration_month , "
-                        + "registration_seq , "
-                        + "id_source "
-                        + "FROM "
-                        + "links_cleaned.registration_c "
-                        + "WHERE id_source = " + SourceNo + " AND "
-                        + "registration_location_no is not null AND "
-                        + "registration_year     is not null AND "
-                        + "registration_month    is not null "
-                        + "ORDER BY "
-                        + "registration_maintype , "
-                        + "registration_location_no , "
-                        + "registration_year , "
-                        + "registration_month , "
-                        + "registration_seq";
-            }
-
-
-            ResultSet rs = conCleaned.runQueryWithResult(startQuery);
-
-            // Read first entry
-            if (rs.next() == false) {
-                return;
-            }
-
-            int previousId = rs.getInt("id_registration");
-            int previousNo = -1;
-            int previousMt = rs.getInt("registration_maintype");
-            int previousLc = rs.getInt("registration_location_no");
-            int previousYr = rs.getInt("registration_year");
-            int previousMn = rs.getInt("registration_month");
-            String id_source = rs.getString("id_source");
-
-            if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
-                // EC 111
-                funcAddtoReportRegistration(previousId, id_source, 111, "");
-            } else { // Present
-                // Is is numeric
-                try {
-
-                    previousNo = Integer.parseInt(rs.getString("registration_seq"));
-
-                } catch (Exception e) {
-                    // EC 112
-                    funcAddtoReportRegistration(previousId, id_source, 112, rs.getString("registration_seq"));
-                }
-            }
-            while (rs.next()) {
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
-                    stepstate += step;
-                }
-
-                int nummer;
-
-                // Is reg_seq present ?
-                if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
-
-                    // EC 111
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 111, "");
-                    continue;
-                }
-                // Is is numeric ?
-                try {
-                    nummer = Integer.parseInt(rs.getString("registration_seq"));
-                } catch (Exception e) {
-                    // EC 112
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 112, rs.getString("registration_seq"));
-
-                    // Set values
-                    previousId = rs.getInt("id_registration");
-                    previousMt = rs.getInt("registration_maintype");
-                    previousLc = rs.getInt("registration_location_no");
-                    previousYr = rs.getInt("registration_year");
-                    previousMn = rs.getInt("registration_month");
-
-                    continue;
-                }
-
-                int verschil = nummer - previousNo;
-
-                if (verschil == 0 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
-                    // EC 113
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq"));
-                } else if (verschil > 1 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
-                    // EC 114
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq"));
-                }
-
-                // Set values
-                previousId = rs.getInt("id_registration");
-                previousNo = nummer;
-                previousMt = rs.getInt("registration_maintype");
-                previousLc = rs.getInt("registration_location_no");
-                previousYr = rs.getInt("registration_year");
-                previousMn = rs.getInt("registration_month");
-            }
-        } catch (Exception e) {
-
-            showMessage(counter + " An error occured while checking sequence: " + e.getMessage(), false, true);
-        }
-    }
-
-    /**
-     *
-     *
-     *
-     *
-     *
-     *
-     * Previous Links basis function
+     * Previous Links basis functions
      * They are now part of links cleaned
-     *
-     *
-     *
-     *
-     *
      *
      *
      *
@@ -4379,7 +4616,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage(counter + " An error occured while running Relation: " + e.getMessage(), false, true);
         }
-    }
+    } // funcRelation
+
 
     public void funMinMaxDateMain(String sourceNo) throws Exception {
 
@@ -4664,7 +4902,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage(counter + " An error occured while running Min Max: " + e.getMessage(), false, true);
         }
-    }
+    } // funMinMaxDateMain
+
 
     /**
      * @param inputInfo
@@ -5141,7 +5380,8 @@ public class LinksCleaned extends Thread {
 
         return returnSet;
 
-    }
+    } // funcMinMaxDate
+
 
     /**
      * @param id_registration
@@ -5208,7 +5448,8 @@ public class LinksCleaned extends Thread {
         }
 
         return ages;
-    }
+    } // funcReturnAgeCentralFigure
+
 
     /**
      * @param act_year
@@ -5383,7 +5624,8 @@ public class LinksCleaned extends Thread {
         // Function A
         return mmj;
 
-    }
+    } // funcMinMaxCalculation
+
 
     /**
      * Use this function to add or substract a amount of time from a date.
@@ -5423,7 +5665,8 @@ public class LinksCleaned extends Thread {
         String am = "" + c1.get(Calendar.DATE) + "-" + c1.get(Calendar.MONTH) + "-" + c1.get(Calendar.YEAR);
 
         return am;
-    }
+    } // funcAddTimeToDate
+
 
     /**
      * @param pYear
@@ -5504,7 +5747,8 @@ public class LinksCleaned extends Thread {
         dy.setMonth(pMonth);
         dy.setDay(pDay);
         return dy;
-    }
+    } // funcCheckMaxDate
+
 
     /**
      * @param year
@@ -5549,7 +5793,8 @@ public class LinksCleaned extends Thread {
             }
         }
         return tempYear;
-    }
+    } // funcRoundUp
+
 
     /**
      * @param hjpsList
@@ -5705,7 +5950,8 @@ public class LinksCleaned extends Thread {
                 }
             }
         }
-    }
+    } // funcMinMaxMarriageYear
+
 
     /**
      * @param lYear
@@ -5756,7 +6002,8 @@ public class LinksCleaned extends Thread {
         }
 
         return false;
-    }
+    } // funcDateLeftIsGreater
+
 
     /**
      * @param sourceNo
@@ -5820,7 +6067,8 @@ public class LinksCleaned extends Thread {
         }
 
         return hjpsList;
-    }
+    } // funcSetMarriageYear
+
 
     private void funcPartsToDate() {
         String query = "UPDATE links_cleaned.person_c SET "
@@ -5838,7 +6086,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage("An error occured while Creating full dates from parts: " + e.getMessage(), false, true);
         }
-    }
+    } // funcPartsToDate
+
 
     private void funcDaysSinceBegin() {
 
@@ -5876,7 +6125,8 @@ public class LinksCleaned extends Thread {
         } catch (Exception e) {
             showMessage("An error occured while computing days since 1-1-1: " + e.getMessage(), false, true);
         }
-    }
+    } // funcDaysSinceBegin
+
 
     /**
      * @param sourceNo
@@ -5932,7 +6182,7 @@ public class LinksCleaned extends Thread {
             hpDeceasedWeek.add(rs4.getInt("age_week"));
             hpDeceasedDay.add(rs4.getInt("age_day"));
         }
-    }
+    } // funcFillMinMaxArrays
 
 
     /**
@@ -5950,7 +6200,7 @@ public class LinksCleaned extends Thread {
         conTemp.runQuery( query );
 
         showMessage( endl, false, true );
-    }
+    } // createTempFamilynameTable
 
 
     /**
@@ -5959,18 +6209,18 @@ public class LinksCleaned extends Thread {
     private void createTempFamilynameFile() throws Exception
     {
         long start = System.currentTimeMillis();
-        String fname = "familyname_t.csv";
-        showMessage( "Creating " + fname, false, true );
+        String filename = "familyname_t.csv";
+        showMessage( "Creating " + filename, false, true );
 
-        File f = new File( fname );
+        File f = new File( filename );
         if( f.exists() ) { f.delete(); }
-        writerFamilyname = new FileWriter( fname );
+        writerFamilyname = new FileWriter( filename );
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Creating familyname_t csv OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // createTempFamilynameFile
 
 
     /**
@@ -5990,7 +6240,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Loading CSV data into temp table OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // loadFamilynameToTable
 
 
     /**
@@ -6013,7 +6263,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Moving familynames from temp table to person_c OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // updateFamilynameToPersonC
 
 
     public void removeFamilynameFile() throws Exception
@@ -6030,7 +6280,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Removing familyname_t csv OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // removeFamilynameFile
 
 
     public void removeFamilynameTable() throws Exception
@@ -6046,7 +6296,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Removing familyname_t table OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // removeFamilynameTable
 
 
     /**
@@ -6064,7 +6314,7 @@ public class LinksCleaned extends Thread {
         conTemp.runQuery( query );
 
         showMessage( endl, false, true );
-    }
+    } // createTempFirstnameTable
 
 
     /**
@@ -6073,18 +6323,18 @@ public class LinksCleaned extends Thread {
     private void createTempFirstnameFile() throws Exception
     {
         long start = System.currentTimeMillis();
-        String fname = "firstname_t.csv";
-        showMessage( "Creating " + fname, false, true );
+        String filename = "firstname_t.csv";
+        showMessage( "Creating " + filename, false, true );
 
-        File f = new File( fname );
+        File f = new File( filename );
         if( f.exists() ) { f.delete(); }
-        writerFirstname = new FileWriter( fname );
+        writerFirstname = new FileWriter( filename );
 
         long stop = System.currentTimeMillis();
         String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating " + fname + " OK " + elapsed;
+        String msg = "Creating " + filename + " OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // createTempFirstnameFile
 
 
     /**
@@ -6103,7 +6353,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Loading CSV data into temp table OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // loadFirstnameToTable
 
 
     /**
@@ -6125,7 +6375,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Moving first names from temp table to person_c OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // updateFirstnameToPersonC
 
 
     /**
@@ -6144,7 +6394,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Removing firstname_t csv file OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // removeFirstnameFile
 
 
     /**
@@ -6162,7 +6412,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = "Removing firstname_t table OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // removeFirstnameTable
 
 
     /**
@@ -6181,7 +6431,7 @@ public class LinksCleaned extends Thread {
 
         if( count == 1 ) return true;
         else return false;
-    }
+    } // doesTableExist
 
 
     /**
@@ -6191,7 +6441,7 @@ public class LinksCleaned extends Thread {
     {
         String query = "DROP TABLE `" + db_name + "`.`" + table_name + "`";
         db_conn.runQuery( query );
-    }
+    } // dropTable
 
 
     private void funcPostTasks() throws Exception
@@ -6245,7 +6495,7 @@ public class LinksCleaned extends Thread {
         String elapsed = Functions.millisec2hms( start, stop );
         String msg = " OK " + elapsed;
         showMessage( msg, false, true );
-    }
+    } // funcPostTasks
 
 
     private void funcDeleteRows()
@@ -6254,7 +6504,7 @@ public class LinksCleaned extends Thread {
         showMessage( "funcDeleteRows() deleting empty links_cleaned.person_c records.", false, true );
         String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
         conCleaned.runQuery( q1 );
-    }
+    } // funcDeleteRows
 
 
     private Connection getConnection(String dbName) throws Exception {
@@ -6274,3 +6524,5 @@ public class LinksCleaned extends Thread {
         return conn;
     }
 }
+
+// [eof]

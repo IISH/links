@@ -609,13 +609,13 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoNames"
 						"selected": true
-						"text": "Names"
+						"text": "First- and Familynames"
 						"name": "cbCdoNames"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoStatusSex"
 						"selected": true
-						"text": "Status and sex"
+						"text": "Civil Status and Sex"
 						"name": "cbCdoStaatSex"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
@@ -639,7 +639,7 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoType"
 						"selected": true
-						"text": "Type"
+						"text": "Registration Type"
 						"name": "cbCdoType"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {

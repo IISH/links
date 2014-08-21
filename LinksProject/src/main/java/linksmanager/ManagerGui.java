@@ -1339,12 +1339,12 @@ public class ManagerGui extends javax.swing.JFrame
 
 				//---- cbCdoNames ----
 				cbCdoNames.setSelected(true);
-				cbCdoNames.setText("Names");
+				cbCdoNames.setText("First- and Familynames");
 				cbCdoNames.setName("cbCdoNames");
 
 				//---- cbCdoStatusSex ----
 				cbCdoStatusSex.setSelected(true);
-				cbCdoStatusSex.setText("Status and sex");
+				cbCdoStatusSex.setText("Civil Status and Sex");
 				cbCdoStatusSex.setName("cbCdoStaatSex");
 
 				//---- cbCdoDates ----
@@ -1364,7 +1364,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 				//---- cbCdoType ----
 				cbCdoType.setSelected(true);
-				cbCdoType.setText("Type");
+				cbCdoType.setText("Registration Type");
 				cbCdoType.setName("cbCdoType");
 
 				//---- cbLOLCdoSequence ----
@@ -2415,7 +2415,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "20-Aug-2014 11:09";
+            String timestamp1 = "21-Aug-2014 14:12";
             //System.out.println( "LINKS timestamp: " + timestamp1 );
             //logger.info( "LINKS timestamp: " + timestamp1 );
 
