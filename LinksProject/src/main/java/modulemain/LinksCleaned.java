@@ -93,10 +93,11 @@ public class LinksCleaned extends Thread {
     private Runtime r = Runtime.getRuntime();
     private String tempTableName;
     private DoSet dos;
-    private final static String SC_I = "o";
-    private final static String SC_X = "x";
-    private final static String SC_N = "n";
-    private final static String SC_Y = "y";
+
+    private final static String SC_I = "o"; // o Standard value assigned (although the original value is not valid)
+    private final static String SC_X = "x"; // x Standard yet to be assigned
+    private final static String SC_N = "n"; // n No standard value assigned (original value is not valid)
+    private final static String SC_Y = "y"; // j Standard value assigned (valid original value)
 
     // old links_base
     private ArrayList<Integer> hpChildRegistration = new ArrayList<Integer>();
@@ -2018,16 +2019,43 @@ public class LinksCleaned extends Thread {
                 int id_person = rs.getInt( "id_person" );
                 String occupation = rs.getString( "occupation" );
 
+                if( occupation == null || occupation.isEmpty() ) {  // not present in original
+                    empty += 1;
+                    funcAddtoReportPerson( id_person, id_source, 41, occupation );         // warning 41
+                    ttalOccupation.addOriginal( occupation );                              // Add new Occupation "x" ??
 
-                if( occupation == null || occupation == "" ) { empty += 1; }
-                //else { System.out.printf( "%d %s: %d: %s: %s\n", counter, "id_person", id_person, "occupation", occupation ); }
+                    String query = PersonC.updateQuery( "occupation", occupation, id_person );
+                    conCleaned.runQuery( query );
+                }
+                else {
+                    //System.out.printf( "%d %s: %d: %s: %s\n", counter, "id_person", id_person, "occupation", occupation );
+                    String newCode = ttalOccupation.getStandardCodeByOriginal( occupation );
 
+                    if( newCode.equals( SC_X ) ) {
+                        funcAddtoReportPerson( id_person, id_source, 41, occupation );     // warning 41
 
-                //...
+                        String query = PersonC.updateQuery( "occupation", occupation, id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else if( newCode.equals( SC_N ) ) {
+                        funcAddtoReportPerson( id_person, id_source, 43, occupation );     // warning 43
+                    }
+                    else if( newCode.equals( SC_I ) ) {
+                        funcAddtoReportPerson( id_person, id_source, 45, occupation );     // warning 45
 
-
-
-
+                        String query = PersonC.updateQuery( "occupation",
+                            ttalStatusSex.getColumnByOriginal( "occupation", occupation ), id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else if( newCode.equals( SC_Y ) ) {
+                        String query = PersonC.updateQuery( "occupation",
+                            ttalStatusSex.getColumnByOriginal( "occupation", occupation ), id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else {     // Invalid standard code
+                        funcAddtoReportPerson( id_person, id_source, 59, occupation );     // warning 39
+                    }
+                }
             }
             showMessage( counter + " persons, " + empty + " without occupation" , false, true );
 
@@ -2461,12 +2489,12 @@ public class LinksCleaned extends Thread {
         int step = 1000;
         int stepstate = step;
 
-        try {
-
+        try
+        {
             String startQuery;
             String id_source;
 
-            if (sourceNo.isEmpty()) {
+            if( sourceNo.isEmpty() ) {
                 startQuery = "SELECT id_person , sex FROM person_o" + bronFilter;
                 id_source = this.sourceId + "";
             } else {
@@ -2474,69 +2502,62 @@ public class LinksCleaned extends Thread {
                 id_source = sourceNo;
             }
 
-            // Get gender
-            ResultSet rsGeslacht = conOriginal.runQueryWithResult(startQuery);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            while (rsGeslacht.next()) {
-
+            while( rs.next() )
+            {
                 counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
                     stepstate += step;
                 }
 
-                int id_person = rsGeslacht.getInt("id_person");
-                String sex = rsGeslacht.getString("sex");
+                int id_person = rs.getInt( "id_person" );
+                String sex = rs.getString( "sex" );
 
-                // Check presence of the gender
-                if (sex != null && !sex.isEmpty()) {
+                if( sex != null && !sex.isEmpty() )                 // check presence of the gender
+                {
+                    if( ttalStatusSex.originalExists( sex ) )       // check presence in original
+                    {
+                        String newCode = ttalStatusSex.getStandardCodeByOriginal( sex );
 
-                    // Check presence in
-                    if (ttalStatusSex.originalExists(sex)) {
+                        if( newCode.equals( SC_X ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 31, sex );     // warning 31
 
-                        String nieuwCode = ttalStatusSex.getStandardCodeByOriginal(sex);
-
-                        if (nieuwCode.equals(SC_X)) {
-
-                            // EC 31
-                            funcAddtoReportPerson(id_person, id_source, 31, sex);
-
-                            String query = PersonC.updateQuery("sex", sex, id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_N)) {
-                            // EC 33
-                            funcAddtoReportPerson(id_person, id_source, 33, sex);
-                        } else if (nieuwCode.equals(SC_I)) {
-
-                            // EC 35
-                            funcAddtoReportPerson(id_person, id_source, 35, sex);
-
-                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_Y)) {
-
-                            String query = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", sex), id_person);
-                            conCleaned.runQuery(query);
-                        } else {
-                            // Invalid standard code
-                            // EC 39
-                            funcAddtoReportPerson(id_person, id_source, 39, sex);
+                            String query = PersonC.updateQuery( "sex", sex, id_person );
+                            conCleaned.runQuery( query );
                         }
-                    } else {
+                        else if( newCode.equals( SC_N ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 33, sex );     // warning 33
+                        }
+                        else if( newCode.equals( SC_I ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 35, sex );     // warning 35
 
-                        // EC 33
-                        funcAddtoReportPerson(id_person, id_source, 31, sex);
+                            String query = PersonC.updateQuery( "sex",
+                                ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            conCleaned.runQuery( query );
+                        }
+                        else if( newCode.equals( SC_Y ) ) {
+                            String query = PersonC.updateQuery( "sex",
+                                ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            conCleaned.runQuery( query );
+                        }
+                        else {     // Invalid standard code
+                            funcAddtoReportPerson( id_person, id_source, 39, sex );     // warning 39
+                        }
+                    }
+                    else // not present in original
+                    {
+                        funcAddtoReportPerson( id_person, id_source, 31, sex );         // warning 31
+                        ttalStatusSex.addOriginal( sex );                               // Add new Sex "x" ??
 
-                        // Add new Sex
-                        ttalStatusSex.addOriginal(sex);
-
-                        String query = PersonC.updateQuery("sex", sex, id_person);
-                        conCleaned.runQuery(query);
+                        String query = PersonC.updateQuery( "sex", sex, id_person );
+                        conCleaned.runQuery( query );
                     }
                 }
             }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Sex: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
         }
     } // standardSex
 
@@ -2550,11 +2571,12 @@ public class LinksCleaned extends Thread {
         int step = 1000;
         int stepstate = step;
 
-        try {
+        try
+        {
             String startQuery;
             String id_source;
 
-            if (sourceNo.isEmpty()) {
+            if( sourceNo.isEmpty() ) {
                 startQuery = "SELECT id_person , sex , civil_status FROM person_o" + bronFilter + " and civil_status is not null ";
                 id_source = this.sourceId + "";
             } else {
@@ -2562,110 +2584,94 @@ public class LinksCleaned extends Thread {
                 id_source = sourceNo;
             }
 
-            ResultSet rsStaat = conOriginal.runQueryWithResult(startQuery);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            while (rsStaat.next()) {
-
+            while( rs.next() )
+            {
                 counter++;
-
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
                     stepstate += step;
                 }
 
+                int id_person = rs.getInt( "id_person" );
+                String sex = rs.getString( "sex" );
+                String civil_status = rs.getString( "civil_status" );
 
-                int id_person = rsStaat.getInt("id_person");
-                String sex = rsStaat.getString("sex");
-                String civil_status = rsStaat.getString("civil_status");
+                if( civil_status != null && !civil_status.isEmpty())    // check presence of civil status
+                {
+                    if( ttalStatusSex.originalExists( civil_status ) )  // check presence in original
+                    {
+                        String newCode = this.ttalStatusSex.getStandardCodeByOriginal( civil_status );
 
-                if (civil_status != null && !civil_status.isEmpty()) {
+                        if( newCode.equals( SC_X ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 61, civil_status );            // warning 61
 
-                    // Check ref
-                    if (ttalStatusSex.originalExists(civil_status)) {
-
-                        String nieuwCode = this.ttalStatusSex.getStandardCodeByOriginal(civil_status);
-
-                        if (nieuwCode.equals(SC_X)) {
-
-                            // EC 61
-                            funcAddtoReportPerson(id_person, id_source, 61, civil_status);
-
-                            String query = PersonC.updateQuery("civil_status", civil_status, id_person);
-                            conCleaned.runQuery(query);
-                        } else if (nieuwCode.equals(SC_N)) {
-                            // EC 63
-                            funcAddtoReportPerson(id_person, id_source, 63, civil_status);
-                        } else if (nieuwCode.equals(SC_I)) {
-
-                            // EC 65
-                            funcAddtoReportPerson(id_person, id_source, 65, civil_status);
-
-                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(query);
-
-                            // Extra check on sex
-                            if (sex != null && !sex.isEmpty()) {
-
-                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
-                                    // EC 68
-                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
-                                }
-                            } // Sex is empty
-                            else {
-
-                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
-                                conCleaned.runQuery(geslachtQuery);
-
-                            }
-
-                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(geslachtQuery);
-
-                        } else if (nieuwCode.equals(SC_Y)) {
-
-
-                            String query = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(query);
-
-                            // Extra check on sex
-                            if (sex != null && !sex.isEmpty()) {
-
-                                if (!sex.equalsIgnoreCase(this.ttalStatusSex.getColumnByOriginal("standard_sex", civil_status))) {
-                                    // EC 68
-                                    funcAddtoReportPerson(id_person, id_source, 68, civil_status);
-                                }
-                            } // Sex is empty
-                            else {
-
-                                String geslachtQuery = PersonC.updateQuery("sex", ttalStatusSex.getColumnByOriginal("standard_sex", civil_status), id_person);
-                                conCleaned.runQuery(geslachtQuery);
-
-                            }
-
-                            String geslachtQuery = PersonC.updateQuery("civil_status", ttalStatusSex.getColumnByOriginal("standard_civilstatus", civil_status), id_person);
-                            conCleaned.runQuery(geslachtQuery);
-                        } else {
-
-                            // Invalid SC
-                            // EC 69
-                            funcAddtoReportPerson(id_person, id_source, 69, civil_status);
+                            String query = PersonC.updateQuery( "civil_status", civil_status, id_person );
+                            conCleaned.runQuery( query );
                         }
-                    } // add to ref
-                    else {
-                        // EC 61
-                        funcAddtoReportPerson(id_person, id_source, 61, civil_status);
+                        else if( newCode.equals( SC_N ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 63, civil_status );            // warning 63
+                        }
+                        else if( newCode.equals( SC_I ) ) {
+                            funcAddtoReportPerson( id_person, id_source, 65, civil_status );            // warning 65
 
-                        // Add new Status
-                        ttalStatusSex.addOriginal(civil_status);
+                            String query = PersonC.updateQuery( "civil_status",
+                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            conCleaned.runQuery( query );
 
-                        // Write to Person
-                        String query = PersonC.updateQuery("civil_status", civil_status, id_person);
-                        conCleaned.runQuery(query);
+                            if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
+                                if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
+                                    funcAddtoReportPerson( id_person, id_source, 68, civil_status );    // warning 68
+                                }
+                            }
+                            else            // Sex is empty
+                            {
+                                String sexQuery = PersonC.updateQuery( "sex",
+                                    ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                conCleaned.runQuery( sexQuery );
+                            }
+
+                            String sexQuery = PersonC.updateQuery( "civil_status",
+                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            conCleaned.runQuery( sexQuery );
+                        }
+                        else if( newCode.equals( SC_Y ) ) {
+                            String query = PersonC.updateQuery( "civil_status",
+                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            conCleaned.runQuery( query );
+
+                            if( sex != null && !sex.isEmpty() ) {      // Extra check on sex
+                                if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
+                                    funcAddtoReportPerson( id_person, id_source, 68, civil_status );    // warning 68
+                                }
+                            }
+                            else {      // Sex is empty
+                                String sexQuery = PersonC.updateQuery( "sex",
+                                    ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                conCleaned.runQuery( sexQuery );
+                            }
+
+                            String sexQuery = PersonC.updateQuery( "civil_status",
+                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            conCleaned.runQuery( sexQuery );
+                        }
+                        else {          // Invalid SC
+                            funcAddtoReportPerson( id_person, id_source, 69, civil_status );            // warning 68
+                        }
+                    }
+                    else {      // add to ref
+                        funcAddtoReportPerson( id_person, id_source, 61, civil_status );                // warning 61
+
+                        ttalStatusSex.addOriginal( civil_status );                                      // Add new Status "x" ??
+
+                        String query = PersonC.updateQuery( "civil_status", civil_status, id_person );  // Write to Person
+                        conCleaned.runQuery( query );
                     }
                 }
             }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Civil Status: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
         }
     } // standardStatusSex
 
@@ -2876,12 +2882,12 @@ public class LinksCleaned extends Thread {
         int step = 1000;
         int stepstate = step;
 
-        try {
-
+        try
+        {
             String startQuery;
             String id_source;
 
-            if (sourceNo.isEmpty()) {
+            if( sourceNo.isEmpty() ) {
                 startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + bronFilter;
                 id_source = this.sourceId + "";
             } else {
@@ -2889,75 +2895,63 @@ public class LinksCleaned extends Thread {
                 id_source = sourceNo;
             }
 
-            // Get types node-152.dev.socialhistoryservices.org
-            ResultSet type = conOriginal.runQueryWithResult(startQuery);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            while (type.next()) {
-
+            while( rs.next() )
+            {
                 counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
                     stepstate += step;
                 }
 
-                int id_registration = type.getInt("id_registration");
-                int registration_maintype = type.getInt("registration_maintype");
-                String registration_type = type.getString("registration_type") != null ? type.getString("registration_type").toLowerCase() : "";
+                int id_registration = rs.getInt( "id_registration" );
+                int registration_maintype = rs.getInt( "registration_maintype" );
+                String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
                 // check ref database
-                ResultSet ref = conGeneral.runQueryWithResult("SELECT * FROM ref_registration WHERE main_type = " + registration_maintype + " AND original = '" + registration_type + "'");
+                ResultSet ref = conGeneral.runQueryWithResult( "SELECT * FROM ref_registration WHERE main_type = " +
+                    registration_maintype + " AND original = '" + registration_type + "'" );
 
-                // check ref
-                if (ref.next()) {
+                if( ref.next() )        // check ref
+                {
+                    String newCode = ref.getString( "standard_code" ).toLowerCase();
 
-                    String nieuwCode = ref.getString("standard_code").toLowerCase();
+                    if( newCode.equals( SC_X ) ) {
+                        funcAddtoReportRegistration( id_registration, id_source, 51, registration_type );       // warning 51
 
-                    if (nieuwCode.equals(SC_X)) {
-
-                        // EC 51
-                        funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
-
-                        String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
-
-                        conCleaned.runQuery(query);
-                    } else if (nieuwCode.equals(SC_N)) {
-                        // EC 53
-                        funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
-                    } else if (nieuwCode.equals(SC_I)) {
-
-                        // EC 55
-                        funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
-
-                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
-
-                        conCleaned.runQuery(query);
-
-                    } else if (nieuwCode.equals(SC_Y)) {
-
-                        String query = RegistrationC.updateQuery("registration_type", ref.getString("standard").toLowerCase(), id_registration);
-                        conCleaned.runQuery(query);
-                    } else {
-
-                        // invalid SC
-                        // EC 59
-                        funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
+                        String query = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
+                        conCleaned.runQuery( query );
                     }
-                } // standardcode x
-                else {
+                    else if( newCode.equals( SC_N ) ) {
+                        funcAddtoReportRegistration( id_registration, id_source, 53, registration_type );       // warning 53
+                    }
+                    else if( newCode.equals( SC_I ) ) {
+                        funcAddtoReportRegistration( id_registration, id_source, 55, registration_type );       // warning 55
 
-                    // EC 51
-                    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+                        String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
+                        conCleaned.runQuery( query );
+                    } else if( newCode.equals( SC_Y ) ) {
+                        String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
+                        conCleaned.runQuery( query );
+                    }
+                    else {    // invalid SC
+                        funcAddtoReportRegistration( id_registration, id_source, 59, registration_type );       // warning 59
+                    }
+                }
+                else {      // not in ref; add standardcode x to ref
+                    funcAddtoReportRegistration( id_registration, id_source, 51, registration_type );           // warning 51
 
                     // add to ref
-                    conGeneral.runQuery("INSERT INTO ref_registration(original, main_type, standard_code) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')");
+                    conGeneral.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
 
                     // update person
-                    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration);
-                    conCleaned.runQuery(query);
+                    String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
+                    conCleaned.runQuery( query );
                 }
             }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
         }
     } // standardType
 
@@ -3037,7 +3031,7 @@ public class LinksCleaned extends Thread {
             rs.first();
             for( ;; ) {
                 String id = rs.getString( "id_source" );
-                if( id == null || id == "" ) { break; }
+                if( id == null || id.isEmpty() ) { break; }
                 else {
                     //System.out.printf( "id: %s\n", id );
                     ids.add(id);

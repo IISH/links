@@ -195,7 +195,7 @@ public class TableToArraysSet
 
                     int index = Collections.binarySearch(columnNew.get(i), newValue);
 
-                    //set al the columns, now we know the index where is has to be put
+                    //set all the columns, now we know the index where is has to be put
                     for (int j = 0; j < columnNew.size(); j++) {
 
                         if (j == 0) {

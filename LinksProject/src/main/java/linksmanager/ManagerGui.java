@@ -1772,13 +1772,13 @@ public class ManagerGui extends javax.swing.JFrame
 
 
     /**
-     * Fill GUI with read  properties
+     * Fill GUI with the read properties
      */
     public void loadProperties( Properties properties )
     {
         String sourceId = properties.getProperty( "tbLOLCSourceId" );
         if( sourceId == null ) { sourceId = ""; }
-        if( sourceId == "" ) { System.out.println( "sourceId not specified" ); }
+        if( sourceId.isEmpty() ) { System.out.println( "sourceId not specified" ); }
         else { System.out.println( "sourceId: " + sourceId ); }
         tbLOLCSourceId.setText( sourceId );
 
