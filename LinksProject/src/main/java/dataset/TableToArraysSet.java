@@ -117,8 +117,10 @@ public class TableToArraysSet
             }
 
             // Fill array with table
-            while (rs.next()) {
-
+            int j = 0;
+            while( rs.next() )
+            {
+                j += 1;
                 if (isIntFlag) {
                     column.get((i - 1)).add(rs.getInt(i));
                     columnCopy.get((i - 1)).add(rs.getInt(i));
@@ -135,8 +137,8 @@ public class TableToArraysSet
                 }
             }
 
-            // set Iterator
-            rs.beforeFirst();
+            System.out.println( "rows: " + j);
+            rs.beforeFirst();            // set Iterator
         }
 
         // Close ResultSet

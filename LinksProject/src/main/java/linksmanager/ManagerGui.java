@@ -8,6 +8,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import java.util.ArrayList;
 import java.util.Properties;
 import javax.swing.*;
@@ -36,9 +39,9 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.status.StatusLogger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.status.StatusLogger;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -72,7 +75,7 @@ public class ManagerGui extends javax.swing.JFrame
 {
     //static final Logger logger = LogManager.getLogger( ManagerGui.class.getName() );
     //protected final static Logger logger = StatusLogger.getLogger();
-    static final Logger logger = LogManager.getLogger( "links" );        // "links" name specified in log4j.xml
+    //static final Logger logger = LogManager.getLogger( "links" );        // "links" name specified in log4j.xml
 
     static general.PrintLogger plog = null;
 
@@ -238,7 +241,7 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoDates = new JCheckBox();
 		cbCdoYearAge = new JCheckBox();
 		cbCdoRefreshData = new JCheckBox();
-		cbCdoType = new JCheckBox();
+		cbCdoRegType = new JCheckBox();
 		cbLOLCdoSequence = new JCheckBox();
 		cbCdoLocations = new JCheckBox();
 		cbCdoRelation = new JCheckBox();
@@ -1362,10 +1365,10 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoRefreshData.setText("Remove previous data");
 				cbCdoRefreshData.setName("cbCdoVernieuwen");
 
-				//---- cbCdoType ----
-				cbCdoType.setSelected(true);
-				cbCdoType.setText("Registration Type");
-				cbCdoType.setName("cbCdoType");
+				//---- cbCdoRegType ----
+				cbCdoRegType.setSelected(true);
+				cbCdoRegType.setText("Registration Type");
+				cbCdoRegType.setName("cbCdoRegType");
 
 				//---- cbLOLCdoSequence ----
 				cbLOLCdoSequence.setText("Sequence");
@@ -1460,7 +1463,7 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 464, Short.MAX_VALUE)
+										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGap(0, 0, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
@@ -1474,12 +1477,12 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbLOLCdoRole, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoRelation, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbLOLCdoSequence, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoType, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+												.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
@@ -1489,10 +1492,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoOccupation)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
+												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
 											.addGap(27, 27, 27)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
@@ -1508,10 +1511,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 258, Short.MAX_VALUE))))
 									.addGap(26, 26, 26)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1569,7 +1572,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
 									.addComponent(jLabel51)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1596,7 +1599,7 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoStatusSex)
 										.addComponent(cbCdoDaysSinceBegin))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoType)
+									.addComponent(cbCdoRegType)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbLOLCdoSequence)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1873,12 +1876,12 @@ public class ManagerGui extends javax.swing.JFrame
         }
 
         // Type
-        String doType = properties.getProperty( "doType" );
-        if( doType != null ) {
-            if (doType.equals("true")) {
-                cbCdoType.setSelected(true);
+        String doRegType = properties.getProperty( "doRegType" );
+        if( doRegType != null ) {
+            if (doRegType.equals("true")) {
+                cbCdoRegType.setSelected(true);
             } else {
-                cbCdoType.setSelected(false);
+                cbCdoRegType.setSelected(false);
             }
         }
 
@@ -2278,7 +2281,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoLocations.isSelected()) { dos.setDoLocations(true); }
 
-        if (cbCdoType.isSelected()) { dos.setDoType(true); }
+        if (cbCdoRegType.isSelected()) { dos.setDoRegType(true); }
 
         if (cbLOLCdoSequence.isSelected()) { dos.setDoSequence(true); }
 
@@ -2403,11 +2406,16 @@ public class ManagerGui extends javax.swing.JFrame
      */
     public static void main( String args[] )
     {
-        try { logger.info( "ManagerGui/main()" ); }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        //try { logger.info( "ManagerGui/main()" ); }
+        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+
+        String hostname = "";
+        try { hostname = InetAddress.getLocalHost().getHostName(); }
+        catch( UnknownHostException ex ) { System.out.println( ex.getMessage() ); }
 
         try {
             plog = new general.PrintLogger();
+            plog.show( "Running on host: " + hostname );
             plog.show( "ManagerGui/main()" );
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
@@ -2415,7 +2423,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "21-Aug-2014 14:12";
+            String timestamp1 = "25-Aug-2014 11:34";
             //System.out.println( "LINKS timestamp: " + timestamp1 );
             //logger.info( "LINKS timestamp: " + timestamp1 );
 
@@ -2574,7 +2582,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoDates;
 	private JCheckBox cbCdoYearAge;
 	private JCheckBox cbCdoRefreshData;
-	private JCheckBox cbCdoType;
+	private JCheckBox cbCdoRegType;
 	private JCheckBox cbLOLCdoSequence;
 	private JCheckBox cbCdoLocations;
 	private JCheckBox cbCdoRelation;

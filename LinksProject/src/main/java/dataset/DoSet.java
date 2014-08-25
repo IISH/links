@@ -24,7 +24,7 @@ package dataset;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-20-Aug-2014 Occupation added
+ * FL-25-Aug-2014 Occupation added
  */
 public class DoSet
 {
@@ -34,7 +34,7 @@ public class DoSet
     private boolean doStatusSex;
     private boolean doAgeYear;
     private boolean doLocations;
-    private boolean doType;
+    private boolean doRegType;
     private boolean doSequence;
     private boolean doPartsToFullDate;
     private boolean doDaysSinceBegin;
@@ -264,16 +264,14 @@ public class DoSet
     /**
      * @return
      */
-    public boolean isDoType() {
-        return doType;
+    public boolean isDoRegType() {
+        return doRegType;
     }
 
     /**
-     * @param doType
+     * @param doRegType
      */
-    public void setDoType(boolean doType) {
-        this.doType = doType;
-    }
+    public void setDoRegType(boolean doRegType) { this.doRegType = doRegType; }
 
 
     /**

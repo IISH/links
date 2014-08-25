@@ -55,7 +55,7 @@ import general.Functions;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-21-Aug-2014 Latest change
+ * FL-25-Aug-2014 Latest change
  */
 public class LinksCleaned extends Thread {
     static final Logger logger = LogManager.getLogger("links");   // "links" name specified in log4j.xml
@@ -71,7 +71,6 @@ public class LinksCleaned extends Thread {
     private TableToArraysSet ttalSuffix;
     private TableToArraysSet ttalRegistration;
     private TableToArraysSet ttalReport;
-
 
     private JTextField tbLOLClatestOutput;
     private JTextArea taLOLCoutput;
@@ -94,10 +93,10 @@ public class LinksCleaned extends Thread {
     private String tempTableName;
     private DoSet dos;
 
-    private final static String SC_I = "o"; // o Standard value assigned (although the original value is not valid)
-    private final static String SC_X = "x"; // x Standard yet to be assigned
-    private final static String SC_N = "n"; // n No standard value assigned (original value is not valid)
-    private final static String SC_Y = "y"; // j Standard value assigned (valid original value)
+    private final static String SC_U = "u"; // Unknown Standard value assigned (although the original value is not valid)
+    private final static String SC_X = "x"; //    X    Standard yet to be assigned
+    private final static String SC_N = "n"; //    No   standard value assigned (original value is not valid)
+    private final static String SC_Y = "y"; //    Yes  Standard value assigned (valid original value)
 
     // old links_base
     private ArrayList<Integer> hpChildRegistration = new ArrayList<Integer>();
@@ -246,9 +245,9 @@ public class LinksCleaned extends Thread {
                 ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
             }
 
-            doRenewData( dos.isDoRenewData() );                   // GUI cb: Remove previous data
+            doRenewData( dos.isDoRenewData() );                 // GUI cb: Remove previous data
 
-            doPreBasicNames( dos.isDoPreBasicNames() );           // GUI cb: Basic names temp
+            doPreBasicNames( dos.isDoPreBasicNames() );         // GUI cb: Basic names temp
 
             doRemarks( dos.isDoRemarks() );                     // GUI cb: Parse remarks
 
@@ -256,9 +255,9 @@ public class LinksCleaned extends Thread {
 
             doLocations( dos.isDoLocations() );                 // GUI cb: Locations
 
-            doStatusSex( dos.isDoStatusSex() );                 // GUI cb: Satus and Sex
+            doStatusSex( dos.isDoStatusSex() );                 // GUI cb: Status and Sex
 
-            doType( dos.isDoType() );                           // GUI cb: Registration Type
+            doRegType( dos.isDoRegType() );                     // GUI cb: Registration Type
 
             doSequence( dos.isDoSequence() );                   // GUI cb: Sequence
 
@@ -692,7 +691,7 @@ public class LinksCleaned extends Thread {
      * @param go
      * @throws Exception
      */
-    private void doType( boolean go ) throws Exception
+    private void doRegType( boolean go ) throws Exception
     {
         String funcname = "doType";
         if( !go ) {
@@ -706,7 +705,7 @@ public class LinksCleaned extends Thread {
         runMethod( "standardType" );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-    } // doType
+    } // doRegType
 
 
     /**
@@ -1083,7 +1082,7 @@ public class LinksCleaned extends Thread {
             if (name.contains(" " + keyword + " ")) {
 
                 // EC 17
-                funcAddtoReportPerson(id, id_souce, 17, name);
+                addToReportPerson(id, id_souce, 17, name);
 
                 // prepare on braces
                 if (keyword.contains("\\(") || keyword.contains("\\(")) {
@@ -1183,7 +1182,7 @@ public class LinksCleaned extends Thread {
                 } else {
 
                     // EC 211
-                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
+                    addToReportPerson(id_person, id_source + "", 211, dymd.getReports());
 
                     String query = ""
                             + "UPDATE person_c "
@@ -1339,7 +1338,7 @@ public class LinksCleaned extends Thread {
 
                     // EC
                     if (spaces) {
-                        funcAddtoReportPerson(id_person, id_source, 1103, "");
+                        addToReportPerson(id_person, id_source, 1103, "");
                     }
 
                     // loop through names
@@ -1352,16 +1351,16 @@ public class LinksCleaned extends Thread {
                             String standard_code = ttalFirstname.getStandardCodeByOriginal(preList.get(i));
                             if (standard_code.equals(SC_Y)) {
                                 postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
-                            } else if (standard_code.equals(SC_I)) { // EC 1100
-                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
+                            } else if (standard_code.equals(SC_U)) { // EC 1100
+                                addToReportPerson(id_person, id_source, 1100, preList.get(i));
                                 postList.add(ttalFirstname.getStandardByOriginal(preList.get(i)));
                             } else if (standard_code.equals(SC_N)) { // EC 1105
-                                funcAddtoReportPerson(id_person, id_source, 1105, preList.get(i));
+                                addToReportPerson(id_person, id_source, 1105, preList.get(i));
                             } else if (standard_code.equals(SC_X)) { // EC 1109
-                                funcAddtoReportPerson(id_person, id_source, 1109, preList.get(i));
+                                addToReportPerson(id_person, id_source, 1109, preList.get(i));
                                 postList.add(preList.get(i));
                             } else {// EC 1100
-                                funcAddtoReportPerson(id_person, id_source, 1100, preList.get(i));
+                                addToReportPerson(id_person, id_source, 1100, preList.get(i));
                             }
                         } // name does not exists in ref_firtname
                         else {
@@ -1373,7 +1372,7 @@ public class LinksCleaned extends Thread {
                             if (!preList.get(i).equalsIgnoreCase(nameNoInvalidChars)) {
 
                                 // EC 1104
-                                funcAddtoReportPerson(id_person, id_source, 1104, preList.get(i));
+                                addToReportPerson(id_person, id_source, 1104, preList.get(i));
 
                                 // Check if name exists in ref
                                 // Does this aprt exists in ref_name?
@@ -1382,16 +1381,16 @@ public class LinksCleaned extends Thread {
                                     String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoInvalidChars);
                                     if (standard_code.equals(SC_Y)) {
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
+                                    } else if (standard_code.equals(SC_U)) { // EC 1100
+                                        addToReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoInvalidChars));
                                     } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoInvalidChars);
+                                        addToReportPerson(id_person, id_source, 1105, nameNoInvalidChars);
                                     } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoInvalidChars);
+                                        addToReportPerson(id_person, id_source, 1109, nameNoInvalidChars);
                                         postList.add(nameNoInvalidChars);
                                     } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
+                                        addToReportPerson(id_person, id_source, 1100, nameNoInvalidChars);
                                     }
 
                                     // continue
@@ -1409,7 +1408,7 @@ public class LinksCleaned extends Thread {
                                             && sfxSc.get(j).toString().equals(SC_Y)) {
 
                                         // EC 1106
-                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
+                                        addToReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
 
                                         nameNoInvalidChars = nameNoInvalidChars.replaceAll(" " + sfxO.get(j).toString(), "");
 
@@ -1426,7 +1425,7 @@ public class LinksCleaned extends Thread {
                                 if (!nameNoPieces.equals(nameNoInvalidChars)) {
 
                                     // EC 1107
-                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
+                                    addToReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
 
                                 }
 
@@ -1436,16 +1435,16 @@ public class LinksCleaned extends Thread {
                                     String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
                                     if (standard_code.equals(SC_Y)) {
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                    } else if (standard_code.equals(SC_U)) { // EC 1100
+                                        addToReportPerson(id_person, id_source, 1100, nameNoPieces);
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
                                     } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1105, nameNoPieces);
                                     } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1109, nameNoPieces);
                                         postList.add(nameNoPieces);
                                     } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1100, nameNoPieces);
                                     }
                                 } else {
                                     // name must be added to ref_firstname with standard_code x
@@ -1468,7 +1467,7 @@ public class LinksCleaned extends Thread {
                                             && sfxSc.get(j).toString().equals(SC_Y)) {
 
                                         // EC 1106
-                                        funcAddtoReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
+                                        addToReportPerson(id_person, id_source, 1106, nameNoInvalidChars);
 
                                         nameNoInvalidChars = nameNoInvalidChars.replaceAll(sfxO.get(j).toString(), "");
 
@@ -1485,7 +1484,7 @@ public class LinksCleaned extends Thread {
                                 if (!nameNoPieces.equals(nameNoInvalidChars)) {
 
                                     // EC 1107
-                                    funcAddtoReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
+                                    addToReportPerson(id_person, id_source, 1107, nameNoInvalidChars);
 
                                 }
 
@@ -1495,16 +1494,16 @@ public class LinksCleaned extends Thread {
                                     String standard_code = ttalFirstname.getStandardCodeByOriginal(nameNoPieces);
                                     if (standard_code.equals(SC_Y)) {
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
-                                    } else if (standard_code.equals(SC_I)) { // EC 1100
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                    } else if (standard_code.equals(SC_U)) { // EC 1100
+                                        addToReportPerson(id_person, id_source, 1100, nameNoPieces);
                                         postList.add(ttalFirstname.getStandardByOriginal(nameNoPieces));
                                     } else if (standard_code.equals(SC_N)) { // EC 1105
-                                        funcAddtoReportPerson(id_person, id_source, 1105, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1105, nameNoPieces);
                                     } else if (standard_code.equals(SC_X)) { // EC 1109
-                                        funcAddtoReportPerson(id_person, id_source, 1109, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1109, nameNoPieces);
                                         postList.add(nameNoPieces);
                                     } else { // EC 1100, standard_code not invalid
-                                        funcAddtoReportPerson(id_person, id_source, 1100, nameNoPieces);
+                                        addToReportPerson(id_person, id_source, 1100, nameNoPieces);
                                     }
                                 } else {
                                     // name must be added to ref_firstname with standard_code x
@@ -1547,7 +1546,7 @@ public class LinksCleaned extends Thread {
                 } else {
 
                     // First name is empty, EC 1101
-                    funcAddtoReportPerson(id_person, id_source, 1101, "");
+                    addToReportPerson(id_person, id_source, 1101, "");
                 }
 
                 // close this
@@ -1636,33 +1635,33 @@ public class LinksCleaned extends Thread {
 
                             writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
 
-                        } else if (standard_code.equals(SC_I)) {
+                        } else if (standard_code.equals(SC_U)) {
 
                             // EC 1000
-                            funcAddtoReportPerson(id_person, id_source, 1000, familyname);
+                            addToReportPerson(id_person, id_source, 1000, familyname);
 
                             writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(familyname).toLowerCase() + "\n");
 
                         } else if (standard_code.equals(SC_N)) {
 
                             // EC 1005
-                            funcAddtoReportPerson(id_person, id_source, 1005, familyname);
+                            addToReportPerson(id_person, id_source, 1005, familyname);
                         } else if (standard_code.equals(SC_X)) {
 
                             // EC 1009
-                            funcAddtoReportPerson(id_person, id_source, 1009, familyname);
+                            addToReportPerson(id_person, id_source, 1009, familyname);
 
                             writerFamilyname.write(id_person + "," + familyname.toLowerCase() + "\n");
                         } else {
 
                             // EC 1010
-                            funcAddtoReportPerson(id_person, id_source, 1010, familyname);
+                            addToReportPerson(id_person, id_source, 1010, familyname);
                         }
                     } // Familyname does not exists in ref_familyname
                     else {
 
                         // EC 1002
-                        funcAddtoReportPerson(id_person, id_source, 1002, familyname);
+                        addToReportPerson(id_person, id_source, 1002, familyname);
 
                         String nameNoSerriedSpaces = familyname.replaceAll(" [ ]+", " ");
 
@@ -1670,7 +1669,7 @@ public class LinksCleaned extends Thread {
                         if (!nameNoSerriedSpaces.equalsIgnoreCase(familyname)) {
 
                             // EC 1003
-                            funcAddtoReportPerson(id_person, id_source, 1003, familyname);
+                            addToReportPerson(id_person, id_source, 1003, familyname);
                         }
 
                         String nameNoInvalidChars = funcCleanNaam(nameNoSerriedSpaces);
@@ -1679,7 +1678,7 @@ public class LinksCleaned extends Thread {
                         if (!nameNoSerriedSpaces.equalsIgnoreCase(nameNoInvalidChars)) {
 
                             // EC 1004
-                            funcAddtoReportPerson(id_person, id_source, 1004, familyname);
+                            addToReportPerson(id_person, id_source, 1004, familyname);
                         }
 
                         // check if name has prepieces
@@ -1689,7 +1688,7 @@ public class LinksCleaned extends Thread {
                         if (!nameNoPrePiece.equalsIgnoreCase(nameNoInvalidChars)) {
 
                             // EC 1008
-                            funcAddtoReportPerson(id_person, id_source, 1008, familyname);
+                            addToReportPerson(id_person, id_source, 1008, familyname);
                         }
 
                         // Ckeck on Aliasses
@@ -1703,7 +1702,7 @@ public class LinksCleaned extends Thread {
                             if (nameNoAlias.endsWith(" " + sfxO.get(i).toString())) {
 
                                 // EC 1006
-                                funcAddtoReportPerson(id_person, id_source, 1006, nameNoAlias);
+                                addToReportPerson(id_person, id_source, 1006, nameNoAlias);
 
                                 nameNoAlias = nameNoAlias.replaceAll(" " + sfxO.get(i).toString(), "");
 
@@ -1725,32 +1724,32 @@ public class LinksCleaned extends Thread {
                             if (standard_code.equals(SC_Y)) {
 
                                 writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
-                            } else if (standard_code.equals(SC_I)) {
+                            } else if (standard_code.equals(SC_U)) {
 
                                 // EC 1000
-                                funcAddtoReportPerson(id_person, id_source, 1000, nameNoSuffix);
+                                addToReportPerson(id_person, id_source, 1000, nameNoSuffix);
 
                                 writerFamilyname.write(id_person + "," + ttalFamilyname.getStandardByOriginal(nameNoSuffix).toLowerCase() + "\n");
                             } else if (standard_code.equals(SC_N)) {
 
                                 // EC 1005
-                                funcAddtoReportPerson(id_person, id_source, 1005, nameNoSuffix);
+                                addToReportPerson(id_person, id_source, 1005, nameNoSuffix);
                             } else if (standard_code.equals(SC_X)) {
 
                                 // EC 1009
-                                funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
+                                addToReportPerson(id_person, id_source, 1009, nameNoSuffix);
 
                                 writerFamilyname.write(id_person + "," + nameNoSuffix.toLowerCase() + "\n");
                             } else {
                                 // EC 1010
-                                funcAddtoReportPerson(id_person, id_source, 1010, nameNoSuffix);
+                                addToReportPerson(id_person, id_source, 1010, nameNoSuffix);
                             }
                         } else {
                             // Familie is nieuw en wordt toegevoegd
                             ttalFamilyname.addOriginal(nameNoSuffix);
 
                             // EC 1009
-                            funcAddtoReportPerson(id_person, id_source, 1009, nameNoSuffix);
+                            addToReportPerson(id_person, id_source, 1009, nameNoSuffix);
 
                             writerFamilyname.write(id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n");
 
@@ -1760,7 +1759,7 @@ public class LinksCleaned extends Thread {
                 else {
 
                     // EC 1001
-                    funcAddtoReportPerson(id_person, id_source, 1001, "");
+                    addToReportPerson(id_person, id_source, 1001, "");
                 }
             }
             con.close();
@@ -1821,7 +1820,7 @@ public class LinksCleaned extends Thread {
                 } else {
 
                     // EC 211
-                    funcAddtoReportPerson(id_person, id_source + "", 211, dymd.getReports());
+                    addToReportPerson(id_person, id_source + "", 211, dymd.getReports());
 
                     String query = ""
                             + "UPDATE person_c "
@@ -1880,11 +1879,11 @@ public class LinksCleaned extends Thread {
 
                             // EC 91
                             if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 91, location);
+                                addToReportRegistration(id, id_source, 91, location);
                                 String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
                                 conCleaned.runQuery(query);
                             } else {
-                                funcAddtoReportPerson(id, id_source, 91, location);
+                                addToReportPerson(id, id_source, 91, location);
                                 String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
                                 conCleaned.runQuery(query);
                             }
@@ -1892,20 +1891,20 @@ public class LinksCleaned extends Thread {
 
                             // EC 93
                             if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 91, location);
+                                addToReportRegistration(id, id_source, 91, location);
                             } else {
-                                funcAddtoReportPerson(id, id_source, 93, location);
+                                addToReportPerson(id, id_source, 93, location);
                             }
-                        } else if (nieuwCode == null ? SC_I == null : nieuwCode.equals(SC_I)) {
+                        } else if (nieuwCode == null ? SC_U == null : nieuwCode.equals(SC_U)) {
 
                             // EC 95
                             if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 95, location);
+                                addToReportRegistration(id, id_source, 95, location);
                                 String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
                                 String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
                                 conCleaned.runQuery(query);
                             } else {
-                                funcAddtoReportPerson(id, id_source, 95, location);
+                                addToReportPerson(id, id_source, 95, location);
                                 String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
                                 String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
                                 conCleaned.runQuery(query);
@@ -1930,20 +1929,20 @@ public class LinksCleaned extends Thread {
 
                             // EC 99
                             if (tt == TableType.REGISTRATION) {
-                                funcAddtoReportRegistration(id, id_source, 99, location);
+                                addToReportRegistration(id, id_source, 99, location);
                             } else {
-                                funcAddtoReportPerson(id, id_source, 99, location);
+                                addToReportPerson(id, id_source, 99, location);
                             }
                         }
                     } else {
 
                         // EC 91
                         if (tt == TableType.REGISTRATION) {
-                            funcAddtoReportRegistration(id, id_source, 91, location);
+                            addToReportRegistration(id, id_source, 91, location);
                             String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
                             conCleaned.runQuery(query);
                         } else {
-                            funcAddtoReportPerson(id, id_source, 91, location);
+                            addToReportPerson(id, id_source, 91, location);
                             String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
                             conCleaned.runQuery(query);
                         }
@@ -1992,8 +1991,8 @@ public class LinksCleaned extends Thread {
         int stepstate = step;
         int empty = 0;
 
-        try {
-
+        try
+        {
             String startQuery;
             String id_source;
 
@@ -2019,29 +2018,21 @@ public class LinksCleaned extends Thread {
                 int id_person = rs.getInt( "id_person" );
                 String occupation = rs.getString( "occupation" );
 
-                if( occupation == null || occupation.isEmpty() ) {  // not present in original
-                    empty += 1;
-                    funcAddtoReportPerson( id_person, id_source, 41, occupation );         // warning 41
-                    ttalOccupation.addOriginal( occupation );                              // Add new Occupation "x" ??
-
-                    String query = PersonC.updateQuery( "occupation", occupation, id_person );
-                    conCleaned.runQuery( query );
-                }
-                else {
+                if( occupation != null && !occupation.isEmpty() ) {
                     //System.out.printf( "%d %s: %d: %s: %s\n", counter, "id_person", id_person, "occupation", occupation );
                     String newCode = ttalOccupation.getStandardCodeByOriginal( occupation );
 
                     if( newCode.equals( SC_X ) ) {
-                        funcAddtoReportPerson( id_person, id_source, 41, occupation );     // warning 41
+                        addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
 
                         String query = PersonC.updateQuery( "occupation", occupation, id_person );
                         conCleaned.runQuery( query );
                     }
                     else if( newCode.equals( SC_N ) ) {
-                        funcAddtoReportPerson( id_person, id_source, 43, occupation );     // warning 43
+                        addToReportPerson( id_person, id_source, 43, occupation );     // warning 43
                     }
-                    else if( newCode.equals( SC_I ) ) {
-                        funcAddtoReportPerson( id_person, id_source, 45, occupation );     // warning 45
+                    else if( newCode.equals( SC_U ) ) {
+                        addToReportPerson( id_person, id_source, 45, occupation );     // warning 45
 
                         String query = PersonC.updateQuery( "occupation",
                             ttalStatusSex.getColumnByOriginal( "occupation", occupation ), id_person );
@@ -2053,8 +2044,16 @@ public class LinksCleaned extends Thread {
                         conCleaned.runQuery( query );
                     }
                     else {     // Invalid standard code
-                        funcAddtoReportPerson( id_person, id_source, 59, occupation );     // warning 39
+                        addToReportPerson( id_person, id_source, 49, occupation );     // warning 49
                     }
+                }
+                else {        // not present in original
+                    empty += 1;
+                    addToReportPerson( id_person, id_source, 41, occupation );         // warning 41
+                    ttalOccupation.addOriginal( occupation );                              // Add new Occupation "x" ??
+
+                    String query = PersonC.updateQuery( "occupation", occupation, id_person );
+                    conCleaned.runQuery( query );
                 }
             }
             showMessage( counter + " persons, " + empty + " without occupation" , false, true );
@@ -2144,16 +2143,16 @@ public class LinksCleaned extends Thread {
                         // standard code x
                         if (standard_code.equals(SC_X)) {
                             // EC 81
-                            funcAddtoReportPerson(id_person, id_source, 81, part);
+                            addToReportPerson(id_person, id_source, 81, part);
 
                             listPF += part + " ";
                         } else if (standard_code.equals(SC_N)) {
                             // EC 83
-                            funcAddtoReportPerson(id_person, id_source, 83, part);
-                        } else if (standard_code.equals(SC_I)) {
+                            addToReportPerson(id_person, id_source, 83, part);
+                        } else if (standard_code.equals(SC_U)) {
 
                             // EC 85
-                            funcAddtoReportPerson(id_person, id_source, 85, part);
+                            addToReportPerson(id_person, id_source, 85, part);
 
                             if (prefix != null && !prefix.isEmpty()) {
                                 listPF += prefix + " ";
@@ -2173,10 +2172,10 @@ public class LinksCleaned extends Thread {
                             }
                         } else {
                             // Standard_code invalid
-                            funcAddtoReportPerson(id_person, id_source, 89, part);
+                            addToReportPerson(id_person, id_source, 89, part);
                         }
                     } else { // Prefix not in ref
-                        funcAddtoReportPerson(id_person, id_source, 81, part);
+                        addToReportPerson(id_person, id_source, 81, part);
 
                         // Add Prefix
                         ttalPrepiece.addOriginal(part);
@@ -2247,7 +2246,7 @@ public class LinksCleaned extends Thread {
                 if (registration_date == null) {
 
                     // EC 202
-                    funcAddtoReportRegistration(id_registration, id_source, 202, "");
+                    addToReportRegistration(id_registration, id_source, 202, "");
 
                     continue;
                 }
@@ -2268,7 +2267,7 @@ public class LinksCleaned extends Thread {
                 else {
 
                     // EC 201
-                    funcAddtoReportRegistration(id_registration, id_source, 201, dymd.getReports());
+                    addToReportRegistration(id_registration, id_source, 201, dymd.getReports());
 
                     String query = "UPDATE registration_c"
                             + " SET registration_c.registration_date = '" + registration_date + "' , "
@@ -2410,7 +2409,7 @@ public class LinksCleaned extends Thread {
 
             if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
                 // EC 111
-                funcAddtoReportRegistration(previousId, id_source, 111, "");
+                addToReportRegistration(previousId, id_source, 111, "");
             } else { // Present
                 // Is is numeric
                 try {
@@ -2419,7 +2418,7 @@ public class LinksCleaned extends Thread {
 
                 } catch (Exception e) {
                     // EC 112
-                    funcAddtoReportRegistration(previousId, id_source, 112, rs.getString("registration_seq"));
+                    addToReportRegistration(previousId, id_source, 112, rs.getString("registration_seq"));
                 }
             }
             while (rs.next()) {
@@ -2435,7 +2434,7 @@ public class LinksCleaned extends Thread {
                 if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
 
                     // EC 111
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 111, "");
+                    addToReportRegistration(rs.getInt("id_registration"), id_source, 111, "");
                     continue;
                 }
                 // Is is numeric ?
@@ -2443,7 +2442,7 @@ public class LinksCleaned extends Thread {
                     nummer = Integer.parseInt(rs.getString("registration_seq"));
                 } catch (Exception e) {
                     // EC 112
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 112, rs.getString("registration_seq"));
+                    addToReportRegistration(rs.getInt("id_registration"), id_source, 112, rs.getString("registration_seq"));
 
                     // Set values
                     previousId = rs.getInt("id_registration");
@@ -2459,10 +2458,10 @@ public class LinksCleaned extends Thread {
 
                 if (verschil == 0 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
                     // EC 113
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq"));
+                    addToReportRegistration(rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq"));
                 } else if (verschil > 1 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
                     // EC 114
-                    funcAddtoReportRegistration(rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq"));
+                    addToReportRegistration(rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq"));
                 }
 
                 // Set values
@@ -2522,33 +2521,45 @@ public class LinksCleaned extends Thread {
                         String newCode = ttalStatusSex.getStandardCodeByOriginal( sex );
 
                         if( newCode.equals( SC_X ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 31, sex );     // warning 31
+                            showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true );
+
+                            addToReportPerson( id_person, id_source, 31, sex );     // warning 31
 
                             String query = PersonC.updateQuery( "sex", sex, id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( newCode.equals( SC_N ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 33, sex );     // warning 33
+                            showMessage( "Warning 33: id_person: " + id_person + ", sex: " + sex, false, true );
+
+                            addToReportPerson( id_person, id_source, 33, sex );     // warning 33
                         }
-                        else if( newCode.equals( SC_I ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 35, sex );     // warning 35
+                        else if( newCode.equals( SC_U ) ) {
+                            showMessage( "Warning 35: id_person: " + id_person + ", sex: " + sex, false, true );
+
+                            addToReportPerson( id_person, id_source, 35, sex );     // warning 35
 
                             String query = PersonC.updateQuery( "sex",
                                 ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( newCode.equals( SC_Y ) ) {
+                            showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true );
+
                             String query = PersonC.updateQuery( "sex",
                                 ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
                             conCleaned.runQuery( query );
                         }
                         else {     // Invalid standard code
-                            funcAddtoReportPerson( id_person, id_source, 39, sex );     // warning 39
+                            showMessage( "Warning 39: id_person: " + id_person + ", sex: " + sex, false, true );
+
+                            addToReportPerson( id_person, id_source, 39, sex );     // warning 39
                         }
                     }
                     else // not present in original
                     {
-                        funcAddtoReportPerson( id_person, id_source, 31, sex );         // warning 31
+                        showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true );
+
+                        addToReportPerson( id_person, id_source, 31, sex );         // warning 31
                         ttalStatusSex.addOriginal( sex );                               // Add new Sex "x" ??
 
                         String query = PersonC.updateQuery( "sex", sex, id_person );
@@ -2598,23 +2609,23 @@ public class LinksCleaned extends Thread {
                 String sex = rs.getString( "sex" );
                 String civil_status = rs.getString( "civil_status" );
 
-                if( civil_status != null && !civil_status.isEmpty())    // check presence of civil status
+                if( civil_status != null && !civil_status.isEmpty() )   // check presence of civil status
                 {
                     if( ttalStatusSex.originalExists( civil_status ) )  // check presence in original
                     {
                         String newCode = this.ttalStatusSex.getStandardCodeByOriginal( civil_status );
 
                         if( newCode.equals( SC_X ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 61, civil_status );            // warning 61
+                            addToReportPerson( id_person, id_source, 61, civil_status );            // warning 61
 
                             String query = PersonC.updateQuery( "civil_status", civil_status, id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( newCode.equals( SC_N ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 63, civil_status );            // warning 63
+                            addToReportPerson( id_person, id_source, 63, civil_status );            // warning 63
                         }
-                        else if( newCode.equals( SC_I ) ) {
-                            funcAddtoReportPerson( id_person, id_source, 65, civil_status );            // warning 65
+                        else if( newCode.equals( SC_U ) ) {
+                            addToReportPerson( id_person, id_source, 65, civil_status );            // warning 65
 
                             String query = PersonC.updateQuery( "civil_status",
                                 ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
@@ -2622,7 +2633,7 @@ public class LinksCleaned extends Thread {
 
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
                                 if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
-                                    funcAddtoReportPerson( id_person, id_source, 68, civil_status );    // warning 68
+                                    addToReportPerson( id_person, id_source, 68, civil_status );    // warning 68
                                 }
                             }
                             else            // Sex is empty
@@ -2643,7 +2654,7 @@ public class LinksCleaned extends Thread {
 
                             if( sex != null && !sex.isEmpty() ) {      // Extra check on sex
                                 if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
-                                    funcAddtoReportPerson( id_person, id_source, 68, civil_status );    // warning 68
+                                    addToReportPerson( id_person, id_source, 68, civil_status );    // warning 68
                                 }
                             }
                             else {      // Sex is empty
@@ -2657,11 +2668,11 @@ public class LinksCleaned extends Thread {
                             conCleaned.runQuery( sexQuery );
                         }
                         else {          // Invalid SC
-                            funcAddtoReportPerson( id_person, id_source, 69, civil_status );            // warning 68
+                            addToReportPerson( id_person, id_source, 69, civil_status );            // warning 68
                         }
                     }
                     else {      // add to ref
-                        funcAddtoReportPerson( id_person, id_source, 61, civil_status );                // warning 61
+                        addToReportPerson( id_person, id_source, 61, civil_status );                // warning 61
 
                         ttalStatusSex.addOriginal( civil_status );                                      // Add new Status "x" ??
 
@@ -2733,19 +2744,19 @@ public class LinksCleaned extends Thread {
                     if (standard_code.equals(SC_X)) {
 
                         // EC 71
-                        funcAddtoReportPerson(id_person, id_source, 71, suffix);
+                        addToReportPerson(id_person, id_source, 71, suffix);
 
                         String query = PersonC.updateQuery("suffix", suffix, id_person);
                         conCleaned.runQuery(query);
                     } else if (standard_code.equals(SC_N)) {
 
                         // EC 73
-                        funcAddtoReportPerson(id_person, id_source, 73, suffix);
+                        addToReportPerson(id_person, id_source, 73, suffix);
 
-                    } else if (standard_code.equals(SC_I)) {
+                    } else if (standard_code.equals(SC_U)) {
 
                         // EC 74
-                        funcAddtoReportPerson(id_person, id_source, 75, suffix);
+                        addToReportPerson(id_person, id_source, 75, suffix);
 
                         String query = PersonC.updateQuery("suffix", suffix, id_person);
                         conCleaned.runQuery(query);
@@ -2757,13 +2768,13 @@ public class LinksCleaned extends Thread {
                     } else {
 
                         // EC 75
-                        funcAddtoReportPerson(id_person, id_source, 79, suffix);
+                        addToReportPerson(id_person, id_source, 79, suffix);
                     }
                 } // Standard code x
                 else {
 
                     // EC 71
-                    funcAddtoReportPerson(id_person, id_source, 71, suffix);
+                    addToReportPerson(id_person, id_source, 71, suffix);
 
                     ttalSuffix.addOriginal(suffix);
 
@@ -2831,17 +2842,17 @@ public class LinksCleaned extends Thread {
     if (nieuwCode.equals(SC_X)) {
 
     // EC 51
-    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+    addToReportRegistration(id_registration, id_source, 51, registration_type);
 
     String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
     conCleaned.runQuery(query);
     } else if (nieuwCode.equals(SC_N)) {
     // EC 53
-    funcAddtoReportRegistration(id_registration, id_source, 53, registration_type);
-    } else if (nieuwCode.equals(SC_I)) {
+    addToReportRegistration(id_registration, id_source, 53, registration_type);
+    } else if (nieuwCode.equals(SC_U)) {
 
     // EC 55
-    funcAddtoReportRegistration(id_registration, id_source, 55, registration_type);
+    addToReportRegistration(id_registration, id_source, 55, registration_type);
 
     String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
     conCleaned.runQuery(query);
@@ -2854,13 +2865,13 @@ public class LinksCleaned extends Thread {
 
     // invalid SC
     // EC 59
-    funcAddtoReportRegistration(id_registration, id_source, 59, registration_type);
+    addToReportRegistration(id_registration, id_source, 59, registration_type);
     }
     } // standardcode x
     else {
 
     // EC 51
-    funcAddtoReportRegistration(id_registration, id_source, 51, registration_type);
+    addToReportRegistration(id_registration, id_source, 51, registration_type);
 
     // add to ref
     ttalRegistration.addOriginal(registration_type);
@@ -2918,29 +2929,41 @@ public class LinksCleaned extends Thread {
                     String newCode = ref.getString( "standard_code" ).toLowerCase();
 
                     if( newCode.equals( SC_X ) ) {
-                        funcAddtoReportRegistration( id_registration, id_source, 51, registration_type );       // warning 51
+                        showMessage( "Warning 51: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+
+                        addToReportRegistration( id_registration, id_source, 51, registration_type );       // warning 51
 
                         String query = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
                         conCleaned.runQuery( query );
                     }
                     else if( newCode.equals( SC_N ) ) {
-                        funcAddtoReportRegistration( id_registration, id_source, 53, registration_type );       // warning 53
+                        showMessage( "Warning 53: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+
+                        addToReportRegistration( id_registration, id_source, 53, registration_type );       // warning 53
                     }
-                    else if( newCode.equals( SC_I ) ) {
-                        funcAddtoReportRegistration( id_registration, id_source, 55, registration_type );       // warning 55
+                    else if( newCode.equals( SC_U ) ) {
+                        showMessage( "Warning 55: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+
+                        addToReportRegistration( id_registration, id_source, 55, registration_type );       // warning 55
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         conCleaned.runQuery( query );
                     } else if( newCode.equals( SC_Y ) ) {
+                        showMessage( "Standard reg type: id_person: " + id_source + ", reg type: " + registration_type, false, true );
+
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         conCleaned.runQuery( query );
                     }
                     else {    // invalid SC
-                        funcAddtoReportRegistration( id_registration, id_source, 59, registration_type );       // warning 59
+                        showMessage( "Warning 59: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+
+                        addToReportRegistration( id_registration, id_source, 59, registration_type );       // warning 59
                     }
                 }
                 else {      // not in ref; add standardcode x to ref
-                    funcAddtoReportRegistration( id_registration, id_source, 51, registration_type );           // warning 51
+                    showMessage( "Warning 51: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+
+                    addToReportRegistration( id_registration, id_source, 51, registration_type );           // warning 51
 
                     // add to ref
                     conGeneral.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
@@ -3002,7 +3025,7 @@ public class LinksCleaned extends Thread {
                         conCleaned.runQuery(query);
                     } else {
                         // EC 241
-                        funcAddtoReportPerson(id_person, id_source, 241, year_age + "");
+                        addToReportPerson(id_person, id_source, 241, year_age + "");
                     }
                 }
             }
@@ -3646,7 +3669,7 @@ public class LinksCleaned extends Thread {
                     }
 
                     return "";
-                } else if (nieuwCode == null ? SC_I == null : nieuwCode.equals(SC_I)) {
+                } else if (nieuwCode == null ? SC_U == null : nieuwCode.equals(SC_U)) {
                     // melding 43
                     try {
                         //addToLogTableRegistratie(id_registratie, id_bron, ErrorCode.WA, 45, "Beroep: " + LinksSpecific.functieParserVerbeterCharVoorMysql(beroepTemp) + " , Ongeldig, wel standaard aanwezig, nieuwcode n");
@@ -3693,7 +3716,7 @@ public class LinksCleaned extends Thread {
                 } else if (nieuwCode == null ? SC_N == null : nieuwCode.equals(SC_N)) {
                     // melding 33
                     return "";
-                } else if (nieuwCode == null ? SC_I == null : nieuwCode.equals(SC_I)) {
+                } else if (nieuwCode == null ? SC_U == null : nieuwCode.equals(SC_U)) {
                     // melding 34
                     String locatieFromTable = ttalLocation.getColumnByOriginal("location_no", locatie);
                     return locatieFromTable;
@@ -3812,27 +3835,29 @@ public class LinksCleaned extends Thread {
      * @param value
      * @throws Exception
      */
-    private void funcAddtoReportRegistration(int id, String id_source, int errorCode, String value) throws Exception {
-
-        String cla = ttalReport.getColumnByColumnInt("type", "class", errorCode);
-        String con = ttalReport.getColumnByColumnInt("type", "content", errorCode);
+    private void addToReportRegistration( int id, String id_source, int errorCode, String value )
+    throws Exception
+    {
+        String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
+        String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
+        showMessage( con, false, true );
 
         // WORKAROUND
         // replace error chars
-        value = value.replaceAll("\\\\", "");
-        value = value.replaceAll("\\$", "");
-        value = value.replaceAll("\\*", "");
+        value = value.replaceAll( "\\\\", "" );
+        value = value.replaceAll( "\\$", "" );
+        value = value.replaceAll( "\\*", "" );
 
-        con = con.replaceAll("<.*>", value);
+        con = con.replaceAll( "<.*>", value );
 
-        con = LinksSpecific.funcPrepareForMysql(con);
+        con = LinksSpecific.funcPrepareForMysql( con );
 
         String query = ""
-                + " insert into links_logs.log" + tempTableName + "( reg_key , id_source , report_class , report_type , content , date_time )"
-                + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
+            + " insert into links_logs.log" + tempTableName + "( reg_key , id_source , report_class , report_type , content , date_time )"
+            + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
 
-        conLog.runQuery(query);
-    } // funcAddtoReportRegistration
+        conLog.runQuery( query );
+    } // addToReportRegistration
 
 
     /**
@@ -3842,27 +3867,29 @@ public class LinksCleaned extends Thread {
      * @param value
      * @throws Exception
      */
-    private void funcAddtoReportPerson(int id, String id_source, int errorCode, String value) throws Exception {
-        String cla = ttalReport.getColumnByColumnInt("type", "class", errorCode);
-        String con = ttalReport.getColumnByColumnInt("type", "content", errorCode);
+    private void addToReportPerson( int id, String id_source, int errorCode, String value )
+    throws Exception
+    {
+        String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
+        String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
 
         // WORKAROUND
         // replace error chars
-        value = value.replaceAll("\\\\", "");
-        value = value.replaceAll("\\$", "");
-        value = value.replaceAll("\\*", "");
+        value = value.replaceAll( "\\\\", "" );
+        value = value.replaceAll( "\\$", "" );
+        value = value.replaceAll( "\\*", "" );
 
 
-        con = con.replaceAll("<.*>", value);
+        con = con.replaceAll( "<.*>", value );
 
-        con = LinksSpecific.funcPrepareForMysql(con);
+        con = LinksSpecific.funcPrepareForMysql( con );
 
         String query = ""
-                + " insert into links_logs.log" + tempTableName + "( pers_key , id_source , report_class , report_type , content , date_time )"
-                + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
+            + " insert into links_logs.log" + tempTableName + "( pers_key , id_source , report_class , report_type , content , date_time )"
+            + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
 
-        conLog.runQuery(query);
-    } // funcAddtoReportPerson
+        conLog.runQuery( query );
+    } // addToReportPerson
 
 
     /**
@@ -3936,7 +3963,6 @@ public class LinksCleaned extends Thread {
         showMessage( "Connecting to databases:", false, true );
 
         //showMessage( "links_general (ref)", false, true );
-        //conOr = new MySqlConnector( ref_url, "links_general", ref_user, ref_pass );
         showMessage( ref_db + " (ref)", false, true );
         conOr = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
@@ -4584,7 +4610,7 @@ public class LinksCleaned extends Thread {
                                     if (relation.isEmpty()) {
 
                                         // EC 101
-                                        funcAddtoReportPerson(id_person1, idSource, 101, id_person2 + "");
+                                        addToReportPerson(id_person1, idSource, 101, id_person2 + "");
                                     } else {
 
                                         // add to relation_c
@@ -5524,7 +5550,7 @@ public class LinksCleaned extends Thread {
         if (!rs.next()) {
 
             // EC 
-            funcAddtoReportPerson(id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]");
+            addToReportPerson(id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]");
 
             MinMaxYearSet mmj = new MinMaxYearSet();
 
