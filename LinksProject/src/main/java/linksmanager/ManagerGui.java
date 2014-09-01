@@ -57,6 +57,7 @@ import modulemain.LinksPrematch;
 import modulemain.LinksSpecific;
 
 import general.Functions;
+import general.PrintLogger;
 
 //import java.util.regex.*;         //test
 
@@ -77,7 +78,7 @@ public class ManagerGui extends javax.swing.JFrame
     //protected final static Logger logger = StatusLogger.getLogger();
     //static final Logger logger = LogManager.getLogger( "links" );        // "links" name specified in log4j.xml
 
-    static general.PrintLogger plog = null;
+    static PrintLogger plog = null;
 
     Document doc;
 
@@ -98,7 +99,7 @@ public class ManagerGui extends javax.swing.JFrame
         tpMain.setEnabledAt( 3, false );
 
         Properties properties = Functions.getProperties();  // Read properties file
-        loadProperties( properties );                       // fill GUI fields
+        loadProperties( plog, properties );                       // fill GUI fields
     }
 
     @SuppressWarnings("unchecked")
@@ -1777,7 +1778,7 @@ public class ManagerGui extends javax.swing.JFrame
     /**
      * Fill GUI with the read properties
      */
-    public void loadProperties( Properties properties )
+    public void loadProperties( PrintLogger plog, Properties properties )
     {
         String sourceId = properties.getProperty( "tbLOLCSourceId" );
         if( sourceId == null ) { sourceId = ""; }
@@ -2423,15 +2424,9 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "25-Aug-2014 11:34";
-            //System.out.println( "LINKS timestamp: " + timestamp1 );
-            //logger.info( "LINKS timestamp: " + timestamp1 );
+            String timestamp1 = "01-Sep-2014 10:26";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
-            //System.out.println( "Start at: " + timestamp2 );
-
-            //timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-            //System.out.println( timestamp + " ManagerGui/main/run()" );
 
             try {
                 plog.show( "LINKS timestamp: " + timestamp1 );
@@ -2440,7 +2435,7 @@ public class ManagerGui extends javax.swing.JFrame
             }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-            new ManagerGui().setVisible(true);
+            new ManagerGui().setVisible( true );
             }
         });
     }

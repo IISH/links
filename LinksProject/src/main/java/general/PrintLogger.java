@@ -23,8 +23,10 @@ import java.io.FileWriter;
 import modulemain.LinksSpecific;
 
 /**
- *  This Class contains logging procedures 
- * @author oaz
+ * This Class contains logging procedures
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ * FL-27-Aug-2014 Latest Change
  */
 public class PrintLogger
 {
@@ -47,6 +49,7 @@ public class PrintLogger
         fileName = "LMM-" + ts + ".log";
         fileIsLocked = false;
         previousIntext = "";
+        System.out.printf( "Log filename: %s\n", fileName );
     }
 
     /**
@@ -80,7 +83,7 @@ public class PrintLogger
         } catch( Exception ex )
         { throw new Exception( "Could not write to file " + fileName, ex ); }
 
-        System.out.println( text );        // Print to screen
+        //System.out.println( text );        // Print to screen
 
         previousIntext = intext;
     }

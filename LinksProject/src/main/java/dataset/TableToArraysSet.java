@@ -26,7 +26,8 @@ import modulemain.LinksSpecific;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
- * FL-15-Aug-2014 Latest change
+ * FL-28-Aug-2014 Comment out some unused functions
+ * FL-28-Aug-2014 Latest change
  */
 public class TableToArraysSet
 {
@@ -45,7 +46,13 @@ public class TableToArraysSet
     ResultSet rs;
 
     /**
-     * Constructor to load table into ArrayLists
+     * Constructor to load a reference table into ArrayLists
+     * "con" is normally conGeneral, i.e. the local links_general db
+     * "con_or" is normally conOr, i.e. the remote links_general db (on node-030)
+     *
+     * "con_or" is only used in the 2 functions updateTable() and updateTableWithCode().
+     * As updateTableWithCode() is nowhere used by the project, we commented it out.
+     *
      * @param con
      * @param con_or
      * @param IndexField
@@ -58,19 +65,19 @@ public class TableToArraysSet
         this.con = con;
         this.con_or = con_or;
 
-        System.out.println("TableToArraysSet, table: " + tableName + " , index: " + IndexField);
+        //System.out.println("TableToArraysSet, table: " + tableName + " , index: " + IndexField);
 
         String query = "";
         if( IndexField.isEmpty() )
         { query = "SELECT * FROM ref_" + tableName; }
         else
         { query = "SELECT * FROM ref_" + tableName + " ORDER BY " + IndexField + " ASC"; }
-        System.out.println("TableToArraysSet, query: " + query);
+        //System.out.println("TableToArraysSet, query: " + query);
 
         rs = this.con.runQueryWithResult( query );
         ResultSetMetaData rsmd = rs.getMetaData();
         int numCols = rsmd.getColumnCount();
-        System.out.println("TableToArraysSet, numCols: " + numCols);
+        //System.out.println("TableToArraysSet, numCols: " + numCols);
 
         for (int i = 1; i <= numCols; i++) {
 
@@ -137,7 +144,7 @@ public class TableToArraysSet
                 }
             }
 
-            System.out.println( "rows: " + j);
+            //System.out.println( "rows: " + j);
             rs.beforeFirst();            // set Iterator
         }
 
@@ -149,7 +156,7 @@ public class TableToArraysSet
         // Do extra sort
         if( !IndexField.isEmpty() )
         {
-            System.out.println("TableToArraysSet: extra sort");
+            //System.out.println("TableToArraysSet: extra sort");
             // Sort by Java 
             Collections.sort(column.get(columnName.indexOf("original")));
 
@@ -174,7 +181,7 @@ public class TableToArraysSet
                 }
             }
         }
-        System.out.println("TableToArraysSet: end");
+        //System.out.println("TableToArraysSet: end");
     }
 
 
@@ -273,10 +280,10 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getStandardCodeByOriginal(String value) throws Exception {
-        //System.out.println( "TableToArraysSet/" );
+    public String getStandardCodeByOriginal( String value ) throws Exception {
+        System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value );
 
-        return getColumnByOriginal("standard_code", value);
+        return getColumnByOriginal( "standard_code", value );
     }
 
 
@@ -298,31 +305,32 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getColumnByOriginal(String name, String value)
+    public String getColumnByOriginal( String name, String value )
     throws Exception
     {
         //System.out.println( "TableToArraysSet/getColumnByOriginal" );
 
-        int index = Collections.binarySearch(column.get(columnName.indexOf("original")), value);
+        int index = Collections.binarySearch( column.get(columnName.indexOf( "original" ) ), value );
+        //System.out.printf( "TableToArraysSet/getColumnByOriginal: index = %d\n", index );
 
-        if (index > -1) {
-            return column.get(columnName.indexOf(name.toLowerCase())).get(index).toString();
+        if( index > -1 ) {
+            return column.get( columnName.indexOf( name.toLowerCase() ) ).get( index ).toString();
         }
 
-        int index2 = Collections.binarySearch(columnNew.get(columnNameNew.indexOf("original")), value);
+        int index2 = Collections.binarySearch( columnNew.get( columnNameNew.indexOf( "original" ) ), value );
+        //System.out.printf( "TableToArraysSet/getColumnByOriginal: index2 = %d\n", index2 );
 
-        if (index2 > -1) {
+        if( index2 > -1 ) {
 
-            // TODO: work arround
-            if (name.equalsIgnoreCase("standard_code")) {
-
-                return "x";
-
+            // TODO: work around
+            if( name.equalsIgnoreCase( "standard_code" ) ) {
+                //return "x";
+                return "y";     // FL-29-Aug-2014
             }
 
-            return columnNew.get(columnNameNew.indexOf(name)).get(index2).toString();
+            return columnNew.get( columnNameNew.indexOf( name ) ).get( index2 ).toString();
         }
-        throw new Exception("Original Index Error");
+        throw new Exception( "Original Index Error" );
     }
 
 
@@ -333,6 +341,7 @@ public class TableToArraysSet
      * @param value
      * @return
      */
+    /*
     public String getColumnByColumn(String columnToGet, String name, String value)
     {
         //System.out.println( "TableToArraysSet/getColumnByColumn" );
@@ -343,7 +352,7 @@ public class TableToArraysSet
 
         return column.get(in).get(column.get(io).indexOf(valuel)).toString();
     }
-
+    */
 
     public String getColumnByColumnInt(String columnToGet, String name, int value)
     {
@@ -361,12 +370,13 @@ public class TableToArraysSet
      * @param index
      * @return
      */
+    /*
     public String getOriginalByIndex(int index) {
         //System.out.println( "TableToArraysSet/getOriginalByIndex" );
 
         return column.get(columnName.indexOf("original")).get(index).toString();
     }
-
+    */
 
     /**
      *
@@ -384,12 +394,13 @@ public class TableToArraysSet
      *
      * @return
      */
+    /*
     public int countRows() {
         //System.out.println( "TableToArraysSet/countRows" );
 
         return column.get(columnName.indexOf("original")).size();
     }
-
+    */
 
     /**
      *
@@ -411,6 +422,7 @@ public class TableToArraysSet
      *
      * @throws Exception
      */
+    /*
     public void updateTableWithCode() throws Exception {
         //System.out.println( "TableToArraysSet/updateTableWithCode" );
 
@@ -422,7 +434,7 @@ public class TableToArraysSet
             this.con_or.insertIntoTable("ref_" + tableName, fields, values);
         }
     }
-
+    */
 
     /**
      * This function clears the used ArrayLists in this Class
@@ -444,3 +456,4 @@ public class TableToArraysSet
         columnCopy.clear();
     }
 }
+

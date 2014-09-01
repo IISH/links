@@ -24,9 +24,6 @@ import java.util.regex.Pattern;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import dataset.ActRoleSet;
 import dataset.Ages;
 import dataset.ArrayListNonCase;
@@ -46,6 +43,7 @@ import enumdefinitions.TableType;
 import enumdefinitions.TimeType;
 import linksmanager.ManagerGui;
 import general.Functions;
+import general.PrintLogger;
 
 /**
  * @author Omar Azouguagh
@@ -55,11 +53,10 @@ import general.Functions;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-25-Aug-2014 Latest change
+ * FL-01-Sep-2014 Latest change
  */
-public class LinksCleaned extends Thread {
-    static final Logger logger = LogManager.getLogger("links");   // "links" name specified in log4j.xml
-
+public class LinksCleaned extends Thread
+{
     // Table to Array Sets
     private TableToArraysSet ttalAlias;
     private TableToArraysSet ttalFamilyname;
@@ -69,11 +66,11 @@ public class LinksCleaned extends Thread {
     private TableToArraysSet ttalPrepiece;
     private TableToArraysSet ttalStatusSex;
     private TableToArraysSet ttalSuffix;
-    private TableToArraysSet ttalRegistration;
+    private TableToArraysSet ttalRegistration;      // formerly used in standardType()
     private TableToArraysSet ttalReport;
 
     private JTextField tbLOLClatestOutput;
-    private JTextArea taLOLCoutput;
+    private JTextArea  taLOLCoutput;
 
     private String bronFilter = "";
     private String sourceFilter = "";
@@ -82,15 +79,15 @@ public class LinksCleaned extends Thread {
     private String bronFilterCleanReg = "";
     private String bronFilterOrigineelReg = "";
 
+    private MySqlConnector conOr;           // remote reference db
     private MySqlConnector conLog;
-    private MySqlConnector conCleaned;
-    private MySqlConnector conGeneral;
-    private MySqlConnector conOriginal;
+    private MySqlConnector conCleaned;      // cleaned, from original
+    private MySqlConnector conGeneral;      // local reference db
+    private MySqlConnector conOriginal;     // original data from A2A
     private MySqlConnector conTemp;
-    private MySqlConnector conOr;
 
     private Runtime r = Runtime.getRuntime();
-    private String tempTableName;
+    private String logTableName;
     private DoSet dos;
 
     private final static String SC_U = "u"; // Unknown Standard value assigned (although the original value is not valid)
@@ -99,26 +96,27 @@ public class LinksCleaned extends Thread {
     private final static String SC_Y = "y"; //    Yes  Standard value assigned (valid original value)
 
     // old links_base
-    private ArrayList<Integer> hpChildRegistration = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildAge = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildMonth = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildWeek = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildDay = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideRegistration = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideAge = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideMonth = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideWeek = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideDay = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomRegistration = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomAge = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomMonth = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomWeek = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomDay = new ArrayList<Integer>();
+    // needed by MinMaxDate functions
+    private ArrayList<Integer> hpChildRegistration    = new ArrayList<Integer>();
+    private ArrayList<Integer> hpChildAge             = new ArrayList<Integer>();
+    private ArrayList<Integer> hpChildMonth           = new ArrayList<Integer>();
+    private ArrayList<Integer> hpChildWeek            = new ArrayList<Integer>();
+    private ArrayList<Integer> hpChildDay             = new ArrayList<Integer>();
+    private ArrayList<Integer> hpBrideRegistration    = new ArrayList<Integer>();
+    private ArrayList<Integer> hpBrideAge             = new ArrayList<Integer>();
+    private ArrayList<Integer> hpBrideMonth           = new ArrayList<Integer>();
+    private ArrayList<Integer> hpBrideWeek            = new ArrayList<Integer>();
+    private ArrayList<Integer> hpBrideDay             = new ArrayList<Integer>();
+    private ArrayList<Integer> hpGroomRegistration    = new ArrayList<Integer>();
+    private ArrayList<Integer> hpGroomAge             = new ArrayList<Integer>();
+    private ArrayList<Integer> hpGroomMonth           = new ArrayList<Integer>();
+    private ArrayList<Integer> hpGroomWeek            = new ArrayList<Integer>();
+    private ArrayList<Integer> hpGroomDay             = new ArrayList<Integer>();
     private ArrayList<Integer> hpDeceasedRegistration = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedAge = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedMonth = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedWeek = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedDay = new ArrayList<Integer>();
+    private ArrayList<Integer> hpDeceasedAge          = new ArrayList<Integer>();
+    private ArrayList<Integer> hpDeceasedMonth        = new ArrayList<Integer>();
+    private ArrayList<Integer> hpDeceasedWeek         = new ArrayList<Integer>();
+    private ArrayList<Integer> hpDeceasedDay          = new ArrayList<Integer>();
 
     private FileWriter writerFirstname;
     private FileWriter writerFamilyname;
@@ -146,7 +144,7 @@ public class LinksCleaned extends Thread {
 
     private String endl = ". OK.";              // ".";
 
-    private general.PrintLogger plog;
+    private PrintLogger plog;
 
     /**
      * Constructor
@@ -221,10 +219,10 @@ public class LinksCleaned extends Thread {
 
             long timeExpand = 0;
             long begintime = System.currentTimeMillis();
-            tempTableName = LinksSpecific.getTimeStamp();
+            logTableName = LinksSpecific.getLogTableName();
 
             clearTextFields();                                  // Clear output text fields on form
-            connectToDatabases();                               // Connect to Databases
+            connectToDatabases();                               // Create databases connectors
             createLogTable();                                   // Create log table with timestamp
 
             sources = getOrigSourceIds();                       // get source ids from links_original.registration_o
@@ -240,7 +238,7 @@ public class LinksCleaned extends Thread {
 
             // links_general.ref_report contains 75 error definitions,
             // to be used when the normalization encounters errors
-            showMessage( "Loading report table", false, true );
+            showMessage( "Loading report table...", false, true );
             {
                 ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
             }
@@ -320,7 +318,7 @@ public class LinksCleaned extends Thread {
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        // Delete existing data
+        // Delete all existing cleaned data
         // Create queries
         String deletePerson = "DELETE FROM person_c" + bronFilter;
         String deleteRegistration = "DELETE FROM registration_c" + bronFilter;
@@ -330,25 +328,25 @@ public class LinksCleaned extends Thread {
         conCleaned.runQuery(deletePerson);
         conCleaned.runQuery(deleteRegistration);
 
-        // Copy links_original data to links_cleaned
+        // Copy selected columns links_original data to links_cleaned
         // Create queries
         showMessage("Copying person keys to links_cleaned", false, true);
         String keysPerson = ""
-            + "INSERT INTO links_cleaned.person_c ( "
-            + "id_person , id_registration , id_source , id_person_o ) "
-            + " SELECT id_person , id_registration , id_source , id_person_o "
+            + "INSERT INTO links_cleaned.person_c "
+            +       "( id_person, id_registration, id_source, registration_maintype, id_person_o ) "
+            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o "
             + "FROM links_original.person_o" + bronFilterOrigineelPers;
+        //System.out.println( keysPerson );
+        conCleaned.runQuery( keysPerson );              // Execute query
 
         showMessage("Copying registration keys to links_cleaned", false, true);
         String keysRegistration = ""
-            + "INSERT INTO links_cleaned.registration_c ("
-            + "id_registration, id_source, id_orig_registration, registration_maintype, registration_seq ) "
-            + "SELECT id_registration, id_source, id_orig_registration, registration_maintype, registration_seq "
+            + "INSERT INTO links_cleaned.registration_c "
+            +      "( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq ) "
+            + "SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq "
             + "FROM links_original.registration_o" + bronFilterOrigineelReg;
-
-        // Execute queries
-        conCleaned.runQuery( keysPerson );
-        conCleaned.runQuery( keysRegistration );
+        //System.out.println( keysRegistration );
+        conCleaned.runQuery( keysRegistration );        // Execute query
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRenewData
@@ -371,7 +369,7 @@ public class LinksCleaned extends Thread {
         showMessage( funcname, false, true );
 
         // load the ref tables
-        showMessage( "Loading reftabel(s): " + "firstname/familyname/prepiece/suffix", false, false );
+        showMessage( "Loading reference tables: firstname/familyname/prepiece/suffix...", false, true );
         {
             //ttalFirstname  = new TableToArraysSet( conGeneral, "original", "firstname" );
             //ttalFamilyname = new TableToArraysSet( conGeneral, "original", "familyname" );
@@ -379,7 +377,6 @@ public class LinksCleaned extends Thread {
             ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
             ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
         }
-        showMessage( endl, false, true );
 
         // Firstname
         if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
@@ -476,16 +473,15 @@ public class LinksCleaned extends Thread {
         showMessage( funcname, false, true );
 
         // load all refs used by remarks Parser
-        showMessage( "Loading reftabel(s): " + "location/occupation" + "...", false, false );
+        showMessage( "Loading reference tables: location/occupation...", false, true );
         {
             //ttalLocation = new TableToArraysSet(conGeneral, "original", "location");
             //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
         }
-        showMessage( endl, false, true );
 
-        runMethod( "scanRemarks" );
+        runMethod("scanRemarks");
 
-        showMessage( "Updating reftabel(s): " + "location/occupation" + "...", false, true );
+        showMessage( "Updating reference tables: " + "location/occupation" + "...", false, true );
         {
             //ttalLocation.updateTable();
             //ttalOccupation.updateTable();
@@ -522,33 +518,38 @@ public class LinksCleaned extends Thread {
         System.out.println(ts + " dos.isDoNames");
 
         // Loading reference tables
-        showMessage("Loading name reference tables", false, false);
+        start = System.currentTimeMillis();
+        msg = "Loading name reference tables";
+        showMessage( msg + "...", false, true );
         {
-            ttalPrepiece = new TableToArraysSet(conGeneral, conOr, "original", "prepiece");
-            ttalSuffix = new TableToArraysSet(conGeneral, conOr, "original", "suffix");
-            ttalAlias = new TableToArraysSet(conGeneral, conOr, "original", "alias");
+            ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
+            ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
+            ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
         }
-        showMessage(endl, false, true);
+        showTimingMessage( msg, start );
 
         // First name
         start = System.currentTimeMillis();
-        if (doesTableExist(conTemp, "links_temp", "firstname_t")) {
-            showMessage("Deleting table links_temp.firstname_t", false, true);
-            dropTable(conTemp, "links_temp", "firstname_t");
+        if( doesTableExist(conTemp, "links_temp", "firstname_t") ) {
+            showMessage( "Deleting table links_temp.firstname_t", false, true );
+            dropTable( conTemp, "links_temp", "firstname_t" );
         }
 
         createTempFirstnameTable();
         createTempFirstnameFile();
         String IndexField = "original";
         String tableName = "firstname";
-        showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
-        ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
-        stop = System.currentTimeMillis();
-        mmss = Functions.millisec2hms(start, stop);
-        msg = "TableToArraysSet OK " + mmss;
-        showMessage(msg, false, true);
+        showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
+        ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
+        showTimingMessage( "TableToArraysSet", start );
 
-        runMethod("standardFirstname");
+        start = System.currentTimeMillis();
+        msg = "standardFirstname";
+        showMessage( msg + "...", false, true );
+        runMethod( "standardFirstname" );
+        showTimingMessage( "standardFirstname", start );
+
+        start = System.currentTimeMillis();
         ttalFirstname.updateTable();
         ttalFirstname.free();
         writerFirstname.close();
@@ -556,26 +557,31 @@ public class LinksCleaned extends Thread {
         updateFirstnameToPersonC();
         removeFirstnameFile();
         removeFirstnameTable();
+        showTimingMessage( "remains Firstname", start );
 
         // Family name
         start = System.currentTimeMillis();
-
-        if (doesTableExist(conTemp, "links_temp", "familyname_t")) {
-            showMessage("Deleting table links_temp.familyname_t", false, true);
-            dropTable(conTemp, "links_temp", "familyname_t");
+        if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
+            showMessage( "Deleting table links_temp.familyname_t", false, true );
+            dropTable( conTemp, "links_temp", "familyname_t" );
         }
 
         createTempFamilynameTable();
         createTempFamilynameFile();
         tableName = "familyname";
-        showMessage("TableToArraysSet: " + IndexField + ", " + tableName, false, true);
-        ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
-        stop = System.currentTimeMillis();
-        mmss = Functions.millisec2hms(start, stop);
-        msg = "TableToArraysSet OK " + mmss;
-        showMessage(msg, false, true);
+        showMessage( "TableToArraysSet: " + IndexField + ", " + tableName, false, true );
+        ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
+        showTimingMessage( "TableToArraysSet", start );
 
-        runMethod("standardFamilyname");
+        start = System.currentTimeMillis();
+        msg = "standardFamilyname";
+        showMessage( msg + "...", false, true );
+        runMethod( "standardFamilyname" );
+        showTimingMessage( msg, start );
+
+        start = System.currentTimeMillis();
+        msg = "remains Familyname";
+        showMessage( msg + "...", false, true );
         ttalFamilyname.updateTable();
         ttalFamilyname.free();
         writerFamilyname.close();
@@ -583,34 +589,35 @@ public class LinksCleaned extends Thread {
         updateFamilynameToPersonC();
         removeFamilynameFile();
         removeFamilynameTable();
+        showTimingMessage( msg, start );
 
-        //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c still 11019
         // KM: Do not delete here.
-        showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
+        //showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
         //funcDeleteRows();               // Delete records with empty firstname and empty familyname
-        //if( 1 ==1 ) { System.out.println( "test EXIT" ); System.exit( 0 ); }    // person_c now empty
 
         // Names to lowercase
-        showMessage("Converting names to lowercase", false, false);
+        start = System.currentTimeMillis();
+        msg = "Converting names to lowercase";
+        showMessage( msg + "...", false, true ) ;
         {
             String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
             conCleaned.runQuery(qLower);
         }
-        showMessage(endl, false, true);
 
         runMethod( "standardPrepiece" );
         runMethod( "standardSuffix" );
+        showTimingMessage( msg, start );
 
         // Update reference
-        showMessage("Updating names reference tables...", false, false);
+        start = System.currentTimeMillis();
+        msg = "Updating reference tables: prepiece/suffix/alias...";
+        showMessage( msg + "...", false, true );
         {
             ttalPrepiece.updateTable();
             ttalSuffix.updateTable();
             ttalAlias.updateTable();
         }
-        showMessage(endl, false, true);
-
-
+        showTimingMessage( msg, start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doNames
@@ -632,18 +639,17 @@ public class LinksCleaned extends Thread {
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage( "Loading reftabel(s): " + "ref_location" + "...", false, false );
+        showMessage( "Loading reference table: location...", false, true );
         {
             ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
         }
-        showMessage(endl, false, true);
 
-        runMethod( "standardRegistrationLocation" );
+        runMethod("standardRegistrationLocation");
         runMethod( "standardBirthLocation" );
         runMethod( "standardMarLocation" );
         runMethod( "standardDeathLocation" );
 
-        showMessage( "Updating reftabel(s): " + "ref_location" + "...", false, true );
+        showMessage( "Updating reference table: location...", false, true );
         {
             ttalLocation.updateTable();
         }
@@ -668,16 +674,15 @@ public class LinksCleaned extends Thread {
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage( "Loading ref tabel: " + "status_sex", false, false );
+        showMessage( "Loading reference table: status_sex...", false, true );
         {
-            ttalStatusSex = new TableToArraysSet(conGeneral, conOr, "original", "status_sex");
+            ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
         }
-        showMessage( endl, false, true );
 
-        runMethod( "standardSex" );
+        runMethod("standardSex");
         runMethod( "standardStatusSex" );
 
-        showMessage( "Updating reftabel(s): " + "status_sex" + "...", false, true );
+        showMessage( "Updating reference table status_sex...", false, true );
         {
             ttalStatusSex.updateTable();
         }
@@ -813,17 +818,18 @@ public class LinksCleaned extends Thread {
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage( "Loading ref tabel: " + "occupation", false, false );
+        showMessage( "Loading reference table: occupation...", false, true );
         {
             ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
         }
-        showMessage( endl, false, true );
 
-        runMethod( "standardOccupation" );
+        runMethod("standardOccupation");
 
-        // updating ref table(s)? see standardSex
+        showMessage( "Updating reference table: occupation...", false, true );
+        ttalOccupation.updateTable();
+        ttalOccupation.free();
 
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        elapsedShowMessage(funcname, timeStart, System.currentTimeMillis());
     } // doOccupation
 
 
@@ -884,44 +890,6 @@ public class LinksCleaned extends Thread {
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doDates
-
-
-    /**
-     * Min Max Date
-     * @param go
-     * @throws Exception
-     */
-    private void doMinMaxDate( boolean go ) throws Exception
-    {
-        String funcname = "MinMaxDate";
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
-
-        if (bronFilter.isEmpty()) {
-            for (int i : sources) {
-                showMessage("Running funMinMaxDateMain for source: " + i + "...", false, false);
-                {
-                    funcFillMinMaxArrays("" + i);
-                    funMinMaxDateMain("" + i);
-                }
-                showMessage(endl, false, true);
-            }
-        } else {
-            showMessage("Running funMinMaxDateMain...", false, false);
-            {
-                funcFillMinMaxArrays("" + this.sourceId);
-                funMinMaxDateMain("");
-            }
-            showMessage(endl, false, true);
-        }
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-    } // doMinMaxDate
 
 
     /**
@@ -1986,6 +1954,7 @@ public class LinksCleaned extends Thread {
      */
     public void standardOccupation( String sourceNo )
     {
+        boolean debug = true;
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -2017,21 +1986,30 @@ public class LinksCleaned extends Thread {
 
                 int id_person = rs.getInt( "id_person" );
                 String occupation = rs.getString( "occupation" );
+                if( debug ) { showMessage( "occupation: " + occupation, false, true  ); }
 
-                if( occupation != null && !occupation.isEmpty() ) {
-                    //System.out.printf( "%d %s: %d: %s: %s\n", counter, "id_person", id_person, "occupation", occupation );
-                    String newCode = ttalOccupation.getStandardCodeByOriginal( occupation );
+                if( occupation != null && !occupation.isEmpty() )
+                {
+                    String newCode = "";
+                    try { newCode = ttalOccupation.getStandardCodeByOriginal( occupation ); }
+                    catch( Exception ex ) {
+                        System.out.println( ex.getMessage() );
+                    }
+                    if( debug ) { showMessage( "newCode: " + newCode, false, true  ); }
 
                     if( newCode.equals( SC_X ) ) {
+                        if( debug ) { showMessage( "Warning 41: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
 
                         String query = PersonC.updateQuery( "occupation", occupation, id_person );
                         conCleaned.runQuery( query );
                     }
                     else if( newCode.equals( SC_N ) ) {
+                        if( debug ) { showMessage( "Warning 43: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, id_source, 43, occupation );     // warning 43
                     }
                     else if( newCode.equals( SC_U ) ) {
+                        if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, id_source, 45, occupation );     // warning 45
 
                         String query = PersonC.updateQuery( "occupation",
@@ -2044,13 +2022,18 @@ public class LinksCleaned extends Thread {
                         conCleaned.runQuery( query );
                     }
                     else {     // Invalid standard code
+                        if( debug ) { showMessage( "Warning 49: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, id_source, 49, occupation );     // warning 49
                     }
                 }
                 else {        // not present in original
                     empty += 1;
+                    if( debug ) { showMessage( "Warning 41: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
+                    if( debug ) { showMessage( "not present in original: skipping ", false, true ); }
+                    if( 1==1 ) { continue; }
+
                     addToReportPerson( id_person, id_source, 41, occupation );         // warning 41
-                    ttalOccupation.addOriginal( occupation );                              // Add new Occupation "x" ??
+                    ttalOccupation.addOriginal( occupation );                          // Add new Occupation "x" ??
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
                     conCleaned.runQuery( query );
@@ -2059,7 +2042,7 @@ public class LinksCleaned extends Thread {
             showMessage( counter + " persons, " + empty + " without occupation" , false, true );
 
         } catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Occupation: " + ex.getMessage(), false, true );
+            showMessage( "counter: " + counter + ", Exception while cleaning Occupation: " + ex.getMessage(), false, true );
         }
     } // standardOccupation
 
@@ -2484,6 +2467,7 @@ public class LinksCleaned extends Thread {
      */
     public void standardSex( String sourceNo )
     {
+        boolean debug = false;
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -2512,16 +2496,19 @@ public class LinksCleaned extends Thread {
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                String sex = rs.getString( "sex" );
+                //String sex = rs.getString( "sex" );
+                String sex = rs.getString( "sex" ) != null ? rs.getString( "sex" ).toLowerCase() : "";
+                if( debug ) { showMessage( "sex: " + sex , false, true ); }
 
                 if( sex != null && !sex.isEmpty() )                 // check presence of the gender
                 {
                     if( ttalStatusSex.originalExists( sex ) )       // check presence in original
                     {
                         String newCode = ttalStatusSex.getStandardCodeByOriginal( sex );
+                        if( debug ) { showMessage( "newCode: " + newCode , false, true ); }
 
                         if( newCode.equals( SC_X ) ) {
-                            showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true );
+                            if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             addToReportPerson( id_person, id_source, 31, sex );     // warning 31
 
@@ -2529,12 +2516,12 @@ public class LinksCleaned extends Thread {
                             conCleaned.runQuery( query );
                         }
                         else if( newCode.equals( SC_N ) ) {
-                            showMessage( "Warning 33: id_person: " + id_person + ", sex: " + sex, false, true );
+                            if( debug ) { showMessage( "Warning 33: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             addToReportPerson( id_person, id_source, 33, sex );     // warning 33
                         }
                         else if( newCode.equals( SC_U ) ) {
-                            showMessage( "Warning 35: id_person: " + id_person + ", sex: " + sex, false, true );
+                            if( debug ) { showMessage( "Warning 35: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             addToReportPerson( id_person, id_source, 35, sex );     // warning 35
 
@@ -2543,21 +2530,22 @@ public class LinksCleaned extends Thread {
                             conCleaned.runQuery( query );
                         }
                         else if( newCode.equals( SC_Y ) ) {
-                            showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true );
+                            if( debug ) { showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             String query = PersonC.updateQuery( "sex",
                                 ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
                             conCleaned.runQuery( query );
                         }
                         else {     // Invalid standard code
-                            showMessage( "Warning 39: id_person: " + id_person + ", sex: " + sex, false, true );
+                            if( debug ) { showMessage( "Warning 39: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             addToReportPerson( id_person, id_source, 39, sex );     // warning 39
                         }
                     }
                     else // not present in original
                     {
-                        showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true );
+                        if( debug ) { showMessage( "not present in original", false, true ); }
+                        if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                         addToReportPerson( id_person, id_source, 31, sex );         // warning 31
                         ttalStatusSex.addOriginal( sex );                               // Add new Sex "x" ??
@@ -2606,8 +2594,10 @@ public class LinksCleaned extends Thread {
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                String sex = rs.getString( "sex" );
-                String civil_status = rs.getString( "civil_status" );
+                //String sex = rs.getString( "sex" );
+                String sex = rs.getString( "sex" ) != null ? rs.getString( "sex" ).toLowerCase() : "";
+                //String civil_status = rs.getString( "civil_status" );
+                String civil_status = rs.getString( "civil_status" ) != null ? rs.getString( "civil_status" ).toLowerCase() : "";
 
                 if( civil_status != null && !civil_status.isEmpty() )   // check presence of civil status
                 {
@@ -2736,7 +2726,7 @@ public class LinksCleaned extends Thread {
 
                 suffix = funcCleanNaam(suffix);
 
-                // Controleer of deze voorkomt in ref tabel
+                // Controleer of deze voorkomt in ref table
                 if (ttalSuffix.originalExists(suffix)) {
 
                     String standard_code = ttalSuffix.getStandardCodeByOriginal(suffix);
@@ -2797,98 +2787,9 @@ public class LinksCleaned extends Thread {
     /**
      * @param sourceNo
      */
-    /*
-    public void standardType(String sourceNo) {
-
-    int counter = 0;
-    int step = 1000;
-    int stepstate = step;
-
-    try {
-
-    String startQuery;
-    String id_source;
-
-    if (sourceNo.isEmpty()) {
-    startQuery = "SELECT id_registration , registration_type FROM registration_o" + bronFilter;
-    id_source = this.sourceId + "";
-    } else {
-    startQuery = "SELECT id_registration , registration_type FROM registration_o WHERE id_source = " + sourceNo;
-    id_source = sourceNo;
-    }
-
-    // Get types
-    ResultSet type = conOriginal.runQueryWithResult(startQuery);
-
-    while (type.next()) {
-
-    counter++;
-    if (counter == stepstate) {
-    showMessage(counter + "", true, true);
-    stepstate += step;
-    }
-
-    int id_registration = type.getInt("id_registration");
-    String registration_type = type.getString("registration_type").toLowerCase();
-
-    // check is it is empty
-    if (registration_type != null && !registration_type.isEmpty()) {
-
-    // check ref
-    if (ttalRegistration.originalExists(registration_type)) {
-
-    String nieuwCode = ttalRegistration.getStandardCodeByOriginal(registration_type);
-
-    if (nieuwCode.equals(SC_X)) {
-
-    // EC 51
-    addToReportRegistration(id_registration, id_source, 51, registration_type);
-
-    String query = RegistrationC.updateQuery("registration_type", registration_type, id_registration);
-    conCleaned.runQuery(query);
-    } else if (nieuwCode.equals(SC_N)) {
-    // EC 53
-    addToReportRegistration(id_registration, id_source, 53, registration_type);
-    } else if (nieuwCode.equals(SC_U)) {
-
-    // EC 55
-    addToReportRegistration(id_registration, id_source, 55, registration_type);
-
-    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
-    conCleaned.runQuery(query);
-
-    } else if (nieuwCode.equals(SC_Y)) {
-
-    String query = RegistrationC.updateQuery("registration_type", ttalRegistration.getStandardByOriginal(registration_type), id_registration);
-    conCleaned.runQuery(query);
-    } else {
-
-    // invalid SC
-    // EC 59
-    addToReportRegistration(id_registration, id_source, 59, registration_type);
-    }
-    } // standardcode x
-    else {
-
-    // EC 51
-    addToReportRegistration(id_registration, id_source, 51, registration_type);
-
-    // add to ref
-    ttalRegistration.addOriginal(registration_type);
-
-    // update person
-    String query = RegistrationC.updateQuery("registration_type", registration_type.length() < 20 ? registration_type : registration_type.substring(0, 20), id_registration);
-    conCleaned.runQuery(query);
-    }
-    }
-    }
-    } catch (Exception e) {
-    showMessage(counter + " An error occured while cleaning Registration Type: " + e.getMessage(), false, true);
-    }
-    }
-     */
     public void standardType( String sourceNo )
     {
+        boolean debug = false;
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -2908,7 +2809,7 @@ public class LinksCleaned extends Thread {
 
             ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            while( rs.next() )
+            while( rs.next() )      // process data from links_original
             {
                 counter++;
                 if( counter == stepstate ) {
@@ -2918,18 +2819,19 @@ public class LinksCleaned extends Thread {
 
                 int id_registration = rs.getInt( "id_registration" );
                 int registration_maintype = rs.getInt( "registration_maintype" );
+                registration_maintype = 2;
                 String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
-                // check ref database
-                ResultSet ref = conGeneral.runQueryWithResult( "SELECT * FROM ref_registration WHERE main_type = " +
-                    registration_maintype + " AND original = '" + registration_type + "'" );
+                String refQuery = "SELECT * FROM ref_registration WHERE main_type = " +
+                    registration_maintype + " AND original = '" + registration_type + "'";
+                ResultSet ref = conGeneral.runQueryWithResult( refQuery );
 
-                if( ref.next() )        // check ref
+                if( ref.next() )        // compare with reference
                 {
                     String newCode = ref.getString( "standard_code" ).toLowerCase();
 
                     if( newCode.equals( SC_X ) ) {
-                        showMessage( "Warning 51: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+                        if( debug ) { showMessage( "Warning 51: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         addToReportRegistration( id_registration, id_source, 51, registration_type );       // warning 51
 
@@ -2937,44 +2839,44 @@ public class LinksCleaned extends Thread {
                         conCleaned.runQuery( query );
                     }
                     else if( newCode.equals( SC_N ) ) {
-                        showMessage( "Warning 53: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+                        if( debug ) { showMessage( "Warning 53: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         addToReportRegistration( id_registration, id_source, 53, registration_type );       // warning 53
                     }
                     else if( newCode.equals( SC_U ) ) {
-                        showMessage( "Warning 55: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+                        if( debug ) { showMessage( "Warning 55: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         addToReportRegistration( id_registration, id_source, 55, registration_type );       // warning 55
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         conCleaned.runQuery( query );
                     } else if( newCode.equals( SC_Y ) ) {
-                        showMessage( "Standard reg type: id_person: " + id_source + ", reg type: " + registration_type, false, true );
+                        if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         conCleaned.runQuery( query );
                     }
                     else {    // invalid SC
-                        showMessage( "Warning 59: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+                        if( debug ) { showMessage( "Warning 59: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         addToReportRegistration( id_registration, id_source, 59, registration_type );       // warning 59
                     }
                 }
-                else {      // not in ref; add standardcode x to ref
-                    showMessage( "Warning 51: id_registration: " + id_source + ", reg type: " + registration_type, false, true );
+                else {      // not in reference; add to reference with "x"
+                    if( debug ) { showMessage( "Warning 51: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                     addToReportRegistration( id_registration, id_source, 51, registration_type );           // warning 51
 
-                    // add to ref
+                    // add to links_general
                     conGeneral.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
 
-                    // update person
+                    // update links_cleaned_.registration_c
                     String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
                     conCleaned.runQuery( query );
                 }
             }
         } catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
+            showMessage( "counter: " + counter + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
         }
     } // standardType
 
@@ -3215,8 +3117,8 @@ public class LinksCleaned extends Thread {
                 boolean matchFound = false;
 
                 /**
-                 * Opmerking strippen aan de hand van de tabel
-                 * We lopen hier door alle regexen uit de tabel
+                 * Opmerking strippen aan de hand van de table
+                 * We lopen hier door alle regexen uit de table
                  */
                 while (rsScanStrings.next()) {
 
@@ -3232,7 +3134,7 @@ public class LinksCleaned extends Thread {
                         matchFound = false;
                     }
 
-                    // Haal regex uit de tabel
+                    // Haal regex uit de table
                     int aktenummer =
                             Integer.parseInt(rsScanStrings.getString("maintype"));
 
@@ -3783,9 +3685,9 @@ public class LinksCleaned extends Thread {
         }
         showMessage( endl, false, true );
 
-        // Maak logtabel aan met resterende opmekingen
+        // Maak log table aan met resterende opmekingen
         String createQuery = ""
-                + "CREATE TABLE IF NOT EXISTS `links_logs`.`log_rest_remarks_" + sourceId + bronnr + "_" + tempTableName + "` (  "
+                + "CREATE TABLE IF NOT EXISTS `links_logs`.`log_rest_remarks_" + sourceId + bronnr + "_" + logTableName + "` (  "
                 + "`id_log` INT NOT NULL AUTO_INCREMENT , "
                 + "`registration_maintype` VARCHAR(3) NULL , "
                 + "`content` VARCHAR(500) NULL , "
@@ -3815,7 +3717,7 @@ public class LinksCleaned extends Thread {
         // eventuele quotes vervangen
         String cleanKey = LinksSpecific.funcPrepareForMysql(key.toString());
         String[] data = {cleanKey.substring(0, cleanKey.indexOf(":")), cleanKey.substring((cleanKey.indexOf(":") + 1)), value.toString()};
-        conLog.insertIntoTable("log_rest_remarks_" + sourceId + bronnr + "_" + tempTableName, velden, data);
+        conLog.insertIntoTable("log_rest_remarks_" + sourceId + bronnr + "_" + logTableName, velden, data);
         
         }
         
@@ -3840,7 +3742,6 @@ public class LinksCleaned extends Thread {
     {
         String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
         String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
-        showMessage( con, false, true );
 
         // WORKAROUND
         // replace error chars
@@ -3851,10 +3752,12 @@ public class LinksCleaned extends Thread {
         con = con.replaceAll( "<.*>", value );
 
         con = LinksSpecific.funcPrepareForMysql( con );
+        //showMessage( con, false, true );
 
         String query = ""
-            + " insert into links_logs.log" + tempTableName + "( reg_key , id_source , report_class , report_type , content , date_time )"
+            + " insert into links_logs.`" + logTableName + "`( reg_key , id_source , report_class , report_type , content , date_time )"
             + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
+        //showMessage( query, false, true );
 
         conLog.runQuery( query );
     } // addToReportRegistration
@@ -3885,11 +3788,24 @@ public class LinksCleaned extends Thread {
         con = LinksSpecific.funcPrepareForMysql( con );
 
         String query = ""
-            + " insert into links_logs.log" + tempTableName + "( pers_key , id_source , report_class , report_type , content , date_time )"
+            + " insert into links_logs.`" + logTableName + "`( pers_key , id_source , report_class , report_type , content , date_time )"
             + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
 
         conLog.runQuery( query );
     } // addToReportPerson
+
+
+    /**
+     * @param logText
+     * @param start
+     */
+    private void showTimingMessage( String logText, long start )
+    {
+        long stop = System.currentTimeMillis();
+        String mmss = Functions.millisec2hms( start, stop );
+        String msg = logText + mmss;
+        showMessage( msg, false, true );
+    }
 
 
     /**
@@ -3966,6 +3882,9 @@ public class LinksCleaned extends Thread {
         showMessage( ref_db + " (ref)", false, true );
         conOr = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
+        showMessage( "links_general", false, true );
+        conGeneral = new MySqlConnector( url, "links_general", user, pass );
+
         showMessage( "links_original", false, true );
         conOriginal = new MySqlConnector( url, "links_original", user, pass );
 
@@ -3975,9 +3894,6 @@ public class LinksCleaned extends Thread {
         showMessage( "links_cleaned", false, true );
         conCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
 
-        showMessage( "links_general", false, true );
-        conGeneral = new MySqlConnector( url, "links_general", user, pass );
-
         showMessage( "links_temp", false, true );
         conTemp = new MySqlConnector( url, "links_temp", user, pass );
     } // connectToDatabases
@@ -3986,10 +3902,10 @@ public class LinksCleaned extends Thread {
     private void createLogTable()
     throws Exception
     {
-        showMessage( "Creating logging table.", false, true );
+        showMessage( "Creating logging table: " + logTableName , false, true );
 
         String query = ""
-            + " CREATE  TABLE `links_logs`.`log" + tempTableName + "` ("
+            + " CREATE  TABLE `links_logs`.`" + logTableName + "` ("
             + " `id_log` INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " `id_source` INT UNSIGNED NULL ,"
             + " `archive` VARCHAR(30) NULL ,"
@@ -4637,6 +4553,1062 @@ public class LinksCleaned extends Thread {
             showMessage(counter + " An error occured while running Relation: " + e.getMessage(), false, true);
         }
     } // funcRelation
+
+
+    /**
+     * @param act_year
+     * @param main_type
+     * @param date_type
+     * @param role
+     * @param age
+     * @param main_role
+     * @param age_main_role
+     * @return
+     * @throws Exception
+     */
+    private MinMaxYearSet funcMinMaxCalculation(
+            int id_person,
+            int act_year,
+            int main_type,
+            String date_type,
+            int role,
+            int age,
+            int main_role,
+            Ages age_main_role) throws Exception {
+        String yn_age_reported = "";
+        String yn_age_main_role = "";
+
+        // Age is given
+        if ((age > 0) || ((role == 1) && (main_type == 1))) {
+            yn_age_reported = "y";
+        } else {
+            yn_age_reported = "n";
+        }
+
+        if (age_main_role.getYear() > 0) {
+            yn_age_main_role = "y";
+        } else {
+            yn_age_main_role = "n";
+        }
+
+        // UITSTAPJE, geldt voor ouders van de overledene
+        if ((main_type == 3) && ((role == 2) || (role == 3)) && (yn_age_main_role.equals("n"))) {
+            if (age_main_role.getMonth() > 0
+                    || age_main_role.getWeek() > 0
+                    || age_main_role.getDay() > 0) {
+                yn_age_main_role = "y";
+
+                // omrekenen
+                int y = 0;
+                int m = age_main_role.getMonth();
+                int w = age_main_role.getWeek();
+                int d = age_main_role.getDay();
+
+                // to year
+                w += (d / 7);
+                m += (w / 4);
+                y += (m / 12);
+
+                age_main_role.setYear(y);
+
+            }
+        }
+
+        // EINDE UITSTAPJE
+
+
+        // Maak query
+        String query = ""
+                + "SELECT * FROM ref_date_minmax WHERE "
+                + "maintype = '" + main_type + "' AND "
+                + "date_type = '" + date_type + "' AND "
+                + "role = '" + role + "' AND "
+                + "age_reported = '" + yn_age_reported + "' AND "
+                + "( age_main_role = '" + yn_age_main_role + "' OR "
+                + "age_main_role = 'nvt' )";
+
+        // Run query
+        ResultSet rs = conGeneral.runQueryWithResult(query);
+
+        // check rs is empty
+        if (!rs.next()) {
+
+            // EC 
+            addToReportPerson(id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]");
+
+            MinMaxYearSet mmj = new MinMaxYearSet();
+
+            mmj.SetMaxYear(0);
+            mmj.SetMinYear(0);
+
+            return mmj;
+        }
+
+        // To last row
+        rs.last();
+
+        // read from to database
+        String function = rs.getString("function");
+        int min_year = rs.getInt("min_year");
+        int max_year = rs.getInt("max_year");
+        int min_person = rs.getInt("min_person");
+        int max_person = rs.getInt("max_person");
+
+        /*
+        min en max age-role search
+         */
+        int min_age = 0;
+        int max_age = 0;
+
+        // find correct age
+        // Min
+        if (min_person == role) {
+            min_age = age;
+        } else if (min_person == main_role) {
+            min_age = age_main_role.getYear();
+        }
+        // Max
+        if (max_person == role) {
+            max_age = age;
+        } else if (max_person == main_role) {
+            max_age = age_main_role.getYear();
+        }
+
+        /**
+         * Calculation
+         */
+        int minimal_year = act_year - min_age + min_year;
+        int maximum_year = act_year - max_age + max_year;
+
+        // set in dataset
+        MinMaxYearSet mmj = new MinMaxYearSet();
+
+        mmj.SetMaxYear(maximum_year);
+        mmj.SetMinYear(minimal_year);
+
+
+        /**
+         * Functions
+         */
+        // If E, deceased
+        if (function.equals("E")) {
+
+            if (age < 14) {
+                mmj.SetMaxYear(0);
+                mmj.SetMinYear(0);
+            }
+
+            return mmj;
+        } // function0 C, check by act year
+        else if (function.equals("C")) {
+
+            if (maximum_year > act_year) {
+                mmj.SetMaxYear(act_year);
+            }
+            return mmj;
+
+        } // function D
+        else if (function.equals("D")) {
+
+            if (minimal_year > (act_year - 14)) {
+
+                mmj.SetMinYear(act_year - 14);
+
+            }
+            if (maximum_year > (act_year - 14)) {
+
+                mmj.SetMaxYear(act_year - 14);
+
+            }
+
+            return mmj;
+
+        }
+
+        // Function A
+        return mmj;
+
+    } // funcMinMaxCalculation
+
+
+    /**
+     * Use this function to add or substract a amount of time from a date.
+     *
+     * @param year
+     * @param month
+     * @param day
+     * @param tt
+     * @param timeAmount
+     * @return
+     */
+    private String funcAddTimeToDate(
+            int year,
+            int month,
+            int day,
+            TimeType tt,
+            int timeAmount) {
+
+        // new calendar instance
+        Calendar c1 = Calendar.getInstance();
+
+        // set(int year, int month, int date)
+        c1.set(year, month, day);
+
+        // Check of time type
+        if (tt == tt.DAY) {
+            c1.add(Calendar.DAY_OF_MONTH, timeAmount);
+        } else if (tt == tt.WEEK) {
+            c1.add(Calendar.WEEK_OF_MONTH, timeAmount);
+        } else if (tt == tt.MONTH) {
+            c1.add(Calendar.MONTH, timeAmount);
+        } else if (tt == tt.YEAR) {
+            c1.add(Calendar.YEAR, timeAmount);
+        }
+
+        // return new date
+        String am = "" + c1.get(Calendar.DATE) + "-" + c1.get(Calendar.MONTH) + "-" + c1.get(Calendar.YEAR);
+
+        return am;
+    } // funcAddTimeToDate
+
+
+    /**
+     * @param pYear
+     * @param pMonth
+     * @param pDay
+     * @param rYear
+     * @param rMonth
+     * @param rDay
+     * @return
+     */
+    private DateYearMonthDaySet funcCheckMaxDate(int pYear, int pMonth, int pDay, int rYear, int rMonth, int rDay) {
+
+        // year is greater than age year
+        if (pYear > rYear) {
+
+            //return akterdatum
+            DateYearMonthDaySet dy = new DateYearMonthDaySet();
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+
+        } // lower, date is correct, return original date
+        else if (pYear < rYear) {
+
+            // return person date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet();
+            dy.setYear(pYear);
+            dy.setMonth(pMonth);
+            dy.setDay(pDay);
+            return dy;
+
+        }
+
+        /*
+        years are equal, rest must be checked
+         */
+
+        // month is higher than act month
+        if (pMonth > rMonth) {
+
+            // return return act month
+            DateYearMonthDaySet dy = new DateYearMonthDaySet();
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+
+        } // month is correct, return original month
+        else if (pMonth < rMonth) {
+
+            // return return persons date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet();
+            dy.setYear(pYear);
+            dy.setMonth(pMonth);
+            dy.setDay(pDay);
+            return dy;
+        }
+
+        /*
+        months are equal, check rest
+         */
+
+        // day is higher than act day
+        if (pDay > rDay) {
+
+            // return act date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet();
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+        }
+
+        // day is lower or similar to act day
+        DateYearMonthDaySet dy = new DateYearMonthDaySet();
+        dy.setYear(pYear);
+        dy.setMonth(pMonth);
+        dy.setDay(pDay);
+        return dy;
+    } // funcCheckMaxDate
+
+
+    /**
+     * @param year
+     * @param month
+     * @param week
+     * @param day
+     * @return
+     */
+    public int funcRoundUp(int year, int month, int week, int day) {
+
+        int tempYear = year;
+        int tempMonth = month;
+        int tempWeek = week;
+
+        // day to week
+        if (day > 0) {
+            tempWeek += (day / 7);
+
+            if ((day % 7) != 0) {
+                tempWeek++;
+            }
+        }
+        week = tempWeek;
+
+        // week to month
+        if (week > 0) {
+            tempMonth += (week / 4);
+
+            if ((week % 4) != 0) {
+                tempMonth++;
+            }
+        }
+
+        month = tempMonth;
+
+        // week to month
+        if (month > 0) {
+            tempYear += (month / 12);
+
+            if ((month % 12) != 0) {
+                tempYear++;
+            }
+        }
+        return tempYear;
+    } // funcRoundUp
+
+
+    /**
+     * @param hjpsList
+     * @param refMinMaxMarriageYaar
+     * @throws Exception
+     */
+    private void funcMinMaxMarriageYear(
+            ArrayList<MarriageYearPersonsSet> hjpsList,
+            ResultSet refMinMaxMarriageYaar) throws Exception {
+
+        int counter = 0;
+        int step = 1000;
+        int stepstate = step;
+
+        // Loop through all persons
+        for (int i = 0; i < hjpsList.size(); i++) {
+
+            counter++;
+
+            if (counter == stepstate) {
+                showMessage(counter + "", true, true);
+                stepstate += step;
+            }
+
+            // walk through
+            refMinMaxMarriageYaar.beforeFirst();
+
+            boolean role1Found = false;
+            int role1 = 0;
+            int role2 = 0;
+
+            while (refMinMaxMarriageYaar.next()) {
+
+                int tempRht = refMinMaxMarriageYaar.getInt("maintype");
+                int tempRole1 = refMinMaxMarriageYaar.getInt("role1");
+                int tempRole2 = refMinMaxMarriageYaar.getInt("role2");
+
+                if ((tempRole1 == hjpsList.get(i).getRole()) && tempRht == (hjpsList.get(i).getRegistrationMainType())) {
+                    // rol found
+                    role1Found = true;
+                    role1 = tempRole1;
+                    role2 = tempRole2;
+
+                    break;
+                }
+            }
+
+            // check if role 1 is found
+            if (role1Found) {
+
+                // search role 2
+                boolean role2Found = false;
+                int role2Id = 0;
+                int role2MarYearMin = 0;
+                int role2MarYearMax = 0;
+                int role2MarMonthMin = 0;
+                int role2MarMonthMax = 0;
+                int role2MarDayMin = 0;
+                int role2MarDayMax = 0;
+
+                // walk trough all persons of registration
+                for (int j = (((i - 7) > 0) ? i - 7 : 0); j < ((i + 7) > hjpsList.size() ? hjpsList.size() : i + 7); j++) {
+
+                    if ((role2 == hjpsList.get(j).getRole()) && (hjpsList.get(i).getIdRegistration() == hjpsList.get(j).getIdRegistration())) {
+
+                        // Role 2 found
+                        role2Found = true;
+                        role2Id = hjpsList.get(j).getIdPerson();
+                        role2MarYearMin = hjpsList.get(j).getMarriageYearMin();
+                        role2MarYearMax = hjpsList.get(j).getMarriageYearMax();
+                        role2MarMonthMin = hjpsList.get(j).getMarriageMonthMin();
+                        role2MarMonthMax = hjpsList.get(j).getMarriageMonthMax();
+                        role2MarDayMin = hjpsList.get(j).getMarriageDayMin();
+                        role2MarDayMax = hjpsList.get(j).getMarriageDayMax();
+
+                        break;
+                    }
+
+                }
+
+                // check is role 2 found
+                if (role2Found) {
+
+                    int role1Id = hjpsList.get(i).getIdPerson();
+                    int role1MarYearMax = hjpsList.get(i).getMarriageYearMax();
+                    int role1MarYearMin = hjpsList.get(i).getMarriageYearMin();
+                    int role1MarMonthMax = hjpsList.get(i).getMarriageMonthMax();
+                    int role1MarMonthMin = hjpsList.get(i).getMarriageMonthMin();
+                    int role1MarDayMax = hjpsList.get(i).getMarriageDayMax();
+                    int role1MarDayMin = hjpsList.get(i).getMarriageDayMin();
+
+                    // First role 2, min Year
+                    if (funcDateLeftIsGreater(role1MarYearMin, role1MarMonthMin, role1MarDayMin, role2MarYearMin, role2MarMonthMin, role2MarDayMin)) {
+
+                        // Query
+                        String query = ""
+                                + " UPDATE person_c"
+                                + " SET"
+                                + " mar_year_min = " + hjpsList.get(i).getMarriageYearMin() + ","
+                                + " mar_month_min = " + hjpsList.get(i).getMarriageMonthMin() + ","
+                                + " mar_day_min = " + hjpsList.get(i).getMarriageDayMin()
+                                + " WHERE"
+                                + " id_person = " + role2Id;
+
+                        conCleaned.runQuery(query);
+
+                    }
+
+                    // Role 2, max year
+                    if (funcDateLeftIsGreater(role2MarYearMax, role2MarMonthMax, role2MarDayMax, role1MarYearMax, role1MarMonthMax, role1MarDayMax)) {
+
+                        // Query
+                        String query = ""
+                                + " UPDATE person_c"
+                                + " SET"
+                                + " mar_year_max = " + hjpsList.get(i).getMarriageYearMax() + ","
+                                + " mar_month_max = " + hjpsList.get(i).getMarriageMonthMax() + ","
+                                + " mar_day_max = " + hjpsList.get(i).getMarriageDayMax()
+                                + " WHERE"
+                                + " id_person = " + role2Id;
+                        conCleaned.runQuery(query);
+
+                    }
+
+                    // role 1
+                    if (funcDateLeftIsGreater(role2MarYearMin, role2MarMonthMin, role2MarDayMin, role1MarYearMin, role1MarMonthMin, role1MarDayMin)) {
+
+                        // Query
+                        String query = "UPDATE person_c"
+                                + " SET"
+                                + " mar_year_min = " + role2MarYearMin + ","
+                                + " mar_month_min = " + role2MarMonthMin + ","
+                                + " mar_day_min = " + role2MarDayMin
+                                + " WHERE"
+                                + " id_person = " + role1Id;
+                        conCleaned.runQuery(query);
+
+                    }
+
+                    // Role 1, max year
+                    if (funcDateLeftIsGreater(role1MarYearMax, role1MarMonthMax, role1MarDayMax, role2MarYearMax, role2MarMonthMax, role2MarDayMax)) {
+
+                        // Query
+                        String query = "UPDATE person_c"
+                                + " SET"
+                                + " mar_year_max = " + role2MarYearMax + ","
+                                + " mar_month_max = " + role2MarMonthMax + ","
+                                + " mar_day_max = " + role2MarDayMax
+                                + " WHERE"
+                                + " id_person = " + role1Id;
+                        conCleaned.runQuery(query);
+                    }
+                }
+            }
+        }
+    } // funcMinMaxMarriageYear
+
+
+    /**
+     * @param lYear
+     * @param lMonth
+     * @param lDay
+     * @param rYear
+     * @param rMonth
+     * @param rDay
+     * @return
+     */
+    private boolean funcDateLeftIsGreater(int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay) {
+
+        // year is greater than ryear year
+        if (lYear > rYear) {
+
+            return true;
+
+        } // lower, date is correct, return original date
+        else if (lYear < rYear) {
+
+            // return person date
+            return false;
+        }
+
+        /*
+        years are equal, rest must be checked
+         */
+
+        // month is higher than act month
+        if (lMonth > rMonth) {
+
+            return true;
+
+        } // month is correct, return original month
+        else if (lMonth < rMonth) {
+
+            return false;
+        }
+
+        /*
+        months are equal, check rest
+         */
+
+        // day is higher than act day
+        if (lDay > rDay) {
+
+            return true;
+        }
+
+        return false;
+    } // funcDateLeftIsGreater
+
+
+    /**
+     * @param sourceNo
+     * @return
+     * @throws Exception
+     */
+    private ArrayList<MarriageYearPersonsSet> funcSetMarriageYear(String sourceNo) throws Exception {
+
+        String query = ""
+                + " SELECT "
+                + " registration_c.id_registration ,"
+                + " registration_c.registration_maintype ,"
+                + " person_c.id_person ,"
+                + " person_c.role ,"
+                + " person_c.mar_day_min ,"
+                + " person_c.mar_day_max ,"
+                + " person_c.mar_month_min ,"
+                + " person_c.mar_month_max ,"
+                + " person_c.mar_year_min ,"
+                + " person_c.mar_year_max"
+                + " FROM registration_c , person_c"
+                + " WHERE registration_c.id_registration = person_c.id_registration"
+                + " AND registration_c.id_source = " + sourceNo + " ORDER by id_registration";
+
+//                String query = ""
+//                + " SELECT "
+//                + " registration_c.id_registration ,"
+//                + " registration_c.registration_maintype ,"
+//                + " pers.id_person ,"
+//                + " pers.role ,"
+//                + " pers.mar_day_min ,"
+//                + " pers.mar_day_max ,"
+//                + " pers.mar_month_min ,"
+//                + " pers.mar_month_max ,"
+//                + " pers.mar_year_min ,"
+//                + " pers.mar_year_max"
+//                + " FROM registration_c , pers"
+//                + " WHERE registration_c.id_registration = pers.id_registration ORDER BY pers.id_registration;";
+
+        ResultSet minmaxjaarRs = conCleaned.runQueryWithResult(query);
+
+        ArrayList<MarriageYearPersonsSet> hjpsList = new ArrayList<MarriageYearPersonsSet>();
+
+        while (minmaxjaarRs.next()) {
+
+            MarriageYearPersonsSet hjps = new MarriageYearPersonsSet();
+
+            hjps.setIdRegistration(minmaxjaarRs.getInt("id_registration"));
+            hjps.setRegistrationMainType(minmaxjaarRs.getInt("registration_maintype"));
+            hjps.setIdPerson(minmaxjaarRs.getInt("id_person"));
+            hjps.setRole(minmaxjaarRs.getInt("role"));
+            hjps.setMarriageDayMin(minmaxjaarRs.getInt("mar_day_min"));
+            hjps.setMarriageDayMax(minmaxjaarRs.getInt("mar_day_max"));
+            hjps.setMarriageMonthMin(minmaxjaarRs.getInt("mar_month_min"));
+            hjps.setMarriageMonthMax(minmaxjaarRs.getInt("mar_month_max"));
+            hjps.setMarriageYearMin(minmaxjaarRs.getInt("mar_year_min"));
+            hjps.setMarriageYearMax(minmaxjaarRs.getInt("mar_year_max"));
+
+            hjpsList.add(hjps);
+
+        }
+
+        return hjpsList;
+    } // funcSetMarriageYear
+
+
+    private void funcPartsToDate() {
+        String query = "UPDATE links_cleaned.person_c SET "
+                + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
+                + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min , '-' , links_cleaned.person_c.mar_month_min , '-' , links_cleaned.person_c.mar_year_min ) ,"
+                + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
+                + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
+                + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max , '-' , links_cleaned.person_c.mar_month_max , '-' , links_cleaned.person_c.mar_year_max ) ,"
+                + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) ;";
+//                + "WHERE "
+//                + "links_cleaned.person_c.id_person = links_cleaned.person_c.id_person;";
+
+        try {
+            conCleaned.runQuery(query);
+        } catch (Exception e) {
+            showMessage("An error occured while Creating full dates from parts: " + e.getMessage(), false, true);
+        }
+    } // funcPartsToDate
+
+
+    private void funcDaysSinceBegin() {
+
+        String query1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
+        String query2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
+        String query3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min    NOT LIKE '0-%' AND mar_date_min     NOT LIKE '%-0-%'";
+        String query4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max    NOT LIKE '0-%' AND mar_date_max     NOT LIKE '%-0-%'";
+        String query5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
+        String query6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
+
+        String queryReg = "UPDATE registration_c SET "
+                + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%'";
+
+        try {
+            showMessage("q1", false, true);
+            conCleaned.runQuery(query1);
+
+            showMessage("q2", false, true);
+            conCleaned.runQuery(query2);
+
+            showMessage("q3", false, true);
+            conCleaned.runQuery(query3);
+
+            showMessage("q4", false, true);
+            conCleaned.runQuery(query4);
+
+            showMessage("q5", false, true);
+            conCleaned.runQuery(query5);
+
+            showMessage("q6", false, true);
+            conCleaned.runQuery(query6);
+
+            showMessage("q7", false, true);
+            conCleaned.runQuery(queryReg);
+        } catch (Exception e) {
+            showMessage("An error occured while computing days since 1-1-1: " + e.getMessage(), false, true);
+        }
+    } // funcDaysSinceBegin
+
+
+    /**
+     * @throws Exception
+     */
+    private void createTempFamilynameTable() throws Exception
+    {
+        showMessage( "Creating familyname_t table", false, false );
+
+        String query = "CREATE  TABLE links_temp.familyname_t ("
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " familyname VARCHAR(80) NULL ,"
+            + " PRIMARY KEY (person_id) );";
+
+        conTemp.runQuery( query );
+
+        showMessage( endl, false, true );
+    } // createTempFamilynameTable
+
+
+    /**
+     * @throws Exception
+     */
+    private void createTempFamilynameFile() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        String filename = "familyname_t.csv";
+        showMessage( "Creating " + filename, false, true );
+
+        File f = new File( filename );
+        if( f.exists() ) { f.delete(); }
+        writerFamilyname = new FileWriter( filename );
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Creating familyname_t csv OK " + elapsed;
+        showMessage( msg, false, true );
+    } // createTempFamilynameFile
+
+
+    /**
+     * @throws Exception
+     */
+    private void loadFamilynameToTable() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Loading CSV data into temp table", false, true );
+
+        {
+            String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
+            conTemp.runQuery( query );
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Loading CSV data into temp table OK " + elapsed;
+        showMessage( msg, false, true );
+    } // loadFamilynameToTable
+
+
+    /**
+     *
+     */
+    private void updateFamilynameToPersonC() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Moving familynames from temp table to person_c", false, true );
+
+        {
+            String query = "UPDATE links_cleaned.person_c, links_temp.familyname_t"
+                    + " SET links_cleaned.person_c.familyname = links_temp.familyname_t.familyname"
+                    + " WHERE links_cleaned.person_c.id_person = links_temp.familyname_t.person_id;";
+
+            conTemp.runQuery( query );
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Moving familynames from temp table to person_c OK " + elapsed;
+        showMessage( msg, false, true );
+    } // updateFamilynameToPersonC
+
+
+    public void removeFamilynameFile() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Removing familyname_t csv", false, true );
+
+        {
+            java.io.File f = new java.io.File("familyname_t.csv");
+            f.delete();
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Removing familyname_t csv OK " + elapsed;
+        showMessage( msg, false, true );
+    } // removeFamilynameFile
+
+
+    public void removeFamilynameTable() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Removing familyname_t table", false, true );
+
+        String query = "DROP TABLE IF EXISTS familyname_t;";
+
+        conTemp.runQuery( query );
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Removing familyname_t table OK " + elapsed;
+        showMessage( msg, false, true );
+    } // removeFamilynameTable
+
+
+    /**
+     * @throws Exception
+     */
+    private void createTempFirstnameTable() throws Exception
+    {
+        showMessage( "Creating firstname_t table", false, false );
+
+        String query = "CREATE  TABLE links_temp.firstname_t ("
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " firstname VARCHAR(80) NULL ,"
+            + " PRIMARY KEY (person_id) );";
+
+        conTemp.runQuery( query );
+
+        showMessage( endl, false, true );
+    } // createTempFirstnameTable
+
+
+    /**
+     * @throws Exception
+     */
+    private void createTempFirstnameFile() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        String filename = "firstname_t.csv";
+        showMessage( "Creating " + filename, false, true );
+
+        File f = new File( filename );
+        if( f.exists() ) { f.delete(); }
+        writerFirstname = new FileWriter( filename );
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Creating " + filename + " OK " + elapsed;
+        showMessage( msg, false, true );
+    } // createTempFirstnameFile
+
+
+    /**
+     * @throws Exception
+     */
+    private void loadFirstnameToTable() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Loading CSV data into temp table", false, true );
+        {
+            String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
+            conTemp.runQuery( query );
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Loading CSV data into temp table OK " + elapsed;
+        showMessage( msg, false, true );
+    } // loadFirstnameToTable
+
+
+    /**
+     *
+     */
+    private void updateFirstnameToPersonC() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Moving first names from temp table to person_c...", false, true );
+        {
+            String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
+                + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
+                + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
+
+            conTemp.runQuery( query );
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Moving first names from temp table to person_c OK " + elapsed;
+        showMessage( msg, false, true );
+    } // updateFirstnameToPersonC
+
+
+    /**
+     * @throws Exception
+     */
+    public void removeFirstnameFile() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Removing firstname_t csv file", false, true );
+        {
+            File f = new File( "firstname_t.csv" );
+            f.delete();
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Removing firstname_t csv file OK " + elapsed;
+        showMessage( msg, false, true );
+    } // removeFirstnameFile
+
+
+    /**
+     * @throws Exception
+     */
+    public void removeFirstnameTable() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Removing firstname_t table", false, true );
+
+        String query = "DROP TABLE IF EXISTS firstname_t;";
+        conTemp.runQuery( query );
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = "Removing firstname_t table OK " + elapsed;
+        showMessage( msg, false, true );
+    } // removeFirstnameTable
+
+
+    /**
+     * @throws Exception
+     */
+    private boolean doesTableExist( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
+    {
+        String query = "SELECT COUNT(*) FROM information_schema.tables"
+                + " WHERE table_schema = '" + db_name + "'"
+                + " AND table_name = '" + table_name + "'";
+
+        ResultSet rs = db_conn.runQueryWithResult( query );
+        rs.first();
+        int count = rs.getInt( "COUNT(*)" );
+        //showMessage( "doesTableExist: " + db_name + " " + table_name + " : " + count, false, true );
+
+        if( count == 1 ) return true;
+        else return false;
+    } // doesTableExist
+
+
+    /**
+     * @throws Exception
+     */
+    private void dropTable( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
+    {
+        String query = "DROP TABLE `" + db_name + "`.`" + table_name + "`";
+        db_conn.runQuery( query );
+    } // dropTable
+
+
+    private void funcPostTasks() throws Exception
+    {
+        long start = System.currentTimeMillis();
+        showMessage( "Post tasks", false, true );
+
+        String[] queries = {
+                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2;",
+                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3;",
+                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4;",
+                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5;",
+                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6;",
+                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7;",
+                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8;",
+                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9;",
+                "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v';",
+                "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+                "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+                "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+                "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+                "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
+                "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
+                "DROP TABLE links_match.male;",
+                "DROP TABLE links_match.female;",
+                "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%';",
+                "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);",
+                "UPDATE IGNORE links_cleaned.person_c "
+                        + "SET "
+                        + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
+                        + "WHERE "
+                        + "birth_date_valid = 1 "
+                        + "AND "
+                        + "mar_date_valid = 1 "
+                        + "AND "
+                        + "age_year is null "
+                        + "AND "
+                        + "( role = 7 OR role = 4 ) "
+                        + "AND mar_date NOT LIKE '0-%' "
+                        + "AND mar_date NOT LIKE '%-0-%' "
+                        + "AND birth_date NOT LIKE '0-%' "
+                        + "AND birth_date NOT LIKE '%-0-%' "
+        };
+
+        // Execute queries
+        for( String s : queries ) {
+            conCleaned.runQuery( s );
+        }
+
+        long stop = System.currentTimeMillis();
+        String elapsed = Functions.millisec2hms( start, stop );
+        String msg = " OK " + elapsed;
+        showMessage( msg, false, true );
+    } // funcPostTasks
+
+
+    private void funcDeleteRows()
+    throws Exception
+    {
+        showMessage( "funcDeleteRows() deleting empty links_cleaned.person_c records.", false, true );
+        String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
+        conCleaned.runQuery( q1 );
+    } // funcDeleteRows
+
+
+    private Connection getConnection(String dbName) throws Exception {
+
+        String driver = "org.gjt.mm.mysql.Driver";
+
+        String _url = "jdbc:mysql://" + this.url + "/" + dbName + "?dontTrackOpenResources=true";
+        String username = user;
+        String password = pass;
+
+        Class.forName(driver);
+
+        // Class.forName("externalModules.jdbcDriver.Driver").newInstance();
+
+        Connection conn = DriverManager.getConnection(_url, username, password);
+
+        return conn;
+    }
+
+    // ---< Min Max Date functions >--------------------------------------------
+
+    /**
+     * Min Max Date
+     * @param go
+     * @throws Exception
+     */
+    private void doMinMaxDate( boolean go ) throws Exception
+    {
+        String funcname = "MinMaxDate";
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname, false, true );
+
+        if (bronFilter.isEmpty()) {
+            for (int i : sources) {
+                showMessage("Running funMinMaxDateMain for source: " + i + "...", false, false);
+                {
+                    funcFillMinMaxArrays("" + i);
+                    funMinMaxDateMain("" + i);
+                }
+                showMessage(endl, false, true);
+            }
+        } else {
+            showMessage("Running funMinMaxDateMain...", false, false);
+            {
+                funcFillMinMaxArrays("" + this.sourceId);
+                funMinMaxDateMain("");
+            }
+            showMessage(endl, false, true);
+        }
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+    } // doMinMaxDate
 
 
     public void funMinMaxDateMain(String sourceNo) throws Exception {
@@ -5472,683 +6444,6 @@ public class LinksCleaned extends Thread {
 
 
     /**
-     * @param act_year
-     * @param main_type
-     * @param date_type
-     * @param role
-     * @param age
-     * @param main_role
-     * @param age_main_role
-     * @return
-     * @throws Exception
-     */
-    private MinMaxYearSet funcMinMaxCalculation(
-            int id_person,
-            int act_year,
-            int main_type,
-            String date_type,
-            int role,
-            int age,
-            int main_role,
-            Ages age_main_role) throws Exception {
-        String yn_age_reported = "";
-        String yn_age_main_role = "";
-
-        // Age is given
-        if ((age > 0) || ((role == 1) && (main_type == 1))) {
-            yn_age_reported = "y";
-        } else {
-            yn_age_reported = "n";
-        }
-
-        if (age_main_role.getYear() > 0) {
-            yn_age_main_role = "y";
-        } else {
-            yn_age_main_role = "n";
-        }
-
-        // UITSTAPJE, geldt voor ouders van de overledene
-        if ((main_type == 3) && ((role == 2) || (role == 3)) && (yn_age_main_role.equals("n"))) {
-            if (age_main_role.getMonth() > 0
-                    || age_main_role.getWeek() > 0
-                    || age_main_role.getDay() > 0) {
-                yn_age_main_role = "y";
-
-                // omrekenen
-                int y = 0;
-                int m = age_main_role.getMonth();
-                int w = age_main_role.getWeek();
-                int d = age_main_role.getDay();
-
-                // to year
-                w += (d / 7);
-                m += (w / 4);
-                y += (m / 12);
-
-                age_main_role.setYear(y);
-
-            }
-        }
-
-        // EINDE UITSTAPJE
-
-
-        // Maak query
-        String query = ""
-                + "SELECT * FROM ref_date_minmax WHERE "
-                + "maintype = '" + main_type + "' AND "
-                + "date_type = '" + date_type + "' AND "
-                + "role = '" + role + "' AND "
-                + "age_reported = '" + yn_age_reported + "' AND "
-                + "( age_main_role = '" + yn_age_main_role + "' OR "
-                + "age_main_role = 'nvt' )";
-
-        // Run query
-        ResultSet rs = conGeneral.runQueryWithResult(query);
-
-        // check rs is empty
-        if (!rs.next()) {
-
-            // EC 
-            addToReportPerson(id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]");
-
-            MinMaxYearSet mmj = new MinMaxYearSet();
-
-            mmj.SetMaxYear(0);
-            mmj.SetMinYear(0);
-
-            return mmj;
-        }
-
-        // To last row
-        rs.last();
-
-        // read from to database
-        String function = rs.getString("function");
-        int min_year = rs.getInt("min_year");
-        int max_year = rs.getInt("max_year");
-        int min_person = rs.getInt("min_person");
-        int max_person = rs.getInt("max_person");
-
-        /*
-        min en max age-role search
-         */
-        int min_age = 0;
-        int max_age = 0;
-
-        // find correct age
-        // Min
-        if (min_person == role) {
-            min_age = age;
-        } else if (min_person == main_role) {
-            min_age = age_main_role.getYear();
-        }
-        // Max
-        if (max_person == role) {
-            max_age = age;
-        } else if (max_person == main_role) {
-            max_age = age_main_role.getYear();
-        }
-
-        /**
-         * Calculation
-         */
-        int minimal_year = act_year - min_age + min_year;
-        int maximum_year = act_year - max_age + max_year;
-
-        // set in dataset
-        MinMaxYearSet mmj = new MinMaxYearSet();
-
-        mmj.SetMaxYear(maximum_year);
-        mmj.SetMinYear(minimal_year);
-
-
-        /**
-         * Functions
-         */
-        // If E, deceased
-        if (function.equals("E")) {
-
-            if (age < 14) {
-                mmj.SetMaxYear(0);
-                mmj.SetMinYear(0);
-            }
-
-            return mmj;
-        } // function0 C, check by act year
-        else if (function.equals("C")) {
-
-            if (maximum_year > act_year) {
-                mmj.SetMaxYear(act_year);
-            }
-            return mmj;
-
-        } // function D
-        else if (function.equals("D")) {
-
-            if (minimal_year > (act_year - 14)) {
-
-                mmj.SetMinYear(act_year - 14);
-
-            }
-            if (maximum_year > (act_year - 14)) {
-
-                mmj.SetMaxYear(act_year - 14);
-
-            }
-
-            return mmj;
-
-        }
-
-        // Function A
-        return mmj;
-
-    } // funcMinMaxCalculation
-
-
-    /**
-     * Use this function to add or substract a amount of time from a date.
-     *
-     * @param year
-     * @param month
-     * @param day
-     * @param tt
-     * @param timeAmount
-     * @return
-     */
-    private String funcAddTimeToDate(
-            int year,
-            int month,
-            int day,
-            TimeType tt,
-            int timeAmount) {
-
-        // new calendar instance
-        Calendar c1 = Calendar.getInstance();
-
-        // set(int year, int month, int date)
-        c1.set(year, month, day);
-
-        // Check of time type
-        if (tt == tt.DAY) {
-            c1.add(Calendar.DAY_OF_MONTH, timeAmount);
-        } else if (tt == tt.WEEK) {
-            c1.add(Calendar.WEEK_OF_MONTH, timeAmount);
-        } else if (tt == tt.MONTH) {
-            c1.add(Calendar.MONTH, timeAmount);
-        } else if (tt == tt.YEAR) {
-            c1.add(Calendar.YEAR, timeAmount);
-        }
-
-        // return new date
-        String am = "" + c1.get(Calendar.DATE) + "-" + c1.get(Calendar.MONTH) + "-" + c1.get(Calendar.YEAR);
-
-        return am;
-    } // funcAddTimeToDate
-
-
-    /**
-     * @param pYear
-     * @param pMonth
-     * @param pDay
-     * @param rYear
-     * @param rMonth
-     * @param rDay
-     * @return
-     */
-    private DateYearMonthDaySet funcCheckMaxDate(int pYear, int pMonth, int pDay, int rYear, int rMonth, int rDay) {
-
-        // year is greater than age year
-        if (pYear > rYear) {
-
-            //return akterdatum
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-
-        } // lower, date is correct, return original date
-        else if (pYear < rYear) {
-
-            // return person date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(pYear);
-            dy.setMonth(pMonth);
-            dy.setDay(pDay);
-            return dy;
-
-        }
-
-        /*
-        years are equal, rest must be checked
-         */
-
-        // month is higher than act month
-        if (pMonth > rMonth) {
-
-            // return return act month
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-
-        } // month is correct, return original month
-        else if (pMonth < rMonth) {
-
-            // return return persons date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(pYear);
-            dy.setMonth(pMonth);
-            dy.setDay(pDay);
-            return dy;
-        }
-
-        /*
-        months are equal, check rest
-         */
-
-        // day is higher than act day
-        if (pDay > rDay) {
-
-            // return act date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-        }
-
-        // day is lower or similar to act day
-        DateYearMonthDaySet dy = new DateYearMonthDaySet();
-        dy.setYear(pYear);
-        dy.setMonth(pMonth);
-        dy.setDay(pDay);
-        return dy;
-    } // funcCheckMaxDate
-
-
-    /**
-     * @param year
-     * @param month
-     * @param week
-     * @param day
-     * @return
-     */
-    public int funcRoundUp(int year, int month, int week, int day) {
-
-        int tempYear = year;
-        int tempMonth = month;
-        int tempWeek = week;
-
-        // day to week
-        if (day > 0) {
-            tempWeek += (day / 7);
-
-            if ((day % 7) != 0) {
-                tempWeek++;
-            }
-        }
-        week = tempWeek;
-
-        // week to month
-        if (week > 0) {
-            tempMonth += (week / 4);
-
-            if ((week % 4) != 0) {
-                tempMonth++;
-            }
-        }
-
-        month = tempMonth;
-
-        // week to month
-        if (month > 0) {
-            tempYear += (month / 12);
-
-            if ((month % 12) != 0) {
-                tempYear++;
-            }
-        }
-        return tempYear;
-    } // funcRoundUp
-
-
-    /**
-     * @param hjpsList
-     * @param refMinMaxMarriageYaar
-     * @throws Exception
-     */
-    private void funcMinMaxMarriageYear(
-            ArrayList<MarriageYearPersonsSet> hjpsList,
-            ResultSet refMinMaxMarriageYaar) throws Exception {
-
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        // Loop through all persons
-        for (int i = 0; i < hjpsList.size(); i++) {
-
-            counter++;
-
-            if (counter == stepstate) {
-                showMessage(counter + "", true, true);
-                stepstate += step;
-            }
-
-            // walk through
-            refMinMaxMarriageYaar.beforeFirst();
-
-            boolean role1Found = false;
-            int role1 = 0;
-            int role2 = 0;
-
-            while (refMinMaxMarriageYaar.next()) {
-
-                int tempRht = refMinMaxMarriageYaar.getInt("maintype");
-                int tempRole1 = refMinMaxMarriageYaar.getInt("role1");
-                int tempRole2 = refMinMaxMarriageYaar.getInt("role2");
-
-                if ((tempRole1 == hjpsList.get(i).getRole()) && tempRht == (hjpsList.get(i).getRegistrationMainType())) {
-                    // rol found
-                    role1Found = true;
-                    role1 = tempRole1;
-                    role2 = tempRole2;
-
-                    break;
-                }
-            }
-
-            // check if role 1 is found
-            if (role1Found) {
-
-                // search role 2
-                boolean role2Found = false;
-                int role2Id = 0;
-                int role2MarYearMin = 0;
-                int role2MarYearMax = 0;
-                int role2MarMonthMin = 0;
-                int role2MarMonthMax = 0;
-                int role2MarDayMin = 0;
-                int role2MarDayMax = 0;
-
-                // walk trough all persons of registration
-                for (int j = (((i - 7) > 0) ? i - 7 : 0); j < ((i + 7) > hjpsList.size() ? hjpsList.size() : i + 7); j++) {
-
-                    if ((role2 == hjpsList.get(j).getRole()) && (hjpsList.get(i).getIdRegistration() == hjpsList.get(j).getIdRegistration())) {
-
-                        // Role 2 found
-                        role2Found = true;
-                        role2Id = hjpsList.get(j).getIdPerson();
-                        role2MarYearMin = hjpsList.get(j).getMarriageYearMin();
-                        role2MarYearMax = hjpsList.get(j).getMarriageYearMax();
-                        role2MarMonthMin = hjpsList.get(j).getMarriageMonthMin();
-                        role2MarMonthMax = hjpsList.get(j).getMarriageMonthMax();
-                        role2MarDayMin = hjpsList.get(j).getMarriageDayMin();
-                        role2MarDayMax = hjpsList.get(j).getMarriageDayMax();
-
-                        break;
-                    }
-
-                }
-
-                // check is role 2 found
-                if (role2Found) {
-
-                    int role1Id = hjpsList.get(i).getIdPerson();
-                    int role1MarYearMax = hjpsList.get(i).getMarriageYearMax();
-                    int role1MarYearMin = hjpsList.get(i).getMarriageYearMin();
-                    int role1MarMonthMax = hjpsList.get(i).getMarriageMonthMax();
-                    int role1MarMonthMin = hjpsList.get(i).getMarriageMonthMin();
-                    int role1MarDayMax = hjpsList.get(i).getMarriageDayMax();
-                    int role1MarDayMin = hjpsList.get(i).getMarriageDayMin();
-
-                    // First role 2, min Year
-                    if (funcDateLeftIsGreater(role1MarYearMin, role1MarMonthMin, role1MarDayMin, role2MarYearMin, role2MarMonthMin, role2MarDayMin)) {
-
-                        // Query
-                        String query = ""
-                                + " UPDATE person_c"
-                                + " SET"
-                                + " mar_year_min = " + hjpsList.get(i).getMarriageYearMin() + ","
-                                + " mar_month_min = " + hjpsList.get(i).getMarriageMonthMin() + ","
-                                + " mar_day_min = " + hjpsList.get(i).getMarriageDayMin()
-                                + " WHERE"
-                                + " id_person = " + role2Id;
-
-                        conCleaned.runQuery(query);
-
-                    }
-
-                    // Role 2, max year
-                    if (funcDateLeftIsGreater(role2MarYearMax, role2MarMonthMax, role2MarDayMax, role1MarYearMax, role1MarMonthMax, role1MarDayMax)) {
-
-                        // Query
-                        String query = ""
-                                + " UPDATE person_c"
-                                + " SET"
-                                + " mar_year_max = " + hjpsList.get(i).getMarriageYearMax() + ","
-                                + " mar_month_max = " + hjpsList.get(i).getMarriageMonthMax() + ","
-                                + " mar_day_max = " + hjpsList.get(i).getMarriageDayMax()
-                                + " WHERE"
-                                + " id_person = " + role2Id;
-                        conCleaned.runQuery(query);
-
-                    }
-
-                    // role 1
-                    if (funcDateLeftIsGreater(role2MarYearMin, role2MarMonthMin, role2MarDayMin, role1MarYearMin, role1MarMonthMin, role1MarDayMin)) {
-
-                        // Query
-                        String query = "UPDATE person_c"
-                                + " SET"
-                                + " mar_year_min = " + role2MarYearMin + ","
-                                + " mar_month_min = " + role2MarMonthMin + ","
-                                + " mar_day_min = " + role2MarDayMin
-                                + " WHERE"
-                                + " id_person = " + role1Id;
-                        conCleaned.runQuery(query);
-
-                    }
-
-                    // Role 1, max year
-                    if (funcDateLeftIsGreater(role1MarYearMax, role1MarMonthMax, role1MarDayMax, role2MarYearMax, role2MarMonthMax, role2MarDayMax)) {
-
-                        // Query
-                        String query = "UPDATE person_c"
-                                + " SET"
-                                + " mar_year_max = " + role2MarYearMax + ","
-                                + " mar_month_max = " + role2MarMonthMax + ","
-                                + " mar_day_max = " + role2MarDayMax
-                                + " WHERE"
-                                + " id_person = " + role1Id;
-                        conCleaned.runQuery(query);
-                    }
-                }
-            }
-        }
-    } // funcMinMaxMarriageYear
-
-
-    /**
-     * @param lYear
-     * @param lMonth
-     * @param lDay
-     * @param rYear
-     * @param rMonth
-     * @param rDay
-     * @return
-     */
-    private boolean funcDateLeftIsGreater(int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay) {
-
-        // year is greater than ryear year
-        if (lYear > rYear) {
-
-            return true;
-
-        } // lower, date is correct, return original date
-        else if (lYear < rYear) {
-
-            // return person date
-            return false;
-        }
-
-        /*
-        years are equal, rest must be checked
-         */
-
-        // month is higher than act month
-        if (lMonth > rMonth) {
-
-            return true;
-
-        } // month is correct, return original month
-        else if (lMonth < rMonth) {
-
-            return false;
-        }
-
-        /*
-        months are equal, check rest
-         */
-
-        // day is higher than act day
-        if (lDay > rDay) {
-
-            return true;
-        }
-
-        return false;
-    } // funcDateLeftIsGreater
-
-
-    /**
-     * @param sourceNo
-     * @return
-     * @throws Exception
-     */
-    private ArrayList<MarriageYearPersonsSet> funcSetMarriageYear(String sourceNo) throws Exception {
-
-        String query = ""
-                + " SELECT "
-                + " registration_c.id_registration ,"
-                + " registration_c.registration_maintype ,"
-                + " person_c.id_person ,"
-                + " person_c.role ,"
-                + " person_c.mar_day_min ,"
-                + " person_c.mar_day_max ,"
-                + " person_c.mar_month_min ,"
-                + " person_c.mar_month_max ,"
-                + " person_c.mar_year_min ,"
-                + " person_c.mar_year_max"
-                + " FROM registration_c , person_c"
-                + " WHERE registration_c.id_registration = person_c.id_registration"
-                + " AND registration_c.id_source = " + sourceNo + " ORDER by id_registration";
-
-//                String query = ""
-//                + " SELECT "
-//                + " registration_c.id_registration ,"
-//                + " registration_c.registration_maintype ,"
-//                + " pers.id_person ,"
-//                + " pers.role ,"
-//                + " pers.mar_day_min ,"
-//                + " pers.mar_day_max ,"
-//                + " pers.mar_month_min ,"
-//                + " pers.mar_month_max ,"
-//                + " pers.mar_year_min ,"
-//                + " pers.mar_year_max"
-//                + " FROM registration_c , pers"
-//                + " WHERE registration_c.id_registration = pers.id_registration ORDER BY pers.id_registration;";
-
-        ResultSet minmaxjaarRs = conCleaned.runQueryWithResult(query);
-
-        ArrayList<MarriageYearPersonsSet> hjpsList = new ArrayList<MarriageYearPersonsSet>();
-
-        while (minmaxjaarRs.next()) {
-
-            MarriageYearPersonsSet hjps = new MarriageYearPersonsSet();
-
-            hjps.setIdRegistration(minmaxjaarRs.getInt("id_registration"));
-            hjps.setRegistrationMainType(minmaxjaarRs.getInt("registration_maintype"));
-            hjps.setIdPerson(minmaxjaarRs.getInt("id_person"));
-            hjps.setRole(minmaxjaarRs.getInt("role"));
-            hjps.setMarriageDayMin(minmaxjaarRs.getInt("mar_day_min"));
-            hjps.setMarriageDayMax(minmaxjaarRs.getInt("mar_day_max"));
-            hjps.setMarriageMonthMin(minmaxjaarRs.getInt("mar_month_min"));
-            hjps.setMarriageMonthMax(minmaxjaarRs.getInt("mar_month_max"));
-            hjps.setMarriageYearMin(minmaxjaarRs.getInt("mar_year_min"));
-            hjps.setMarriageYearMax(minmaxjaarRs.getInt("mar_year_max"));
-
-            hjpsList.add(hjps);
-
-        }
-
-        return hjpsList;
-    } // funcSetMarriageYear
-
-
-    private void funcPartsToDate() {
-        String query = "UPDATE links_cleaned.person_c SET "
-                + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
-                + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min , '-' , links_cleaned.person_c.mar_month_min , '-' , links_cleaned.person_c.mar_year_min ) ,"
-                + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
-                + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
-                + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max , '-' , links_cleaned.person_c.mar_month_max , '-' , links_cleaned.person_c.mar_year_max ) ,"
-                + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) ;";
-//                + "WHERE "
-//                + "links_cleaned.person_c.id_person = links_cleaned.person_c.id_person;";
-
-        try {
-            conCleaned.runQuery(query);
-        } catch (Exception e) {
-            showMessage("An error occured while Creating full dates from parts: " + e.getMessage(), false, true);
-        }
-    } // funcPartsToDate
-
-
-    private void funcDaysSinceBegin() {
-
-        String query1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
-        String query2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
-        String query3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min    NOT LIKE '0-%' AND mar_date_min     NOT LIKE '%-0-%'";
-        String query4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max    NOT LIKE '0-%' AND mar_date_max     NOT LIKE '%-0-%'";
-        String query5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
-        String query6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
-
-        String queryReg = "UPDATE registration_c SET "
-                + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%'";
-
-        try {
-            showMessage("q1", false, true);
-            conCleaned.runQuery(query1);
-
-            showMessage("q2", false, true);
-            conCleaned.runQuery(query2);
-
-            showMessage("q3", false, true);
-            conCleaned.runQuery(query3);
-
-            showMessage("q4", false, true);
-            conCleaned.runQuery(query4);
-
-            showMessage("q5", false, true);
-            conCleaned.runQuery(query5);
-
-            showMessage("q6", false, true);
-            conCleaned.runQuery(query6);
-
-            showMessage("q7", false, true);
-            conCleaned.runQuery(queryReg);
-        } catch (Exception e) {
-            showMessage("An error occured while computing days since 1-1-1: " + e.getMessage(), false, true);
-        }
-    } // funcDaysSinceBegin
-
-
-    /**
      * @param sourceNo
      * @throws Exception
      */
@@ -6204,345 +6499,6 @@ public class LinksCleaned extends Thread {
         }
     } // funcFillMinMaxArrays
 
-
-    /**
-     * @throws Exception
-     */
-    private void createTempFamilynameTable() throws Exception
-    {
-        showMessage( "Creating familyname_t table", false, false );
-
-        String query = "CREATE  TABLE links_temp.familyname_t ("
-            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " familyname VARCHAR(80) NULL ,"
-            + " PRIMARY KEY (person_id) );";
-
-        conTemp.runQuery( query );
-
-        showMessage( endl, false, true );
-    } // createTempFamilynameTable
-
-
-    /**
-     * @throws Exception
-     */
-    private void createTempFamilynameFile() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        String filename = "familyname_t.csv";
-        showMessage( "Creating " + filename, false, true );
-
-        File f = new File( filename );
-        if( f.exists() ) { f.delete(); }
-        writerFamilyname = new FileWriter( filename );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating familyname_t csv OK " + elapsed;
-        showMessage( msg, false, true );
-    } // createTempFamilynameFile
-
-
-    /**
-     * @throws Exception
-     */
-    private void loadFamilynameToTable() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Loading CSV data into temp table", false, true );
-
-        {
-            String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
-            conTemp.runQuery( query );
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Loading CSV data into temp table OK " + elapsed;
-        showMessage( msg, false, true );
-    } // loadFamilynameToTable
-
-
-    /**
-     *
-     */
-    private void updateFamilynameToPersonC() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Moving familynames from temp table to person_c", false, true );
-
-        {
-            String query = "UPDATE links_cleaned.person_c, links_temp.familyname_t"
-                    + " SET links_cleaned.person_c.familyname = links_temp.familyname_t.familyname"
-                    + " WHERE links_cleaned.person_c.id_person = links_temp.familyname_t.person_id;";
-
-            conTemp.runQuery( query );
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Moving familynames from temp table to person_c OK " + elapsed;
-        showMessage( msg, false, true );
-    } // updateFamilynameToPersonC
-
-
-    public void removeFamilynameFile() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Removing familyname_t csv", false, true );
-
-        {
-            java.io.File f = new java.io.File("familyname_t.csv");
-            f.delete();
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing familyname_t csv OK " + elapsed;
-        showMessage( msg, false, true );
-    } // removeFamilynameFile
-
-
-    public void removeFamilynameTable() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Removing familyname_t table", false, true );
-
-        String query = "DROP TABLE IF EXISTS familyname_t;";
-
-        conTemp.runQuery( query );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing familyname_t table OK " + elapsed;
-        showMessage( msg, false, true );
-    } // removeFamilynameTable
-
-
-    /**
-     * @throws Exception
-     */
-    private void createTempFirstnameTable() throws Exception
-    {
-        showMessage( "Creating firstname_t table", false, false );
-
-        String query = "CREATE  TABLE links_temp.firstname_t ("
-            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " firstname VARCHAR(80) NULL ,"
-            + " PRIMARY KEY (person_id) );";
-
-        conTemp.runQuery( query );
-
-        showMessage( endl, false, true );
-    } // createTempFirstnameTable
-
-
-    /**
-     * @throws Exception
-     */
-    private void createTempFirstnameFile() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        String filename = "firstname_t.csv";
-        showMessage( "Creating " + filename, false, true );
-
-        File f = new File( filename );
-        if( f.exists() ) { f.delete(); }
-        writerFirstname = new FileWriter( filename );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating " + filename + " OK " + elapsed;
-        showMessage( msg, false, true );
-    } // createTempFirstnameFile
-
-
-    /**
-     * @throws Exception
-     */
-    private void loadFirstnameToTable() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Loading CSV data into temp table", false, true );
-        {
-            String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
-            conTemp.runQuery( query );
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Loading CSV data into temp table OK " + elapsed;
-        showMessage( msg, false, true );
-    } // loadFirstnameToTable
-
-
-    /**
-     *
-     */
-    private void updateFirstnameToPersonC() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Moving first names from temp table to person_c...", false, true );
-        {
-            String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
-                + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
-                + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
-
-            conTemp.runQuery( query );
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Moving first names from temp table to person_c OK " + elapsed;
-        showMessage( msg, false, true );
-    } // updateFirstnameToPersonC
-
-
-    /**
-     * @throws Exception
-     */
-    public void removeFirstnameFile() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Removing firstname_t csv file", false, true );
-        {
-            File f = new File( "firstname_t.csv" );
-            f.delete();
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing firstname_t csv file OK " + elapsed;
-        showMessage( msg, false, true );
-    } // removeFirstnameFile
-
-
-    /**
-     * @throws Exception
-     */
-    public void removeFirstnameTable() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Removing firstname_t table", false, true );
-
-        String query = "DROP TABLE IF EXISTS firstname_t;";
-        conTemp.runQuery( query );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing firstname_t table OK " + elapsed;
-        showMessage( msg, false, true );
-    } // removeFirstnameTable
-
-
-    /**
-     * @throws Exception
-     */
-    private boolean doesTableExist( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
-    {
-        String query = "SELECT COUNT(*) FROM information_schema.tables"
-                + " WHERE table_schema = '" + db_name + "'"
-                + " AND table_name = '" + table_name + "'";
-
-        ResultSet rs = db_conn.runQueryWithResult( query );
-        rs.first();
-        int count = rs.getInt( "COUNT(*)" );
-        //showMessage( "doesTableExist: " + db_name + " " + table_name + " : " + count, false, true );
-
-        if( count == 1 ) return true;
-        else return false;
-    } // doesTableExist
-
-
-    /**
-     * @throws Exception
-     */
-    private void dropTable( MySqlConnector db_conn, String db_name, String table_name ) throws Exception
-    {
-        String query = "DROP TABLE `" + db_name + "`.`" + table_name + "`";
-        db_conn.runQuery( query );
-    } // dropTable
-
-
-    private void funcPostTasks() throws Exception
-    {
-        long start = System.currentTimeMillis();
-        showMessage( "Post tasks", false, true );
-
-        String[] queries = {
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9;",
-                "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v';",
-                "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-                "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-                "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
-                "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
-                "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-                "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-                "DROP TABLE links_match.male;",
-                "DROP TABLE links_match.female;",
-                "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%';",
-                "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);",
-                "UPDATE IGNORE links_cleaned.person_c "
-                        + "SET "
-                        + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
-                        + "WHERE "
-                        + "birth_date_valid = 1 "
-                        + "AND "
-                        + "mar_date_valid = 1 "
-                        + "AND "
-                        + "age_year is null "
-                        + "AND "
-                        + "( role = 7 OR role = 4 ) "
-                        + "AND mar_date NOT LIKE '0-%' "
-                        + "AND mar_date NOT LIKE '%-0-%' "
-                        + "AND birth_date NOT LIKE '0-%' "
-                        + "AND birth_date NOT LIKE '%-0-%' "
-        };
-
-        // Execute queries
-        for( String s : queries ) {
-            conCleaned.runQuery( s );
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = " OK " + elapsed;
-        showMessage( msg, false, true );
-    } // funcPostTasks
-
-
-    private void funcDeleteRows()
-    throws Exception
-    {
-        showMessage( "funcDeleteRows() deleting empty links_cleaned.person_c records.", false, true );
-        String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
-        conCleaned.runQuery( q1 );
-    } // funcDeleteRows
-
-
-    private Connection getConnection(String dbName) throws Exception {
-
-        String driver = "org.gjt.mm.mysql.Driver";
-
-        String _url = "jdbc:mysql://" + this.url + "/" + dbName + "?dontTrackOpenResources=true";
-        String username = user;
-        String password = pass;
-
-        Class.forName(driver);
-
-        // Class.forName("externalModules.jdbcDriver.Driver").newInstance();
-
-        Connection conn = DriverManager.getConnection(_url, username, password);
-
-        return conn;
-    }
 }
 
 // [eof]

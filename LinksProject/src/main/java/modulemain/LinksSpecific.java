@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.File;
 
+import java.text.SimpleDateFormat;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +40,7 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
+ * FL-28-Aug-2014 Latest change
  */
 public class LinksSpecific {
 
@@ -273,15 +276,26 @@ public class LinksSpecific {
         }
     }
 
-    
+    /**
+     *
+     * @return
+     */
+    public static String getLogTableName() {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyy.MM.dd-HH:mm:ss" );     // not valid for mysql
+        //SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMddHHmm" );
+        return "log-" + sdf.format( cal.getTime() );
+    }
+
+
     /**
      * 
      * @return
      */
-    public static String getTimeStamp(){
+    public static String getTimeStamp() {
         Calendar cal = Calendar.getInstance();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMddHHmm");
-        return sdf.format(cal.getTime());
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMddHHmm" );
+        return sdf.format( cal.getTime() );
     }
 
 
@@ -291,7 +305,7 @@ public class LinksSpecific {
      */
     public static String getTimeStamp2( String format ) {
         Calendar cal = Calendar.getInstance();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat( format );
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
         return sdf.format(cal.getTime());
     }
 
