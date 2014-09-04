@@ -27,119 +27,129 @@ import modulemain.LinksSpecific;
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
  * FL-28-Aug-2014 Comment out some unused functions
- * FL-28-Aug-2014 Latest change
+ * FL-04-Sep-2014 Latest change
  */
 public class TableToArraysSet
 {
-    private ArrayList<ArrayListNonCase> column = new ArrayList<ArrayListNonCase>();
-    private ArrayList<String> columnName = new ArrayList<String>();
-    
-    // used for Shuffle
-    private ArrayList<ArrayListNonCase> columnCopy = new ArrayList<ArrayListNonCase>();
-    
-    private ArrayList<ArrayListNonCase> columnNew = new ArrayList<ArrayListNonCase>();
-    private ArrayList<String> columnNameNew = new ArrayList<String>();
+    private ArrayList< ArrayListNonCase > column     = new ArrayList<ArrayListNonCase>();
+    private ArrayList <ArrayListNonCase > columnCopy = new ArrayList<ArrayListNonCase>();         // used for Shuffle
+    private ArrayList< ArrayListNonCase > columnNew  = new ArrayList<ArrayListNonCase>();
+
+    private ArrayList< String > columnName    = new ArrayList< String >();
+    private ArrayList< String > columnNameNew = new ArrayList<String>();
     
     private String tableName;
+
     private MySqlConnector con;
     private MySqlConnector con_or;
+
     ResultSet rs;
 
     /**
      * Constructor to load a reference table into ArrayLists
-     * "con" is normally conGeneral, i.e. the local links_general db
-     * "con_or" is normally conOr, i.e. the remote links_general db (on node-030)
      *
      * "con_or" is only used in the 2 functions updateTable() and updateTableWithCode().
      * As updateTableWithCode() is nowhere used by the project, we commented it out.
      *
-     * @param con
-     * @param con_or
+     * @param con           // "con" is normally conGeneral, i.e. the local links_general db
+     * @param con_or        // "con_or" is normally conOr, i.e. the remote links_general db (on node-030)
      * @param IndexField
      * @param tableName
      */
     public TableToArraysSet( MySqlConnector con, MySqlConnector con_or, String IndexField, String tableName )
     throws Exception
     {
+        boolean debug = false;
         this.tableName = tableName;
         this.con = con;
         this.con_or = con_or;
 
-        //System.out.println("TableToArraysSet, table: " + tableName + " , index: " + IndexField);
+        if( debug ) { System.out.println( "TableToArraysSet, table: " + tableName + " , index: " + IndexField ); }
 
         String query = "";
         if( IndexField.isEmpty() )
         { query = "SELECT * FROM ref_" + tableName; }
         else
         { query = "SELECT * FROM ref_" + tableName + " ORDER BY " + IndexField + " ASC"; }
-        //System.out.println("TableToArraysSet, query: " + query);
+
+        if( debug ) { System.out.println( "TableToArraysSet, query: " + query ); }
 
         rs = this.con.runQueryWithResult( query );
         ResultSetMetaData rsmd = rs.getMetaData();
+
         int numCols = rsmd.getColumnCount();
-        //System.out.println("TableToArraysSet, numCols: " + numCols);
+        if( debug ) { System.out.println( "TableToArraysSet, numCols: " + numCols ); }
 
-        for (int i = 1; i <= numCols; i++) {
+        if( debug ) {
+            System.out.printf( "column names: " );
+            for( int i = 1; i <= numCols; i++ ) { System.out.printf("%s, ", rsmd.getColumnName(i)); }
+            System.out.println("\n");
+        }
 
-            int ct = rsmd.getColumnType(i);
-            String cn = rsmd.getColumnName(i);
+        for( int i = 1; i <= numCols; i++ )     // process each column
+        {
+            int ct = rsmd.getColumnType( i );
+            String cn = rsmd.getColumnName( i );
 
             boolean isIntFlag;
 
-            // int
-            if ((ct == -6) || (ct == -5) || (ct == 4) || (ct == 5)) {
-
-                ArrayListNonCase<Integer> al = new ArrayListNonCase<Integer>();
-                ArrayListNonCase<Integer> alCopy = new ArrayListNonCase<Integer>();
-                ArrayListNonCase<Integer> alNew = new ArrayListNonCase<Integer>();
+            // int arraylist
+            if( (ct == -6) || (ct == -5) || (ct == 4) || (ct == 5) )
+            {
+                ArrayListNonCase< Integer > al     = new ArrayListNonCase<Integer>();
+                ArrayListNonCase< Integer > alCopy = new ArrayListNonCase<Integer>();
+                ArrayListNonCase< Integer > alNew  = new ArrayListNonCase<Integer>();
                 
-                column.add(al);
-                columnCopy.add(alCopy);
-                columnNew.add(alNew);
+                column.add( al );
+                columnCopy.add( alCopy );
+                columnNew.add( alNew );
 
                 // add name
-                columnName.add(cn);
-                columnNameNew.add(cn);
+                columnName.add( cn );
+                columnNameNew.add( cn );
 
-                // set flag
-                isIntFlag = true;
+                isIntFlag = true;                // set int flag
+            }
+            else        // else a String arraylist
+            {
 
-            } // else a String arraylist
-            else {
-
-                ArrayListNonCase<String> al = new ArrayListNonCase<String>();
-                ArrayListNonCase<String> alCopy = new ArrayListNonCase<String>();
-                ArrayListNonCase<String> alNew = new ArrayListNonCase<String>();
+                ArrayListNonCase< String > al     = new ArrayListNonCase<String>();
+                ArrayListNonCase< String > alCopy = new ArrayListNonCase<String>();
+                ArrayListNonCase< String > alNew  = new ArrayListNonCase<String>();
                 
-                column.add(al);
-                columnCopy.add(alCopy);
-                columnNew.add(alNew);
+                column.add( al );
+                columnCopy.add( alCopy );
+                columnNew.add( alNew );
 
                 // add name
-                columnName.add(cn);
-                columnNameNew.add(cn);
+                columnName.add( cn );
+                columnNameNew.add( cn );
 
-                // set flag
-                isIntFlag = false;
+                isIntFlag = false;          // set int flag
             }
 
             // Fill array with table
             int j = 0;
-            while( rs.next() )
+            while( rs.next() )              // process each row
             {
                 j += 1;
-                if (isIntFlag) {
-                    column.get((i - 1)).add(rs.getInt(i));
-                    columnCopy.get((i - 1)).add(rs.getInt(i));
-                } else { // string
-                    String ts = rs.getString(i);
+                if( isIntFlag )            // int
+                {
+                    column.get( (i - 1) ).add( rs.getInt( i ) );
+                    columnCopy.get( (i - 1) ).add( rs.getInt( i ) );
+                }
+                else                        // string
+                {
+                    String ts = rs.getString( i );
 
-                    if (ts != null && !ts.isEmpty()) {
-                        column.get((i - 1)).add(ts.toLowerCase());
-                        columnCopy.get((i - 1)).add(ts.toLowerCase());
-                    } else {
-                        column.get((i - 1)).add("");
-                        columnCopy.get((i - 1)).add("");
+                    if( ts != null && !ts.isEmpty() ) {
+                        column.get( (i - 1) ).add( ts.toLowerCase() );
+                        columnCopy.get( (i - 1) ).add( ts.toLowerCase() );
+                    }
+                    else
+                    {
+                        column.get( (i - 1) ).add( "" );
+                        columnCopy.get( (i - 1) ).add( "" );
                     }
                 }
             }
@@ -148,15 +158,15 @@ public class TableToArraysSet
             rs.beforeFirst();            // set Iterator
         }
 
-        // Close ResultSet
-        rs.close();
+        rs.close();        // Close ResultSet
         rs = null;
 
+        if( debug ) { showContents( "id_" + tableName ); }
 
         // Do extra sort
         if( !IndexField.isEmpty() )
         {
-            //System.out.println("TableToArraysSet: extra sort");
+            System.out.println( "TableToArraysSet: extra sort" );
             // Sort by Java 
             Collections.sort(column.get(columnName.indexOf("original")));
 
@@ -187,9 +197,64 @@ public class TableToArraysSet
 
     /**
      *
+     */
+    public void showContents( String ref_name )
+    {
+        int ncolumns = this.column.size();
+
+        System.out.println( "TableToArraysSet/showContents" );
+        System.out.printf("Table name: %s\n", this.tableName);
+        System.out.printf( "colums: %d\n", ncolumns );
+
+        if( ncolumns != 5 ) {
+            System.out.println( "unexpected number of columns" );
+            return;
+        }
+
+        //id_occupation, original, standard, standard_code, standard_source
+        int nrows = column.get( columnName.indexOf( "original" ) ).size();
+
+        ArrayListNonCase alnc_name = this.column.get( 0 );
+        ArrayListNonCase alnc_orig = this.column.get( 1 );
+        ArrayListNonCase alnc_stan = this.column.get( 2 );
+        ArrayListNonCase alnc_code = this.column.get( 3 );
+        ArrayListNonCase alnc_sour = this.column.get( 4 );
+
+        System.out.println( "============================================================================================================" );
+        System.out.printf( "     #  %s  original                 standard                 standard_code standard_source\n", ref_name );
+        System.out.println("------------------------------------------------------------------------------------------------------------");
+        for( int c = 0; c < ncolumns; c ++ )
+        {
+            for( int r = 0; r < nrows; r++)
+            {
+                String name = alnc_name.get( r ).toString();
+                int id_name = Integer.parseInt(name );
+
+                int lmax = 40;
+                String orig = alnc_orig.get( r ).toString();
+                if( orig.length() > lmax ) { orig = orig.substring( 0, lmax ); }
+
+                String stan = alnc_stan.get( r ).toString();
+                if( stan.length() > lmax ) { stan = stan.substring( 0, lmax ); }
+
+                //if( orig.startsWith( "beroep" ) ) {
+                if( id_name> 666000 ) {
+                    System.out.printf("%06d: %6s %40s %40s %s %9s\n", r,
+                            alnc_name.get(r), orig, stan, alnc_code.get(r), alnc_sour.get(r));
+                }
+
+                //if (r > 10) { break; }
+            }
+        }
+        System.out.println( "============================================================================================================" );
+    }
+
+
+    /**
+     *
      * @param newValue
      */
-    public void addOriginal(String newValue)
+    public void addOriginal( String newValue )
     {
         //System.out.println( "TableToArraysSet/addOriginal" );
 
@@ -229,7 +294,7 @@ public class TableToArraysSet
      * @param newValue
      * @param standardCode
      */
-    public void addOriginalWithCode(String newValue, String standardCode)
+    public void addOriginalWithCode( String newValue, String standardCode )
     {
         //System.out.println( "TableToArraysSet/addOriginalWithCode" );
 
@@ -254,7 +319,7 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public boolean originalExists(String value)
+    public boolean originalExists( String value )
     {
         //System.out.println( "TableToArraysSet/originalExists" );
 
@@ -280,7 +345,9 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getStandardCodeByOriginal( String value ) throws Exception {
+    public String getStandardCodeByOriginal( String value )
+    throws Exception
+    {
         System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value );
 
         return getColumnByOriginal( "standard_code", value );
@@ -292,7 +359,9 @@ public class TableToArraysSet
      * @param value
      * @return
      */
-    public String getStandardByOriginal(String value) throws Exception {
+    public String getStandardByOriginal( String value )
+    throws Exception
+    {
         //System.out.println( "TableToArraysSet/getStandardByOriginal" );
 
         return getColumnByOriginal("standard", value);
@@ -342,7 +411,7 @@ public class TableToArraysSet
      * @return
      */
     /*
-    public String getColumnByColumn(String columnToGet, String name, String value)
+    public String getColumnByColumn( String columnToGet, String name, String value )
     {
         //System.out.println( "TableToArraysSet/getColumnByColumn" );
 
@@ -354,7 +423,7 @@ public class TableToArraysSet
     }
     */
 
-    public String getColumnByColumnInt(String columnToGet, String name, int value)
+    public String getColumnByColumnInt( String columnToGet, String name, int value )
     {
         //System.out.println( "TableToArraysSet/getColumnByColumnInt" );
 
@@ -371,7 +440,8 @@ public class TableToArraysSet
      * @return
      */
     /*
-    public String getOriginalByIndex(int index) {
+    public String getOriginalByIndex( int index )
+    {
         //System.out.println( "TableToArraysSet/getOriginalByIndex" );
 
         return column.get(columnName.indexOf("original")).get(index).toString();
@@ -383,7 +453,8 @@ public class TableToArraysSet
      * @param cName
      * @return
      */
-    public ArrayListNonCase getArray(String cName) {
+    public ArrayListNonCase getArray( String cName )
+    {
         //System.out.println( "TableToArraysSet/getArray" );
 
         return column.get(columnName.indexOf(cName));
@@ -395,7 +466,8 @@ public class TableToArraysSet
      * @return
      */
     /*
-    public int countRows() {
+    public int countRows()
+    {
         //System.out.println( "TableToArraysSet/countRows" );
 
         return column.get(columnName.indexOf("original")).size();
@@ -406,7 +478,8 @@ public class TableToArraysSet
      *
      * @throws Exception
      */
-    public void updateTable() throws Exception
+    public void updateTable()
+    throws Exception
     {
         //System.out.println( "TableToArraysSet/updateTable" );
 
@@ -423,7 +496,8 @@ public class TableToArraysSet
      * @throws Exception
      */
     /*
-    public void updateTableWithCode() throws Exception {
+    public void updateTableWithCode()
+    throws Exception {
         //System.out.println( "TableToArraysSet/updateTableWithCode" );
 
         for (int i = 0; i < columnNew.get(0).size(); i++) {

@@ -4,11 +4,11 @@
 package dataset;
 
 /**
- * DevinedMinMaxDatum dataset
+ * DivideMinMaxDatum dataset
  * Used to return a set of data
  * @author oaz
  */
-public final class DevinedMinMaxDatumSet {
+public final class DivideMinMaxDatumSet {
 
     // Private vars
     private int MinDay ;
