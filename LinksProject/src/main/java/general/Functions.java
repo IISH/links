@@ -45,8 +45,8 @@ import modulemain.LinksSpecific;
  * FL-15-Aug-2014 Latest change
  *
  */
-public class Functions {
-
+public class Functions
+{
     /**
      * 
      * @param lineToRepare
@@ -454,16 +454,17 @@ public class Functions {
     /**
      * 
      * 
-     * now("dd MMMMM yyyy"));
-     * now("yyyyMMdd"));
-     * now("dd.MM.yy"));
-     * now("MM/dd/yy"));
-     * now("yyyy.MM.dd G 'at' HH:mm:ss z"));
-     * now("EEE, MMM d, ''yy"));
-     * now("h:mm a"));
-     * now("H:mm:ss:SSS"));
-     * now("K:mm a,z"));
-     * now("yyyy.MMMMM.dd GGG hh:mm aaa"));
+     * now("dd MMMMM yyyy");
+     * now("yyyyMMdd");
+     * now("dd.MM.yy");
+     * now("MM/dd/yy");
+     * now("yyyy.MM.dd G 'at' HH:mm:ss z");
+     * now("EEE, MMM d, ''yy");
+     * now("h:mm a");
+     * now("H:mm:ss:SSS");
+     * now("K:mm a,z");
+     * now("yyyy.MMMMM.dd GGG hh:mm aaa");
+     *
      * @param dateFormat
      * @return 
      */

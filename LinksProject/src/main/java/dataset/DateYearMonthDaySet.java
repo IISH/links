@@ -1,8 +1,10 @@
 package dataset;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * FL-04-Sep-2014 Latest change
  */
 public final class DateYearMonthDaySet {
 
@@ -25,9 +27,9 @@ public final class DateYearMonthDaySet {
     /**
      *
      */
-    private String reportsYear = "";
+    private String reportsYear  = "";
     private String reportsMonth = "";
-    private String reportsDay = "";
+    private String reportsDay   = "";
 
 
 
@@ -43,7 +45,7 @@ public final class DateYearMonthDaySet {
 
     /**
      *
-     * @param meldingText
+     * @param value
      */
     public void setReportYear( String value ) {
         this.reportsYear = value;
@@ -54,21 +56,21 @@ public final class DateYearMonthDaySet {
 
     /**
      *
-     * @param meldingText
+     * @param value
      */
     public void setReportMonth( String value ) {
         this.reportsMonth = value;
-        this.dateIsValid = false;
+        this.dateIsValid  = false;
     }
 
 
 
     /**
      *
-     * @param meldingText
+     * @param value
      */
     public void setReportDay( String value ) {
-        this.reportsDay = value;
+        this.reportsDay  = value;
         this.dateIsValid = false;
     }
 
@@ -139,7 +141,7 @@ public final class DateYearMonthDaySet {
      * @return
      */
     public String getReports( ){
-        return "[ DAG: " + reportsDay + " ; MAAND: " + reportsMonth + " ; JAAR: " + reportsYear + " ]";
+        return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]";
     }
 
 

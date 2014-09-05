@@ -40,10 +40,10 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-28-Aug-2014 Latest change
+ * FL-04-Sep-2014 Latest change
  */
-public class LinksSpecific {
-
+public class LinksSpecific
+{
     /**
      * 
      * @param lineToRepare
@@ -340,11 +340,12 @@ public class LinksSpecific {
      * @param date
      * @return een DateYearMonthDay object met datum en evt. fouten
      */
-    public static DateYearMonthDaySet devideCheckDate(String date){
+    public static DateYearMonthDaySet divideCheckDate(String date){
 
         dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet();
 
-        if(date == null || date.isEmpty() ){
+        if( date == null || date.isEmpty() )
+        {
             dymd.setYear( 0 ) ;
             dymd.setMonth( 0 ) ;
             dymd.setDay( 0 ) ;
@@ -379,53 +380,53 @@ public class LinksSpecific {
             year = Integer.parseInt(m.group());
         }
 
-        // they are devides, now we check the value on errors
+        // they are divided, now we check the value on errors
         if( (year > 1680) && ( year < 1960 ) ){
             dymd.setYear(year);
         }
         else {
             // MELDING
-            dymd.setReportYear("ERROR");
+            dymd.setReportYear( Integer.toString( year ) );
             dymd.setYear(0);
         }
 
-         // they are devides, now we check the value on errors
+         // they are divided, now we check the value on errors
         if( (month > 0) && ( month < 13 ) ){
             dymd.setMonth(month);
         }
         else {
             // MELDING
-            dymd.setReportMonth("ERROR");
+            dymd.setReportMonth( Integer.toString( month ) );
             dymd.setMonth(0);
         }
 
         // check day number
         if( ( day < 1 ) && ( day > 31 ) ){
             // MELDING
-            dymd.setReportDay("ERROR");
+            dymd.setReportDay( Integer.toString( day ) );
             dymd.setDay(0);
         }
 
         //check if day is 31 in wrong month
         else if( ( day == 31 ) && ( ( month == 2 ) || ( month == 4 ) || ( month == 6 ) || ( month == 9 ) || ( month == 11 ) ) ){
             // MELDING
-            dymd.setReportDay("ERROR");
+            dymd.setReportDay( Integer.toString( day ) );
             dymd.setDay(0);
         }
         // Check if februari has 30 days
         else if( ( month == 2 ) && ( day == 30 ) ){
             // MELDING
-            dymd.setReportDay("ERROR");
+            dymd.setReportDay( Integer.toString( day ) );
             dymd.setDay(0);
         }
         // leap year calculation
         else if ( ( month == 2 ) && ( day == 29 ) ){
-            if( ( year % 4 == 0 ) && ( year % 100 != 0 ) || ( year % 400 == 0 ) ) { // is leapyear
+            if( ( year % 4 == 0 ) && ( year % 100 != 0 ) || ( year % 400 == 0 ) ) { // is leap year
                 dymd.setDay(day);
             }
             else {
                 // MELDING
-                dymd.setReportDay("ERROR");
+                dymd.setReportDay( Integer.toString( day ) );
                 dymd.setDay(0);
             }
         }

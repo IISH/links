@@ -595,7 +595,7 @@ public class LinksCleaned extends Thread
 
         // KM: Do not delete here.
         //showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
-        //funcDeleteRows();               // Delete records with empty firstname and empty familyname
+        //deleteRows();               // Delete records with empty firstname and empty familyname
 
         // Names to lowercase
         start = System.currentTimeMillis();
@@ -897,20 +897,24 @@ public class LinksCleaned extends Thread
         standardFlaggedDate( "death" );
         */
 
-        showMessage( "Running minMaxCorrectDate...", false, true );
-        minMaxCorrectDate();
+        // FL-04-Sep-2014
+        // commented out function calls below: probably overlapping functionality with doMinMaxDate ?!
 
-        showMessage( "Running completeMinMaxBirth...", false, true );
-        completeMinMaxBirth();
+        //showMessage( "Running minMaxCorrectDate...", false, true );
+        //minMaxCorrectDate();
 
-        showMessage( "Running completeMinMaxMar...", false, true );
-        completeMinMaxMar();
+        //showMessage( "Running completeMinMaxBirth...", false, true );
+        //completeMinMaxBirth();
 
-        // no funcCompleteMinMaxDeath(); ??
+        //showMessage( "Running completeMinMaxMar...", false, true );
+        //completeMinMaxMar();
 
-        showMessage( "Running setComplete...", false, true );
-        setComplete();
+        // no function completeMinMaxDeath(); ??
 
+        //showMessage( "Running setComplete...", false, true );
+        //setComplete();
+
+        /*
         showMessage( "Running update queries...", false, true );
         // extra function to correct registration data
         String q1 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.birth_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 1 AND p.role = 1;";
@@ -924,6 +928,7 @@ public class LinksCleaned extends Thread
         conCleaned.runQuery( q3 );
         conCleaned.runQuery( q4 );
         conCleaned.runQuery( q5 );
+        */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doDates
@@ -947,26 +952,19 @@ public class LinksCleaned extends Thread
 
         try {
             // loading ref
-            ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult("SELECT * FROM ref_minmax_marriageyear");
+            ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
 
-            if (bronFilter.isEmpty()) {
-                for (int i : sources) {
-                    showMessage("Running funcMinMaxMarriageYear for source: " + i + "...", false, false);
-                    {
-                        funcMinMaxMarriageYear(funcSetMarriageYear(i + ""), refMinMaxMarriageYear);
-                    }
-                    showMessage(endl, false, true);
+            if( bronFilter.isEmpty() ) {
+                for( int i : sources ) {
+                    showMessage( "Running minMaxMarriageYear for source: " + i + "...", false, true );
+                    minMaxMarriageYear( setMarriageYear( i + "" ), refMinMaxMarriageYear );
                 }
-
             } else {
-                showMessage("Running funcMinMaxMarriageYear...", false, false);
-                {
-                    funcMinMaxMarriageYear(funcSetMarriageYear(this.sourceId + ""), refMinMaxMarriageYear);
-                }
-                showMessage(endl, false, true);
+                showMessage( "Running minMaxMarriageYear...", false, true );
+                minMaxMarriageYear( setMarriageYear( this.sourceId + "" ), refMinMaxMarriageYear );
             }
-        } catch (Exception e) {
-            showMessage("An error occured while running Min max Marriage date, properly ref_minmax_marriageyear error: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( "Exception while running Min max Marriage date, properly ref_minmax_marriageyear error: " + ex.getMessage(), false, true );
         }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -989,8 +987,17 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage("Running func Part to Date on all sources...", false, true );
-        funcPartsToDate();
+        if( bronFilter.isEmpty())  {
+            for( int i : sources ) {
+                String sourceStr = "" + i;
+                showMessage( "Running partsToDate for source: " + i + "...", false, true );
+                partsToDate( sourceStr );
+            }
+        } else {
+            String sourceStr = "" + this.sourceId;
+            showMessage( "Running partsToDate...", false, true );
+            partsToDate( sourceStr );
+        }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doPartsToFullDate
@@ -1012,8 +1019,17 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage("Running func Days since begin on all sources...", false, false);
-        funcDaysSinceBegin();
+        if( bronFilter.isEmpty())  {
+            for( int i : sources ) {
+                String sourceStr = "" + i;
+                showMessage( "Running daysSinceBegin for source: " + i + "...", false, true );
+                daysSinceBegin( sourceStr );
+            }
+        } else {
+            String sourceStr = "" + this.sourceId;
+            showMessage( "Running daysSinceBegin...", false, true );
+            daysSinceBegin( sourceStr );
+        }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doDaysSinceBegin
@@ -1035,8 +1051,17 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname, false, true );
 
-        showMessage( "Running func post tasks all sources...", false, true );
-        funcPostTasks();
+        if( bronFilter.isEmpty())  {
+            for( int i : sources ) {
+                String sourceStr = "" + i;
+                showMessage( "Running postTasks for source: " + i + "...", false, true );
+                postTasks( sourceStr );
+            }
+        } else {
+            String sourceStr = "" + this.sourceId;
+            showMessage( "Running postTasks...", false, true );
+            postTasks( sourceStr );
+        }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doPostTasks
@@ -1119,7 +1144,7 @@ public class LinksCleaned extends Thread
         String startQuery;
         String id_source;
 
-        if (sourceNo.isEmpty()) {
+        if( sourceNo.isEmpty() ) {
             startQuery = "SELECT id_person , birth_location FROM person_o" + bronFilter + " AND birth_location <> ''";
             id_source = this.sourceId + "";
         } else {
@@ -1128,11 +1153,11 @@ public class LinksCleaned extends Thread
         }
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            standardLocation(rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
+            standardLocation( rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON );
+        } catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
         }
     } // standardBirthLocation
 
@@ -1169,7 +1194,7 @@ public class LinksCleaned extends Thread
 
                 if( date.isEmpty() ) { continue; }
 
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
 
                 if( dymd.isValidDate() )
                 {
@@ -1203,7 +1228,7 @@ public class LinksCleaned extends Thread
             showMessage( "Number of " + type + " records: " + counter, false, true );
             rs = null;
         } catch( Exception ex ) {
-            showMessage( counter + " An error occured while cleaning " + type + " date: " + ex.getMessage(), false, true );
+            showMessage( counter + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
         }
     } // standardDate
 
@@ -1216,7 +1241,7 @@ public class LinksCleaned extends Thread
         String startQuery;
         String id_source;
 
-        if (sourceNo.isEmpty()) {
+        if( sourceNo.isEmpty() ) {
             startQuery = "SELECT id_person , death_location FROM person_o" + bronFilter + " AND death_location <> ''";
             id_source = this.sourceId + "";
         } else {
@@ -1225,10 +1250,10 @@ public class LinksCleaned extends Thread
         }
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            standardLocation(rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            standardLocation( rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON );
+        } catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
         }
     } // standardDeathLocation
 
@@ -1244,16 +1269,14 @@ public class LinksCleaned extends Thread
         int stepstate = step;
         String id_source;
 
-        try {
-
-            // create connection
-
-            Connection con = getConnection("links_original");
+        try
+        {
+            Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
             String startQuery;
 
-            if (sourceNo.isEmpty()) {
+            if( sourceNo.isEmpty() ) {
                 startQuery = "SELECT id_person , firstname FROM person_o" + bronFilter + "";
                 id_source = this.sourceId + "";
             } else {
@@ -1263,7 +1286,7 @@ public class LinksCleaned extends Thread
 
             // startQuery = "SELECT id_person , firstname FROM person_o" + " WHERE id_source = 115";
 
-            ResultSet rsFirstName = con.createStatement().executeQuery(startQuery);
+            ResultSet rsFirstName = con.createStatement().executeQuery( startQuery );
             con.createStatement().close();
             // con.createStatement().close();
 
@@ -1567,7 +1590,7 @@ public class LinksCleaned extends Thread
             con.close();
 
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Firstname: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning Firstname: " + e.getMessage(), false, true);
         }
     } // standardFirstname
 
@@ -1587,7 +1610,7 @@ public class LinksCleaned extends Thread
             String startQuery;
             String id_source;
 
-            if (sourceNo.isEmpty()) {
+            if( sourceNo.isEmpty() ) {
                 startQuery = "SELECT id_person , familyname FROM person_o" + bronFilter;
                 id_source = this.sourceId + "";
             } else {
@@ -1597,11 +1620,11 @@ public class LinksCleaned extends Thread
 
 
             // create connection
-            Connection con = getConnection("links_original");
+            Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
             // Read family names from table
-            ResultSet rsFamilyname = con.createStatement().executeQuery(startQuery);
+            ResultSet rsFamilyname = con.createStatement().executeQuery( startQuery );
             con.createStatement().close();
 
             // get total
@@ -1771,7 +1794,7 @@ public class LinksCleaned extends Thread
             con.close();
             rsFamilyname.close();
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning familyname: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning familyname: " + e.getMessage(), false, true);
         }
     } // standardFamilyname
 
@@ -1791,10 +1814,10 @@ public class LinksCleaned extends Thread
 
             startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_c WHERE ( ( " + type + "_date_flag = 2 ) OR ( " + type + "_date_flag = 3 ) ) AND " + type + "_date is not null";
 
-            ResultSet rs = conCleaned.runQueryWithResult(startQuery);
+            ResultSet rs = conCleaned.runQueryWithResult( startQuery );
 
-            while (rs.next()) {
-
+            while( rs.next() )
+            {
                 // GUI info
                 counter++;
                 if (counter == stepstate) {
@@ -1810,7 +1833,7 @@ public class LinksCleaned extends Thread
                     continue;
                 }
 
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
 
                 if (dymd.isValidDate()) {
                     String query = ""
@@ -1841,7 +1864,7 @@ public class LinksCleaned extends Thread
             }
             rs = null;
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning " + type + " flagged date: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning " + type + " flagged date: " + e.getMessage(), false, true);
         }
     } // standardFlaggedDate
 
@@ -1885,7 +1908,7 @@ public class LinksCleaned extends Thread
 
                             // EC 91
                             if (tt == TableType.REGISTRATION) {
-                                addToReportRegistration(id, id_source, 91, location);
+                                addToReportRegistration( id, id_source, 91, location );
                                 String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
                                 conCleaned.runQuery(query);
                             } else {
@@ -1897,7 +1920,7 @@ public class LinksCleaned extends Thread
 
                             // EC 93
                             if (tt == TableType.REGISTRATION) {
-                                addToReportRegistration(id, id_source, 91, location);
+                                addToReportRegistration( id, id_source, 91, location );
                             } else {
                                 addToReportPerson(id, id_source, 93, location);
                             }
@@ -1905,7 +1928,7 @@ public class LinksCleaned extends Thread
 
                             // EC 95
                             if (tt == TableType.REGISTRATION) {
-                                addToReportRegistration(id, id_source, 95, location);
+                                addToReportRegistration( id, id_source, 95, location );
                                 String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
                                 String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
                                 conCleaned.runQuery(query);
@@ -1935,7 +1958,7 @@ public class LinksCleaned extends Thread
 
                             // EC 99
                             if (tt == TableType.REGISTRATION) {
-                                addToReportRegistration(id, id_source, 99, location);
+                                addToReportRegistration( id, id_source, 99, location );
                             } else {
                                 addToReportPerson(id, id_source, 99, location);
                             }
@@ -1944,7 +1967,7 @@ public class LinksCleaned extends Thread
 
                         // EC 91
                         if (tt == TableType.REGISTRATION) {
-                            addToReportRegistration(id, id_source, 91, location);
+                            addToReportRegistration( id, id_source, 91, location );
                             String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
                             conCleaned.runQuery(query);
                         } else {
@@ -1957,7 +1980,7 @@ public class LinksCleaned extends Thread
                 }
             }
         } catch (Exception e) {
-            throw new Exception(counter + " An error occured while cleaning Location: " + e.getMessage());
+            throw new Exception(counter + " Exception while cleaning Location: " + e.getMessage());
         }
     } // standardLocation
 
@@ -1970,7 +1993,7 @@ public class LinksCleaned extends Thread
         String startQuery;
         String id_source;
 
-        if (sourceNo.isEmpty()) {
+        if( sourceNo.isEmpty() ) {
             startQuery = "SELECT id_person , mar_location FROM person_o" + bronFilter + " AND mar_location <> ''";
             id_source = this.sourceId + "";
         } else {
@@ -1979,10 +2002,10 @@ public class LinksCleaned extends Thread
         }
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult(startQuery);
-            standardLocation(rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON);
-        } catch (Exception e) {
-            showMessage(e.getMessage(), false, true);
+            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            standardLocation( rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON );
+        } catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
         }
     } // standardMarLocation
 
@@ -2250,7 +2273,7 @@ public class LinksCleaned extends Thread
             con.isReadOnly();
 
             // Read family names from table
-            ResultSet rsPrepiece = con.createStatement().executeQuery(startQuery);
+            ResultSet rsPrepiece = con.createStatement().executeQuery( startQuery );
             con.createStatement().close();
 
             // Get count
@@ -2360,7 +2383,7 @@ public class LinksCleaned extends Thread
             rsPrepiece.close();
             con.close();
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Prepiece: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning Prepiece: " + e.getMessage(), false, true);
         }
     } // standardPrepiece
 
@@ -2402,41 +2425,41 @@ public class LinksCleaned extends Thread
                 String registration_date = rs.getString( "registration_date" );
 
                 if( registration_date == null ) {
-                    addToReportRegistration(id_registration, id_source, 202, "" );   // EC 202
+                    addToReportRegistration( id_registration, id_source, 202, "" );   // EC 202
 
                     continue;
                 }
 
-                DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate( registration_date );
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
 
                 if( dymd.isValidDate() )
                 {
                     String query = "UPDATE registration_c"
                         + " SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = " + dymd.getDay() + " , "
-                        + "registration_c.registration_month = " + dymd.getMonth() + " , "
-                        + "registration_c.registration_year = " + dymd.getYear()
-                        + " WHERE registration_c.id_registration = " + id_registration;
+                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
+                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
+                        + "registration_c.registration_year = "       + dymd.getYear()
+                        + " WHERE registration_c.id_registration = "  + id_registration;
 
                     conCleaned.runQuery( query );
-                } // Error occured
-                else
+                }
+                else         // Error occured
                 {
-                    addToReportRegistration(id_registration, id_source, 201, dymd.getReports());    // EC 201
+                    addToReportRegistration( id_registration, id_source, 201, dymd.getReports() );    // EC 201
 
                     String query = "UPDATE registration_c"
                         + " SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = " + dymd.getDay() + " , "
-                        + "registration_c.registration_month = " + dymd.getMonth() + " , "
-                        + "registration_c.registration_year = " + dymd.getYear()
-                        + " WHERE registration_c.id_registration = " + id_registration;
+                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
+                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
+                        + "registration_c.registration_year = "       + dymd.getYear()
+                        + " WHERE registration_c.id_registration = "  + id_registration;
 
                     conCleaned.runQuery( query );
                 }
             }
             rs = null;
         } catch( Exception ex ) {
-            showMessage( counter + " An error occured while cleaning Registration date: " + ex.getMessage(), false, true );
+            showMessage( counter + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
         }
     } // standardRegistrationDate
 
@@ -2479,7 +2502,7 @@ public class LinksCleaned extends Thread
         try {
             conCleaned.runQuery(query);
         } catch (Exception e) {
-            showMessage("An error occured while running standardRole: " + e.getMessage(), false, true);
+            showMessage("Exception while running standardRole: " + e.getMessage(), false, true);
         }
     } // standardRole
 
@@ -2564,7 +2587,7 @@ public class LinksCleaned extends Thread
 
             if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
                 // EC 111
-                addToReportRegistration(previousId, id_source, 111, "");
+                addToReportRegistration( previousId, id_source, 111, "" );
             } else { // Present
                 // Is is numeric
                 try {
@@ -2573,7 +2596,7 @@ public class LinksCleaned extends Thread
 
                 } catch (Exception e) {
                     // EC 112
-                    addToReportRegistration(previousId, id_source, 112, rs.getString("registration_seq"));
+                    addToReportRegistration( previousId, id_source, 112, rs.getString( "registration_seq" ) );
                 }
             }
             while (rs.next()) {
@@ -2589,7 +2612,7 @@ public class LinksCleaned extends Thread
                 if (rs.getString("registration_seq") == null || rs.getString("registration_seq").isEmpty()) {
 
                     // EC 111
-                    addToReportRegistration(rs.getInt("id_registration"), id_source, 111, "");
+                    addToReportRegistration( rs.getInt("id_registration"), id_source, 111, "" );
                     continue;
                 }
                 // Is is numeric ?
@@ -2597,7 +2620,7 @@ public class LinksCleaned extends Thread
                     nummer = Integer.parseInt(rs.getString("registration_seq"));
                 } catch (Exception e) {
                     // EC 112
-                    addToReportRegistration(rs.getInt("id_registration"), id_source, 112, rs.getString("registration_seq"));
+                    addToReportRegistration( rs.getInt("id_registration"), id_source, 112, rs.getString( "registration_seq" ) );
 
                     // Set values
                     previousId = rs.getInt("id_registration");
@@ -2613,10 +2636,10 @@ public class LinksCleaned extends Thread
 
                 if (verschil == 0 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
                     // EC 113
-                    addToReportRegistration(rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq"));
+                    addToReportRegistration( rs.getInt("id_registration"), id_source, 113, rs.getString("registration_seq") );
                 } else if (verschil > 1 && (previousYr == rs.getInt("registration_year")) && (previousMt == rs.getInt("registration_maintype")) && (previousLc == rs.getInt("registration_location_no"))) {
                     // EC 114
-                    addToReportRegistration(rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq"));
+                    addToReportRegistration( rs.getInt("id_registration"), id_source, 114, rs.getString("registration_seq") );
                 }
 
                 // Set values
@@ -2629,7 +2652,7 @@ public class LinksCleaned extends Thread
             }
         } catch (Exception e) {
 
-            showMessage(counter + " An error occured while checking sequence: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while checking sequence: " + e.getMessage(), false, true);
         }
     } // standardSequence
 
@@ -2948,7 +2971,7 @@ public class LinksCleaned extends Thread
             con.close();
 
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Suffix: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning Suffix: " + e.getMessage(), false, true);
         }
     } // standardSuffix
 
@@ -3103,7 +3126,7 @@ public class LinksCleaned extends Thread
             rs.close();
             rs = null;
         } catch (Exception e) {
-            showMessage(counter + " An error occured while cleaning Age Year: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while cleaning Age Year: " + e.getMessage(), false, true);
         }
     } // standardYearAge
 
@@ -3619,7 +3642,7 @@ public class LinksCleaned extends Thread
     private String functieOpmerkingenTeLocatie(String currentPart) {
         String[] locationRaw = currentPart.split("te");
 
-        // to prevent nullpoint exception
+        // to prevent null pointer exception
         if (locationRaw.length > 1) {
             String location = locationRaw[1];
             String cleanLocation = LinksSpecific.funcCleanSides(location);
@@ -3652,7 +3675,7 @@ public class LinksCleaned extends Thread
         values.put("birth_date", cleanDate);
 
         // date has to be devided
-        DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(cleanDate);
+        DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( cleanDate );
 
         //add location
         values.put("birth_day", dymd.getDay());
@@ -3676,7 +3699,7 @@ public class LinksCleaned extends Thread
         String cleanValue = LinksSpecific.functieOpmerkingenWaardeNaDubbelePunt(currentPart);
 
         // functie datum scheiding
-        String[] devidedValueDate = devideValueDate(cleanValue).split("&");
+        String[] devidedValueDate = divideValueDate( cleanValue ).split( "&" );
 
         HashMap values = new HashMap();
 
@@ -3689,7 +3712,7 @@ public class LinksCleaned extends Thread
         values.put("birth_date", date);
 
         // date has to be devided
-        DateYearMonthDaySet dymd = LinksSpecific.devideCheckDate(date);
+        DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
 
         //add location
         values.put("birth_day", dymd.getDay());
@@ -3800,17 +3823,17 @@ public class LinksCleaned extends Thread
     } // functieVeldLocatie
 
 
-    private String devideValueDate(String valueToDevide) {
-
-        Pattern regex = Pattern.compile("[0-9]+-[0-9]+-[0-9]+");
-        Matcher m = regex.matcher(valueToDevide);
+    private String divideValueDate( String valueToDevide )
+    {
+        Pattern regex = Pattern.compile( "[0-9]+-[0-9]+-[0-9]+" );
+        Matcher m = regex.matcher( valueToDevide );
 
         String date = m.group();
 
-        String onlyData = valueToDevide.replaceAll("[0-9]+-[0-9]+-[0-9]+", "");
+        String onlyData = valueToDevide.replaceAll( "[0-9]+-[0-9]+-[0-9]+", "" );
 
         return onlyData + "$" + date;
-    } // devideValueDate
+    } // divideValueDate
 
 
     /**
@@ -3921,7 +3944,7 @@ public class LinksCleaned extends Thread
         String query = ""
             + " insert into links_logs.`" + logTableName + "`( reg_key , id_source , report_class , report_type , content , date_time )"
             + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
-        //showMessage( query, false, true );
+        showMessage( query, false, true );
 
         conLog.runQuery( query );
     } // addToReportRegistration
@@ -4232,7 +4255,7 @@ public class LinksCleaned extends Thread
             conCleaned.runQuery( query2 );
             conCleaned.runQuery( query3) ;
         } catch( Exception ex ) {
-            showMessage( "An error occured while flagging Birth date: " + ex.getMessage(), false, true );
+            showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
         }
     } // flagBirthDate
 
@@ -4284,7 +4307,7 @@ public class LinksCleaned extends Thread
             conCleaned.runQuery( query3 );
 
         } catch( Exception ex ) {
-            showMessage( "An error occured while flagging Marriage date: " + ex.getMessage(), false, true );
+            showMessage( "Exception while flagging Marriage date: " + ex.getMessage(), false, true );
         }
     } // flagMarriageDate
 
@@ -4333,7 +4356,7 @@ public class LinksCleaned extends Thread
             conCleaned.runQuery( query3 );
 
         } catch( Exception ex ) {
-            showMessage( "An error occured while flagging Death date: " + ex.getMessage(), false, true );
+            showMessage( "Exception while flagging Death date: " + ex.getMessage(), false, true );
         }
     } // flagDeathDate
 
@@ -4552,18 +4575,8 @@ public class LinksCleaned extends Thread
     } // setComplete
 
 
+    // ---< Previous Links basis functions, They are now part of links cleaned >---
 
-    /**
-     * Previous Links basis functions
-     * They are now part of links cleaned
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     */
     /**
      * @param sourceNo
      * @throws Exception
@@ -4712,7 +4725,7 @@ public class LinksCleaned extends Thread
                 }
             }
         } catch (Exception e) {
-            showMessage(counter + " An error occured while running Relation: " + e.getMessage(), false, true);
+            showMessage(counter + " Exception while running Relation: " + e.getMessage(), false, true);
         }
     } // funcRelation
 
@@ -4728,7 +4741,7 @@ public class LinksCleaned extends Thread
      * @return
      * @throws Exception
      */
-    private MinMaxYearSet funcMinMaxCalculation(
+    private MinMaxYearSet minMaxCalculation(
             int id_person,
             int act_year,
             int main_type,
@@ -4890,7 +4903,7 @@ public class LinksCleaned extends Thread
         // Function A
         return mmj;
 
-    } // funcMinMaxCalculation
+    } // minMaxCalculation
 
 
     /**
@@ -5064,159 +5077,160 @@ public class LinksCleaned extends Thread
 
     /**
      * @param hjpsList
-     * @param refMinMaxMarriageYaar
+     * @param refMinMaxMarriageYear
      * @throws Exception
      */
-    private void funcMinMaxMarriageYear(
-            ArrayList<MarriageYearPersonsSet> hjpsList,
-            ResultSet refMinMaxMarriageYaar) throws Exception {
-
+    private void minMaxMarriageYear(
+        ArrayList< MarriageYearPersonsSet > hjpsList,
+        ResultSet refMinMaxMarriageYear )
+    throws Exception
+    {
         int counter = 0;
         int step = 1000;
         int stepstate = step;
 
         // Loop through all persons
-        for (int i = 0; i < hjpsList.size(); i++) {
-
+        for( int i = 0; i < hjpsList.size(); i++ )
+        {
             counter++;
 
-            if (counter == stepstate) {
-                showMessage(counter + "", true, true);
+            if( counter == stepstate ) {
+                showMessage( counter + "", true, true );
                 stepstate += step;
             }
 
             // walk through
-            refMinMaxMarriageYaar.beforeFirst();
+            refMinMaxMarriageYear.beforeFirst();
 
             boolean role1Found = false;
-            int role1 = 0;
+            int role1 = 0;      // role1 not used ?
             int role2 = 0;
 
-            while (refMinMaxMarriageYaar.next()) {
+            while( refMinMaxMarriageYear.next() )
+            {
+                int tempRht   = refMinMaxMarriageYear.getInt( "maintype" );
+                int tempRole1 = refMinMaxMarriageYear.getInt( "role1" );
+                int tempRole2 = refMinMaxMarriageYear.getInt( "role2" );
 
-                int tempRht = refMinMaxMarriageYaar.getInt("maintype");
-                int tempRole1 = refMinMaxMarriageYaar.getInt("role1");
-                int tempRole2 = refMinMaxMarriageYaar.getInt("role2");
-
-                if ((tempRole1 == hjpsList.get(i).getRole()) && tempRht == (hjpsList.get(i).getRegistrationMainType())) {
-                    // rol found
+                if( ( tempRole1 == hjpsList.get( i ).getRole() ) &&
+                      tempRht == ( hjpsList.get( i ).getRegistrationMainType() ) ) {
+                    // role found
                     role1Found = true;
-                    role1 = tempRole1;
-                    role2 = tempRole2;
+                    role1      = tempRole1;
+                    role2      = tempRole2;
 
                     break;
                 }
             }
 
-            // check if role 1 is found
-            if (role1Found) {
-
+            if( role1Found )             // check if role 1 is found
+            {
                 // search role 2
                 boolean role2Found = false;
                 int role2Id = 0;
-                int role2MarYearMin = 0;
-                int role2MarYearMax = 0;
+
+                int role2MarYearMin  = 0;
+                int role2MarYearMax  = 0;
                 int role2MarMonthMin = 0;
                 int role2MarMonthMax = 0;
-                int role2MarDayMin = 0;
-                int role2MarDayMax = 0;
+                int role2MarDayMin   = 0;
+                int role2MarDayMax   = 0;
 
                 // walk trough all persons of registration
-                for (int j = (((i - 7) > 0) ? i - 7 : 0); j < ((i + 7) > hjpsList.size() ? hjpsList.size() : i + 7); j++) {
-
-                    if ((role2 == hjpsList.get(j).getRole()) && (hjpsList.get(i).getIdRegistration() == hjpsList.get(j).getIdRegistration())) {
-
+                for( int j = (((i - 7) > 0) ? i - 7 : 0); j < ((i + 7) > hjpsList.size() ? hjpsList.size() : i + 7); j++ )
+                {
+                    if( (role2 == hjpsList.get(j).getRole()) && (hjpsList.get(i).getIdRegistration() == hjpsList.get(j).getIdRegistration()) )
+                    {
                         // Role 2 found
-                        role2Found = true;
-                        role2Id = hjpsList.get(j).getIdPerson();
-                        role2MarYearMin = hjpsList.get(j).getMarriageYearMin();
-                        role2MarYearMax = hjpsList.get(j).getMarriageYearMax();
+                        role2Found       = true;
+                        role2Id          = hjpsList.get(j).getIdPerson();
+                        role2MarYearMin  = hjpsList.get(j).getMarriageYearMin();
+                        role2MarYearMax  = hjpsList.get(j).getMarriageYearMax();
                         role2MarMonthMin = hjpsList.get(j).getMarriageMonthMin();
                         role2MarMonthMax = hjpsList.get(j).getMarriageMonthMax();
-                        role2MarDayMin = hjpsList.get(j).getMarriageDayMin();
-                        role2MarDayMax = hjpsList.get(j).getMarriageDayMax();
+                        role2MarDayMin   = hjpsList.get(j).getMarriageDayMin();
+                        role2MarDayMax   = hjpsList.get(j).getMarriageDayMax();
 
                         break;
                     }
-
                 }
 
                 // check is role 2 found
-                if (role2Found) {
-
-                    int role1Id = hjpsList.get(i).getIdPerson();
-                    int role1MarYearMax = hjpsList.get(i).getMarriageYearMax();
-                    int role1MarYearMin = hjpsList.get(i).getMarriageYearMin();
+                if( role2Found )
+                {
+                    int role1Id          = hjpsList.get(i).getIdPerson();
+                    int role1MarYearMax  = hjpsList.get(i).getMarriageYearMax();
+                    int role1MarYearMin  = hjpsList.get(i).getMarriageYearMin();
                     int role1MarMonthMax = hjpsList.get(i).getMarriageMonthMax();
                     int role1MarMonthMin = hjpsList.get(i).getMarriageMonthMin();
-                    int role1MarDayMax = hjpsList.get(i).getMarriageDayMax();
-                    int role1MarDayMin = hjpsList.get(i).getMarriageDayMin();
+                    int role1MarDayMax   = hjpsList.get(i).getMarriageDayMax();
+                    int role1MarDayMin   = hjpsList.get(i).getMarriageDayMin();
 
                     // First role 2, min Year
-                    if (funcDateLeftIsGreater(role1MarYearMin, role1MarMonthMin, role1MarDayMin, role2MarYearMin, role2MarMonthMin, role2MarDayMin)) {
-
+                    if( dateLeftIsGreater( role1MarYearMin, role1MarMonthMin, role1MarDayMin, role2MarYearMin, role2MarMonthMin, role2MarDayMin ) )
+                    {
                         // Query
                         String query = ""
-                                + " UPDATE person_c"
-                                + " SET"
-                                + " mar_year_min = " + hjpsList.get(i).getMarriageYearMin() + ","
-                                + " mar_month_min = " + hjpsList.get(i).getMarriageMonthMin() + ","
-                                + " mar_day_min = " + hjpsList.get(i).getMarriageDayMin()
-                                + " WHERE"
-                                + " id_person = " + role2Id;
+                            + " UPDATE person_c"
+                            + " SET"
+                            + " mar_year_min = " + hjpsList.get(i).getMarriageYearMin() + ","
+                            + " mar_month_min = " + hjpsList.get(i).getMarriageMonthMin() + ","
+                            + " mar_day_min = " + hjpsList.get(i).getMarriageDayMin()
+                            + " WHERE"
+                            + " id_person = " + role2Id;
 
-                        conCleaned.runQuery(query);
-
+                        conCleaned.runQuery( query );
                     }
 
                     // Role 2, max year
-                    if (funcDateLeftIsGreater(role2MarYearMax, role2MarMonthMax, role2MarDayMax, role1MarYearMax, role1MarMonthMax, role1MarDayMax)) {
-
+                    if( dateLeftIsGreater( role2MarYearMax, role2MarMonthMax, role2MarDayMax, role1MarYearMax, role1MarMonthMax, role1MarDayMax ) )
+                    {
                         // Query
                         String query = ""
-                                + " UPDATE person_c"
-                                + " SET"
-                                + " mar_year_max = " + hjpsList.get(i).getMarriageYearMax() + ","
-                                + " mar_month_max = " + hjpsList.get(i).getMarriageMonthMax() + ","
-                                + " mar_day_max = " + hjpsList.get(i).getMarriageDayMax()
-                                + " WHERE"
-                                + " id_person = " + role2Id;
-                        conCleaned.runQuery(query);
+                            + " UPDATE person_c"
+                            + " SET"
+                            + " mar_year_max = " + hjpsList.get(i).getMarriageYearMax() + ","
+                            + " mar_month_max = " + hjpsList.get(i).getMarriageMonthMax() + ","
+                            + " mar_day_max = " + hjpsList.get(i).getMarriageDayMax()
+                            + " WHERE"
+                            + " id_person = " + role2Id;
+                        conCleaned.runQuery( query );
 
                     }
 
                     // role 1
-                    if (funcDateLeftIsGreater(role2MarYearMin, role2MarMonthMin, role2MarDayMin, role1MarYearMin, role1MarMonthMin, role1MarDayMin)) {
-
+                    if( dateLeftIsGreater( role2MarYearMin, role2MarMonthMin, role2MarDayMin, role1MarYearMin, role1MarMonthMin, role1MarDayMin ) )
+                    {
                         // Query
                         String query = "UPDATE person_c"
-                                + " SET"
-                                + " mar_year_min = " + role2MarYearMin + ","
-                                + " mar_month_min = " + role2MarMonthMin + ","
-                                + " mar_day_min = " + role2MarDayMin
-                                + " WHERE"
-                                + " id_person = " + role1Id;
-                        conCleaned.runQuery(query);
+                            + " SET"
+                            + " mar_year_min = " + role2MarYearMin + ","
+                            + " mar_month_min = " + role2MarMonthMin + ","
+                            + " mar_day_min = " + role2MarDayMin
+                            + " WHERE"
+                            + " id_person = " + role1Id;
 
+                        conCleaned.runQuery( query );
                     }
 
                     // Role 1, max year
-                    if (funcDateLeftIsGreater(role1MarYearMax, role1MarMonthMax, role1MarDayMax, role2MarYearMax, role2MarMonthMax, role2MarDayMax)) {
-
+                    if( dateLeftIsGreater( role1MarYearMax, role1MarMonthMax, role1MarDayMax, role2MarYearMax, role2MarMonthMax, role2MarDayMax ) )
+                    {
                         // Query
                         String query = "UPDATE person_c"
-                                + " SET"
-                                + " mar_year_max = " + role2MarYearMax + ","
-                                + " mar_month_max = " + role2MarMonthMax + ","
-                                + " mar_day_max = " + role2MarDayMax
-                                + " WHERE"
-                                + " id_person = " + role1Id;
-                        conCleaned.runQuery(query);
+                            + " SET"
+                            + " mar_year_max = " + role2MarYearMax + ","
+                            + " mar_month_max = " + role2MarMonthMax + ","
+                            + " mar_day_max = " + role2MarDayMax
+                            + " WHERE"
+                            + " id_person = " + role1Id;
+
+                        conCleaned.runQuery( query );
                     }
                 }
             }
         }
-    } // funcMinMaxMarriageYear
+    } // minMaxMarriageYear
 
 
     /**
@@ -5228,47 +5242,20 @@ public class LinksCleaned extends Thread
      * @param rDay
      * @return
      */
-    private boolean funcDateLeftIsGreater(int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay) {
+    private boolean dateLeftIsGreater( int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay )
+    {
+        if( lYear > rYear )      { return true; }   // lower, date is correct, return original date
+        else if( lYear < rYear ) { return false; }  // return person date
 
-        // year is greater than ryear year
-        if (lYear > rYear) {
+        // years are equal, check months
+        if( lMonth > rMonth ) { return true; }      // month is correct, return original month
+        else if (lMonth < rMonth) { return false; }
 
-            return true;
-
-        } // lower, date is correct, return original date
-        else if (lYear < rYear) {
-
-            // return person date
-            return false;
-        }
-
-        /*
-        years are equal, rest must be checked
-         */
-
-        // month is higher than act month
-        if (lMonth > rMonth) {
-
-            return true;
-
-        } // month is correct, return original month
-        else if (lMonth < rMonth) {
-
-            return false;
-        }
-
-        /*
-        months are equal, check rest
-         */
-
-        // day is higher than act day
-        if (lDay > rDay) {
-
-            return true;
-        }
+        // months are equal, check days
+        if( lDay > rDay ) { return true; }
 
         return false;
-    } // funcDateLeftIsGreater
+    } // dateLeftIsGreater
 
 
     /**
@@ -5276,86 +5263,90 @@ public class LinksCleaned extends Thread
      * @return
      * @throws Exception
      */
-    private ArrayList<MarriageYearPersonsSet> funcSetMarriageYear(String sourceNo) throws Exception {
-
+    private ArrayList< MarriageYearPersonsSet > setMarriageYear( String sourceNo )
+    throws Exception
+    {
         String query = ""
-                + " SELECT "
-                + " registration_c.id_registration ,"
-                + " registration_c.registration_maintype ,"
-                + " person_c.id_person ,"
-                + " person_c.role ,"
-                + " person_c.mar_day_min ,"
-                + " person_c.mar_day_max ,"
-                + " person_c.mar_month_min ,"
-                + " person_c.mar_month_max ,"
-                + " person_c.mar_year_min ,"
-                + " person_c.mar_year_max"
-                + " FROM registration_c , person_c"
-                + " WHERE registration_c.id_registration = person_c.id_registration"
-                + " AND registration_c.id_source = " + sourceNo + " ORDER by id_registration";
+            + " SELECT "
+            + " registration_c.id_registration ,"
+            + " registration_c.registration_maintype ,"
+            + " person_c.id_person ,"
+            + " person_c.role ,"
+            + " person_c.mar_day_min ,"
+            + " person_c.mar_day_max ,"
+            + " person_c.mar_month_min ,"
+            + " person_c.mar_month_max ,"
+            + " person_c.mar_year_min ,"
+            + " person_c.mar_year_max"
+            + " FROM registration_c , person_c"
+            + " WHERE registration_c.id_registration = person_c.id_registration"
+            + " AND registration_c.id_source = " + sourceNo + " ORDER by id_registration";
 
-//                String query = ""
-//                + " SELECT "
-//                + " registration_c.id_registration ,"
-//                + " registration_c.registration_maintype ,"
-//                + " pers.id_person ,"
-//                + " pers.role ,"
-//                + " pers.mar_day_min ,"
-//                + " pers.mar_day_max ,"
-//                + " pers.mar_month_min ,"
-//                + " pers.mar_month_max ,"
-//                + " pers.mar_year_min ,"
-//                + " pers.mar_year_max"
-//                + " FROM registration_c , pers"
-//                + " WHERE registration_c.id_registration = pers.id_registration ORDER BY pers.id_registration;";
+        /*
+        String query = ""
+            + " SELECT "
+            + " registration_c.id_registration ,"
+            + " registration_c.registration_maintype ,"
+            + " pers.id_person ,"
+            + " pers.role ,"
+            + " pers.mar_day_min ,"
+            + " pers.mar_day_max ,"
+            + " pers.mar_month_min ,"
+            + " pers.mar_month_max ,"
+            + " pers.mar_year_min ,"
+            + " pers.mar_year_max"
+            + " FROM registration_c , pers"
+            + " WHERE registration_c.id_registration = pers.id_registration ORDER BY pers.id_registration;";
+        */
 
-        ResultSet minmaxjaarRs = conCleaned.runQueryWithResult(query);
+        ResultSet minmaxjaarRs = conCleaned.runQueryWithResult( query );
 
-        ArrayList<MarriageYearPersonsSet> hjpsList = new ArrayList<MarriageYearPersonsSet>();
+        ArrayList< MarriageYearPersonsSet > hjpsList = new ArrayList< MarriageYearPersonsSet >();
 
-        while (minmaxjaarRs.next()) {
-
+        while( minmaxjaarRs.next() )
+        {
             MarriageYearPersonsSet hjps = new MarriageYearPersonsSet();
 
-            hjps.setIdRegistration(minmaxjaarRs.getInt("id_registration"));
-            hjps.setRegistrationMainType(minmaxjaarRs.getInt("registration_maintype"));
-            hjps.setIdPerson(minmaxjaarRs.getInt("id_person"));
-            hjps.setRole(minmaxjaarRs.getInt("role"));
-            hjps.setMarriageDayMin(minmaxjaarRs.getInt("mar_day_min"));
-            hjps.setMarriageDayMax(minmaxjaarRs.getInt("mar_day_max"));
-            hjps.setMarriageMonthMin(minmaxjaarRs.getInt("mar_month_min"));
-            hjps.setMarriageMonthMax(minmaxjaarRs.getInt("mar_month_max"));
-            hjps.setMarriageYearMin(minmaxjaarRs.getInt("mar_year_min"));
-            hjps.setMarriageYearMax(minmaxjaarRs.getInt("mar_year_max"));
+            hjps.setIdRegistration( minmaxjaarRs.getInt( "id_registration" ) );
+            hjps.setRegistrationMainType( minmaxjaarRs.getInt( "registration_maintype" ) );
+            hjps.setIdPerson( minmaxjaarRs.getInt( "id_person" ) );
+            hjps.setRole( minmaxjaarRs.getInt( "role" ) );
+            hjps.setMarriageDayMin( minmaxjaarRs.getInt( "mar_day_min" ) );
+            hjps.setMarriageDayMax( minmaxjaarRs.getInt( "mar_day_max" ) );
+            hjps.setMarriageMonthMin( minmaxjaarRs.getInt( "mar_month_min" ) );
+            hjps.setMarriageMonthMax( minmaxjaarRs.getInt( "mar_month_max" ) );
+            hjps.setMarriageYearMin( minmaxjaarRs.getInt( "mar_year_min" ) );
+            hjps.setMarriageYearMax( minmaxjaarRs.getInt( "mar_year_max" ) );
 
-            hjpsList.add(hjps);
-
+            hjpsList.add( hjps );
         }
 
         return hjpsList;
-    } // funcSetMarriageYear
+    } // setMarriageYear
 
 
-    private void funcPartsToDate() {
+    private void partsToDate( String sourceStr )
+    {
         String query = "UPDATE links_cleaned.person_c SET "
-                + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
-                + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min , '-' , links_cleaned.person_c.mar_month_min , '-' , links_cleaned.person_c.mar_year_min ) ,"
-                + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
-                + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
-                + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max , '-' , links_cleaned.person_c.mar_month_max , '-' , links_cleaned.person_c.mar_year_max ) ,"
-                + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) ;";
-//                + "WHERE "
-//                + "links_cleaned.person_c.id_person = links_cleaned.person_c.id_person;";
+            + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
+            + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
+            + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
+            + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
+            + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max ,   '-' , links_cleaned.person_c.mar_month_max ,   '-' , links_cleaned.person_c.mar_year_max ) ,"
+            + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) "
+            + "WHERE id_source = " + sourceStr;
 
         try {
-            conCleaned.runQuery(query);
-        } catch (Exception e) {
-            showMessage("An error occured while Creating full dates from parts: " + e.getMessage(), false, true);
+            conCleaned.runQuery( query );
+        } catch( Exception ex ) {
+            showMessage( "Exception while Creating full dates from parts: " + ex.getMessage(), false, true );
         }
-    } // funcPartsToDate
+    } // partsToDate
 
 
-    private void funcDaysSinceBegin() {
+    private void daysSinceBegin( String sourceStr )
+    {
+        boolean debug = false;
 
         String query1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
         String query2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
@@ -5364,34 +5355,45 @@ public class LinksCleaned extends Thread
         String query5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
         String query6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
 
+        query1 += "AND id_source = " + sourceStr;
+        query2 += "AND id_source = " + sourceStr;
+        query3 += "AND id_source = " + sourceStr;
+        query4 += "AND id_source = " + sourceStr;
+        query5 += "AND id_source = " + sourceStr;
+        query6 += "AND id_source = " + sourceStr;
+
         String queryReg = "UPDATE registration_c SET "
-                + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%'";
+            + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
+            + "WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%' "
+            + "AND id_source = " + sourceStr;
 
-        try {
-            showMessage("q1", false, true);
-            conCleaned.runQuery(query1);
+        try
+        {
+            if( debug ) { showMessage( "q1", false, true ); }
+            conCleaned.runQuery( query1 );
 
-            showMessage("q2", false, true);
-            conCleaned.runQuery(query2);
+            if( debug ) { showMessage( "q2", false, true ); }
+            conCleaned.runQuery( query2 );
 
-            showMessage("q3", false, true);
-            conCleaned.runQuery(query3);
+            if( debug ) { showMessage( "q3", false, true ); }
+            conCleaned.runQuery( query3 );
 
-            showMessage("q4", false, true);
-            conCleaned.runQuery(query4);
+            if( debug ) { showMessage( "q4", false, true ); }
+            conCleaned.runQuery( query4 );
 
-            showMessage("q5", false, true);
-            conCleaned.runQuery(query5);
+            if( debug ) { showMessage( "q5", false, true ); }
+            conCleaned.runQuery( query5 );
 
-            showMessage("q6", false, true);
-            conCleaned.runQuery(query6);
+            if( debug ) { showMessage( "q6", false, true ); }
+            conCleaned.runQuery( query6 );
 
-            showMessage("q7", false, true);
-            conCleaned.runQuery(queryReg);
-        } catch (Exception e) {
-            showMessage("An error occured while computing days since 1-1-1: " + e.getMessage(), false, true);
+            if( debug ) { showMessage( "q7", false, true ); }
+            conCleaned.runQuery( queryReg );
         }
-    } // funcDaysSinceBegin
+        catch( Exception ex ) {
+            showMessage( "Exception while computing days since 1-1-1: " + ex.getMessage(), false, true );
+        }
+    } // daysSinceBegin
 
 
     /**
@@ -5417,18 +5419,12 @@ public class LinksCleaned extends Thread
      */
     private void createTempFamilynameFile() throws Exception
     {
-        long start = System.currentTimeMillis();
         String filename = "familyname_t.csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
         if( f.exists() ) { f.delete(); }
         writerFamilyname = new FileWriter( filename );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating familyname_t csv OK " + elapsed;
-        showMessage( msg, false, true );
     } // createTempFamilynameFile
 
 
@@ -5440,15 +5436,10 @@ public class LinksCleaned extends Thread
         long start = System.currentTimeMillis();
         showMessage( "Loading CSV data into temp table", false, true );
 
-        {
-            String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
-            conTemp.runQuery( query );
-        }
+        String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
+        conTemp.runQuery( query );
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Loading CSV data into temp table OK " + elapsed;
-        showMessage( msg, false, true );
+        elapsedShowMessage( "Loading CSV data into temp table", start, System.currentTimeMillis() );
     } // loadFamilynameToTable
 
 
@@ -5468,43 +5459,26 @@ public class LinksCleaned extends Thread
             conTemp.runQuery( query );
         }
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Moving familynames from temp table to person_c OK " + elapsed;
-        showMessage( msg, false, true );
+        elapsedShowMessage( "Moving familynames from temp table to person_c", start, System.currentTimeMillis() );
     } // updateFamilynameToPersonC
 
 
     public void removeFamilynameFile() throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Removing familyname_t csv", false, true );
 
-        {
-            java.io.File f = new java.io.File("familyname_t.csv");
-            f.delete();
-        }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing familyname_t csv OK " + elapsed;
-        showMessage( msg, false, true );
+        java.io.File f = new java.io.File("familyname_t.csv");
+        f.delete();
     } // removeFamilynameFile
 
 
     public void removeFamilynameTable() throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Removing familyname_t table", false, true );
 
         String query = "DROP TABLE IF EXISTS familyname_t;";
 
         conTemp.runQuery( query );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing familyname_t table OK " + elapsed;
-        showMessage( msg, false, true );
     } // removeFamilynameTable
 
 
@@ -5513,7 +5487,7 @@ public class LinksCleaned extends Thread
      */
     private void createTempFirstnameTable() throws Exception
     {
-        showMessage( "Creating firstname_t table", false, false );
+        showMessage( "Creating firstname_t table", false, true );
 
         String query = "CREATE  TABLE links_temp.firstname_t ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
@@ -5521,8 +5495,6 @@ public class LinksCleaned extends Thread
             + " PRIMARY KEY (person_id) );";
 
         conTemp.runQuery( query );
-
-        showMessage( endl, false, true );
     } // createTempFirstnameTable
 
 
@@ -5531,18 +5503,12 @@ public class LinksCleaned extends Thread
      */
     private void createTempFirstnameFile() throws Exception
     {
-        long start = System.currentTimeMillis();
         String filename = "firstname_t.csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
         if( f.exists() ) { f.delete(); }
         writerFirstname = new FileWriter( filename );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Creating " + filename + " OK " + elapsed;
-        showMessage( msg, false, true );
     } // createTempFirstnameFile
 
 
@@ -5553,15 +5519,11 @@ public class LinksCleaned extends Thread
     {
         long start = System.currentTimeMillis();
         showMessage( "Loading CSV data into temp table", false, true );
-        {
-            String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
-            conTemp.runQuery( query );
-        }
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Loading CSV data into temp table OK " + elapsed;
-        showMessage( msg, false, true );
+        String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
+        conTemp.runQuery( query );
+
+        elapsedShowMessage( "Loading CSV data into temp table", start, System.currentTimeMillis() );
     } // loadFirstnameToTable
 
 
@@ -5572,18 +5534,14 @@ public class LinksCleaned extends Thread
     {
         long start = System.currentTimeMillis();
         showMessage( "Moving first names from temp table to person_c...", false, true );
-        {
-            String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
-                + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
-                + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
 
-            conTemp.runQuery( query );
-        }
+        String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
+            + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
+            + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Moving first names from temp table to person_c OK " + elapsed;
-        showMessage( msg, false, true );
+        conTemp.runQuery( query );
+
+        elapsedShowMessage( "Moving first names from temp table to person_c", start, System.currentTimeMillis() );
     } // updateFirstnameToPersonC
 
 
@@ -5592,17 +5550,10 @@ public class LinksCleaned extends Thread
      */
     public void removeFirstnameFile() throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Removing firstname_t csv file", false, true );
-        {
-            File f = new File( "firstname_t.csv" );
-            f.delete();
-        }
 
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing firstname_t csv file OK " + elapsed;
-        showMessage( msg, false, true );
+        File f = new File( "firstname_t.csv" );
+        f.delete();
     } // removeFirstnameFile
 
 
@@ -5611,16 +5562,10 @@ public class LinksCleaned extends Thread
      */
     public void removeFirstnameTable() throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Removing firstname_t table", false, true );
 
         String query = "DROP TABLE IF EXISTS firstname_t;";
         conTemp.runQuery( query );
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = "Removing firstname_t table OK " + elapsed;
-        showMessage( msg, false, true );
     } // removeFirstnameTable
 
 
@@ -5653,67 +5598,118 @@ public class LinksCleaned extends Thread
     } // dropTable
 
 
-    private void funcPostTasks() throws Exception
+    private void postTasks( String sourceStr ) throws Exception
     {
-        long start = System.currentTimeMillis();
-        showMessage( "Post tasks", false, true );
+        /*
+        String[] queries =
+        {
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2;",
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3;",
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4;",
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5;",
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6;",
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7;",
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8;",
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9;",
 
-        String[] queries = {
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7;",
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8;",
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9;",
-                "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v';",
-                "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-                "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-                "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
-                "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
-                "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-                "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-                "DROP TABLE links_match.male;",
-                "DROP TABLE links_match.female;",
-                "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%';",
-                "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);",
-                "UPDATE IGNORE links_cleaned.person_c "
-                        + "SET "
-                        + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
-                        + "WHERE "
-                        + "birth_date_valid = 1 "
-                        + "AND "
-                        + "mar_date_valid = 1 "
-                        + "AND "
-                        + "age_year is null "
-                        + "AND "
-                        + "( role = 7 OR role = 4 ) "
-                        + "AND mar_date NOT LIKE '0-%' "
-                        + "AND mar_date NOT LIKE '%-0-%' "
-                        + "AND birth_date NOT LIKE '0-%' "
-                        + "AND birth_date NOT LIKE '%-0-%' "
+            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v';",
+            "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+            "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+            "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
+            "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
+            "DROP TABLE links_match.male;",
+            "DROP TABLE links_match.female;",
+            "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%';",
+            "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);",
+            "UPDATE IGNORE links_cleaned.person_c "
+                + "SET "
+                + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
+                + "WHERE "
+                + "birth_date_valid = 1 "
+                + "AND "
+                + "mar_date_valid = 1 "
+                + "AND "
+                + "age_year is null "
+                + "AND "
+                + "( role = 7 OR role = 4 ) "
+                + "AND mar_date NOT LIKE '0-%' "
+                + "AND mar_date NOT LIKE '%-0-%' "
+                + "AND birth_date NOT LIKE '0-%' "
+                + "AND birth_date NOT LIKE '%-0-%' "
+        };
+        */
+
+        String[] queries =
+        {
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8 AND id_source = " + sourceStr,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + sourceStr,
+
+            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v' AND id_source = " + sourceStr,
+
+
+            "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+
+            "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+
+            "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+
+            "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+
+            "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                + " AND id_source = " + sourceStr,
+
+            "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                + " AND id_source = " + sourceStr,
+
+            "DROP TABLE links_match.male;",
+
+            "DROP TABLE links_match.female;",
+
+
+            "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%' AND id_source = " + sourceStr,
+
+            "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname) WHERE id_source = " + sourceStr,
+
+            "UPDATE IGNORE links_cleaned.person_c "
+                + "SET "
+                + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
+                + "WHERE "
+                + "birth_date_valid = 1 "
+                + "AND "
+                + "mar_date_valid = 1 "
+                + "AND "
+                + "age_year is null "
+                + "AND "
+                + "( role = 7 OR role = 4 ) "
+                + "AND mar_date NOT LIKE '0-%' "
+                + "AND mar_date NOT LIKE '%-0-%' "
+                + "AND birth_date NOT LIKE '0-%' "
+                + "AND birth_date NOT LIKE '%-0-%' "
+                + "AND id_source = " + sourceStr
         };
 
         // Execute queries
         for( String s : queries ) {
             conCleaned.runQuery( s );
         }
-
-        long stop = System.currentTimeMillis();
-        String elapsed = Functions.millisec2hms( start, stop );
-        String msg = " OK " + elapsed;
-        showMessage( msg, false, true );
-    } // funcPostTasks
+    } // postTasks
 
 
-    private void funcDeleteRows()
+    private void deleteRows()
     throws Exception
     {
-        showMessage( "funcDeleteRows() deleting empty links_cleaned.person_c records.", false, true );
+        showMessage( "deleteRows() deleting empty links_cleaned.person_c records.", false, true );
         String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
         conCleaned.runQuery( q1 );
-    } // funcDeleteRows
+    } // deleteRows
 
 
     private Connection getConnection(String dbName) throws Exception {
@@ -5753,17 +5749,17 @@ public class LinksCleaned extends Thread
 
         if( bronFilter.isEmpty() ) {
             for( int i : sources ) {
-                showMessage( "Running funMinMaxDateMain for source: " + i + "...", false, true );
+                showMessage( "Running Min Max Date for source: " + i + "...", false, true );
                 {
                     fillMinMaxArrays( "" + i );
-                    funMinMaxDateMain( "" + i );
+                    minMaxDateMain( "" + i );
                 }
             }
         } else {
-            showMessage( "Running funMinMaxDateMain...", false, true );
+            showMessage( "Running Min Max Date...", false, true );
             {
                 fillMinMaxArrays( "" + this.sourceId );
-                funMinMaxDateMain( "" );
+                minMaxDateMain( "" );
             }
         }
 
@@ -5771,7 +5767,7 @@ public class LinksCleaned extends Thread
     } // doMinMaxDate
 
 
-    public void funMinMaxDateMain( String sourceNo ) throws Exception
+    public void minMaxDateMain( String sourceNo ) throws Exception
     {
         int counter = 0;
         int step = 10000;
@@ -5921,7 +5917,7 @@ public class LinksCleaned extends Thread
                     mmds.setDate( birth_date );
 
                     // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdBirth = funcMinMaxDate(mmds);
+                    DivideMinMaxDatumSet ddmdBirth = funcMinMaxDate( mmds );
 
                     // TODO temporary solution
                     if( ddmdBirth.getMinYear()  < 0 ) { ddmdBirth.setMinYear( 0 ); }
@@ -5953,9 +5949,9 @@ public class LinksCleaned extends Thread
                     mmds.setDate(mar_date);
 
                     // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdMarriage = funcMinMaxDate(mmds);
+                    DivideMinMaxDatumSet ddmdMarriage = funcMinMaxDate( mmds );
 
-                    // temp solution
+                    // TODO: temp solution
                     if( ddmdMarriage.getMinYear()  < 0 ) { ddmdMarriage.setMinYear( 0 ); }
                     if( ddmdMarriage.getMinMonth() < 0 ) { ddmdMarriage.setMinMonth( 0 ); }
                     if( ddmdMarriage.getMinDay()   < 0 ) { ddmdMarriage.setMinDay( 0 ); }
@@ -5966,63 +5962,52 @@ public class LinksCleaned extends Thread
                     // Min Max to table
                     String runQueryHuw = "UPDATE person_c"
                         + " SET "
-                        + type_date + "_year_min" + " = " + ddmdMarriage.getMinYear() + " ,"
+                        + type_date + "_year_min"  + " = " + ddmdMarriage.getMinYear() + " ,"
                         + type_date + "_month_min" + " = " + ddmdMarriage.getMinMonth() + " ,"
-                        + type_date + "_day_min" + " = " + ddmdMarriage.getMinDay() + " ,"
-                        + type_date + "_year_max" + " = " + ddmdMarriage.getMaxYear() + " ,"
+                        + type_date + "_day_min"   + " = " + ddmdMarriage.getMinDay() + " ,"
+                        + type_date + "_year_max"  + " = " + ddmdMarriage.getMaxYear() + " ,"
                         + type_date + "_month_max" + " = " + ddmdMarriage.getMaxMonth() + " ,"
-                        + type_date + "_day_max" + " = " + ddmdMarriage.getMaxDay()
+                        + type_date + "_day_max"   + " = " + ddmdMarriage.getMaxDay()
                         + " WHERE person_c.id_person = " + id_person;
 
-                    conCleaned.runQuery(runQueryHuw);
+                    conCleaned.runQuery( runQueryHuw );
                 }
 
                 // Death date
-                if (death_date_valid != 1) {
-                    mmds.setTypeDate("death_date");
+                if( death_date_valid != 1 )
+                {
+                    mmds.setTypeDate( "death_date" );
                     type_date = "death";
-                    mmds.setDate(death_date);
+                    mmds.setDate( death_date );
 
                     // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdDeath = funcMinMaxDate(mmds);
+                    DivideMinMaxDatumSet ddmdDeath = funcMinMaxDate( mmds );
 
 
                     // TODO: temp solution
-                    if (ddmdDeath.getMinYear() < 0) {
-                        ddmdDeath.setMinYear(0);
-                    }
-                    if (ddmdDeath.getMinMonth() < 0) {
-                        ddmdDeath.setMinMonth(0);
-                    }
-                    if (ddmdDeath.getMinDay() < 0) {
-                        ddmdDeath.setMinDay(0);
-                    }
-                    if (ddmdDeath.getMaxYear() < 0) {
-                        ddmdDeath.setMaxYear(0);
-                    }
-                    if (ddmdDeath.getMaxMonth() < 0) {
-                        ddmdDeath.setMaxMonth(0);
-                    }
-                    if (ddmdDeath.getMaxDay() < 0) {
-                        ddmdDeath.setMaxDay(0);
-                    }
+                    if( ddmdDeath.getMinYear()  < 0 ) { ddmdDeath.setMinYear( 0 ); }
+                    if( ddmdDeath.getMinMonth() < 0 ) { ddmdDeath.setMinMonth( 0 ); }
+                    if( ddmdDeath.getMinDay()   < 0 ) { ddmdDeath.setMinDay( 0 ); }
+                    if( ddmdDeath.getMaxYear()  < 0 ) { ddmdDeath.setMaxYear( 0 ); }
+                    if( ddmdDeath.getMaxMonth() < 0 ) { ddmdDeath.setMaxMonth( 0 ); }
+                    if( ddmdDeath.getMaxDay()   < 0 ) { ddmdDeath.setMaxDay( 0 ); }
 
                     // Min Max to table
                     String runQueryOvl = "UPDATE person_c"
-                            + " SET "
-                            + type_date + "_year_min" + " = " + ddmdDeath.getMinYear() + " ,"
-                            + type_date + "_month_min" + " = " + ddmdDeath.getMinMonth() + " ,"
-                            + type_date + "_day_min" + " = " + ddmdDeath.getMinDay() + " ,"
-                            + type_date + "_year_max" + " = " + ddmdDeath.getMaxYear() + " ,"
-                            + type_date + "_month_max" + " = " + ddmdDeath.getMaxMonth() + " ,"
-                            + type_date + "_day_max" + " = " + ddmdDeath.getMaxDay()
-                            + " WHERE person_c.id_person = " + id_person;
+                        + " SET "
+                        + type_date + "_year_min"  + " = " + ddmdDeath.getMinYear() + " ,"
+                        + type_date + "_month_min" + " = " + ddmdDeath.getMinMonth() + " ,"
+                        + type_date + "_day_min"   + " = " + ddmdDeath.getMinDay() + " ,"
+                        + type_date + "_year_max"  + " = " + ddmdDeath.getMaxYear() + " ,"
+                        + type_date + "_month_max" + " = " + ddmdDeath.getMaxMonth() + " ,"
+                        + type_date + "_day_max"   + " = " + ddmdDeath.getMaxDay()
+                        + " WHERE person_c.id_person = " + id_person;
 
-                    conCleaned.runQuery(runQueryOvl);
+                    conCleaned.runQuery( runQueryOvl );
                 }
             }
-        } catch (Exception e) {
-            showMessage(counter + " An error occured while running Min Max: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while running Min Max: " + ex.getMessage(), false, true );
         }
     } // minMaxDateMain
 
@@ -6042,7 +6027,7 @@ public class LinksCleaned extends Thread
 
         // registration date
         DateYearMonthDaySet inputregistrationYearMonthDday =
-                LinksSpecific.devideCheckDate(inputInfo.getRegistrationDate());
+                LinksSpecific.divideCheckDate( inputInfo.getRegistrationDate() );
 
         // Check: Is date valid
         // TODO: DATE CANNOT BE VALID
@@ -6073,7 +6058,7 @@ public class LinksCleaned extends Thread
             if (inputInfo.getPersonRole() == 10) {
 
                 // registration date
-                DateYearMonthDaySet inputDeathDate = LinksSpecific.devideCheckDate(inputInfo.getDeathDate());
+                DateYearMonthDaySet inputDeathDate = LinksSpecific.divideCheckDate( inputInfo.getDeathDate() );
 
                 // check death date
                 if (inputDeathDate.isValidDate()) {
@@ -6109,8 +6094,8 @@ public class LinksCleaned extends Thread
                     funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
 
             // compute min and max year
-            // via funcMinMaxCalculation
-            MinMaxYearSet mmj = funcMinMaxCalculation(
+            // via minMaxCalculation
+            MinMaxYearSet mmj = minMaxCalculation(
                     inputInfo.getPersonId(),
                     inputregistrationYearMonthDday.getYear(),
                     inputInfo.getRegistrationMainType(),
@@ -6153,8 +6138,8 @@ public class LinksCleaned extends Thread
                     funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
 
             // compute min and max year
-            // via funcMinMaxCalculation
-            MinMaxYearSet mmj = funcMinMaxCalculation(
+            // via minMaxCalculation
+            MinMaxYearSet mmj = minMaxCalculation(
                     inputInfo.getPersonId(),
                     act_year,
                     inputInfo.getRegistrationMainType(),
@@ -6198,8 +6183,8 @@ public class LinksCleaned extends Thread
                     funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
 
             // compute min and max year
-            // via funcMinMaxCalculation
-            MinMaxYearSet mmj = funcMinMaxCalculation(
+            // via minMaxCalculation
+            MinMaxYearSet mmj = minMaxCalculation(
                     inputInfo.getPersonId(),
                     inputregistrationYearMonthDday.getYear(),
                     inputInfo.getRegistrationMainType(),
@@ -6250,7 +6235,7 @@ public class LinksCleaned extends Thread
         }
 
         // TODO: added
-        DateYearMonthDaySet inputDeathDate = LinksSpecific.devideCheckDate(inputInfo.getDeathDate());
+        DateYearMonthDaySet inputDeathDate = LinksSpecific.divideCheckDate( inputInfo.getDeathDate() );
 
         int useYear;
         int useMonth;
@@ -6301,8 +6286,8 @@ public class LinksCleaned extends Thread
                     maxdays);
 
             // New date return return values
-            DateYearMonthDaySet computedMinDate = LinksSpecific.devideCheckDate(minDate);
-            DateYearMonthDaySet computedMaxDate = LinksSpecific.devideCheckDate(maxDate);
+            DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // Checken if max date not later than actdate
             DateYearMonthDaySet dymd = funcCheckMaxDate(
@@ -6354,8 +6339,8 @@ public class LinksCleaned extends Thread
                     maxdagen);
 
             // New date to return values
-            DateYearMonthDaySet computedMinDate = LinksSpecific.devideCheckDate(minDate);
-            DateYearMonthDaySet computedMaxDate = LinksSpecific.devideCheckDate(maxDate);
+            DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // returnen
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -6399,8 +6384,8 @@ public class LinksCleaned extends Thread
                     maxdays);
 
             // date to return values
-            DateYearMonthDaySet computedMinDate = LinksSpecific.devideCheckDate(minDate);
-            DateYearMonthDaySet computedMaxDate = LinksSpecific.devideCheckDate(maxDate);
+            DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // return
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -6443,8 +6428,8 @@ public class LinksCleaned extends Thread
 
 
             // New date to return value
-            DateYearMonthDaySet computedMinDate = LinksSpecific.devideCheckDate(minDate);
-            DateYearMonthDaySet computedMaxDate = LinksSpecific.devideCheckDate(maxDate);
+            DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
 
             // Checken if max date niet later than actdate
@@ -6479,7 +6464,7 @@ public class LinksCleaned extends Thread
         returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
 
         // compute min max year
-        // via funcMinMaxCalculation
+        // via minMaxCalculation
         // PREPARATION FOR THIS EXCEPTION!!!
         Ages ages = new Ages();
         ages.setYear(0);
@@ -6487,7 +6472,7 @@ public class LinksCleaned extends Thread
         ages.setWeek(0);
         ages.setDay(0);
 
-        MinMaxYearSet mmj = funcMinMaxCalculation(
+        MinMaxYearSet mmj = minMaxCalculation(
                 inputInfo.getPersonId(),
                 inputregistrationYearMonthDday.getYear(),
                 inputInfo.getRegistrationMainType(),
