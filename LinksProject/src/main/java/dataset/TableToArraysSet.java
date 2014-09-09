@@ -27,10 +27,13 @@ import modulemain.LinksSpecific;
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
  * FL-28-Aug-2014 Comment out some unused functions
- * FL-04-Sep-2014 Latest change
+ * FL-09-Sep-2014 Latest change
  */
 public class TableToArraysSet
 {
+    boolean debug = false;
+    boolean extra = true;
+
     private ArrayList< ArrayListNonCase > column     = new ArrayList<ArrayListNonCase>();
     private ArrayList <ArrayListNonCase > columnCopy = new ArrayList<ArrayListNonCase>();         // used for Shuffle
     private ArrayList< ArrayListNonCase > columnNew  = new ArrayList<ArrayListNonCase>();
@@ -59,7 +62,6 @@ public class TableToArraysSet
     public TableToArraysSet( MySqlConnector con, MySqlConnector con_or, String IndexField, String tableName )
     throws Exception
     {
-        boolean debug = false;
         this.tableName = tableName;
         this.con = con;
         this.con_or = con_or;
@@ -163,36 +165,38 @@ public class TableToArraysSet
 
         if( debug ) { showContents( "id_" + tableName ); }
 
-        // Do extra sort
-        if( !IndexField.isEmpty() )
+        //if( !extra ) {
+        //    System.out.println( "SKIPPING EXTRA SORT" );
+        //    return;
+        //}
+
+        if( !IndexField.isEmpty() )             // Do extra sort
         {
             System.out.println( "TableToArraysSet: extra sort" );
             // Sort by Java 
-            Collections.sort(column.get(columnName.indexOf("original")));
+            Collections.sort( column.get( columnName.indexOf( "original" ) ) );
 
             // Sort other arrays
-            for (int i = 0; i < column.get(columnName.indexOf("original")).size(); i++) {
-
-                int index = columnCopy.get(columnName.indexOf("original")).indexOf(column.get(columnName.indexOf("original")).get(i)) ;
+            for( int i = 0; i < column.get( columnName.indexOf( "original" ) ).size(); i++ )
+            {
+                int index = columnCopy.get( columnName.indexOf( "original" ) ).indexOf( column.get( columnName.indexOf( "original" ) ).get( i ) ) ;
                 
                 // Check if original is replaced
-                if(i != index){
-                    
+                if( i != index )
+                {
                     // Shuffle
-                    for (int j = 0 ; j < columnName.size() ; j++) {
-                        
+                    for( int j = 0 ; j < columnName.size() ; j++ )
+                    {
                         // Shuffle only originals
-                        if( columnName.get(j) != "original" ){
-                            
-                            column.get(j).set(i, columnCopy.get(j).get( index ) );
-                            
+                        if( columnName.get( j ) != "original" ) {
+                            column.get( j ).set( i, columnCopy.get( j ).get( index ) );
                         }
                     }
                 }
             }
         }
         //System.out.println("TableToArraysSet: end");
-    }
+    } // TableToArraysSet
 
 
     /**
@@ -200,6 +204,9 @@ public class TableToArraysSet
      */
     public void showContents( String ref_name )
     {
+        int id_limit = 0;
+        //int id_limit = 666000;       // occupation
+
         int ncolumns = this.column.size();
 
         System.out.println( "TableToArraysSet/showContents" );
@@ -221,8 +228,8 @@ public class TableToArraysSet
         ArrayListNonCase alnc_sour = this.column.get( 4 );
 
         System.out.println( "============================================================================================================" );
-        System.out.printf( "     #  %s  original                 standard                 standard_code standard_source\n", ref_name );
-        System.out.println("------------------------------------------------------------------------------------------------------------");
+        System.out.printf ( "     #  %s  original                 standard                 standard_code standard_source\n", ref_name );
+        System.out.println( "------------------------------------------------------------------------------------------------------------" );
         for( int c = 0; c < ncolumns; c ++ )
         {
             for( int r = 0; r < nrows; r++)
@@ -238,7 +245,8 @@ public class TableToArraysSet
                 if( stan.length() > lmax ) { stan = stan.substring( 0, lmax ); }
 
                 //if( orig.startsWith( "beroep" ) ) {
-                if( id_name> 666000 ) {
+                if( orig.contains( "eroep" ) ) {
+                //if( id_name > id_limit ) {
                     System.out.printf("%06d: %6s %40s %40s %s %9s\n", r,
                             alnc_name.get(r), orig, stan, alnc_code.get(r), alnc_sour.get(r));
                 }
@@ -247,7 +255,7 @@ public class TableToArraysSet
             }
         }
         System.out.println( "============================================================================================================" );
-    }
+    } // showContents
 
 
     /**
@@ -286,7 +294,7 @@ public class TableToArraysSet
                 }
             }
         }
-    }
+    } // addOriginal
 
 
     /**
@@ -311,7 +319,7 @@ public class TableToArraysSet
                 columnNew.get(i).add("");
             }
         }
-    }
+    } // addOriginalWithCode
 
 
     /**
@@ -337,7 +345,7 @@ public class TableToArraysSet
         }
 
         return false;
-    }
+    } // originalExists
 
 
     /**
@@ -348,10 +356,10 @@ public class TableToArraysSet
     public String getStandardCodeByOriginal( String value )
     throws Exception
     {
-        System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value );
+        if( debug ) { System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value ); }
 
         return getColumnByOriginal( "standard_code", value );
-    }
+    } // getStandardCodeByOriginal
 
 
     /**
@@ -362,10 +370,10 @@ public class TableToArraysSet
     public String getStandardByOriginal( String value )
     throws Exception
     {
-        //System.out.println( "TableToArraysSet/getStandardByOriginal" );
+        if( debug ) { System.out.println( "TableToArraysSet/getStandardByOriginal" ); }
 
-        return getColumnByOriginal("standard", value);
-    }
+        return getColumnByOriginal( "standard", value );
+    } // getStandardByOriginal
 
 
     /**
@@ -399,8 +407,14 @@ public class TableToArraysSet
 
             return columnNew.get( columnNameNew.indexOf( name ) ).get( index2 ).toString();
         }
+
+        if( debug ) {
+            System.out.printf( "TableToArraysSet/getColumnByOriginal: name: %s, value: %s\n" );
+            System.out.printf( "TableToArraysSet/getColumnByOriginal: index1: %d, index2: %d\n" );
+        }
+
         throw new Exception( "Original Index Error" );
-    }
+    } // getColumnByOriginal
 
 
     /**
@@ -420,7 +434,7 @@ public class TableToArraysSet
         int in = columnName.indexOf(name);
 
         return column.get(in).get(column.get(io).indexOf(valuel)).toString();
-    }
+    } // getColumnByColumn
     */
 
     public String getColumnByColumnInt( String columnToGet, String name, int value )
@@ -431,7 +445,7 @@ public class TableToArraysSet
         int in = columnName.indexOf(name);
 
         return column.get(in).get(column.get(io).indexOf(value)).toString();
-    }
+    } // getColumnByColumnInt
 
 
     /**
@@ -445,7 +459,7 @@ public class TableToArraysSet
         //System.out.println( "TableToArraysSet/getOriginalByIndex" );
 
         return column.get(columnName.indexOf("original")).get(index).toString();
-    }
+    } // getOriginalByIndex
     */
 
     /**
@@ -458,7 +472,7 @@ public class TableToArraysSet
         //System.out.println( "TableToArraysSet/getArray" );
 
         return column.get(columnName.indexOf(cName));
-    }
+    } // getArray
 
 
     /**
@@ -471,7 +485,7 @@ public class TableToArraysSet
         //System.out.println( "TableToArraysSet/countRows" );
 
         return column.get(columnName.indexOf("original")).size();
-    }
+    } // countRows
     */
 
     /**
@@ -488,7 +502,7 @@ public class TableToArraysSet
             String[] values = {LinksSpecific.funcPrepareForMysql(columnNew.get(columnNameNew.indexOf("original")).get(i).toString()), "x"};
             this.con_or.insertIntoTable("ref_" + tableName, fields, values);
         }
-    }
+    } // updateTable
 
 
     /**
@@ -507,7 +521,7 @@ public class TableToArraysSet
                 columnNew.get(columnNameNew.indexOf("standard_code")).get(i).toString()};
             this.con_or.insertIntoTable("ref_" + tableName, fields, values);
         }
-    }
+    } // updateTableWithCode
     */
 
     /**
@@ -528,6 +542,6 @@ public class TableToArraysSet
         columnNameNew.clear();
         
         columnCopy.clear();
-    }
+    } // free
 }
 

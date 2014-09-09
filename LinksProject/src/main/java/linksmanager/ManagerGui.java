@@ -69,7 +69,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-04-Sep-2014 Latest change
+ * FL-09-Sep-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -246,7 +246,6 @@ public class ManagerGui extends javax.swing.JFrame
 		cbLOLCdoSequence = new JCheckBox();
 		cbCdoLocations = new JCheckBox();
 		cbCdoRelation = new JCheckBox();
-		cbLOLCdoMinMaxDate = new JCheckBox();
 		cbLOLCdoMinMaxMarriage = new JCheckBox();
 		cbLOLCdoPartsToFullDate = new JCheckBox();
 		cbCdoDaysSinceBegin = new JCheckBox();
@@ -1369,7 +1368,7 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- cbCdoRegType ----
 				cbCdoRegType.setSelected(true);
 				cbCdoRegType.setText("Registration Type");
-				cbCdoRegType.setName("cbCdoRegType");
+				cbCdoRegType.setName("cbCdoType");
 
 				//---- cbLOLCdoSequence ----
 				cbLOLCdoSequence.setText("Sequence");
@@ -1383,11 +1382,6 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- cbCdoRelation ----
 				cbCdoRelation.setText("Relation");
 				cbCdoRelation.setName("cbCdoRelation");
-
-				//---- cbLOLCdoMinMaxDate ----
-				cbLOLCdoMinMaxDate.setSelected(true);
-				cbLOLCdoMinMaxDate.setText("Min Max Date");
-				cbLOLCdoMinMaxDate.setName("cbLOLCdoMinMaxDate");
 
 				//---- cbLOLCdoMinMaxMarriage ----
 				cbLOLCdoMinMaxMarriage.setSelected(true);
@@ -1485,12 +1479,11 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
 											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbLOLCdoMinMaxDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbCdoOccupation)))
+												.addComponent(cbCdoOccupation)
+												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
@@ -1586,19 +1579,17 @@ public class ManagerGui extends javax.swing.JFrame
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoRemarks)
-										.addComponent(cbLOLCdoMinMaxDate))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoNames)
 										.addComponent(cbLOLCdoMinMaxMarriage))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoLocations)
+										.addComponent(cbCdoNames)
 										.addComponent(cbLOLCdoPartsToFullDate))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoStatusSex)
+										.addComponent(cbCdoLocations)
 										.addComponent(cbCdoDaysSinceBegin))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addComponent(cbCdoStatusSex)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoRegType)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1946,16 +1937,6 @@ public class ManagerGui extends javax.swing.JFrame
             }
         }
 
-        // Min Max Date
-        String doMinMaxDate = properties.getProperty( "doMinMaxDate" );
-        if( doMinMaxDate != null ) {
-            if (doMinMaxDate.equals("true")) {
-                cbLOLCdoMinMaxDate.setSelected(true);
-            } else {
-                cbLOLCdoMinMaxDate.setSelected(false);
-            }
-        }
-
         // Min Max Marriage
         String doMinMaxMarriage = properties.getProperty( "doMinMaxMarriage" );
         if( doMinMaxMarriage != null ) {
@@ -2290,8 +2271,6 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoDaysSinceBegin.isSelected()) { dos.setDoDaysSinceBegin(true); }
 
-        if (cbLOLCdoMinMaxDate.isSelected()) { dos.setDoMinMaxDate(true); }
-
         if (cbLOLCdoMinMaxMarriage.isSelected()) { dos.setDoMinMaxMarriage(true); }
 
         if (cbCdoRelation.isSelected()) { dos.setDoRelation(true); }
@@ -2424,7 +2403,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "04-Sep-2014 16:34";
+            String timestamp1 = "09-Sep-2014 15:15";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2581,7 +2560,6 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbLOLCdoSequence;
 	private JCheckBox cbCdoLocations;
 	private JCheckBox cbCdoRelation;
-	private JCheckBox cbLOLCdoMinMaxDate;
 	private JCheckBox cbLOLCdoMinMaxMarriage;
 	private JCheckBox cbLOLCdoPartsToFullDate;
 	private JCheckBox cbCdoDaysSinceBegin;

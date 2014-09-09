@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-04-Sep-2014 Latest change
+ * FL-05-Sep-2014 Latest change
  */
 public class LinksSpecific
 {
@@ -340,9 +340,9 @@ public class LinksSpecific
      * @param date
      * @return een DateYearMonthDay object met datum en evt. fouten
      */
-    public static DateYearMonthDaySet divideCheckDate(String date){
-
-        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet();
+    public static DateYearMonthDaySet divideCheckDate( String date )
+    {
+        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet( date );
 
         if( date == null || date.isEmpty() )
         {

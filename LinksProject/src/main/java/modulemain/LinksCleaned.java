@@ -73,12 +73,12 @@ public class LinksCleaned extends Thread
     private JTextField tbLOLClatestOutput;
     private JTextArea  taLOLCoutput;
 
-    private String bronFilter = "";
+    // WHERE [...]id_source = ...   shortcuts
     private String sourceFilter = "";
-    private String bronFilterCleanPers = "";
-    private String bronFilterOrigineelPers = "";
-    private String bronFilterCleanReg = "";
-    private String bronFilterOrigineelReg = "";
+    private String sourceFilterCleanPers = "";
+    private String sourceFilterOrigPers = "";
+    private String sourceFilterCleanReg = "";
+    private String sourceFilterOrigReg = "";
 
     private MySqlConnector conOr;           // remote reference db
     private MySqlConnector conLog;
@@ -97,7 +97,10 @@ public class LinksCleaned extends Thread
     private final static String SC_Y = "y"; //    Yes  Standard value assigned (valid original value)
 
     // old links_base
-    // needed by MinMaxDate functions
+    // hp* objects directly used by 2 functions:
+    //      returnAgeCentralFigure()  suppressed  called by minMaxDate()
+    //      fillMinMaxArrays()        suppressed  called by doMinMaxDate()
+    /*
     private ArrayList<Integer> hpChildRegistration    = new ArrayList<Integer>();
     private ArrayList<Integer> hpChildAge             = new ArrayList<Integer>();
     private ArrayList<Integer> hpChildMonth           = new ArrayList<Integer>();
@@ -118,6 +121,7 @@ public class LinksCleaned extends Thread
     private ArrayList<Integer> hpDeceasedMonth        = new ArrayList<Integer>();
     private ArrayList<Integer> hpDeceasedWeek         = new ArrayList<Integer>();
     private ArrayList<Integer> hpDeceasedDay          = new ArrayList<Integer>();
+    */
 
     private FileWriter writerFirstname;
     private FileWriter writerFamilyname;
@@ -136,12 +140,7 @@ public class LinksCleaned extends Thread
     private int teller = 0;
     private int sourceId;
 
-    //private int[] sources = { 10, 225 };      // Oegstgeest is already 231 !
-    //private int[] sources = { 10, 999 };      // put in GUI or preferences file
-    //private int[] sources;                      // fill with source_ids from links_original.person_o
-    private int[] sources;                      // only needed as global by runMethod()
-    //private int source_id_first =  10;
-    //private int source_id_last  = 999;
+    private int[] sourceList;                      // either sourceListAvail, or [sourceId] from GUI
 
     private String endl = ". OK.";              // ".";
 
@@ -179,7 +178,8 @@ public class LinksCleaned extends Thread
             DoSet dos,
             general.PrintLogger plog,
             ManagerGui mg
-    ) {
+    )
+    {
         this.sourceId = sourceId;
 
         this.ref_url = ref_url;
@@ -226,23 +226,27 @@ public class LinksCleaned extends Thread
             connectToDatabases();                               // Create databases connectors
             createLogTable();                                   // Create log table with timestamp
 
-            sources = getOrigSourceIds();                       // get source ids from links_original.registration_o
+            int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
+            sourceList  = createSourceList( sourceId, sourceListAvail );
 
             if( sourceId == 0 ) {
-                showMessage( "Processing source ids: ", false, true );
-                String s = "";
-                for( int i : sources ) { s = s + i + " "; }
+                String s = "Available source Ids: ";
+                for( int i : sourceListAvail ) { s = s + i + " "; }
                 showMessage( s, false, true );
             }
+
+            String s = "";
+            if( sourceList.length == 1 ) { s = "Processing source: "; }
+            else { s = "Processing sources: "; }
+            for( int i : sourceList ) { s = s + i + " "; }
+            showMessage( s, false, true );
 
             if( sourceId != 0 ) { setSourceFilters(); }         // Set source filters
 
             // links_general.ref_report contains 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
-            {
-                ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
-            }
+            ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
 
             doRenewData( dos.isDoRenewData() );                 // GUI cb: Remove previous data
 
@@ -270,7 +274,7 @@ public class LinksCleaned extends Thread
 
             doDates( dos.isDoDates() );                         // GUI cb: Dates
 
-            doMinMaxDate( dos.isDoMinMaxDate() );               // GUI cb: Min Max Date
+            //doMinMaxDate( dos.isDoMinMaxDate() );               // GUI cb: Min Max Date   // combined with doDates
 
             doMinMaxMarriage( dos.isDoMinMaxMarriage() );       // GUI cb: Min Max Marriage
 
@@ -317,12 +321,12 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         // Delete all existing cleaned data
         // Create queries
-        String deletePerson = "DELETE FROM person_c" + bronFilter;
-        String deleteRegistration = "DELETE FROM registration_c" + bronFilter;
+        String deletePerson = "DELETE FROM person_c" + sourceFilter;
+        String deleteRegistration = "DELETE FROM registration_c" + sourceFilter;
 
         // Execute queries
         showMessage("Deleting previous data", false, true);
@@ -336,7 +340,7 @@ public class LinksCleaned extends Thread
             + "INSERT INTO links_cleaned.person_c "
             +       "( id_person, id_registration, id_source, registration_maintype, id_person_o ) "
             + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o "
-            + "FROM links_original.person_o" + bronFilterOrigineelPers;
+            + "FROM links_original.person_o" + sourceFilterOrigPers;
 
         //System.out.println( keysPerson );
         conCleaned.runQuery( keysPerson );              // Execute query
@@ -346,7 +350,7 @@ public class LinksCleaned extends Thread
             + "INSERT INTO links_cleaned.registration_c "
             +      "( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq ) "
             + "SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq "
-            + "FROM links_original.registration_o" + bronFilterOrigineelReg;
+            + "FROM links_original.registration_o" + sourceFilterOrigReg;
         //System.out.println( keysRegistration );
         conCleaned.runQuery( keysRegistration );        // Execute query
 
@@ -368,7 +372,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         // load the ref tables
         showMessage( "Loading reference tables: firstname/familyname/prepiece/suffix...", false, true );
@@ -390,9 +394,11 @@ public class LinksCleaned extends Thread
         createTempFirstnameFile();
         ttalFirstname = new TableToArraysSet(conGeneral, conOr, "original", "firstname");
 
-        System.out.println("before");
-        runMethod("standardFirstname");
-        System.out.println("after");
+        //runMethod("standardFirstname");
+        for( int i : sourceList ) {
+            showMessage( "Processing standardFirstname for source: " + i + "...", false, true );
+            standardFirstname( "" + i );
+        }
 
         ttalFirstname.updateTable();
         ttalFirstname.free();
@@ -410,8 +416,14 @@ public class LinksCleaned extends Thread
 
         createTempFamilynameTable();
         createTempFamilynameFile();
-        ttalFamilyname = new TableToArraysSet(conGeneral, conOr, "original", "familyname");
-        runMethod("standardFamilyname");
+        ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
+
+        //runMethod("standardFamilyname");
+        for( int i : sourceList ) {
+            showMessage( "Processing standardFamilyname for source: " + i + "...", false, true );
+            standardFamilyname( "" + i );
+        }
+
         ttalFamilyname.updateTable();
         ttalFamilyname.free();
         writerFamilyname.close();
@@ -472,7 +484,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         // load all refs used by remarks Parser
         showMessage( "Loading reference tables: location/occupation...", false, true );
@@ -481,7 +493,11 @@ public class LinksCleaned extends Thread
             //ttalOccupation = new TableToArraysSet(conGeneral, "original", "occupation");
         }
 
-        runMethod("scanRemarks");
+        //runMethod("scanRemarks");
+        for( int i : sourceList ) {
+            showMessage( "Processing scanRemarks for source: " + i + "...", false, true );
+            scanRemarks( "" + i );
+        }
 
         showMessage( "Updating reference tables: " + "location/occupation" + "...", false, true );
         {
@@ -507,7 +523,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         String mmss = "";
         String msg = "";
@@ -639,7 +655,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: location...", false, true );
         long start = System.currentTimeMillis();
@@ -685,7 +701,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: status_sex...", false, true );
         {
@@ -718,7 +734,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         runMethod( "standardType" );
 
@@ -740,7 +756,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         runMethod( "standardSequence" );
 
@@ -762,7 +778,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         runMethod( "funcRelation" );
 
@@ -784,7 +800,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         runMethod( "standardYearAge" );
 
@@ -806,7 +822,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         showMessage( "Running standardRole on all sources...", false, true );
         standardRole();
@@ -822,6 +838,8 @@ public class LinksCleaned extends Thread
      */
     private void doOccupation( boolean go ) throws Exception
     {
+        boolean debug = false;
+
         String funcname = "doOccupation";
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -829,17 +847,20 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: occupation...", false, true );
         {
             ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
-            ttalOccupation.showContents( "id_occupation" );
+            if( debug ) { ttalOccupation.showContents( "id_occupation" ); }
         }
 
-        runMethod( "standardOccupation" );
+        for( int i : sourceList ) {
+            showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
+            standardOccupation( debug, i );
+        }
 
-        showMessage( "Updating reference table: occupation...", false, true );
+        showMessage( "Updating reference table: occupation", false, true );
         ttalOccupation.updateTable();
         ttalOccupation.free();
 
@@ -861,29 +882,27 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
-        // Clean dates
-        runMethod( "standardRegistrationDate" );
+        for( int i : sourceList ) {
+            showMessage( "Processing standardRegistrationDate for source: " + i + "...", false, true );
+            standardRegistrationDate( i );
 
-        if( bronFilter.isEmpty())  {
-            for( int i : sources ) {
-                String sourceStr = "" + i;
-                showMessage( "Running standardDate for source: " + i + "...", false, true );
-                {
-                    standardDate( sourceStr, "birth" );
-                    standardDate( sourceStr, "mar" );
-                    standardDate( sourceStr, "death" );
-                }
-            }
-        } else {
-            String sourceStr = "" + this.sourceId;
-            showMessage( "Running standardDate...", false, true );
-            {
-                standardDate( sourceStr, "birth" );
-                standardDate( sourceStr, "mar" );
-                standardDate( sourceStr, "death" );
-            }
+            showMessage( "Processing standardDate for source: " + i + "...", false, true );
+            standardDate( i, "birth" );
+            standardDate( i, "mar" );
+            standardDate( i, "death" );
+
+            showMessage( "Processing setComplete for source: " + i + "...", false, true );
+            setValidDateComplete( i );
+
+            showMessage( "Processing minMaxValidDate for source: " + i + "...", false, true );
+            minMaxValidDate( i );
+
+            //fillMinMaxArrays( "" + i );
+
+            showMessage( "Processing minMaxDateMain for source: " + i + "...", false, true );
+            minMaxDateMain( i );
         }
 
         // Fill empty dates with register dates: this is still buggy
@@ -900,20 +919,16 @@ public class LinksCleaned extends Thread
         // FL-04-Sep-2014
         // commented out function calls below: probably overlapping functionality with doMinMaxDate ?!
 
-        //showMessage( "Running minMaxCorrectDate...", false, true );
-        //minMaxCorrectDate();
-
         //showMessage( "Running completeMinMaxBirth...", false, true );
         //completeMinMaxBirth();
 
         //showMessage( "Running completeMinMaxMar...", false, true );
         //completeMinMaxMar();
 
-        // no function completeMinMaxDeath(); ??
+        // no function completeMinMaxDeath() : NO, not needed
 
-        //showMessage( "Running setComplete...", false, true );
-        //setComplete();
 
+        showMessage( "Skipping registration_c updates", false, true );
         /*
         showMessage( "Running update queries...", false, true );
         // extra function to correct registration data
@@ -928,6 +943,32 @@ public class LinksCleaned extends Thread
         conCleaned.runQuery( q3 );
         conCleaned.runQuery( q4 );
         conCleaned.runQuery( q5 );
+        */
+
+
+        // the remains are copied from doMinMaxDate()
+        //minMaxValidDate();              // for all sources ? NO, per source, -> change
+
+        /*
+        if( sourceFilter.isEmpty() ) {
+            for( int i : sourceList ) {
+                showMessage( "Processing minMaxValidDate for source: " + i + "...", false, true );
+                minMaxValidDate( "" + i );
+
+                //fillMinMaxArrays( "" + i );
+
+                showMessage( "Processing minMaxDateMain for source: " + i + "...", false, true );
+                minMaxDateMain(   "" + i );
+            }
+        } else {
+            showMessage( "Processing minMaxValidDate", false, true );
+            minMaxValidDate( "" + this.sourceId );
+
+            //fillMinMaxArrays( "" + this.sourceId );
+
+            showMessage( "Processing minMaxDateMain", false, true );
+            minMaxDateMain( "" + this.sourceId );
+        }
         */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -948,23 +989,19 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
-        try {
-            // loading ref
+        try
+        {
             ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
 
-            if( bronFilter.isEmpty() ) {
-                for( int i : sources ) {
-                    showMessage( "Running minMaxMarriageYear for source: " + i + "...", false, true );
-                    minMaxMarriageYear( setMarriageYear( i + "" ), refMinMaxMarriageYear );
-                }
-            } else {
-                showMessage( "Running minMaxMarriageYear...", false, true );
-                minMaxMarriageYear( setMarriageYear( this.sourceId + "" ), refMinMaxMarriageYear );
+            for( int i : sourceList ) {
+                showMessage( "Processing minMaxMarriageYear for source: " + i + "...", false, true );
+                minMaxMarriageYear( setMarriageYear( i + "" ), refMinMaxMarriageYear );
             }
-        } catch( Exception ex ) {
-            showMessage( "Exception while running Min max Marriage date, properly ref_minmax_marriageyear error: " + ex.getMessage(), false, true );
+        }
+        catch( Exception ex ) {
+            showMessage( "Exception while running minMaxMarriageYear, properly ref_minmax_marriageyear error: " + ex.getMessage(), false, true );
         }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -985,17 +1022,11 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
-        if( bronFilter.isEmpty())  {
-            for( int i : sources ) {
-                String sourceStr = "" + i;
-                showMessage( "Running partsToDate for source: " + i + "...", false, true );
-                partsToDate( sourceStr );
-            }
-        } else {
-            String sourceStr = "" + this.sourceId;
-            showMessage( "Running partsToDate...", false, true );
+        for( int i : sourceList ) {
+            String sourceStr = "" + i;
+            showMessage( "processing partsToDate for source: " + i + "...", false, true );
             partsToDate( sourceStr );
         }
 
@@ -1017,17 +1048,11 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
-        if( bronFilter.isEmpty())  {
-            for( int i : sources ) {
-                String sourceStr = "" + i;
-                showMessage( "Running daysSinceBegin for source: " + i + "...", false, true );
-                daysSinceBegin( sourceStr );
-            }
-        } else {
-            String sourceStr = "" + this.sourceId;
-            showMessage( "Running daysSinceBegin...", false, true );
+        for( int i : sourceList ) {
+            String sourceStr = "" + i;
+            showMessage( "Processing daysSinceBegin for source: " + i + "...", false, true );
             daysSinceBegin( sourceStr );
         }
 
@@ -1049,17 +1074,11 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
-        if( bronFilter.isEmpty())  {
-            for( int i : sources ) {
-                String sourceStr = "" + i;
-                showMessage( "Running postTasks for source: " + i + "...", false, true );
-                postTasks( sourceStr );
-            }
-        } else {
-            String sourceStr = "" + this.sourceId;
-            showMessage( "Running postTasks...", false, true );
+        for( int i : sourceList ) {
+            String sourceStr = "" + i;
+            showMessage( "Processing postTasks for source: " + i + "...", false, true );
             postTasks( sourceStr );
         }
 
@@ -1081,7 +1100,7 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
+        showMessage( funcname + "...", false, true );
 
         showMessage("Running PREMATCH...", false, false);
         mg.firePrematch();
@@ -1145,7 +1164,7 @@ public class LinksCleaned extends Thread
         String id_source;
 
         if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , birth_location FROM person_o" + bronFilter + " AND birth_location <> ''";
+            startQuery = "SELECT id_person , birth_location FROM person_o" + sourceFilter + " AND birth_location <> ''";
             id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceNo + " AND birth_location <> ''";
@@ -1165,9 +1184,9 @@ public class LinksCleaned extends Thread
     /**
      * @param type      // "birth", "mar", or "death"
      */
-    public void standardDate( String sourceNo, String type )
+    public void standardDate( int sourceInt, String type )
     {
-        // Step vars
+        String sourceStr = Integer.toString( sourceInt );
         int counter = 0;
         int step = 10000;
         int stepstate = step;
@@ -1175,7 +1194,7 @@ public class LinksCleaned extends Thread
         try
         {
             String startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_o WHERE " + type + "_date is not null";
-            startQuery =  startQuery + " AND id_source = " + sourceNo;
+            startQuery =  startQuery + " AND id_source = " + sourceStr;
 
             ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
@@ -1242,7 +1261,7 @@ public class LinksCleaned extends Thread
         String id_source;
 
         if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , death_location FROM person_o" + bronFilter + " AND death_location <> ''";
+            startQuery = "SELECT id_person , death_location FROM person_o" + sourceFilter + " AND death_location <> ''";
             id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceNo + " AND death_location <> ''";
@@ -1277,7 +1296,7 @@ public class LinksCleaned extends Thread
             String startQuery;
 
             if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , firstname FROM person_o" + bronFilter + "";
+                startQuery = "SELECT id_person , firstname FROM person_o" + sourceFilter + "";
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceNo;
@@ -1611,7 +1630,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , familyname FROM person_o" + bronFilter;
+                startQuery = "SELECT id_person , familyname FROM person_o" + sourceFilter;
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceNo;
@@ -1884,103 +1903,106 @@ public class LinksCleaned extends Thread
         int step = 1000;
         int stepstate = step;
 
-        try {
-            while (rs.next()) {
-
+        try
+        {
+            while( rs.next() )
+            {
                 counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
                     stepstate += step;
                 }
 
-                int id = rs.getInt(idFieldO);
-                String location = rs.getString(locationFieldO);
+                int id = rs.getInt( idFieldO );
+                String location = rs.getString( locationFieldO );
 
-                if (location != null && !location.isEmpty()) {
-
+                if( location != null && !location.isEmpty() )
+                {
                     location = location.toLowerCase();
 
-                    if (ttalLocation.originalExists(location)) {
+                    if( ttalLocation.originalExists( location ) )
+                    {
+                        String nieuwCode = ttalLocation.getStandardCodeByOriginal( location );
 
-                        String nieuwCode = ttalLocation.getStandardCodeByOriginal(location);
-
-                        if (nieuwCode == null ? SC_X == null : (nieuwCode.equals(SC_X))) {
-
+                        if( nieuwCode == null ? SC_X == null : (nieuwCode.equals( SC_X )) )
+                        {
                             // EC 91
-                            if (tt == TableType.REGISTRATION) {
+                            if( tt == TableType.REGISTRATION ) {
                                 addToReportRegistration( id, id_source, 91, location );
-                                String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
-                                conCleaned.runQuery(query);
+                                String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
+                                conCleaned.runQuery( query );
                             } else {
-                                addToReportPerson(id, id_source, 91, location);
-                                String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
-                                conCleaned.runQuery(query);
+                                addToReportPerson( id, id_source, 91, location );
+                                String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
+                                conCleaned.runQuery( query );
                             }
-                        } else if (nieuwCode == null ? SC_N == null : nieuwCode.equals(SC_N)) {
-
+                        }
+                        else if( nieuwCode == null ? SC_N == null : nieuwCode.equals( SC_N ))
+                        {
                             // EC 93
                             if (tt == TableType.REGISTRATION) {
-                                addToReportRegistration( id, id_source, 91, location );
+                                addToReportRegistration( id, id_source, 93, location );
                             } else {
-                                addToReportPerson(id, id_source, 93, location);
+                                addToReportPerson( id, id_source, 93, location );
                             }
-                        } else if (nieuwCode == null ? SC_U == null : nieuwCode.equals(SC_U)) {
-
+                        }
+                        else if( nieuwCode == null ? SC_U == null : nieuwCode.equals( SC_U ))
+                        {
                             // EC 95
-                            if (tt == TableType.REGISTRATION) {
+                            if( tt == TableType.REGISTRATION ) {
                                 addToReportRegistration( id, id_source, 95, location );
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
+                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
+                                conCleaned.runQuery( query );
                             } else {
-                                addToReportPerson(id, id_source, 95, location);
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
+                                addToReportPerson( id, id_source, 95, location );
+                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
+                                conCleaned.runQuery( query );
                             }
 
-                            String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-
-                        } else if (nieuwCode == null ? SC_Y == null : nieuwCode.equals(SC_Y)) {
-
-                            if (tt == TableType.REGISTRATION) {
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = RegistrationC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
+                            String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                        }
+                        else if( nieuwCode == null ? SC_Y == null : nieuwCode.equals( SC_Y ))
+                        {
+                            if( tt == TableType.REGISTRATION ) {
+                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
+                                conCleaned.runQuery( query );
                             } else {
-                                String locationnumber = ttalLocation.getColumnByOriginal("location_no", location);
-                                String query = PersonC.updateIntQuery(locationFieldC, locationnumber, id);
-                                conCleaned.runQuery(query);
+                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
+                                conCleaned.runQuery( query );
                             }
-
-
-                        } else {
-
+                        }
+                        else
+                        {
                             // EC 99
-                            if (tt == TableType.REGISTRATION) {
+                            if( tt == TableType.REGISTRATION ) {
                                 addToReportRegistration( id, id_source, 99, location );
                             } else {
-                                addToReportPerson(id, id_source, 99, location);
+                                addToReportPerson( id, id_source, 99, location );
                             }
                         }
-                    } else {
-
+                    }
+                    else
+                    {
                         // EC 91
-                        if (tt == TableType.REGISTRATION) {
+                        if( tt == TableType.REGISTRATION ) {
                             addToReportRegistration( id, id_source, 91, location );
-                            String query = RegistrationC.updateIntQuery(locationFieldC, "10010", id);
-                            conCleaned.runQuery(query);
+                            String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
+                            conCleaned.runQuery( query );
                         } else {
-                            addToReportPerson(id, id_source, 91, location);
-                            String query = PersonC.updateIntQuery(locationFieldC, "10010", id);
-                            conCleaned.runQuery(query);
+                            addToReportPerson( id, id_source, 91, location );
+                            String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
+                            conCleaned.runQuery( query );
                         }
-                        ttalLocation.addOriginal(location);
+                        ttalLocation.addOriginal( location );
                     }
                 }
             }
-        } catch (Exception e) {
-            throw new Exception(counter + " Exception while cleaning Location: " + e.getMessage());
+        } catch( Exception ex ) {
+              throw new Exception( counter + " Exception while cleaning Location: " + ex.getMessage() );
         }
     } // standardLocation
 
@@ -1994,7 +2016,7 @@ public class LinksCleaned extends Thread
         String id_source;
 
         if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , mar_location FROM person_o" + bronFilter + " AND mar_location <> ''";
+            startQuery = "SELECT id_person , mar_location FROM person_o" + sourceFilter + " AND mar_location <> ''";
             id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceNo + " AND mar_location <> ''";
@@ -2011,32 +2033,23 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param debug
+     * @param sourceInt
      */
-    /*
-    public void standardOccupation( String sourceNo )
+    public void standardOccupation( boolean debug, int sourceInt )
     {
-        boolean debug = true;
+        String sourceStr = Integer.toString( sourceInt );
         int counter = 0;
         int step = 1000;
         int stepstate = step;
         int empty = 0;
 
+        String startQuery = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceStr;
+        if( debug ) { showMessage( startQuery, false, true ); }
+
         try
         {
-            String startQuery;
-            String id_source;
-
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , occupation FROM person_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            // Get occupation
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet  rs = conOriginal.runQueryWithResult( startQuery );           // Get occupation
 
             while( rs.next() )
             {
@@ -2047,202 +2060,94 @@ public class LinksCleaned extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                String occupation = rs.getString( "occupation" ) != null ? rs.getString( "occupation" ).toLowerCase() : "";
-                if( occupation.isEmpty() ) { empty += 1; }
-                //if( debug && !occupation.isEmpty() ) { showMessage( "occupation: " + occupation , false, true  ); }
+                String occupation = rs.getString( "occupation") != null ? rs.getString( "occupation" ).toLowerCase() : "";
+                if( occupation.isEmpty() ) {
+                    empty += 1;
+                }
+                else {
+                    if( debug ) { showMessage( "occupation: " + occupation, false, true ); }
+                    standardOccupationRecord( debug, sourceStr, id_person, occupation );
+                }
+            }
+            showMessage( counter + " persons, " + empty + " without occupation" , false, true );
+        }
+        catch( SQLException sex )
+        { showMessage( "\ncounter: " + counter + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true ); }
+        catch( Exception jex )
+        { showMessage( "\ncounter: " + counter + " Exception while cleaning Occupation: " + jex.getMessage(), false, true ); }
 
-                try
+
+    } // standardOccupation
+
+
+    /**
+     * @param debug
+     * @param id_person
+     * @param occupation
+     */
+    public void standardOccupationRecord( boolean debug, String sourceNo, int id_person, String occupation )
+    {
+        try
+        {
+            if( !occupation.isEmpty() )                 // check presence of the occupation
+            {
+                if( ttalOccupation.originalExists( occupation ) )       // occupation present in ref_occupation.original
                 {
+                    if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
                     String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
-                    //if( debug ) { showMessage( "refSCode: " + refSCode, false, true  ); }
+                    if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
 
-                    if( refSCode.equals( SC_X ) ) {
+                    if( refSCode.equals( SC_X ) )
+                    {
                         if( debug ) { showMessage( "Warning 41 (via SC_X): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
+                        addToReportPerson( id_person, sourceNo, 41, occupation );      // warning 41
 
                         String query = PersonC.updateQuery( "occupation", occupation, id_person );
                         conCleaned.runQuery( query );
                     }
-                    else if( refSCode.equals( SC_N ) ) {
+                    else if( refSCode.equals( SC_N ) )
+                    {
                         if( debug ) { showMessage( "Warning 43: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 43, occupation );     // warning 43
+                        addToReportPerson( id_person, sourceNo, 43, occupation );      // warning 43
                     }
-                    else if( refSCode.equals( SC_U ) ) {
+                    else if (refSCode.equals(SC_U))
+                    {
                         if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 45, occupation );     // warning 45
+                        addToReportPerson( id_person, sourceNo, 45, occupation );      // warning 45
 
-                        String _occupation = "";
-                        try { _occupation = ttalOccupation.getColumnByOriginal( "occupation", occupation ); }
-                        catch( Exception ex ) { showMessage( "ttal exception: " + ex.getMessage(), false, true ); }
-
-                        if( !_occupation.isEmpty() ) {
-                            showMessage( "_occupation: " + _occupation, false, true );
-                            String query = "";
-                            try {
-                                query = PersonC.updateQuery("occupation", _occupation, id_person);
-                            } catch (Exception ex) {
-                                showMessage("update exception: " + ex.getMessage(), false, true);
-                            }
-
-                            if (!query.isEmpty()) {
-                                try {
-                                    conCleaned.runQuery(query);
-                                } catch (Exception ex) {
-                                    showMessage("mysql exception:" + ex.getMessage(), false, true);
-                                }
-                            }
-                        }
-                    }
-                    else if( refSCode.equals( SC_Y ) ) {
-                        String query = PersonC.updateQuery( "occupation", ttalOccupation.getColumnByOriginal( "occupation", occupation ), id_person );
+                        String refOccupation = ttalOccupation.getColumnByOriginal( "occupation", occupation );
+                        String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
                         conCleaned.runQuery( query );
                     }
-                    else {     // Invalid standard code
+                    else if( refSCode.equals( SC_Y ) )
+                    {
+                        String refOccupation = ttalOccupation.getColumnByOriginal( "occupation", occupation );
+                        if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
+
+                        String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else      // Invalid standard code
+                    {
                         if( debug ) { showMessage( "Warning 49: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 49, occupation );     // warning 49
+                        addToReportPerson( id_person, sourceNo, 49, occupation );      // warning 49
                     }
                 }
-                catch( Exception ex )       // not in reference db
+                else // not present in original
                 {
-                    // even with an empty original in the reference db, an empty occupation is not found: BUG workaround !
-                    if( !occupation.isEmpty() ) {
-                        if( debug ) { showMessage( "Warning 41 (via Exception): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
+                    if( debug ) { showMessage( "Warning 41 (via Exception): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
+                    addToReportPerson( id_person, sourceNo, 41, occupation );     // warning 41
 
-                        ttalOccupation.addOriginal( occupation );                      // Add new Occupation "x"
-                    }
+                    ttalOccupation.addOriginal( occupation );                      // Add new Occupation "x"
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
                     conCleaned.runQuery( query );
                 }
             }
-            showMessage( counter + " persons, " + empty + " without occupation" , false, true );
         }
-        catch( Exception ex ) { showMessage( "counter: " + counter + ", Exception while cleaning Occupation: " + ex.getMessage(), false, true ); }
-    } // standardOccupation
-    */
-    /**
-     * @param sourceNo
-     */
-    public void standardOccupation( String sourceNo )
-    {
-        boolean debug = true;
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-        int empty = 0;
-
-        try
-        {
-            String startQuery;
-            String id_source;
-
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , occupation FROM person_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );            // Get occupation
-
-            while( rs.next() )
-            {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
-                    stepstate += step;
-                }
-
-                int id_person = rs.getInt( "id_person" );
-                String occupation = rs.getString( "occupation" ) != null ? rs.getString( "occupation" ).toLowerCase() : "";
-                if( occupation.isEmpty() ) { empty += 1; }
-                if( debug && !occupation.isEmpty() ) { showMessage( "occupation: " + occupation , false, true  ); }
-
-                if( !occupation.isEmpty() )                 // check presence of the occupation
-                {
-                    if( ttalOccupation.originalExists( occupation ) )       // occupation present in ref_occupation.original
-                    {
-                        if( debug ) { showMessage( "getStandardCodeByOriginal: " + occupation , false, true ); }
-                        String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
-                        if( debug ) { showMessage( "refSCode: " + refSCode , false, true ); }
-
-                        if( refSCode.equals( SC_X ) ) {
-                            if( debug ) { showMessage( "Warning 41 (via SC_X): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                            addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
-
-                            String query = PersonC.updateQuery( "occupation", occupation, id_person );
-                            conCleaned.runQuery( query );
-                        }
-                        else if( refSCode.equals( SC_N ) ) {
-                            if( debug ) { showMessage( "Warning 43: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                            addToReportPerson( id_person, id_source, 43, occupation );     // warning 43
-                        }
-                        else if( refSCode.equals( SC_U ) ) {
-                            if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                            addToReportPerson( id_person, id_source, 45, occupation );     // warning 45
-
-                            /*
-                            String _occupation = "";
-                            try { _occupation = ttalOccupation.getColumnByOriginal( "occupation", occupation ); }
-                            catch( Exception ex ) { showMessage( "ttal exception: " + ex.getMessage(), false, true ); }
-
-                            if( !_occupation.isEmpty() ) {
-                                showMessage( "_occupation: " + _occupation, false, true );
-                                String query = "";
-                                try {
-                                    query = PersonC.updateQuery("occupation", _occupation, id_person);
-                                } catch (Exception ex) {
-                                    showMessage("update exception: " + ex.getMessage(), false, true);
-                                }
-
-                                if (!query.isEmpty()) {
-                                    try {
-                                        conCleaned.runQuery(query);
-                                    } catch (Exception ex) {
-                                        showMessage("mysql exception:" + ex.getMessage(), false, true);
-                                    }
-                                }
-                            }
-                            */
-                            String query = PersonC.updateQuery( "occupation", ttalOccupation.getColumnByOriginal( "occupation", occupation ), id_person );
-                            conCleaned.runQuery( query );
-                        }
-                        else if( refSCode.equals( SC_Y ) ) {
-                            String query = PersonC.updateQuery( "occupation", ttalOccupation.getColumnByOriginal( "occupation", occupation ), id_person );
-                            conCleaned.runQuery( query );
-                        }
-                        else {     // Invalid standard code
-                            if( debug ) { showMessage( "Warning 49: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                            addToReportPerson( id_person, id_source, 49, occupation );     // warning 49
-                        }
-                    }
-                    else // not present in original
-                    {
-    ;                    // even with an empty original in the reference db, an empty occupation is not found: BUG workaround !
-                        /*
-                        if( !occupation.isEmpty() ) {
-                            if( debug ) { showMessage( "Warning 41 (via Exception): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                            addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
-
-                            ttalOccupation.addOriginal( occupation );                      // Add new Occupation "x"
-                        }
-                        */
-                        if( debug ) { showMessage( "Warning 41 (via Exception): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                        addToReportPerson( id_person, id_source, 41, occupation );     // warning 41
-
-                        ttalOccupation.addOriginal( occupation );                      // Add new Occupation "x"
-
-                        String query = PersonC.updateQuery( "occupation", occupation, id_person );
-                        conCleaned.runQuery( query );
-                    }
-                }
-            }
-        } catch( Exception ex ) {
-            showMessage( "\ncounter: " + counter + " Exception while cleaning Occupation: " + ex.getMessage(), false, true );
-        }
-    } // standardOccupation
+        catch( Exception ex3 )
+        { showMessage( "Exception while cleaning Occupation: " + ex3.getMessage(), false, true); }
+    } // standardOccupationRecord
 
 
     /**
@@ -2261,7 +2166,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , prefix FROM person_o" + bronFilter + " AND prefix <> ''";
+                startQuery = "SELECT id_person , prefix FROM person_o" + sourceFilter + " AND prefix <> ''";
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceNo + " AND prefix <> ''";
@@ -2389,26 +2294,18 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceInt
      */
-    public void standardRegistrationDate( String sourceNo )
+    public void standardRegistrationDate( int sourceInt )
     {
+        String sourceStr = Integer.toString( sourceInt );
         int counter = 0;
         int step = 1000;
         int stepstate = step;
 
-        try {
-
-            String startQuery;
-            String id_source;
-
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_registration , registration_date FROM registration_o" + bronFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
+        try
+        {
+            String startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + sourceStr;
 
             ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
@@ -2425,7 +2322,7 @@ public class LinksCleaned extends Thread
                 String registration_date = rs.getString( "registration_date" );
 
                 if( registration_date == null ) {
-                    addToReportRegistration( id_registration, id_source, 202, "" );   // EC 202
+                    addToReportRegistration( id_registration, sourceStr, 202, "" );   // EC 202
 
                     continue;
                 }
@@ -2445,7 +2342,7 @@ public class LinksCleaned extends Thread
                 }
                 else         // Error occured
                 {
-                    addToReportRegistration( id_registration, id_source, 201, dymd.getReports() );    // EC 201
+                    addToReportRegistration( id_registration, sourceStr, 201, dymd.getReports() );    // EC 201
 
                     String query = "UPDATE registration_c"
                         + " SET registration_c.registration_date = '" + registration_date + "' , "
@@ -2473,7 +2370,7 @@ public class LinksCleaned extends Thread
         String id_source;
 
         if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_registration , registration_location FROM registration_o" + bronFilter;
+            startQuery = "SELECT id_registration , registration_location FROM registration_o" + sourceFilter;
             id_source = this.sourceId + "";
         } else {
             startQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceNo;
@@ -2483,7 +2380,6 @@ public class LinksCleaned extends Thread
         try {
             ResultSet rs = conOriginal.runQueryWithResult( startQuery );
 
-            // Call standardLocation
             standardLocation( rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION );
         } catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2673,7 +2569,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , sex FROM person_o" + bronFilter;
+                startQuery = "SELECT id_person , sex FROM person_o" + sourceFilter;
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceNo;
@@ -2771,7 +2667,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , sex , civil_status FROM person_o" + bronFilter + " and civil_status is not null ";
+                startQuery = "SELECT id_person , sex , civil_status FROM person_o" + sourceFilter + " and civil_status is not null ";
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceNo;
@@ -2883,7 +2779,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if (bronnrsourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , suffix FROM person_o" + bronFilter + " AND suffix <> ''";
+                startQuery = "SELECT id_person , suffix FROM person_o" + sourceFilter + " AND suffix <> ''";
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + bronnrsourceNo + " AND suffix <> ''";
@@ -2992,7 +2888,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + bronFilter;
+                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + sourceFilter;
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceNo;
@@ -3088,7 +2984,7 @@ public class LinksCleaned extends Thread
             String id_source;
 
             if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , age_year FROM person_o" + bronFilter;
+                startQuery = "SELECT id_person , age_year FROM person_o" + sourceFilter;
                 id_source = this.sourceId + "";
             } else {
                 startQuery = "SELECT id_person , age_year FROM person_o WHERE id_source = " + sourceNo;
@@ -3174,6 +3070,24 @@ public class LinksCleaned extends Thread
     } // getOrigSourceIds
 
 
+        /**
+     * Read distinct source ids from links_original.registration_o
+     * @return
+     */
+    private int[] createSourceList( int sourceId, int[] sourceListAvail )
+    {
+        int[] idsInt;
+
+        if( sourceId == 0 ) { idsInt = sourceListAvail; }
+        else {
+            idsInt = new int[ 1 ];
+            idsInt[ 0 ] = sourceId;
+        }
+
+        return idsInt;
+    } // createSourceList
+
+
     /**
      * @param msg
      * @param start
@@ -3190,36 +3104,23 @@ public class LinksCleaned extends Thread
      * @param MethodName
      * @throws Exception
      */
-    private void runMethod(String MethodName) throws Exception
+    private void runMethod( String MethodName ) throws Exception
     {
         Class[] partypes = new Class[1];
         Object[] argList = new Object[1];
 
         partypes[0] = String.class;
 
-        // source 1-by-1
-        if( bronFilter.isEmpty() )
-        {
-            for( int i : sources ) {
-                showMessage( "Running " + MethodName + " for source: " + i + "...", false, true );
+        for( int i : sourceList ) {
+            showMessage( "Running " + MethodName + " for source: " + i + "...", false, true );
 
-                argList[ 0 ] = i + "";
-                Method m = this.getClass().getMethod( MethodName, partypes );
-
-                // Call method
-                m.invoke( this, argList );
-            }
-        }
-        else
-        {
-            showMessage( "Running " + MethodName + "...", false, true );
-
-            argList[ 0 ] = "";
+            argList[ 0 ] = i + "";
             Method m = this.getClass().getMethod( MethodName, partypes );
 
             // Call method
             m.invoke( this, argList );
         }
+
     } // runMethod
 
 
@@ -3851,7 +3752,7 @@ public class LinksCleaned extends Thread
         String query;
 
         if (bronnr.isEmpty()) {
-            query = "SELECT id_registration , id_source , registration_maintype , remarks FROM registration_o" + bronFilter;
+            query = "SELECT id_registration , id_source , registration_maintype , remarks FROM registration_o" + sourceFilter;
         } else {
             query = "SELECT id_registration , id_source , registration_maintype , remarks FROM registration_o WHERE id_source = " + bronnr;
         }
@@ -4116,19 +4017,18 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * TODO clean this, bron -> source everywhere
+     * WHERE [...]id_source = ...   shortcuts
      */
     private void setSourceFilters()
     {
         showMessage( "Set source filters for: " + sourceId, false, true );
 
-        bronFilter   = " WHERE id_source = " + sourceId;
         sourceFilter = " WHERE id_source = " + sourceId;
 
-        bronFilterCleanPers     = " WHERE person_c.id_source = "       + sourceId;
-        bronFilterOrigineelPers = " WHERE person_o.id_source = "       + sourceId;
-        bronFilterCleanReg      = " WHERE registration_c.id_source = " + sourceId;
-        bronFilterOrigineelReg  = " WHERE registration_o.id_source = " + sourceId;
+        sourceFilterCleanPers = " WHERE person_c.id_source = "       + sourceId;
+        sourceFilterOrigPers  = " WHERE person_o.id_source = "       + sourceId;
+        sourceFilterCleanReg  = " WHERE registration_c.id_source = " + sourceId;
+        sourceFilterOrigReg   = " WHERE registration_o.id_source = " + sourceId;
 
     } // setSourceFilters
 
@@ -4364,59 +4264,6 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void minMaxCorrectDate() throws Exception
-    {
-        String q1 = ""
-            + "UPDATE person_c "
-            + "SET "
-            + "birth_date_min  = birth_date , "
-            + "birth_date_max  = birth_date , "
-            + "birth_year_min  = birth_year , "
-            + "birth_year_max  = birth_year , "
-            + "birth_month_min = birth_month , "
-            + "birth_month_max = birth_month , "
-            + "birth_day_min   = birth_day , "
-            + "birth_day_max   = birth_day "
-            + "WHERE "
-            + "birth_date_valid = 1";
-
-        String q2 = ""
-            + "UPDATE person_c "
-            + "SET "
-            + "mar_date_min  = mar_date , "
-            + "mar_date_max  = mar_date , "
-            + "mar_year_min  = mar_year , "
-            + "mar_year_max  = mar_year , "
-            + "mar_month_min = mar_month , "
-            + "mar_month_max = mar_month , "
-            + "mar_day_min   = mar_day , "
-            + "mar_day_max   = mar_day "
-            + "WHERE "
-            + "mar_date_valid = 1";
-
-        String q3 = ""
-            + "UPDATE person_c "
-            + "SET "
-            + "death_date_min  = death_date , "
-            + "death_date_max  = death_date , "
-            + "death_year_min  = death_year , "
-            + "death_year_max  = death_year , "
-            + "death_month_min = death_month , "
-            + "death_month_max = death_month , "
-            + "death_day_min   = death_day , "
-            + "death_day_max   = death_day "
-            + "WHERE "
-            + "death_date_valid = 1";
-
-        conCleaned.runQuery( q1 );
-        conCleaned.runQuery( q2 );
-        conCleaned.runQuery( q3 );
-    } // minMaxCorrectDate
-
-
-    /**
-     * @throws Exception
-     */
     private void completeMinMaxBirth() throws Exception
     {
         String q1 = ""
@@ -4560,21 +4407,6 @@ public class LinksCleaned extends Thread
     } // completeMinMaxMar
 
 
-    private void setComplete() throws Exception
-    {
-        String q = ""
-                + " UPDATE links_cleaned.person_c"
-                + " SET"
-                + " valid_complete = 1"
-                + " WHERE"
-                + " birth_date_valid    = 1 AND"
-                + " mar_date_valid      = 1 AND"
-                + " death_date_valid    = 1";
-
-        conCleaned.runQuery( q );
-    } // setComplete
-
-
     // ---< Previous Links basis functions, They are now part of links cleaned >---
 
     /**
@@ -4595,7 +4427,7 @@ public class LinksCleaned extends Thread
             // source is given in GUI
             if (sourceNo.isEmpty()) {
 
-                startQuery = "SELECT id_registration , id_person, role, sex FROM person_c " + bronFilter + " ORDER BY id_registration";
+                startQuery = "SELECT id_registration , id_person, role, sex FROM person_c " + sourceFilter + " ORDER BY id_registration";
 
                 idSource = this.sourceId + "";
 
@@ -4749,23 +4581,26 @@ public class LinksCleaned extends Thread
             int role,
             int age,
             int main_role,
-            Ages age_main_role) throws Exception {
+            Ages age_main_role)
+    throws Exception
+    {
         String yn_age_reported = "";
         String yn_age_main_role = "";
 
         // Age is given
-        if ((age > 0) || ((role == 1) && (main_type == 1))) {
+        if( (age > 0) || ((role == 1) && (main_type == 1)) ) {
             yn_age_reported = "y";
         } else {
             yn_age_reported = "n";
         }
 
-        if (age_main_role.getYear() > 0) {
+        if( age_main_role.getYear() > 0 ) {
             yn_age_main_role = "y";
         } else {
             yn_age_main_role = "n";
         }
 
+        /*
         // UITSTAPJE, geldt voor ouders van de overledene
         if ((main_type == 3) && ((role == 2) || (role == 3)) && (yn_age_main_role.equals("n"))) {
             if (age_main_role.getMonth() > 0
@@ -4788,291 +4623,106 @@ public class LinksCleaned extends Thread
 
             }
         }
-
         // EINDE UITSTAPJE
+        */
 
-
-        // Maak query
         String query = ""
-                + "SELECT * FROM ref_date_minmax WHERE "
-                + "maintype = '" + main_type + "' AND "
-                + "date_type = '" + date_type + "' AND "
-                + "role = '" + role + "' AND "
-                + "age_reported = '" + yn_age_reported + "' AND "
-                + "( age_main_role = '" + yn_age_main_role + "' OR "
-                + "age_main_role = 'nvt' )";
+            + "SELECT * FROM ref_date_minmax WHERE "
+            + "maintype = '" + main_type + "' AND "
+            + "date_type = '" + date_type + "' AND "
+            + "role = '" + role + "' AND "
+            + "age_reported = '" + yn_age_reported + "' AND "
+            + "( age_main_role = '" + yn_age_main_role + "' OR "
+            + "age_main_role = 'nvt' )";
 
-        // Run query
-        ResultSet rs = conGeneral.runQueryWithResult(query);
+        ResultSet rs = conGeneral.runQueryWithResult( query );
 
-        // check rs is empty
-        if (!rs.next()) {
-
+        if( !rs.next() )
+        {
             // EC 
-            addToReportPerson(id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]");
+            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]" );
 
             MinMaxYearSet mmj = new MinMaxYearSet();
 
-            mmj.SetMaxYear(0);
-            mmj.SetMinYear(0);
+            mmj.SetMaxYear( 0 );
+            mmj.SetMinYear( 0 );
 
             return mmj;
         }
 
-        // To last row
+        // to last row
         rs.last();
 
         // read from to database
-        String function = rs.getString("function");
-        int min_year = rs.getInt("min_year");
-        int max_year = rs.getInt("max_year");
-        int min_person = rs.getInt("min_person");
-        int max_person = rs.getInt("max_person");
+        String function = rs.getString( "function" );
+        int min_year    = rs.getInt( "min_year" );
+        int max_year    = rs.getInt( "max_year" );
+        int min_person  = rs.getInt( "min_person" );
+        int max_person  = rs.getInt( "max_person" );
 
-        /*
-        min en max age-role search
-         */
+        // min en max age-role search
         int min_age = 0;
         int max_age = 0;
 
         // find correct age
         // Min
-        if (min_person == role) {
+        if( min_person == role ) {
             min_age = age;
-        } else if (min_person == main_role) {
+        } else if( min_person == main_role ) {
             min_age = age_main_role.getYear();
         }
         // Max
-        if (max_person == role) {
+        if( max_person == role ) {
             max_age = age;
-        } else if (max_person == main_role) {
+        } else if( max_person == main_role ) {
             max_age = age_main_role.getYear();
         }
 
-        /**
-         * Calculation
-         */
+         // calculation
         int minimal_year = act_year - min_age + min_year;
         int maximum_year = act_year - max_age + max_year;
 
         // set in dataset
         MinMaxYearSet mmj = new MinMaxYearSet();
 
-        mmj.SetMaxYear(maximum_year);
-        mmj.SetMinYear(minimal_year);
+        mmj.SetMaxYear( maximum_year );
+        mmj.SetMinYear( minimal_year );
 
+         // function designations from ref_date_minmax; what about function "B" ?
 
-        /**
-         * Functions
-         */
-        // If E, deceased
-        if (function.equals("E")) {
-
-            if (age < 14) {
-                mmj.SetMaxYear(0);
-                mmj.SetMinYear(0);
+        if( function.equals( "E" ) )                    // If E, deceased
+        {
+            if( age < 14 ) {
+                mmj.SetMaxYear( 0 );
+                mmj.SetMinYear( 0 );
             }
 
             return mmj;
-        } // function0 C, check by act year
-        else if (function.equals("C")) {
-
-            if (maximum_year > act_year) {
-                mmj.SetMaxYear(act_year);
+        }
+        else if( function.equals( "C" ) )               // function C, check by act year
+        {
+            if( maximum_year > act_year ) {
+                mmj.SetMaxYear( act_year );
             }
             return mmj;
 
-        } // function D
-        else if (function.equals("D")) {
-
-            if (minimal_year > (act_year - 14)) {
-
-                mmj.SetMinYear(act_year - 14);
-
+        }
+        else if( function.equals( "D" ) )               // function D
+        {
+            if( minimal_year > (act_year - 14) ) {
+                mmj.SetMinYear( act_year - 14 );
             }
-            if (maximum_year > (act_year - 14)) {
-
+            if( maximum_year > (act_year - 14) ) {
                 mmj.SetMaxYear(act_year - 14);
-
             }
 
             return mmj;
 
         }
 
-        // Function A
-        return mmj;
+        return mmj;                                     // Function A
 
     } // minMaxCalculation
-
-
-    /**
-     * Use this function to add or substract a amount of time from a date.
-     *
-     * @param year
-     * @param month
-     * @param day
-     * @param tt
-     * @param timeAmount
-     * @return
-     */
-    private String funcAddTimeToDate(
-            int year,
-            int month,
-            int day,
-            TimeType tt,
-            int timeAmount) {
-
-        // new calendar instance
-        Calendar c1 = Calendar.getInstance();
-
-        // set(int year, int month, int date)
-        c1.set(year, month, day);
-
-        // Check of time type
-        if (tt == tt.DAY) {
-            c1.add(Calendar.DAY_OF_MONTH, timeAmount);
-        } else if (tt == tt.WEEK) {
-            c1.add(Calendar.WEEK_OF_MONTH, timeAmount);
-        } else if (tt == tt.MONTH) {
-            c1.add(Calendar.MONTH, timeAmount);
-        } else if (tt == tt.YEAR) {
-            c1.add(Calendar.YEAR, timeAmount);
-        }
-
-        // return new date
-        String am = "" + c1.get(Calendar.DATE) + "-" + c1.get(Calendar.MONTH) + "-" + c1.get(Calendar.YEAR);
-
-        return am;
-    } // funcAddTimeToDate
-
-
-    /**
-     * @param pYear
-     * @param pMonth
-     * @param pDay
-     * @param rYear
-     * @param rMonth
-     * @param rDay
-     * @return
-     */
-    private DateYearMonthDaySet funcCheckMaxDate(int pYear, int pMonth, int pDay, int rYear, int rMonth, int rDay) {
-
-        // year is greater than age year
-        if (pYear > rYear) {
-
-            //return akterdatum
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-
-        } // lower, date is correct, return original date
-        else if (pYear < rYear) {
-
-            // return person date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(pYear);
-            dy.setMonth(pMonth);
-            dy.setDay(pDay);
-            return dy;
-
-        }
-
-        /*
-        years are equal, rest must be checked
-         */
-
-        // month is higher than act month
-        if (pMonth > rMonth) {
-
-            // return return act month
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-
-        } // month is correct, return original month
-        else if (pMonth < rMonth) {
-
-            // return return persons date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(pYear);
-            dy.setMonth(pMonth);
-            dy.setDay(pDay);
-            return dy;
-        }
-
-        /*
-        months are equal, check rest
-         */
-
-        // day is higher than act day
-        if (pDay > rDay) {
-
-            // return act date
-            DateYearMonthDaySet dy = new DateYearMonthDaySet();
-            dy.setYear(rYear);
-            dy.setMonth(rMonth);
-            dy.setDay(rDay);
-            return dy;
-        }
-
-        // day is lower or similar to act day
-        DateYearMonthDaySet dy = new DateYearMonthDaySet();
-        dy.setYear(pYear);
-        dy.setMonth(pMonth);
-        dy.setDay(pDay);
-        return dy;
-    } // funcCheckMaxDate
-
-
-    /**
-     * @param year
-     * @param month
-     * @param week
-     * @param day
-     * @return
-     */
-    public int funcRoundUp(int year, int month, int week, int day) {
-
-        int tempYear = year;
-        int tempMonth = month;
-        int tempWeek = week;
-
-        // day to week
-        if (day > 0) {
-            tempWeek += (day / 7);
-
-            if ((day % 7) != 0) {
-                tempWeek++;
-            }
-        }
-        week = tempWeek;
-
-        // week to month
-        if (week > 0) {
-            tempMonth += (week / 4);
-
-            if ((week % 4) != 0) {
-                tempMonth++;
-            }
-        }
-
-        month = tempMonth;
-
-        // week to month
-        if (month > 0) {
-            tempYear += (month / 12);
-
-            if ((month % 12) != 0) {
-                tempYear++;
-            }
-        }
-        return tempYear;
-    } // funcRoundUp
 
 
     /**
@@ -5729,54 +5379,104 @@ public class LinksCleaned extends Thread
         return conn;
     }
 
-    // ---< Min Max Date functions >--------------------------------------------
+
+    // ---< Date functions >----------------------------------------------------
+
+    private void setValidDateComplete( int sourceInt ) throws Exception
+    {
+        String sourceStr = Integer.toString( sourceInt );
+
+        String q = ""
+            + " UPDATE links_cleaned.person_c"
+            + " SET"
+            + " valid_complete = 1"
+            + " WHERE"
+            + " birth_date_valid = 1 AND"
+            + " mar_date_valid   = 1 AND"
+            + " death_date_valid = 1 AND"
+            + " links_cleaned.person_c.id_source = " + sourceStr;
+
+        conCleaned.runQuery( q );
+    } // setValidDateComplete
+
+
 
     /**
-     * Min Max Date
-     * @param go
+     * @param sourceInt
+     * @throws Exception
+     *
+     * if the date is valid, set the min en max values of date, year, month, day equal to the given values
+     * do this for birth, marriage and death
+     */
+    private void minMaxValidDate( int sourceInt ) throws Exception
+    {
+        String sourceStr = Integer.toString( sourceInt );
+
+        String q1 = ""
+                + "UPDATE person_c "
+                + "SET "
+                + "birth_date_min  = birth_date , "
+                + "birth_date_max  = birth_date , "
+                + "birth_year_min  = birth_year , "
+                + "birth_year_max  = birth_year , "
+                + "birth_month_min = birth_month , "
+                + "birth_month_max = birth_month , "
+                + "birth_day_min   = birth_day , "
+                + "birth_day_max   = birth_day "
+                + "WHERE "
+                + "birth_date_valid = 1 "
+                + "AND links_cleaned.person_c.id_source = " + sourceStr;
+
+        String q2 = ""
+                + "UPDATE person_c "
+                + "SET "
+                + "mar_date_min  = mar_date , "
+                + "mar_date_max  = mar_date , "
+                + "mar_year_min  = mar_year , "
+                + "mar_year_max  = mar_year , "
+                + "mar_month_min = mar_month , "
+                + "mar_month_max = mar_month , "
+                + "mar_day_min   = mar_day , "
+                + "mar_day_max   = mar_day "
+                + "WHERE "
+                + "mar_date_valid = 1 "
+                + "AND links_cleaned.person_c.id_source = " + sourceStr;
+
+        String q3 = ""
+                + "UPDATE person_c "
+                + "SET "
+                + "death_date_min  = death_date , "
+                + "death_date_max  = death_date , "
+                + "death_year_min  = death_year , "
+                + "death_year_max  = death_year , "
+                + "death_month_min = death_month , "
+                + "death_month_max = death_month , "
+                + "death_day_min   = death_day , "
+                + "death_day_max   = death_day "
+                + "WHERE "
+                + "death_date_valid = 1 "
+                + "AND links_cleaned.person_c.id_source = " + sourceStr;
+
+        conCleaned.runQuery( q1 );
+        conCleaned.runQuery( q2 );
+        conCleaned.runQuery( q3 );
+    } // minMaxValidDate
+
+
+    /**
+     * minMaxDateMain
+     * @param sourceInt
      * @throws Exception
      */
-    private void doMinMaxDate( boolean go ) throws Exception
+    public void minMaxDateMain( int sourceInt ) throws Exception
     {
-        String funcname = "MinMaxDate";
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        showMessage( funcname, false, true );
-
-        if( bronFilter.isEmpty() ) {
-            for( int i : sources ) {
-                showMessage( "Running Min Max Date for source: " + i + "...", false, true );
-                {
-                    fillMinMaxArrays( "" + i );
-                    minMaxDateMain( "" + i );
-                }
-            }
-        } else {
-            showMessage( "Running Min Max Date...", false, true );
-            {
-                fillMinMaxArrays( "" + this.sourceId );
-                minMaxDateMain( "" );
-            }
-        }
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-    } // doMinMaxDate
-
-
-    public void minMaxDateMain( String sourceNo ) throws Exception
-    {
+        String sourceStr = Integer.toString( sourceInt );
         int counter = 0;
         int step = 10000;
         int stepstate = step;
 
         try
         {
-            String idSource;
-
             String startQuery = ""
                 + " SELECT "
                 + " registration_c.id_registration ,"
@@ -5800,19 +5500,8 @@ public class LinksCleaned extends Thread
                 + " person_c , registration_c"
                 + " WHERE"
                 + " person_c.id_registration = registration_c.id_registration AND"
-                + " valid_complete = 0";
-
-
-            if( sourceNo.isEmpty() ) {            // Source from GUI
-                startQuery += " AND links_cleaned.person_c.id_source = " + this.sourceId;
-
-                idSource = this.sourceId + "";
-            }
-            else { // per source
-                startQuery += " AND links_cleaned.person_c.id_source = " + sourceNo;
-
-                idSource = sourceNo;
-            }
+                + " valid_complete = 0"
+                + " AND links_cleaned.person_c.id_source = " + sourceStr;
 
             ResultSet rsPersons = conCleaned.runQueryWithResult( startQuery );            // Run person query
 
@@ -5909,15 +5598,13 @@ public class LinksCleaned extends Thread
 
                 String type_date = "";
 
-                // Birth date
-                if( birth_date_valid != 1 )
+                if( birth_date_valid != 1 )                 // invalid birth date
                 {
                     mmds.setTypeDate( "birth_date" );
                     type_date = "birth";
                     mmds.setDate( birth_date );
 
-                    // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdBirth = funcMinMaxDate( mmds );
+                    DivideMinMaxDatumSet ddmdBirth = minMaxDate( mmds );
 
                     // TODO temporary solution
                     if( ddmdBirth.getMinYear()  < 0 ) { ddmdBirth.setMinYear( 0 ); }
@@ -5941,17 +5628,15 @@ public class LinksCleaned extends Thread
                     conCleaned.runQuery( runQueryGeb );
                 }
 
-                // Marriage date
-                if( mar_date_valid != 1 )
+                if( mar_date_valid != 1 )                // invalid marriage date
                 {
                     mmds.setTypeDate( "marriage_date" );
                     type_date = "mar";
                     mmds.setDate(mar_date);
 
-                    // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdMarriage = funcMinMaxDate( mmds );
+                    DivideMinMaxDatumSet ddmdMarriage = minMaxDate( mmds );
 
-                    // TODO: temp solution
+                    // TODO: temporary solution
                     if( ddmdMarriage.getMinYear()  < 0 ) { ddmdMarriage.setMinYear( 0 ); }
                     if( ddmdMarriage.getMinMonth() < 0 ) { ddmdMarriage.setMinMonth( 0 ); }
                     if( ddmdMarriage.getMinDay()   < 0 ) { ddmdMarriage.setMinDay( 0 ); }
@@ -5973,18 +5658,15 @@ public class LinksCleaned extends Thread
                     conCleaned.runQuery( runQueryHuw );
                 }
 
-                // Death date
-                if( death_date_valid != 1 )
+                if( death_date_valid != 1 )                // invalid death date
                 {
                     mmds.setTypeDate( "death_date" );
                     type_date = "death";
                     mmds.setDate( death_date );
 
-                    // Call Minmaxdate
-                    DivideMinMaxDatumSet ddmdDeath = funcMinMaxDate( mmds );
+                    DivideMinMaxDatumSet ddmdDeath = minMaxDate( mmds );
 
-
-                    // TODO: temp solution
+                    // TODO: temporary solution
                     if( ddmdDeath.getMinYear()  < 0 ) { ddmdDeath.setMinYear( 0 ); }
                     if( ddmdDeath.getMinMonth() < 0 ) { ddmdDeath.setMinMonth( 0 ); }
                     if( ddmdDeath.getMinDay()   < 0 ) { ddmdDeath.setMinDay( 0 ); }
@@ -6013,88 +5695,62 @@ public class LinksCleaned extends Thread
 
 
     /**
+     * minMaxDate : called by minMaxDateMain for invalid dates
+     *
      * @param inputInfo
      * @return
      * @throws Exception
      */
-    private DivideMinMaxDatumSet funcMinMaxDate(MinMaxDateSet inputInfo)
-            throws Exception {
-
-        // central date
-        // TODO: DATE CANNOT BE VALID
-//        DateYearMonthDaySet inputYearMonthDay =
-//                LinksSpecific.devideCheckDate(inputInfo.getDate());
-
+    private DivideMinMaxDatumSet minMaxDate( MinMaxDateSet inputInfo )
+    throws Exception
+    {
         // registration date
         DateYearMonthDaySet inputregistrationYearMonthDday =
                 LinksSpecific.divideCheckDate( inputInfo.getRegistrationDate() );
 
-        // Check: Is date valid
-        // TODO: DATE CANNOT BE VALID
-//        if (inputYearMonthDay.isValidDate()) {
-//            DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
-//
-//            returnSet.setMaxDay(inputYearMonthDay.getDay());
-//            returnSet.setMaxMonth(inputYearMonthDay.getMonth());
-//            returnSet.setMaxYear(inputYearMonthDay.getYear());
-//            returnSet.setMinDay(inputYearMonthDay.getDay());
-//            returnSet.setMinMonth(inputYearMonthDay.getMonth());
-//            returnSet.setMinYear(inputYearMonthDay.getYear());
-//
-//            return returnSet;
-//        }
-
-        // Fact: Date invalid
-
         // Check: age in years given?
+        if( inputInfo.getPersonAgeYear() > 0 )                               // age is given in years
+        {
+            DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();    // Create new return set
 
-        // Fact: age is given in years
-        if (inputInfo.getPersonAgeYear() > 0) {
-
-            // Create new return set
-            DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
-
-            // check if it is the deceased
-            if (inputInfo.getPersonRole() == 10) {
-
+            if( inputInfo.getPersonRole() == 10 )   // it is the deceased
+            {
                 // registration date
                 DateYearMonthDaySet inputDeathDate = LinksSpecific.divideCheckDate( inputInfo.getDeathDate() );
 
                 // check death date
-                if (inputDeathDate.isValidDate()) {
-
-                    // Day no en month no are similar to aktdate
-                    returnSet.setMaxDay(inputDeathDate.getDay());
-                    returnSet.setMaxMonth(inputDeathDate.getMonth());
-                    returnSet.setMinDay(inputDeathDate.getDay());
-                    returnSet.setMinMonth(inputDeathDate.getMonth());
-
-                } else {
-
-                    // Day no en month no are similar to aktdate
-                    returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
-                    returnSet.setMaxMonth(inputregistrationYearMonthDday.getMonth());
-                    returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
-                    returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
-
+                if( inputDeathDate.isValidDate() )
+                {
+                    // Day no en month no are similar to death date
+                    returnSet.setMaxDay(   inputDeathDate.getDay() );
+                    returnSet.setMaxMonth( inputDeathDate.getMonth() );
+                    returnSet.setMinDay(   inputDeathDate.getDay() );
+                    returnSet.setMinMonth( inputDeathDate.getMonth() );
                 }
-
-            } else {
-
-                // Day no en month no are similar to aktdate
-                returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
-                returnSet.setMaxMonth(inputregistrationYearMonthDday.getMonth());
-                returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
-                returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
-
+                else
+                {
+                    // Day no en month no are similar to regis date
+                    returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
+                    returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
+                    returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
+                    returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
+                }
+            }
+            else        // it is not the deceased
+            {
+                // Day no en month no are similar to regis date
+                returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
+                returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
+                returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
+                returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
             }
 
-            // preperation tasks
+            // TODO: KM: compute MinYear & MaxYear in a simpler way
+            /*
             Ages ageCentralFigure =
-                    funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
+                    returnAgeCentralFigure( inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole() );
 
-            // compute min and max year
-            // via minMaxCalculation
+            // compute min and max year via minMaxCalculation
             MinMaxYearSet mmj = minMaxCalculation(
                     inputInfo.getPersonId(),
                     inputregistrationYearMonthDday.getYear(),
@@ -6105,72 +5761,66 @@ public class LinksCleaned extends Thread
                     inputInfo.getRegistrationMainRole(),
                     ageCentralFigure);
 
-            returnSet.setMinYear(mmj.GetMinYear());
-            returnSet.setMaxYear(mmj.GetMaxYear());
+            returnSet.setMinYear( mmj.GetMinYear() );
+            returnSet.setMaxYear( mmj.GetMaxYear() );
+            */
 
             return returnSet;
-        }
+        } // age is given in years
 
-        // Fact: age not given by years
 
-        // Check: Is birthyear given?
-
-        // Fact: birth year given
-        if (inputInfo.getPersonBirthYear() > 0) {
-
-            // age is = actjaar - birth year
+        // Check: Is birth year given?
+        if( inputInfo.getPersonBirthYear() > 0 )           // birth year given
+        {
+            // age is = regis jaar - birth year
             int birth_year = inputInfo.getPersonBirthYear();
-            int act_year = inputregistrationYearMonthDday.getYear();
-
-            int AgeInYears = act_year - birth_year;
+            int regis_year = inputregistrationYearMonthDday.getYear();
+            int AgeInYears = regis_year - birth_year;
 
             // Create new set
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
 
-            // Day no en month similar to act date
-            returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
-            returnSet.setMaxMonth(inputregistrationYearMonthDday.getMonth());
-            returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
-            returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
+            // Day no en month similar to regis date
+            returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
+            returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
+            returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
+            returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
-            // preparation
+            // TODO: KM: compute MinYear & MaxYear in a simpler way
+            /*
             Ages ageCentralFigure =
-                    funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
+                    returnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
 
             // compute min and max year
             // via minMaxCalculation
             MinMaxYearSet mmj = minMaxCalculation(
-                    inputInfo.getPersonId(),
-                    act_year,
-                    inputInfo.getRegistrationMainType(),
-                    inputInfo.getTypeDate(),
-                    inputInfo.getPersonRole(),
-                    AgeInYears,
-                    inputInfo.getRegistrationMainRole(),
-                    ageCentralFigure);
+                inputInfo.getPersonId(),
+                regis_year,
+                inputInfo.getRegistrationMainType(),
+                inputInfo.getTypeDate(),
+                inputInfo.getPersonRole(),
+                AgeInYears,
+                inputInfo.getRegistrationMainRole(),
+                ageCentralFigure);
 
             returnSet.setMinYear(mmj.GetMinYear());
             returnSet.setMaxYear(mmj.GetMaxYear());
+            */
 
             return returnSet;
-        }
+        } // birth year given
 
-        // Fact: birth year not given
-
-        // Check: Is it the deceased him self?
-
-        // Fact: not the deceased
-        if (inputInfo.getPersonRole() != 10) {
-
+        // Check: Is it the deceased himself?
+        if( inputInfo.getPersonRole() != 10 )           // not the deceased
+        {
             // Days, month, weeks to years, round up
-            int ageinYears = funcRoundUp(
-                    inputInfo.getPersonAgeYear(),
-                    inputInfo.getPersonAgeMonth(),
-                    inputInfo.getPersonAgeWeek(),
-                    inputInfo.getPersonAgeDay());
+            int ageinYears = roundUp(
+                inputInfo.getPersonAgeYear(),
+                inputInfo.getPersonAgeMonth(),
+                inputInfo.getPersonAgeWeek(),
+                inputInfo.getPersonAgeDay() );
 
-            // New return set
-            DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
+            DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();            // New return set
 
             // day and month is similar to act date
             returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
@@ -6178,58 +5828,52 @@ public class LinksCleaned extends Thread
             returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
             returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
 
-            // preparation
+            // TODO: KM: compute MinYear & MaxYear in a simpler way
+            /*
             Ages leeftijdHoofdpersoon =
-                    funcReturnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
+                    returnAgeCentralFigure(inputInfo.getRegistrationId(), inputInfo.getRegistrationMainType(), inputInfo.getPersonRole());
 
             // compute min and max year
             // via minMaxCalculation
             MinMaxYearSet mmj = minMaxCalculation(
-                    inputInfo.getPersonId(),
-                    inputregistrationYearMonthDday.getYear(),
-                    inputInfo.getRegistrationMainType(),
-                    inputInfo.getTypeDate(),
-                    inputInfo.getPersonRole(),
-                    ageinYears,
-                    inputInfo.getRegistrationMainRole(),
-                    leeftijdHoofdpersoon);
+                inputInfo.getPersonId(),
+                inputregistrationYearMonthDday.getYear(),
+                inputInfo.getRegistrationMainType(),
+                inputInfo.getTypeDate(),
+                inputInfo.getPersonRole(),
+                ageinYears,
+                inputInfo.getRegistrationMainRole(),
+                leeftijdHoofdpersoon);
 
             returnSet.setMinYear(mmj.GetMinYear());
             returnSet.setMaxYear(mmj.GetMaxYear());
+            */
 
             return returnSet;
-        }
+        } // not the deceased
 
-        // Fact: It is de deceased
 
         // Check: combination of month days and weeks?
-
         int areMonths = 0;
-        int areWeeks = 0;
-        int areDays = 0;
+        int areWeeks  = 0;
+        int areDays   = 0;
 
-        if (inputInfo.getPersonAgeMonth() > 0) {
-            areMonths++;
-        }
-        if (inputInfo.getPersonAgeWeek() > 0) {
-            areWeeks++;
-        }
-        if (inputInfo.getPersonAgeDay() > 0) {
-            areDays++;
-        }
+        if( inputInfo.getPersonAgeMonth() > 0 ) { areMonths = 1; }
+        if( inputInfo.getPersonAgeWeek()  > 0 ) { areWeeks  = 1; }
+        if( inputInfo.getPersonAgeDay()   > 0 ) { areDays   = 1; }
 
         // TODO: ADDED
         // If marriage date, return 0-0-0
-        // returnen
-        if (inputInfo.getTypeDate().equalsIgnoreCase("marriage_date") && ((areMonths + areWeeks + areDays) > 0)) {
+        if( inputInfo.getTypeDate().equalsIgnoreCase( "marriage_date" ) && ( (areMonths + areWeeks + areDays) > 0) )
+        {
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
 
-            returnSet.setMaxDay(0);
-            returnSet.setMaxMonth(0);
-            returnSet.setMaxYear(0);
-            returnSet.setMinDay(0);
-            returnSet.setMinMonth(0);
-            returnSet.setMinYear(0);
+            returnSet.setMaxDay( 0 );
+            returnSet.setMaxMonth( 0 );
+            returnSet.setMaxYear( 0 );
+            returnSet.setMinDay( 0 );
+            returnSet.setMinMonth( 0 );
+            returnSet.setMinYear( 0 );
 
             return returnSet;
         }
@@ -6241,23 +5885,21 @@ public class LinksCleaned extends Thread
         int useMonth;
         int useDay;
 
-        if (inputDeathDate.isValidDate()) {
-
-            useYear = inputDeathDate.getYear();
+        if( inputDeathDate.isValidDate() )
+        {
+            useYear  = inputDeathDate.getYear();
             useMonth = inputDeathDate.getMonth();
-            useDay = inputDeathDate.getDay();
-
-        } else {
-
-            useYear = inputregistrationYearMonthDday.getYear();
+            useDay   = inputDeathDate.getDay();
+        }
+        else
+        {
+            useYear  = inputregistrationYearMonthDday.getYear();
             useMonth = inputregistrationYearMonthDday.getMonth();
-            useDay = inputregistrationYearMonthDday.getDay();
-
+            useDay   = inputregistrationYearMonthDday.getDay();
         }
 
-        // fact: combination
-        if ((areMonths + areWeeks + areDays) > 1) {
-
+        if( ( areMonths + areWeeks + areDays ) >= 2 )         // at least 2 given
+        {
             // weeks and months to days
             int dagen = inputInfo.getPersonAgeMonth() * 30;
             dagen += inputInfo.getPersonAgeWeek() * 7;
@@ -6270,33 +5912,33 @@ public class LinksCleaned extends Thread
             int maxdays = (dagen + 1) * -1;
 
             // Min date
-            String minDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+            String minDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays);
 
             // Max date
-            String maxDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
+            String maxDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdays);
 
             // New date return return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // Checken if max date not later than actdate
-            DateYearMonthDaySet dymd = funcCheckMaxDate(
-                    computedMaxDate.getYear(),
-                    computedMaxDate.getMonth(),
-                    computedMaxDate.getDay(),
-                    useYear,
-                    useMonth,
-                    useDay);
+            DateYearMonthDaySet dymd = checkMaxDate(
+                computedMaxDate.getYear(),
+                computedMaxDate.getMonth(),
+                computedMaxDate.getDay(),
+                useYear,
+                useMonth,
+                useDay);
 
             // returnen
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -6309,9 +5951,10 @@ public class LinksCleaned extends Thread
             returnSet.setMinYear(computedMinDate.getYear());
 
             return returnSet;
-        } // Fact: age in months
-        else if (areMonths == 1) {
+        }
 
+        else if( areMonths == 1 )       // age in months given
+        {
             // convert months
             int dagen = inputInfo.getPersonAgeMonth() * 30;
 
@@ -6323,20 +5966,20 @@ public class LinksCleaned extends Thread
             int maxdagen = (dagen - 14) * -1;
 
             // Min date
-            String minDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindagen);
+            String minDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindagen);
 
             // Max date
-            String maxDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdagen);
+            String maxDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdagen);
 
             // New date to return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
@@ -6353,9 +5996,10 @@ public class LinksCleaned extends Thread
             returnSet.setMinYear(computedMinDate.getYear());
 
             return returnSet;
-        } // Fact: age in weeks
-        else if (areWeeks == 1) {
+        }
 
+        else if( areWeeks == 1 )             // age in weeks given
+        {
             // weeks and months to days
             int days = inputInfo.getPersonAgeWeek() * 7;
 
@@ -6368,20 +6012,20 @@ public class LinksCleaned extends Thread
             int maxdays = (days - 4) * -1;
 
             // Min date
-            String minDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+            String minDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays);
 
             // Max datum
-            String maxDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
+            String maxDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdays);
 
             // date to return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
@@ -6399,9 +6043,10 @@ public class LinksCleaned extends Thread
 
             return returnSet;
 
-        } // Fact: age in days
-        else if (areDays == 1) {
+        }
 
+        else if( areDays == 1 )             // age in days given
+        {
             // weeks and months to days
             int days = inputInfo.getPersonAgeDay();
 
@@ -6411,20 +6056,20 @@ public class LinksCleaned extends Thread
             int maxdays = (days - 1) * -1;
 
             // min date
-            String minDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+            String minDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays);
 
             // max date
-            String maxDate = funcAddTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
+            String maxDate = addTimeToDate(
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdays);
 
 
             // New date to return value
@@ -6433,13 +6078,13 @@ public class LinksCleaned extends Thread
 
 
             // Checken if max date niet later than actdate
-            DateYearMonthDaySet dymd = funcCheckMaxDate(
-                    computedMaxDate.getYear(),
-                    computedMaxDate.getMonth(),
-                    computedMaxDate.getDay(),
-                    useYear,
-                    useMonth,
-                    useDay);
+            DateYearMonthDaySet dymd = checkMaxDate(
+                computedMaxDate.getYear(),
+                computedMaxDate.getMonth(),
+                computedMaxDate.getDay(),
+                useYear,
+                useMonth,
+                useDay);
 
             // return
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -6458,110 +6103,280 @@ public class LinksCleaned extends Thread
         DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
 
         // day and month similar to act date
-        returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
-        returnSet.setMaxMonth(inputregistrationYearMonthDday.getMonth());
-        returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
-        returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
+        returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
+        returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
+        returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
+        returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
-        // compute min max year
-        // via minMaxCalculation
-        // PREPARATION FOR THIS EXCEPTION!!!
+        // Compute min max year via minMaxCalculation
         Ages ages = new Ages();
-        ages.setYear(0);
-        ages.setMonth(0);
-        ages.setWeek(0);
-        ages.setDay(0);
+        ages.setYear( 0 );
+        ages.setMonth( 0 );
+        ages.setWeek( 0 );
+        ages.setDay( 0 );
 
         MinMaxYearSet mmj = minMaxCalculation(
-                inputInfo.getPersonId(),
-                inputregistrationYearMonthDday.getYear(),
-                inputInfo.getRegistrationMainType(),
-                inputInfo.getTypeDate(),
-                inputInfo.getPersonRole(),
-                0,
-                inputInfo.getRegistrationMainRole(),
-                ages);
+            inputInfo.getPersonId(),
+            inputregistrationYearMonthDday.getYear(),
+            inputInfo.getRegistrationMainType(),
+            inputInfo.getTypeDate(),
+            inputInfo.getPersonRole(),
+            0,
+            inputInfo.getRegistrationMainRole(),
+            ages );
 
-        returnSet.setMinYear(mmj.GetMinYear());
-        returnSet.setMaxYear(mmj.GetMaxYear());
+        returnSet.setMinYear( mmj.GetMinYear() );
+        returnSet.setMaxYear( mmj.GetMaxYear() );
 
         return returnSet;
+    } // minMaxDate
 
-    } // funcMinMaxDate
 
+    /**
+     * @param year
+     * @param month
+     * @param week
+     * @param day
+     * @return
+     */
+    public int roundUp(int year, int month, int week, int day)
+    {
+        int tempYear  = year;
+        int tempMonth = month;
+        int tempWeek  = week;
+
+        // day to week
+        if( day > 0 ) {
+            tempWeek += (day / 7);
+
+            if( (day % 7) != 0 ) { tempWeek++; }
+        }
+        week = tempWeek;
+
+        // week to month
+        if( week > 0 ) {
+            tempMonth += (week / 4);
+
+            if( (week % 4 ) != 0) { tempMonth++; }
+        }
+
+        month = tempMonth;
+
+        // week to month
+        if( month > 0 ) {
+            tempYear += (month / 12);
+
+            if( (month % 12 ) != 0) { tempYear++; }
+        }
+
+        return tempYear;
+    } // roundUp
+
+
+    /**
+     * Use this function to add or subtract an amount of time from a date.
+     *
+     * @param year
+     * @param month
+     * @param day
+     * @param tt
+     * @param timeAmount
+     * @return
+     */
+    private String addTimeToDate(
+            int year,
+            int month,
+            int day,
+            TimeType tt,
+            int timeAmount)
+    {
+
+        Calendar c1 = Calendar.getInstance();       // new calendar instance
+
+        c1.set( year, month, day );                 // set(int year, int month, int date)
+
+        // Check of time type
+        if( tt == tt.DAY ) {
+            c1.add( Calendar.DAY_OF_MONTH, timeAmount );
+        }
+        else if( tt == tt.WEEK ) {
+            c1.add( Calendar.WEEK_OF_MONTH, timeAmount );
+        }
+        else if( tt == tt.MONTH ) {
+            c1.add( Calendar.MONTH, timeAmount );
+        }
+        else if( tt == tt.YEAR ) {
+            c1.add( Calendar.YEAR, timeAmount );
+        }
+
+        // return new date
+        String am = "" + c1.get( Calendar.DATE ) + "-" + c1.get( Calendar.MONTH ) + "-" + c1.get( Calendar.YEAR );
+
+        return am;
+    } // addTimeToDate
+
+
+    /**
+     * @param pYear
+     * @param pMonth
+     * @param pDay
+     * @param rYear
+     * @param rMonth
+     * @param rDay
+     * @return
+     */
+    private DateYearMonthDaySet checkMaxDate( int pYear, int pMonth, int pDay, int rYear, int rMonth, int rDay )
+    {
+        // year is greater than age year
+        if (pYear > rYear) {
+
+            //return akterdatum
+            DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+
+        } // lower, date is correct, return original date
+        else if (pYear < rYear) {
+
+            // return person date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+            dy.setYear(pYear);
+            dy.setMonth(pMonth);
+            dy.setDay(pDay);
+            return dy;
+
+        }
+
+        // years are equal, rest must be checked
+
+        // month is higher than act month
+        if (pMonth > rMonth) {
+
+            // return return act month
+            DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+
+        } // month is correct, return original month
+        else if (pMonth < rMonth) {
+
+            // return return persons date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+            dy.setYear(pYear);
+            dy.setMonth(pMonth);
+            dy.setDay(pDay);
+            return dy;
+        }
+
+        // months are equal, check rest
+
+        // day is higher than act day
+        if (pDay > rDay) {
+
+            // return act date
+            DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+            dy.setYear(rYear);
+            dy.setMonth(rMonth);
+            dy.setDay(rDay);
+            return dy;
+        }
+
+        // day is lower or similar to act day
+        DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
+        dy.setYear(pYear);
+        dy.setMonth(pMonth);
+        dy.setDay(pDay);
+        return dy;
+    } // checkMaxDate
+
+
+    // ---< Functions using hp* objects >---------------------------------------
 
     /**
      * @param id_registration
      * @param registration_maintype
-     * @param rol
+     * @param role
      * @return
      */
-    private Ages funcReturnAgeCentralFigure(int id_registration, int registration_maintype, int rol) {
-
+    /*
+    private Ages returnAgeCentralFigure( int id_registration, int registration_maintype, int role )
+    {
         Ages ages = new Ages();
 
         // age of central figure
-        if (registration_maintype == 1) {
+        if( registration_maintype == 1 )
+        {
             // int indexNr = hpChildRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch(hpChildRegistration, id_registration);
+            int indexNr = Collections.binarySearch( hpChildRegistration, id_registration );
 
             // Check if number excists in list
             // add age
-            if (indexNr > -1) {
-                ages.setYear(hpChildAge.get(indexNr));
-                ages.setMonth(hpChildMonth.get(indexNr));
-                ages.setWeek(hpChildWeek.get(indexNr));
-                ages.setDay(hpChildDay.get(indexNr));
+            if( indexNr > -1 ) {
+                ages.setYear(  hpChildAge.get(   indexNr ) );
+                ages.setMonth( hpChildMonth.get( indexNr ) );
+                ages.setWeek(  hpChildWeek.get(  indexNr) );
+                ages.setDay(   hpChildDay.get(   indexNr ) );
             }
-        } // age of central figure
-        // age of central figure
-        else if ((registration_maintype == 2) && ((rol == 5) || (rol == 6))) {
+        }
+
+        else if( (registration_maintype == 2) && ((role == 5) || (role == 6)) )
+        {
             // int indexNr = hpBrideRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch(hpBrideRegistration, id_registration);
+            int indexNr = Collections.binarySearch( hpBrideRegistration, id_registration );
 
             // check is number exists
             // add age
-            if (indexNr > -1) {
-                ages.setYear(hpBrideAge.get(indexNr));
-                ages.setMonth(hpBrideMonth.get(indexNr));
-                ages.setWeek(hpBrideWeek.get(indexNr));
-                ages.setDay(hpBrideDay.get(indexNr));
+            if( indexNr > -1 ) {
+                ages.setYear(  hpBrideAge.get(   indexNr ) );
+                ages.setMonth( hpBrideMonth.get( indexNr ) );
+                ages.setWeek(  hpBrideWeek.get(  indexNr ) );
+                ages.setDay(   hpBrideDay.get(   indexNr ) );
             }
-        } else if ((registration_maintype == 2) && ((rol == 8) || (rol == 9))) {
-            // int indexNr = hpGroomRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch(hpGroomRegistration, id_registration);
+        }
 
-            // check exeistence of number in list
+        else if( (registration_maintype == 2) && ((role == 8) || (role == 9)) )
+        {
+            // int indexNr = hpGroomRegistration.indexOf(id_registration);
+            int indexNr = Collections.binarySearch( hpGroomRegistration, id_registration );
+
+            // check existence of number in list
             // add age
-            if (indexNr > -1) {
-                ages.setYear(hpGroomAge.get(indexNr));
-                ages.setMonth(hpGroomMonth.get(indexNr));
-                ages.setWeek(hpGroomWeek.get(indexNr));
-                ages.setDay(hpGroomDay.get(indexNr));
+            if( indexNr > -1 ) {
+                ages.setYear(  hpGroomAge.get(   indexNr ) );
+                ages.setMonth( hpGroomMonth.get( indexNr ) );
+                ages.setWeek(  hpGroomWeek.get(  indexNr ) );
+                ages.setDay(   hpGroomDay.get(   indexNr ) );
             }
-        } // central figure age
-        else if (registration_maintype == 3) {
+        }
+
+        else if( registration_maintype == 3 )
+        {
             // int indexNr = hpDeceasedRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch(hpDeceasedRegistration, id_registration);
+            int indexNr = Collections.binarySearch( hpDeceasedRegistration, id_registration );
 
             // check number if exists
             // add age
-            if (indexNr > -1) {
-                ages.setYear(hpDeceasedAge.get(indexNr));
-                ages.setMonth(hpDeceasedMonth.get(indexNr));
-                ages.setWeek(hpDeceasedWeek.get(indexNr));
-                ages.setDay(hpDeceasedDay.get(indexNr));
+            if( indexNr > -1 ) {
+                ages.setYear(  hpDeceasedAge.get(   indexNr ) );
+                ages.setMonth( hpDeceasedMonth.get( indexNr ) );
+                ages.setWeek(  hpDeceasedWeek.get(  indexNr ) );
+                ages.setDay(   hpDeceasedDay.get(   indexNr) ) ;
             }
         }
 
         return ages;
-    } // funcReturnAgeCentralFigure
-
+    } // returnAgeCentralFigure
+    */
 
     /**
      * @param sourceNo
      * @throws Exception
      */
+    /*
     private void fillMinMaxArrays( String sourceNo ) throws Exception
     {
         hpChildRegistration.clear();
@@ -6585,37 +6400,37 @@ public class LinksCleaned extends Thread
 
         while( rs1.next() ) {
             hpChildRegistration.add( rs1.getInt( "id_registration" ) );
-            hpChildAge.add( rs1.getInt( "age_year" ) );
+            hpChildAge.add(   rs1.getInt( "age_year" ) );
             hpChildMonth.add( rs1.getInt( "age_month" ) );
-            hpChildWeek.add( rs1.getInt( "age_week" ) );
-            hpChildDay.add( rs1.getInt( "age_day" ) );
+            hpChildWeek.add(  rs1.getInt( "age_week" ) );
+            hpChildDay.add(   rs1.getInt( "age_day" ) );
         }
 
         while( rs2.next() ) {
             hpGroomRegistration.add( rs2.getInt( "id_registration" ) );
-            hpGroomAge.add( rs2.getInt( "age_year" ) );
+            hpGroomAge.add(   rs2.getInt( "age_year" ) );
             hpGroomMonth.add( rs2.getInt( "age_month" ) );
-            hpGroomWeek.add( rs2.getInt( "age_week" ) );
-            hpGroomDay.add( rs2.getInt( "age_day" ) );
+            hpGroomWeek.add(  rs2.getInt( "age_week" ) );
+            hpGroomDay.add(   rs2.getInt( "age_day" ) );
         }
 
         while( rs3.next() ) {
             hpBrideRegistration.add( rs3.getInt( "id_registration" ) );
-            hpBrideAge.add( rs3.getInt( "age_year" ) );
+            hpBrideAge.add(   rs3.getInt( "age_year" ) );
             hpBrideMonth.add( rs3.getInt( "age_month" ) );
-            hpBrideWeek.add( rs3.getInt( "age_week" ) );
-            hpBrideDay.add( rs3.getInt( "age_day" ) );
+            hpBrideWeek.add(  rs3.getInt( "age_week" ) );
+            hpBrideDay.add(   rs3.getInt( "age_day" ) );
         }
 
         while( rs4.next() ) {
             hpDeceasedRegistration.add( rs4.getInt( "id_registration" ) );
-            hpDeceasedAge.add( rs4.getInt( "age_year" ) );
+            hpDeceasedAge.add(   rs4.getInt( "age_year" ) );
             hpDeceasedMonth.add( rs4.getInt( "age_month" ) );
-            hpDeceasedWeek.add( rs4.getInt( "age_week" ) );
-            hpDeceasedDay.add( rs4.getInt( "age_day" ) );
+            hpDeceasedWeek.add(  rs4.getInt( "age_week" ) );
+            hpDeceasedDay.add(   rs4.getInt( "age_day" ) );
         }
     } // fillMinMaxArrays
-
+    */
 }
 
 // [eof]

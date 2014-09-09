@@ -4,43 +4,35 @@ package dataset;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-04-Sep-2014 Latest change
+ * FL-05-Sep-2014 Latest change
  */
-public final class DateYearMonthDaySet {
-
-    /**
-     *
-     */
+public final class DateYearMonthDaySet
+{
     private int year;
     private int month;
     private int day;
 
-
-
-    /**
-     *
-     */
     private boolean dateIsValid = true;
 
-    
-    
-    /**
-     *
-     */
     private String reportsYear  = "";
     private String reportsMonth = "";
     private String reportsDay   = "";
 
+    private String reportsDate  = "";
 
+
+    public DateYearMonthDaySet( String reportsDate )
+    {
+        this.reportsDate = reportsDate;
+    }
 
     /**
      *
      * @return
      */
-    public boolean isValidDate( ) {
+    public boolean isValidDate() {
         return this.dateIsValid;
     }
-
 
 
     /**
@@ -53,7 +45,6 @@ public final class DateYearMonthDaySet {
     }
 
 
-
     /**
      *
      * @param value
@@ -62,7 +53,6 @@ public final class DateYearMonthDaySet {
         this.reportsMonth = value;
         this.dateIsValid  = false;
     }
-
 
 
     /**
@@ -75,6 +65,14 @@ public final class DateYearMonthDaySet {
     }
 
 
+    /**
+     *
+     * @param value
+     */
+    public void setReportDate( String value ) {
+        this.reportsDate  = value;
+    }
+
 
     /**
      *
@@ -83,7 +81,6 @@ public final class DateYearMonthDaySet {
     public void setYear( int value ) {
         this.year = value;
     }
-
 
 
     /**
@@ -95,7 +92,6 @@ public final class DateYearMonthDaySet {
     }
 
 
-
     /**
      *
      * @param value
@@ -103,7 +99,6 @@ public final class DateYearMonthDaySet {
     public void setDay( int value ){
         this.day = value;
     }
-
 
 
     /**
@@ -115,7 +110,6 @@ public final class DateYearMonthDaySet {
     }
 
 
-
     /**
      *
      * @return
@@ -123,7 +117,6 @@ public final class DateYearMonthDaySet {
     public String getReportMonth( ){
         return reportsMonth;
     }
-
 
 
     /**
@@ -135,15 +128,14 @@ public final class DateYearMonthDaySet {
     }
 
 
-
     /**
      *
      * @return
      */
-    public String getReports( ){
-        return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]";
+    public String getReports( ) {
+        if( reportsDate.isEmpty() ) { return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]"; }
+        else { return "[ Date: " + reportsDate + " ]"; }
     }
-
 
 
     /**
@@ -155,7 +147,6 @@ public final class DateYearMonthDaySet {
     }
 
 
-
     /**
      *
      * @return
@@ -163,7 +154,6 @@ public final class DateYearMonthDaySet {
     public int getMonth( ){
         return month;
     }
-
 
 
     /**
@@ -174,3 +164,4 @@ public final class DateYearMonthDaySet {
         return day;
     }
 }
+

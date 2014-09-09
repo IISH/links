@@ -318,9 +318,9 @@ public class Functions
      * @param date to be checked
      * @return een DateYearMonthDay object met datum en evt. fouten
      */
-    public static DateYearMonthDaySet devideCheckDate(String date){
-
-        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet();
+    public static DateYearMonthDaySet devideCheckDate( String date )
+    {
+        dataset.DateYearMonthDaySet dymd = new dataset.DateYearMonthDaySet( date );
 
         if(date == null || date.isEmpty() ){
             dymd.setYear( 0 ) ;
