@@ -27,16 +27,17 @@ import modulemain.LinksSpecific;
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
  * FL-28-Aug-2014 Comment out some unused functions
- * FL-09-Sep-2014 Latest change
+ * FL-10-Sep-2014 Latest change
  */
 public class TableToArraysSet
 {
     boolean debug = false;
     boolean extra = true;
 
-    private ArrayList< ArrayListNonCase > column     = new ArrayList<ArrayListNonCase>();
     private ArrayList <ArrayListNonCase > columnCopy = new ArrayList<ArrayListNonCase>();         // used for Shuffle
-    private ArrayList< ArrayListNonCase > columnNew  = new ArrayList<ArrayListNonCase>();
+
+    private ArrayList< ArrayListNonCase > column     = new ArrayList<ArrayListNonCase>();   // old, from ref db
+    private ArrayList< ArrayListNonCase > columnNew  = new ArrayList<ArrayListNonCase>();   // new, to ref db
 
     private ArrayList< String > columnName    = new ArrayList< String >();
     private ArrayList< String > columnNameNew = new ArrayList<String>();
@@ -244,11 +245,14 @@ public class TableToArraysSet
                 String stan = alnc_stan.get( r ).toString();
                 if( stan.length() > lmax ) { stan = stan.substring( 0, lmax ); }
 
+                String std_src = alnc_sour.get( r ).toString();
+
                 //if( orig.startsWith( "beroep" ) ) {
-                if( orig.contains( "eroep" ) ) {
+                //if( orig.contains( "eroep" ) ) {
                 //if( id_name > id_limit ) {
-                    System.out.printf("%06d: %6s %40s %40s %s %9s\n", r,
-                            alnc_name.get(r), orig, stan, alnc_code.get(r), alnc_sour.get(r));
+                if( std_src.contains( "test" ) ) {
+                    System.out.printf( "%06d: %6s %40s %40s %s %9s\n", r,
+                            alnc_name.get(r), orig, stan, alnc_code.get(r), std_src );
                 }
 
                 //if (r > 10) { break; }
@@ -390,19 +394,16 @@ public class TableToArraysSet
         int index = Collections.binarySearch( column.get(columnName.indexOf( "original" ) ), value );
         //System.out.printf( "TableToArraysSet/getColumnByOriginal: index = %d\n", index );
 
-        if( index > -1 ) {
+        if( index > -1 ) {      // present in reference table
             return column.get( columnName.indexOf( name.toLowerCase() ) ).get( index ).toString();
         }
 
         int index2 = Collections.binarySearch( columnNew.get( columnNameNew.indexOf( "original" ) ), value );
         //System.out.printf( "TableToArraysSet/getColumnByOriginal: index2 = %d\n", index2 );
 
-        if( index2 > -1 ) {
-
-            // TODO: work around
+        if( index2 > -1 ) {     // present in the new collection (to be written to reference table)
             if( name.equalsIgnoreCase( "standard_code" ) ) {
-                //return "x";
-                return "y";     // FL-29-Aug-2014
+                return "x";     // already present case-insensitive
             }
 
             return columnNew.get( columnNameNew.indexOf( name ) ).get( index2 ).toString();
@@ -479,14 +480,13 @@ public class TableToArraysSet
      *
      * @return
      */
-    /*
     public int countRows()
     {
         //System.out.println( "TableToArraysSet/countRows" );
 
         return column.get(columnName.indexOf("original")).size();
     } // countRows
-    */
+
 
     /**
      *
