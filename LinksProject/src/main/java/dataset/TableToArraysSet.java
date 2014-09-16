@@ -11,9 +11,6 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import connectors.MySqlConnector;
 
 import modulemain.LinksSpecific;
@@ -27,7 +24,7 @@ import modulemain.LinksSpecific;
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
  * FL-28-Aug-2014 Comment out some unused functions
- * FL-10-Sep-2014 Latest change
+ * FL-11-Sep-2014 Latest change
  */
 public class TableToArraysSet
 {
@@ -103,12 +100,12 @@ public class TableToArraysSet
                 ArrayListNonCase< Integer > alCopy = new ArrayListNonCase<Integer>();
                 ArrayListNonCase< Integer > alNew  = new ArrayListNonCase<Integer>();
                 
-                column.add( al );
+                column.add(     al );
                 columnCopy.add( alCopy );
-                columnNew.add( alNew );
+                columnNew.add(  alNew );
 
                 // add name
-                columnName.add( cn );
+                columnName.add(    cn );
                 columnNameNew.add( cn );
 
                 isIntFlag = true;                // set int flag
@@ -138,7 +135,7 @@ public class TableToArraysSet
                 j += 1;
                 if( isIntFlag )            // int
                 {
-                    column.get( (i - 1) ).add( rs.getInt( i ) );
+                    column.get(     (i - 1) ).add( rs.getInt( i ) );
                     columnCopy.get( (i - 1) ).add( rs.getInt( i ) );
                 }
                 else                        // string
@@ -146,12 +143,12 @@ public class TableToArraysSet
                     String ts = rs.getString( i );
 
                     if( ts != null && !ts.isEmpty() ) {
-                        column.get( (i - 1) ).add( ts.toLowerCase() );
+                        column.get(     (i - 1) ).add( ts.toLowerCase() );
                         columnCopy.get( (i - 1) ).add( ts.toLowerCase() );
                     }
                     else
                     {
-                        column.get( (i - 1) ).add( "" );
+                        column.get(     (i - 1) ).add( "" );
                         columnCopy.get( (i - 1) ).add( "" );
                     }
                 }
@@ -164,7 +161,7 @@ public class TableToArraysSet
         rs.close();        // Close ResultSet
         rs = null;
 
-        if( debug ) { showContents( "id_" + tableName ); }
+        if( debug ) { showContents(); }
 
         //if( !extra ) {
         //    System.out.println( "SKIPPING EXTRA SORT" );
@@ -203,62 +200,80 @@ public class TableToArraysSet
     /**
      *
      */
-    public void showContents( String ref_name )
+    public void showContents()
     {
-        int id_limit = 0;
-        //int id_limit = 666000;       // occupation
-
-        int ncolumns = this.column.size();
-
         System.out.println( "TableToArraysSet/showContents" );
-        System.out.printf("Table name: %s\n", this.tableName);
-        System.out.printf( "colums: %d\n", ncolumns );
+        System.out.printf( "Table name: %s\n", this.tableName );
 
-        if( ncolumns != 5 ) {
-            System.out.println( "unexpected number of columns" );
-            return;
-        }
+        if( this.tableName == "report" ) { return; }
 
-        //id_occupation, original, standard, standard_code, standard_source
         int nrows = column.get( columnName.indexOf( "original" ) ).size();
+        int ncols = this.column.size();
+        System.out.printf( "rows: %d, columns: %d\n", nrows, ncols );
 
-        ArrayListNonCase alnc_name = this.column.get( 0 );
-        ArrayListNonCase alnc_orig = this.column.get( 1 );
-        ArrayListNonCase alnc_stan = this.column.get( 2 );
-        ArrayListNonCase alnc_code = this.column.get( 3 );
-        ArrayListNonCase alnc_sour = this.column.get( 4 );
-
-        System.out.println( "============================================================================================================" );
-        System.out.printf ( "     #  %s  original                 standard                 standard_code standard_source\n", ref_name );
-        System.out.println( "------------------------------------------------------------------------------------------------------------" );
-        for( int c = 0; c < ncolumns; c ++ )
+        if( this.tableName == "occupation" )
         {
-            for( int r = 0; r < nrows; r++)
+            //id_occupation, original, standard, standard_code, standard_source
+
+            ArrayListNonCase alnc_name = this.column.get( 0 );
+            ArrayListNonCase alnc_orig = this.column.get( 1 );
+            ArrayListNonCase alnc_stan = this.column.get( 2 );
+            ArrayListNonCase alnc_code = this.column.get( 3 );
+            ArrayListNonCase alnc_sour = this.column.get( 4 );
+
+            System.out.println( "============================================================================================================" );
+            System.out.println( "     #     id                                 original                                 standard sc   ssource" );
+            System.out.println( "------------------------------------------------------------------------------------------------------------" );
+
+            for( int r = 0; r < nrows; r++ )
             {
                 String name = alnc_name.get( r ).toString();
-                int id_name = Integer.parseInt(name );
+                String orig = alnc_orig.get( r ).toString();
+                String stan = alnc_stan.get( r ).toString();
+                String code = alnc_code.get( r ).toString();
+                String sour = alnc_sour.get( r ).toString();
 
                 int lmax = 40;
-                String orig = alnc_orig.get( r ).toString();
                 if( orig.length() > lmax ) { orig = orig.substring( 0, lmax ); }
-
-                String stan = alnc_stan.get( r ).toString();
                 if( stan.length() > lmax ) { stan = stan.substring( 0, lmax ); }
 
-                String std_src = alnc_sour.get( r ).toString();
-
-                //if( orig.startsWith( "beroep" ) ) {
-                //if( orig.contains( "eroep" ) ) {
-                //if( id_name > id_limit ) {
-                if( std_src.contains( "test" ) ) {
-                    System.out.printf( "%06d: %6s %40s %40s %s %9s\n", r,
-                            alnc_name.get(r), orig, stan, alnc_code.get(r), std_src );
-                }
-
-                //if (r > 10) { break; }
+                // check only for "beroep" or "Beroep"
+                //if( orig.contains( "eroep" ) )
+                if( ! sour.equals( "hsn_links" ) )
+                { System.out.printf( "%06d %6s %40s %40s %2s %9s\n", r, name, orig, stan, code, sour ); }
             }
+
+            System.out.println("============================================================================================================");
         }
-        System.out.println( "============================================================================================================" );
+
+        else if( this.tableName == "role" )
+        {
+            //id_occupation, original, standard, role_nr, standard_code, standard_source
+
+            ArrayListNonCase alnc_name = this.column.get( 0 );
+            ArrayListNonCase alnc_orig = this.column.get( 1 );
+            ArrayListNonCase alnc_stan = this.column.get( 2 );
+            ArrayListNonCase alnc_role = this.column.get( 3 );
+            ArrayListNonCase alnc_code = this.column.get( 4 );
+            ArrayListNonCase alnc_sour = this.column.get( 5 );
+
+            System.out.println( "===========================================================================" );
+            System.out.println( "     #     id                  original                  standard nr sc  ss" );
+            System.out.println( "---------------------------------------------------------------------------" );
+
+            for( int r = 0; r < nrows; r++ )
+            {
+                String name = alnc_name.get( r ).toString();
+                String orig = alnc_orig.get( r ).toString();
+                String stan = alnc_stan.get( r ).toString();
+                String role = alnc_role.get( r ).toString();
+                String code = alnc_code.get( r ).toString();
+                String sour = alnc_sour.get( r ).toString();
+
+                System.out.printf( "%06d %6s %25s %25s %2s %2s %3s\n", r, name, orig, stan, role, code, sour );
+            }
+            System.out.println( "===========================================================================" );
+        }
     } // showContents
 
 
@@ -360,7 +375,7 @@ public class TableToArraysSet
     public String getStandardCodeByOriginal( String value )
     throws Exception
     {
-        if( debug ) { System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value ); }
+        //if( debug ) { System.out.println( "TableToArraysSet/getStandardCodeByOriginal, value: " + value ); }
 
         return getColumnByOriginal( "standard_code", value );
     } // getStandardCodeByOriginal

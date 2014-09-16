@@ -4,163 +4,60 @@
 package dataset;
 
 /**
- * DivideMinMaxDatum dataset
- * Used to return a set of data
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * FL-16-Sep-2014 Latest change
  */
-public final class DivideMinMaxDatumSet {
+public final class DivideMinMaxDatumSet
+{
+    private int MinDay   = 0;
+    private int MinMonth = 0;
+    private int MinYear  = 0;
 
-    // Private vars
-    private int MinDay ;
-    private int MinMonth ;
-    private int MinYear ;
+    private int MaxDay   = 0;
+    private int MaxMonth = 0;
+    private int MaxYear  = 0;
 
-    private int MaxDay ;
-    private int MaxMonth ;
-    private int MaxYear ;
-
-
-
-    /**
-     * Use this method to get MinDay
-     * @return MinDay
-     */
-    public int getMinDay( ){
-
-        return this.MinDay ;
-
+    public void nonnegative() {
+        if( this.MinYear  < 0 ) { this.MinYear  = 0; }
+        if( this.MinMonth < 0 ) { this.MinMonth = 0; }
+        if( this.MinDay   < 0 ) { this.MinDay   = 0; }
+        if( this.MaxYear  < 0 ) { this.MaxYear  = 0; }
+        if( this.MaxMonth < 0 ) { this.MaxMonth = 0; }
+        if( this.MaxDay   < 0 ) { this.MaxDay   = 0; }
     }
 
+    public String getMinDate()  { return String.format ( "%04d.%02d.%02d", this.MinYear, this.MinMonth, this.MinDay ); }
+
+    public String getMaxDate()  { return String.format ( "%04d.%02d.%02d", this.MaxYear, this.MaxMonth, this.MaxDay ); }
+
+    public String getMinMaxDate()  { return "min/max date: " + getMinDate() + "-" + getMaxDate(); }
 
 
-    /**
-     * Use this method to get MinMonth
-     * @return MinMonth
-     */
-    public int getMinMonth( ){
+    public int getMinDay()   { return this.MinDay; }
 
-        return this.MinMonth ;
+    public int getMinMonth() { return this.MinMonth; }
 
-    }
+    public int getMinYear()  { return this.MinYear; }
 
+    public int getMaxDay()   { return this.MaxDay; }
 
+    public int getMaxMonth() { return this.MaxMonth; }
 
-    /**
-     * Use this method to get MinYear
-     * @return MinYear
-     */
-    public int getMinYear( ){
-
-        return this.MinYear ;
-
-    }
+    public int getMaxYear()  { return this.MaxYear; }
 
 
+    public void setMinDay(   int value ) { this.MinDay   = value; }
 
-    /**
-     * Use this method to get MaxDay
-     * @return MaxDay
-     */
-    public int getMaxDay( ){
+    public void setMinMonth( int value ) { this.MinMonth = value; }
 
-        return this.MaxDay ;
+    public void setMinYear(  int value ) { this.MinYear  = value; }
 
-    }
+    public void setMaxDay(   int value ) { this.MaxDay   = value; }
 
+    public void setMaxMonth( int value ) { this.MaxMonth = value; }
 
-
-    /**
-     * Use this method to get MaxMonth
-     * @return MaxMonth
-     */
-    public int getMaxMonth( ){
-
-        return this.MaxMonth ;
-
-    }
-
-
-
-    /**
-     * Use this method to get MaxYear
-     * @return MaxYear
-     */
-    public int getMaxYear( ){
-
-        return this.MaxYear ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MinDay
-     * @param value value to set MinDay
-     */
-    public void setMinDay( int value ){
-
-        this.MinDay = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MinMonth
-     * @param value value to set MinMonth
-     */
-    public void setMinMonth( int value ){
-
-        this.MinMonth = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MinYear
-     * @param value value to set MinYear
-     */
-    public void setMinYear( int value ){
-
-        this.MinYear = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MaxDay
-     * @param value value to set MaxDay
-     */
-    public void setMaxDay( int value ){
-
-        this.MaxDay = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MaxMonth
-     * @param value value to set MaxMonth
-     */
-    public void setMaxMonth( int value ){
-
-        this.MaxMonth = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MaxYear
-     * @param value value to set MaxYear
-     */
-    public void setMaxYear( int value ){
-
-        this.MaxYear = value ;
-
-    }
+    public void setMaxYear(  int value ) { this.MaxYear  = value; }
 
 }

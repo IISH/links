@@ -240,7 +240,7 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoNames = new JCheckBox();
 		cbCdoStatusSex = new JCheckBox();
 		cbCdoDates = new JCheckBox();
-		cbCdoYearAge = new JCheckBox();
+		cbCdoAge = new JCheckBox();
 		cbCdoRefreshData = new JCheckBox();
 		cbCdoRegType = new JCheckBox();
 		cbLOLCdoSequence = new JCheckBox();
@@ -1355,10 +1355,10 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoDates.setText("Dates");
 				cbCdoDates.setName("cbCdoDates");
 
-				//---- cbCdoYearAge ----
-				cbCdoYearAge.setSelected(true);
-				cbCdoYearAge.setText("Year Age");
-				cbCdoYearAge.setName("cbCdoJaarLeeftijd");
+				//---- cbCdoAge ----
+				cbCdoAge.setSelected(true);
+				cbCdoAge.setText("Age");
+				cbCdoAge.setName("cbCdoJaarLeeftijd");
 
 				//---- cbCdoRefreshData ----
 				cbCdoRefreshData.setSelected(true);
@@ -1468,7 +1468,7 @@ public class ManagerGui extends javax.swing.JFrame
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
 												.addComponent(cbCdoRefreshData, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoRemarks, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoYearAge, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+												.addComponent(cbCdoAge, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbLOLCdoRole, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbCdoRelation, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
 												.addComponent(cbLOLCdoSequence, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
@@ -1598,7 +1598,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addComponent(cbCdoRelation)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoYearAge)
+										.addComponent(cbCdoAge)
 										.addComponent(cbLOLCdoPostTasks))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1897,13 +1897,13 @@ public class ManagerGui extends javax.swing.JFrame
             }
         }
 
-        // Year Age
-        String doYearAge = properties.getProperty( "doYearAge" );
-        if( doYearAge != null ) {
-            if (doYearAge.equals("true")) {
-                cbCdoYearAge.setSelected(true);
+        // Age
+        String doAge = properties.getProperty( "doAge" );
+        if( doAge != null ) {
+            if (doAge.equals("true")) {
+                cbCdoAge.setSelected(true);
             } else {
-                cbCdoYearAge.setSelected(false);
+                cbCdoAge.setSelected(false);
             }
         }
 
@@ -2259,7 +2259,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoStatusSex.isSelected()) { dos.setDoStatusSex(true); }
 
-        if (cbCdoYearAge.isSelected()) { dos.setDoAgeYear(true); }
+        if (cbCdoAge.isSelected()) { dos.setDoAgeYear(true); }
 
         if (cbCdoLocations.isSelected()) { dos.setDoLocations(true); }
 
@@ -2403,7 +2403,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "10-Sep-2014 17:04";
+            String timestamp1 = "16-Sep-2014 17:13";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2554,7 +2554,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoNames;
 	private JCheckBox cbCdoStatusSex;
 	private JCheckBox cbCdoDates;
-	private JCheckBox cbCdoYearAge;
+	private JCheckBox cbCdoAge;
 	private JCheckBox cbCdoRefreshData;
 	private JCheckBox cbCdoRegType;
 	private JCheckBox cbLOLCdoSequence;
