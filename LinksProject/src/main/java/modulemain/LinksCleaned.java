@@ -75,6 +75,9 @@ public class LinksCleaned extends Thread
 
     // Table -> ArrayListMultiMap
     private boolean almm = true;
+    private TabletoArrayListMultiMap almmFamilyname;
+    private TabletoArrayListMultiMap almmFirstname;
+    private TabletoArrayListMultiMap almmOccupation;
     private TabletoArrayListMultiMap almmRole;
 
     private JTextField tbLOLClatestOutput;
@@ -102,36 +105,6 @@ public class LinksCleaned extends Thread
     private final static String SC_X = "x"; //    X    Standard yet to be assigned
     private final static String SC_N = "n"; //    No   standard value assigned (original value is not valid)
     private final static String SC_Y = "y"; //    Yes  Standard value assigned (original value is valid)
-
-    // old links_base
-    // hp* objects directly used by 2 functions:
-    //      returnAgeCentralFigure()  called by minMaxDate()
-    //      fillMinMaxArrays()        called by doMinMaxDate()
-    /*
-    private ArrayList<Integer> hpChildRegistration    = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildAge             = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildMonth           = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildWeek            = new ArrayList<Integer>();
-    private ArrayList<Integer> hpChildDay             = new ArrayList<Integer>();
-
-    private ArrayList<Integer> hpBrideRegistration    = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideAge             = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideMonth           = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideWeek            = new ArrayList<Integer>();
-    private ArrayList<Integer> hpBrideDay             = new ArrayList<Integer>();
-
-    private ArrayList<Integer> hpGroomRegistration    = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomAge             = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomMonth           = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomWeek            = new ArrayList<Integer>();
-    private ArrayList<Integer> hpGroomDay             = new ArrayList<Integer>();
-
-    private ArrayList<Integer> hpDeceasedRegistration = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedAge          = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedMonth        = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedWeek         = new ArrayList<Integer>();
-    private ArrayList<Integer> hpDeceasedDay          = new ArrayList<Integer>();
-    */
 
     private FileWriter writerFirstname;
     private FileWriter writerFamilyname;
@@ -530,6 +503,20 @@ public class LinksCleaned extends Thread
             return;
         }
 
+        if( almm ) {
+            long start = System.currentTimeMillis();
+            almmFirstname = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_firstname", "original" );
+            int size = almmFirstname.sizeOld();
+            almmFirstname.free();
+            elapsedShowMessage( "almmFirstname [" + size + " records]", start, System.currentTimeMillis() );
+
+            start = System.currentTimeMillis();
+            almmFamilyname = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_familyname", "original" );
+            size = almmFamilyname.sizeOld();
+            almmFamilyname.free();
+            elapsedShowMessage( "almmFamilyname [" + size + " records]", start, System.currentTimeMillis() );
+        }
+
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
@@ -833,11 +820,16 @@ public class LinksCleaned extends Thread
             return;
         }
 
-        long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        if( almm ) { almmRole = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_role", "original" ); }
+        if( almm ) {
+            long start = System.currentTimeMillis();
+            almmRole = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_role", "original" );
+            int size = almmRole.sizeOld();
+            elapsedShowMessage("almmRole [" + size + " records]", start, System.currentTimeMillis());
+        }
 
+        long timeStart = System.currentTimeMillis();
         ttalRole = new TableToArraysSet( conGeneral, conOr, "original", "role" );
 
         for( int i : sourceList ) {
@@ -849,6 +841,8 @@ public class LinksCleaned extends Thread
         ttalRole.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+
+        if( almm ) { almmRole.free(); }
     } // doRole
 
 
@@ -867,24 +861,51 @@ public class LinksCleaned extends Thread
             return;
         }
 
-        long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        if( almm ) {
+            long start = System.currentTimeMillis();
+            showMessage( funcname + "...", false, true );
 
-        showMessage( "Loading reference table: occupation...", false, true );
-        ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
-        if( debug ) { ttalOccupation.showContents(); }
-        showMessage( "Number of rows in reference table: " + ttalOccupation.countRows(), false, true );
+            showMessage( "Loading reference table: occupation...", false, true );
+            almmOccupation = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_occupation", "original" );
 
-        for( int i : sourceList ) {
-            showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
-            standardOccupation( debug, i );
+            //almmOccupation.contentsOld();
+
+            showMessage( "Number of rows in reference table: " + almmOccupation.sizeOld(), false, true );
+
+            for( int i : sourceList ) {
+                showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
+                standardOccupation( debug, i );
+            }
+
+            int size = almmOccupation.sizeOld();
+            almmOccupation.free();
+
+            elapsedShowMessage( "almmOccupation [" + size + " records]", start, System.currentTimeMillis() );
         }
 
-        showMessage( "Updating reference table: occupation", false, true );
-        ttalOccupation.updateTable();
-        ttalOccupation.free();
+        else
+        {
+            long timeStart = System.currentTimeMillis();
+            showMessage( funcname + "...", false, true );
 
-        elapsedShowMessage(funcname, timeStart, System.currentTimeMillis());
+            showMessage( "Loading reference table: occupation...", false, true );
+            ttalOccupation = new TableToArraysSet(conGeneral, conOr, "original", "occupation");
+
+            //ttalOccupation.showContents();
+
+            showMessage( "Number of rows in reference table: " + ttalOccupation.countRows(), false, true );
+
+            for( int i : sourceList ) {
+                showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
+                standardOccupation( debug, i );
+            }
+
+            showMessage("Updating reference table: occupation", false, true);
+            ttalOccupation.updateTable();
+            ttalOccupation.free();
+
+            elapsedShowMessage(funcname, timeStart, System.currentTimeMillis());
+        }
     } // doOccupation
 
 
@@ -2064,12 +2085,12 @@ public class LinksCleaned extends Thread
         int stepstate = step;
         int empty = 0;
 
-        String startQuery = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceStr;
-        if( debug ) { showMessage( startQuery, false, true ); }
+        String query = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceStr;
+        if( debug ) { showMessage( query, false, true ); }
 
         try
         {
-            ResultSet  rs = conOriginal.runQueryWithResult( startQuery );           // Get occupation
+            ResultSet  rs = conOriginal.runQueryWithResult( query );           // Get occupation
 
             while( rs.next() )
             {
@@ -2086,13 +2107,14 @@ public class LinksCleaned extends Thread
                 }
                 else {
                     if( debug ) { showMessage( "id_person: " + id_person + ", occupation: " + occupation, false, true ); }
+                    System.out.println( "" + counter + " " + occupation );
                     standardOccupationRecord( debug, sourceStr, id_person, occupation );
                 }
             }
             //System.out.println( "after cleaning" );
-            //ttalOccupation.showContents();
+            almmOccupation.contentsNew();
 
-            showMessage(counter + " persons, " + empty + " without occupation", false, true);
+            showMessage( counter + " persons, " + empty + " without occupation", false, true );
         }
         catch( SQLException sex )
         { showMessage( "\ncounter: " + counter + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true ); }
@@ -2114,10 +2136,13 @@ public class LinksCleaned extends Thread
         {
             if( !occupation.isEmpty() )                 // check presence of the occupation
             {
-                if( ttalOccupation.originalExists( occupation ) )       // occupation present in ref_occupation.original
+              //if( ttalOccupation.originalExists( occupation ) )       // occupation present in ref_occupation.original
+                if( almmOccupation.containsKey( occupation ) )
                 {
+                    System.out.println( "old" );
                     if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
-                    String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
+                  //String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
+                    String refSCode = almmOccupation.standardCode(occupation);
                     if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
 
                     if( refSCode.equals( SC_X ) )
@@ -2138,13 +2163,17 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, sourceNo, 45, occupation );      // warning 45
 
-                        String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
-                        String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
+                      //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
+                        String refOccupation = almmOccupation.standard(occupation);
+
+                        String query = PersonC.updateQuery("occupation", refOccupation, id_person);
                         conCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_Y ) )
                     {
-                        String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
+                      //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
+                        String refOccupation = almmOccupation.standard(occupation);
+
                         if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
 
                         String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
@@ -2156,12 +2185,14 @@ public class LinksCleaned extends Thread
                         addToReportPerson( id_person, sourceNo, 49, occupation );      // warning 49
                     }
                 }
-                else // not present in ref_occupation.original, collect in ttal new column
+                else        // not present, collect as new
                 {
+                    System.out.println( "new" );
                     if( debug ) { showMessage( "Warning 41 (not in ref_): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                    addToReportPerson( id_person, sourceNo, 41, occupation );     // warning 41
+                    addToReportPerson( id_person, sourceNo, 41, occupation );       // warning 41
 
-                    ttalOccupation.addOriginal( occupation );                      // Add new Occupation "x"
+                  //ttalOccupation.addOriginal( occupation );                       // Add new Occupation "x"
+                    almmOccupation.add( occupation );                               // Add new Occupation "x"
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
                     conCleaned.runQuery( query );
@@ -3138,8 +3169,6 @@ public class LinksCleaned extends Thread
      */
     private int[] getOrigSourceIds()
     {
-        //sources = null;
-
         ArrayList< String > ids = new ArrayList();
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
         try {
@@ -3169,6 +3198,7 @@ public class LinksCleaned extends Thread
             idsInt[ i ] = Integer.parseInt(id);
             i += 1;
         }
+
         return idsInt;
     } // getOrigSourceIds
 
@@ -4703,21 +4733,46 @@ public class LinksCleaned extends Thread
     {
         showMessage( "minMaxCalculation()", false, true );
 
-        String yn_age_reported  = "";
-        String yn_age_main_role = "";
+        String min_age_0 = "n";
+        String max_age_0 = "n";
+        String age_main_role = "nvt";
 
-        int main_role = 0;
-        String min_age_0 = "";
-        String max_age_0 = "";
+        String age_reported  = "";
+        String function = "";
+        int min_year = 0;
+        int max_year = 0;
 
         if( age > 0 )
         {
-            yn_age_reported  = "y";
-            yn_age_main_role = "nvt";
+            age_reported  = "y";
+
+            String query = "SELECT function, min_year, max_year FROM ref_date_minmax"
+                + " WHERE maintype = '"    + main_type + "'"
+                + " AND role = '"          + role + "'"
+                + " AND date_type = '"     + date_type + "'"
+                + " AND age_reported = '"  + age_reported + "'"
+                + " AND age_main_role = '" + age_main_role  + "'";
+
+            System.out.println( query );
+            ResultSet rs = conGeneral.runQueryWithResult( query );
+
+            if( !rs.next() )
+            {
+                addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
+
+                MinMaxYearSet mmj = new MinMaxYearSet();
+                return mmj;
+            }
+
+            rs.last();        // to last row
+
+            function = rs.getString( "function" );
+            min_year = rs.getInt( "min_year" );
+            max_year = rs.getInt( "max_year" );
         }
         else
         {
-            yn_age_reported  = "n";
+            age_reported  = "n";
             MinMaxMainAgeSet mmmas = minMaxMainAge
             (
                 id_person,
@@ -4725,88 +4780,31 @@ public class LinksCleaned extends Thread
                 main_type,
                 date_type,
                 role,
-                yn_age_reported
+                age_reported,
+                age_main_role
             );
-            age = mmmas.getAgeYear();
-            main_role = mmmas.getMainRole();
+            age       = mmmas.getAgeYear();
             min_age_0 = mmmas.getMinAge0();
             max_age_0 = mmmas.getMaxAge0();
 
+            function = mmmas.getFunction();
+            min_year = mmmas.getMinYear();
+            max_year = mmmas.getMaxYear();
+
             System.out.println( "age_year: "  + age );
-            System.out.println( "main_role: " + main_role );
             System.out.println( "min_age_0: " + min_age_0 );
             System.out.println( "max_age_0: " + max_age_0 );
 
-            if( role == main_role ) { yn_age_main_role = "nvt"; }
-            else {
-                if( age > 0 ) { yn_age_main_role = "y"; }
-                else { yn_age_main_role = "n"; }
-            }
+            System.out.println( "function: " + function );
+            System.out.println( "min_year: " + min_year );
+            System.out.println( "max_year: " + max_year );
         }
-
-        String query = "SELECT function, min_year, max_year FROM ref_date_minmax"
-            + " WHERE maintype = '"    + main_type + "'"
-            + " AND role = '"          + role + "'"
-            + " AND date_type = '"     + date_type + "'"
-            + " AND age_reported = '"  + yn_age_reported + "'"
-            + " AND age_main_role = '" + yn_age_main_role  + "'";
-
-        System.out.println( query );
-        ResultSet rs = conGeneral.runQueryWithResult( query );
-
-        if( !rs.next() )
-        {
-            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]" );
-
-            MinMaxYearSet mmj = new MinMaxYearSet();
-
-            mmj.SetMaxYear( 0 );
-            mmj.SetMinYear( 0 );
-
-            return mmj;
-        }
-
-        // to last row
-        rs.last();
-
-        // read from to database
-        String function = rs.getString( "function" );
-        int min_year    = rs.getInt( "min_year" );
-        int max_year    = rs.getInt( "max_year" );
 
         if( min_age_0 == "y" ) { age = 0; }
         if( max_age_0 == "y" ) { age = 0; }
 
         int minimal_year = reg_year - age + min_year;
         int maximum_year = reg_year - age + max_year;
-
-        /*
-        int min_person  = rs.getInt( "min_person" );
-        int max_person  = rs.getInt( "max_person" );
-
-        // min en max age-role search
-        int min_age = 0;
-        int max_age = 0;
-
-        // find correct age
-        // Min
-        if( min_person == role ) {
-            min_age = age;
-        } else if( min_person == main_role ) {
-            min_age = age_main_role.getYear();
-        }
-        // Max
-        if( max_person == role ) {
-            max_age = age;
-        } else if( max_person == main_role ) {
-            max_age = age_main_role.getYear();
-        }
-
-        int minimal_year = reg_year - min_age + min_year;
-        int maximum_year = reg_year - max_age + max_year;
-        */
-
-
 
         MinMaxYearSet mmj = new MinMaxYearSet();
 
@@ -4846,7 +4844,7 @@ public class LinksCleaned extends Thread
         }
         else
         {
-            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + yn_age_reported + "][lh:" + yn_age_main_role + "]" );
+            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
         }
 
         return mmj;                                     // Function A
@@ -4865,89 +4863,105 @@ public class LinksCleaned extends Thread
      */
     private MinMaxMainAgeSet minMaxMainAge
     (
-        int     id_person,
-        int     id_registration,
-        int     main_type,
-        String  date_type,
-        int     role,
-        String  yn_age_reported
+        int    id_person,
+        int    id_registration,
+        int    main_type,
+        String date_type,
+        int    role,
+        String age_reported,
+        String age_main_role
     )
     throws Exception
     {
-        String min_age_0 = "n";
-        String max_age_0 = "n";
-        int main_role = 0;
-
-        String yn_age_main_role = "y";
-        String queryRef = "SELECT min_person, max_person FROM links_general.ref_date_minmax"
-            + " WHERE maintype = '"    + main_type + "'"
-            + " AND role = '"          + role + "'"
-            + " AND date_type = '"     + date_type + "'"
-            + " AND age_reported = '"  + yn_age_reported + "'"
-            + " AND age_main_role = '" + yn_age_main_role + "'";
-
-        ResultSet rs_ref = conGeneral.runQueryWithResult( queryRef );
-
-        int countRef = 0;
-        int min_person_role = 0;
-        int max_person_role = 0;
-
-        while( rs_ref.next() )          // process each row
-        {
-            countRef++;
-            min_person_role = rs_ref.getInt( "min_person" );
-            max_person_role = rs_ref.getInt( "max_person" );
-        }
-
-        // want exactly 1 row from ref_date_minmax
-        if( countRef != 1 ) {
-            showMessage( queryRef, false, true );
-            throw new Exception( "minMaxAge: ref_date_minmax count = " + countRef );
-        }
-
-        if( min_person_role == 0 && max_person_role == 0 ) {
-            showMessage( queryRef, false, true );
-            throw new Exception( "minMaxAge: could not get min/max person role" );
-        }
-
-        if( min_person_role == 0 ) { main_role = max_person_role; }
-        else { main_role = min_person_role; }
-
-        boolean readPc = false;
-
-        if( min_person_role > 0 ) { readPc = true; }
-        else { min_age_0 = "y"; }
-
-        if( max_person_role > 0 ) { readPc = true; }
-        else { max_age_0 = "y"; }
-
-        int age = 0;
-        if( readPc ) {
-            String queryPc = "SELECT age_year FROM links_cleaned.person_c"
-                + " WHERE id_registration = '" + id_registration + "'"
-                + " AND role = '" + main_role + "'";
-
-            ResultSet rs_pc = conCleaned.runQueryWithResult( queryPc );
-
-            int countPc = 0;
-
-            while( rs_pc.next() )
-            {
-                countPc++;
-                age = rs_pc.getInt( "age_year" );
-            }
-
-            if( countPc != 1 ) {
-                showMessage( queryPc, false, true );
-                throw new Exception( "minMaxAge: person_c count = " + countPc );
-            }
-        }
+        boolean done = false;
 
         MinMaxMainAgeSet mmmas = new MinMaxMainAgeSet();
-        mmmas.setAgeYear( age );
-        mmmas.setMinAge0( min_age_0 );
-        mmmas.setMaxAge0( max_age_0 );
-        mmmas.setMainRole( main_role );
+        mmmas.setMinAge0( "n" );
+        mmmas.setMaxAge0( "n" );
+
+        while( !done )
+        {
+            showMessage( "minMaxMainAge: age_main_role = " + age_main_role, false, true );
+
+            String queryRef = "SELECT function, min_year, max_year, min_person, max_person FROM links_general.ref_date_minmax"
+                + " WHERE maintype = '" + main_type + "'"
+                + " AND role = '" + role + "'"
+                + " AND date_type = '" + date_type + "'"
+                + " AND age_reported = '" + age_reported + "'"
+                + " AND age_main_role = '" + age_main_role + "'";
+
+            ResultSet rs_ref = conGeneral.runQueryWithResult( queryRef );
+
+            int min_person_role = 0;
+            int max_person_role = 0;
+
+            if( !rs_ref.next() ) {
+                if( age_main_role.equals( "nvt" ) ) { age_main_role = "y"; }
+                else { done = true; }
+            }
+            else
+            {
+                min_person_role = rs_ref.getInt( "min_person" );
+                max_person_role = rs_ref.getInt( "max_person" );
+
+                mmmas.setFunction( rs_ref.getString( "function" ) );
+                mmmas.setMinYear(rs_ref.getInt("min_year"));
+                mmmas.setMaxYear(rs_ref.getInt("max_year"));
+
+                boolean readPc = false;
+
+                int main_role = 0;
+                if( min_person_role > 0 ) {
+                    readPc = true;
+                    main_role = min_person_role;
+                }
+                else { mmmas.setMinAge0( "y" ); }
+
+                if( max_person_role > 0 ) {
+                    readPc = true;
+                    main_role = max_person_role;
+                }
+                else { mmmas.setMaxAge0( "y" ); }
+
+                int age = 0;
+                String death = "";
+                if (readPc) {
+                    String queryPc = "SELECT age_year, death FROM links_cleaned.person_c"
+                            + " WHERE id_registration = '" + id_registration + "'"
+                            + " AND role = '" + main_role + "'";
+
+                    ResultSet rs_pc = conCleaned.runQueryWithResult(queryPc);
+
+                    int countPc = 0;
+
+                    while (rs_pc.next()) {
+                        countPc++;
+                        age = rs_pc.getInt("age_year");
+                        death = rs_pc.getString("death");
+                        mmmas.setAgeYear(age);
+                    }
+
+                    if (countPc != 1) {
+                        showMessage(queryPc, false, true);
+                        throw new Exception("minMaxMainAge: person_c count = " + countPc);
+                    }
+
+                    if (age <= 0) {
+                        if (age_main_role.equals("y")) {
+                            age_main_role = "n";
+                        } else {
+                            if (date_type.equals("death_date") &&
+                                    death.equals("y") &&
+                                    age_reported.equals("n")) {
+                                age_reported = "a";
+                            }
+                        }
+                    }
+                }
+
+                done = true;
+            }
+        }
 
         return mmmas;
 
@@ -6506,143 +6520,6 @@ public class LinksCleaned extends Thread
     } // checkMaxDate
 
 
-    // ---< Functions using hp* objects >---------------------------------------
-
-    /**
-     * @param id_registration
-     * @param registration_maintype
-     * @param role
-     * @return
-     */
-    /*
-    private Ages returnAgeCentralFigure( int id_registration, int registration_maintype, int role )
-    {
-        Ages ages = new Ages();
-
-        // age of central figure
-        if( registration_maintype == 1 )
-        {
-            // int indexNr = hpChildRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch( hpChildRegistration, id_registration );
-
-            // Check if number excists in list
-            // add age
-            if( indexNr > -1 ) {
-                ages.setYear(  hpChildAge.get(   indexNr ) );
-                ages.setMonth( hpChildMonth.get( indexNr ) );
-                ages.setWeek(  hpChildWeek.get(  indexNr) );
-                ages.setDay(   hpChildDay.get(   indexNr ) );
-            }
-        }
-
-        else if( (registration_maintype == 2) && ((role == 5) || (role == 6)) )
-        {
-            // int indexNr = hpBrideRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch( hpBrideRegistration, id_registration );
-
-            // check is number exists
-            // add age
-            if( indexNr > -1 ) {
-                ages.setYear(  hpBrideAge.get(   indexNr ) );
-                ages.setMonth( hpBrideMonth.get( indexNr ) );
-                ages.setWeek(  hpBrideWeek.get(  indexNr ) );
-                ages.setDay(   hpBrideDay.get(   indexNr ) );
-            }
-        }
-
-        else if( (registration_maintype == 2) && ((role == 8) || (role == 9)) )
-        {
-            // int indexNr = hpGroomRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch( hpGroomRegistration, id_registration );
-
-            // check existence of number in list
-            // add age
-            if( indexNr > -1 ) {
-                ages.setYear(  hpGroomAge.get(   indexNr ) );
-                ages.setMonth( hpGroomMonth.get( indexNr ) );
-                ages.setWeek(  hpGroomWeek.get(  indexNr ) );
-                ages.setDay(   hpGroomDay.get(   indexNr ) );
-            }
-        }
-
-        else if( registration_maintype == 3 )
-        {
-            // int indexNr = hpDeceasedRegistration.indexOf(id_registration);
-            int indexNr = Collections.binarySearch( hpDeceasedRegistration, id_registration );
-
-            // check number if exists
-            // add age
-            if( indexNr > -1 ) {
-                ages.setYear(  hpDeceasedAge.get(   indexNr ) );
-                ages.setMonth( hpDeceasedMonth.get( indexNr ) );
-                ages.setWeek(  hpDeceasedWeek.get(  indexNr ) );
-                ages.setDay(   hpDeceasedDay.get(   indexNr) ) ;
-            }
-        }
-
-        return ages;
-    } // returnAgeCentralFigure
-    */
-
-    /**
-     * @param sourceNo
-     * @throws Exception
-     */
-    /*
-    private void fillMinMaxArrays( String sourceNo ) throws Exception
-    {
-        hpChildRegistration.clear();
-        hpChildAge.clear();
-        hpBrideRegistration.clear();
-        hpBrideAge.clear();
-        hpGroomRegistration.clear();
-        hpGroomAge.clear();
-        hpDeceasedRegistration.clear();
-        hpDeceasedAge.clear();
-
-        String query1 = "SELECT id_registration , age_year , age_month , age_week , age_day FROM person_c WHERE role =  '1' AND id_source = " + sourceNo + " ORDER BY id_registration ASC";
-        String query2 = "SELECT id_registration , age_year , age_month , age_week , age_day FROM person_c WHERE role =  '7' AND id_source = " + sourceNo + " ORDER BY id_registration ASC";
-        String query3 = "SELECT id_registration , age_year , age_month , age_week , age_day FROM person_c WHERE role =  '4' AND id_source = " + sourceNo + " ORDER BY id_registration ASC";
-        String query4 = "SELECT id_registration , age_year , age_month , age_week , age_day FROM person_c WHERE role = '10' AND id_source = " + sourceNo + " ORDER BY id_registration ASC";
-
-        ResultSet rs1 = conCleaned.runQueryWithResult( query1 );
-        ResultSet rs2 = conCleaned.runQueryWithResult( query2 );
-        ResultSet rs3 = conCleaned.runQueryWithResult( query3 );
-        ResultSet rs4 = conCleaned.runQueryWithResult( query4 );
-
-        while( rs1.next() ) {
-            hpChildRegistration.add( rs1.getInt( "id_registration" ) );
-            hpChildAge.add(   rs1.getInt( "age_year" ) );
-            hpChildMonth.add( rs1.getInt( "age_month" ) );
-            hpChildWeek.add(  rs1.getInt( "age_week" ) );
-            hpChildDay.add(   rs1.getInt( "age_day" ) );
-        }
-
-        while( rs2.next() ) {
-            hpGroomRegistration.add( rs2.getInt( "id_registration" ) );
-            hpGroomAge.add(   rs2.getInt( "age_year" ) );
-            hpGroomMonth.add( rs2.getInt( "age_month" ) );
-            hpGroomWeek.add(  rs2.getInt( "age_week" ) );
-            hpGroomDay.add(   rs2.getInt( "age_day" ) );
-        }
-
-        while( rs3.next() ) {
-            hpBrideRegistration.add( rs3.getInt( "id_registration" ) );
-            hpBrideAge.add(   rs3.getInt( "age_year" ) );
-            hpBrideMonth.add( rs3.getInt( "age_month" ) );
-            hpBrideWeek.add(  rs3.getInt( "age_week" ) );
-            hpBrideDay.add(   rs3.getInt( "age_day" ) );
-        }
-
-        while( rs4.next() ) {
-            hpDeceasedRegistration.add( rs4.getInt( "id_registration" ) );
-            hpDeceasedAge.add(   rs4.getInt( "age_year" ) );
-            hpDeceasedMonth.add( rs4.getInt( "age_month" ) );
-            hpDeceasedWeek.add(  rs4.getInt( "age_week" ) );
-            hpDeceasedDay.add(   rs4.getInt( "age_day" ) );
-        }
-    } // fillMinMaxArrays
-    */
 }
 
 // [eof]

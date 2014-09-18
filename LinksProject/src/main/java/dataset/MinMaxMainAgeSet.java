@@ -3,23 +3,28 @@ package dataset;
 /**
  * @author Fons Laan
  *
- * FL-16-Sep-2014 Latest change
+ * FL-18-Sep-2014 Latest change
  */
 public class MinMaxMainAgeSet {
-    private int age_year;
-    private int main_role;
+    private String function;
     private String min_age_0;
     private String max_age_0;
+    private int age;
+    private int min_year;
+    private int max_year;
 
+    public void MinMaxMainAgeSet() {
+        function  = "";
+        min_age_0 = "";
+        max_age_0 = "";
+        age  = 0;
+        min_year = 0;
+        max_year = 0;
+    }
 
-    public int getAgeYear() { return this.age_year; }
+    public String getFunction() {  return this.function; }
 
-    public void setAgeYear( int age_year ) { this.age_year = age_year; }
-
-
-    public int getMainRole() {  return this.main_role; }
-
-    public void setMainRole( int main_role ) { this.main_role = main_role; }
+    public void setFunction( String function ) { this.function = function; }
 
 
     public String getMinAge0() { return this.min_age_0; };
@@ -31,4 +36,18 @@ public class MinMaxMainAgeSet {
 
     public void setMaxAge0( String max_age_0 ) { this.max_age_0 = max_age_0; }
 
+
+    public int getAgeYear() { return this.age; }
+
+    public void setAgeYear( int age ) { this.age = age; }
+
+
+    public int getMinYear() { return this.min_year; }
+
+    public void setMinYear( int min_year ) { this.min_year = min_year; }
+
+
+    public int getMaxYear() { return this.max_year; }
+
+    public void setMaxYear( int max_year ) { this.max_year = max_year; }
 }
