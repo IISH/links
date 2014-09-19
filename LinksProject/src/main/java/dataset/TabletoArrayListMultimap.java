@@ -11,21 +11,26 @@ import java.util.Set;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.HashMultiset;
 
 import connectors.MySqlConnector;
+
+import modulemain.LinksSpecific;
 
 /**
  * @author Fons Laan
  *
  * FL-15-Sep-2014 Latest change
  */
-public class TabletoArrayListMultiMap
+public class TabletoArrayListMultimap
 {
     private boolean debug = true;
 
-    // create multimaps to store key and values for reference table and new values (to be added to ref table)
-    private Multimap< String, String > multiMapOld = ArrayListMultimap.create();
-    private Multimap< String, String > multiMapNew = ArrayListMultimap.create();
+    // A hashed multimap to store key and values for a reference table for fast lookups.
+    private Multimap< String, String > oldMap = ArrayListMultimap.create();
+
+    // A hashed set to store new originals.
+    private HashMultiset< String > newSet = HashMultiset.create();
 
     private String tableName;
     private String keyColumn;             // column name used as index
@@ -53,7 +58,7 @@ public class TabletoArrayListMultiMap
      * @param keyColumn
      * @param tableName
      */
-    public TabletoArrayListMultiMap( MySqlConnector con, MySqlConnector con_or, String tableName, String keyColumn )
+    public TabletoArrayListMultimap( MySqlConnector con, MySqlConnector con_or, String tableName, String keyColumn )
     throws Exception
     {
         this.con = con;
@@ -61,7 +66,7 @@ public class TabletoArrayListMultiMap
         this.tableName = tableName;
         this.keyColumn = keyColumn;
 
-        if( debug ) { System.out.println( "TabletoArrayListMultiMap, table name: " + tableName + " , index column: " + keyColumn ); }
+        if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " + tableName + " , index column: " + keyColumn ); }
 
         /*
         ref_role:
@@ -120,7 +125,7 @@ public class TabletoArrayListMultiMap
 
 
         String query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC";
-        if( debug ) { System.out.println( "TabletoArrayListMultiMap, query: " + query ); }
+        if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
         ResultSet rs = con.runQueryWithResult( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
@@ -172,7 +177,7 @@ public class TabletoArrayListMultiMap
                 else if( ct == 1 || ct ==12 ) {
                     strValue = rs.getString( c );
                 }
-                else { throw new Exception( "TabletoArrayListMultiMap: unhandled column type: " + ct ); }
+                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
 
                 //if( strValue == null ) { strValue = ""; }
 
@@ -181,7 +186,7 @@ public class TabletoArrayListMultiMap
                 else { values.add( strValue ); }
             }
 
-            for( String value : values ) { multiMapOld.put ( key, value ); }
+            for( String value : values ) { oldMap.put ( key, value ); }
             values = null;
         }
 
@@ -208,61 +213,71 @@ public class TabletoArrayListMultiMap
      * size existing reference table map
      */
     public int sizeOld() {
-        return multiMapOld.size();
-    }
-
-    /**
-     * size of new map (to be added to reference table)
-     */
-    public int sizeNew() {
-        return multiMapNew.size();
+        return oldMap.size();
     }
 
 
     /**
-     * check key in either map
+     * size of new set (to be added to the reference table)
      */
-    public boolean containsKey( String key )
+    public int sizeNew() { return newSet.size(); }
+
+
+    /**
+     * check entry in map and set
+     */
+    public boolean contains( String entry )
     {
-        boolean old = multiMapOld.containsKey( key );
-        if( old ) return true;
+        boolean tf = false;
 
-        return multiMapNew.containsKey( key );
+        try { tf = oldMap.containsKey( entry ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+
+        if( ! tf ) {
+            try { tf = newSet.contains( entry ); }
+            catch( Exception ex ) { System.out.println(ex.getMessage()); }
+        }
+
+        return tf;
     }
 
 
     /**
-     * return standard for existing key
+     * return standard for existing key, else empty string
      */
     public String standard( String key )
     {
-        Collection< String > collection = multiMapOld.get( key );
-        String[] values = collection.toArray( new String[ collection.size() ] );
+        String standard = "";
 
-        return values [ standardIdx ];
+        if( oldMap.containsKey( key ) ) {
+            Collection< String > collection = oldMap.get( key );
+            String[] values = collection.toArray( new String[ collection.size() ] );
+
+            standard = values [ standardIdx ];
+        }
+
+        return standard;
     }
 
 
     /**
      * return standard code for existing key
+     * return "x" for entry of new set
      */
     public String standardCode( String key )
     {
-        Collection< String > collection = multiMapOld.get( key );
-        String[] values = collection.toArray( new String[ collection.size() ] );
+        String sc = "";     // we know nothing
 
-        return values [ standardCodeIdx ];
-    }
+        if( oldMap.containsKey( key ) ) {
+            Collection< String > collection = oldMap.get( key );
+            String[] values = collection.toArray( new String[ collection.size() ] );
 
-
-    /**
-     *
-     */
-    public void contentsOld()
-    {
-        int size = multiMapOld.size();
-        if( size == 0 ) { System.out.println( "multiMapOld is empty" ); }
-        else { tableContents( "old", multiMapOld ); }
+            sc = values[ standardCodeIdx ];
+        }
+        else if( newSet.contains( key ) ) {
+            sc = "x";
+        }
+        return sc;
     }
 
 
@@ -271,16 +286,29 @@ public class TabletoArrayListMultiMap
      */
     public void contentsNew()
     {
-        int size = multiMapNew.size();
-        if( size == 0 ) { System.out.println( "multiMapNew is empty" ); }
-        else { tableContents( "new", multiMapNew ); }
+        System.out.println( "\n" + newSet.size() + " new entries:");
+        int num = 0;
+        for( String entry : newSet.elementSet() ) {
+            num++;
+            System.out.printf( "%d %s\n", num, entry );
+        }
     }
 
 
     /**
      *
      */
-    public void tableContents( String source, Multimap< String, String > mmap ) {
+    public int countNew()
+    {
+        return newSet.size();
+    }
+
+
+    /**
+     *
+     */
+    public void contentsOld()
+    {
         /*
         if (tableName == "ref_role") {
             System.out.println("========================================================================");
@@ -297,50 +325,60 @@ public class TabletoArrayListMultiMap
         }
         */
 
-        int size = mmap.size();
-        System.out.println( "Contents " + source + " (size: " + size + "):");
-        Set< String > keys = mmap.keySet();
+        Set< String > keys = oldMap.keySet();
+        int nkeys = keys.size();
+
+        System.out.println( "Contents " + " (entries: " + nkeys + "):");
 
         int nrow = 0;
-        for( String key : keys ) {
+        for( String key : keys )
+        {
             nrow++;
-            Collection< String > collection = mmap.get( key );
+            Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            System.out.printf( "%6d %25s : ", nrow, key );
+            System.out.printf( "%d %s : ", nrow, key );
             System.out.println( "" + Arrays.toString( values ) );
-            nrow++;
         }
     }
 
 
     /**
-     *
+     * Add an entry to the new set
      */
-    public void add( String original )
+    public void add( String entry )
     {
-        String key = "original";
-        ArrayList< String > values = new ArrayList();
-
-        String str = "";
-        for( int i = 0; i < numColumns; i++ )     // process each column
-        {
-            str = "";
-            if( i == originalIdx )    { str = original; }
-            if( i == standardCodeIdx) { str = "x"; }
-        }
-        values.add( str );
-
-        for( String value : values ) { multiMapNew.put ( key, value ); }
+        newSet.add( entry );
     }
 
 
     /**
-     *
+     * Write the new set entries to the reference table
+     */
+    public void updateTable()
+    throws Exception
+    {
+        System.out.println( "updateTable" );
+
+        int num = 0;
+        for( String entry : newSet.elementSet() ) {
+            num++;
+            System.out.printf( "%d %s\n", num, entry );
+            String[] fields = { "original", "standard_code" };
+
+            String[] values = { LinksSpecific.funcPrepareForMysql( entry ), "x" };
+
+            con_or.insertIntoTable( tableName, fields, values );
+        }
+    }
+
+
+    /**
+     * Work for the garbage collector
      */
     public void free() {
-        multiMapOld = null;
-        multiMapNew = null;
+        oldMap = null;
+        newSet = null;
         columnNames = null;
         valueNames  = null;
     }

@@ -39,7 +39,7 @@ import dataset.PersonC;
 import dataset.RegistrationC;
 import dataset.RelationSet;
 import dataset.TableToArraysSet;
-import dataset.TabletoArrayListMultiMap;
+import dataset.TabletoArrayListMultimap;
 
 import connectors.MySqlConnector;
 import enumdefinitions.TableType;
@@ -74,11 +74,12 @@ public class LinksCleaned extends Thread
     private TableToArraysSet ttalRole;
 
     // Table -> ArrayListMultiMap
-    private boolean almm = true;
-    private TabletoArrayListMultiMap almmFamilyname;
-    private TabletoArrayListMultiMap almmFirstname;
-    private TabletoArrayListMultiMap almmOccupation;
-    private TabletoArrayListMultiMap almmRole;
+    private boolean alm = true;
+    private TabletoArrayListMultimap almLocation;
+    private TabletoArrayListMultimap almFamilyname;
+    private TabletoArrayListMultimap almFirstname;
+    private TabletoArrayListMultimap almOccupation;
+    private TabletoArrayListMultimap almRole;
 
     private JTextField tbLOLClatestOutput;
     private JTextArea  taLOLCoutput;
@@ -128,6 +129,7 @@ public class LinksCleaned extends Thread
     private String endl = ". OK.";              // ".";
 
     private PrintLogger plog;
+    private boolean showskip = false;
 
     /**
      * Constructor
@@ -226,44 +228,45 @@ public class LinksCleaned extends Thread
 
             if( sourceId != 0 ) { setSourceFilters(); }         // Set source filters
 
-            // links_general.ref_report contains 75 error definitions,
+            // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
             ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
 
-            doRenewData( dos.isDoRenewData() );                 // GUI cb: Remove previous data
+            for( int sourceInt : sourceList )
+            {
+                doRenewData( dos.isDoRenewData(), sourceInt );                 // GUI cb: Remove previous data
 
-            doPreBasicNames( dos.isDoPreBasicNames() );         // GUI cb: Basic names temp
+                doPreBasicNames( dos.isDoPreBasicNames(), sourceInt );         // GUI cb: Basic names temp
 
-            doRemarks( dos.isDoRemarks() );                     // GUI cb: Parse remarks
+                doRemarks( dos.isDoRemarks(), sourceInt );                     // GUI cb: Parse remarks
 
-            doNames( dos.isDoNames() );                         // GUI cb: Names
+                doNames( dos.isDoNames(), sourceInt );                         // GUI cb: Names
 
-            doLocations( dos.isDoLocations() );                 // GUI cb: Locations
+                doLocations( dos.isDoLocations(), sourceInt );                 // GUI cb: Locations
 
-            doStatusSex( dos.isDoStatusSex() );                 // GUI cb: Status and Sex
+                doStatusSex( dos.isDoStatusSex(), sourceInt );                 // GUI cb: Status and Sex
 
-            doRegType( dos.isDoRegType() );                     // GUI cb: Registration Type
+                doRegType( dos.isDoRegType(), sourceInt );                     // GUI cb: Registration Type
 
-            doSequence( dos.isDoSequence() );                   // GUI cb: Sequence
+                doSequence( dos.isDoSequence(), sourceInt );                   // GUI cb: Sequence
 
-            doRelation( dos.isDoRelation() );                   // GUI cb: Relation
+                doRelation( dos.isDoRelation(), sourceInt );                   // GUI cb: Relation
 
-            doAge(dos.isDoAgeYear());                         // GUI cb: Year Age
+                doOccupation( dos.isDoOccupation(), sourceInt );               // GUI cb: Occupation
 
-            doRole( dos.isDoRole() );                           // GUI cb: Role
+                //doAge( dos.isDoAgeYear(), sourceInt );                       // part of Dates
+                //doRole( dos.isDoRole(), sourceInt );                         // part of Dates
+                doDates( dos.isDoDates(), sourceInt );                         // GUI cb: Dates
 
-            doOccupation( dos.isDoOccupation() );               // GUI cb: Occupation
+                doMinMaxMarriage( dos.isDoMinMaxMarriage(), sourceInt );       // GUI cb: Min Max Marriage
 
-            doDates( dos.isDoDates() );                         // GUI cb: Dates
+                doPartsToFullDate( dos.isDoPartsToFullDate(), sourceInt );     // GUI cb: Parts to Full Date
 
-            doMinMaxMarriage( dos.isDoMinMaxMarriage() );       // GUI cb: Min Max Marriage
+                doDaysSinceBegin( dos.isDoDaysSinceBegin(), sourceInt );       // GUI cb: Days since begin
 
-            doPartsToFullDate( dos.isDoPartsToFullDate() );     // GUI cb: Parts to Full Date
-
-            doDaysSinceBegin( dos.isDoDaysSinceBegin() );       // GUI cb: Days since begin
-
-            doPostTasks( dos.isDoPostTasks() );                 // GUI cb: Post Tasks
+                doPostTasks( dos.isDoPostTasks(), sourceInt );                 // GUI cb: Post Tasks
+            }
 
             // Close db connections
             conOriginal.close();
@@ -272,7 +275,9 @@ public class LinksCleaned extends Thread
             conGeneral.close();
             conTemp.close();
 
-            doPrematch( dos.isDoPrematch() );                   // GUI cb: Run PreMatch
+            for( int sourceInt : sourceList ) {
+                doPrematch( dos.isDoPrematch(), sourceInt );                   // GUI cb: Run PreMatch
+            }
 
             // Total time
             timeExpand = System.currentTimeMillis() - begintime;
@@ -293,11 +298,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRenewData(boolean go) throws Exception
+    private void doRenewData( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doRenewData";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -316,7 +321,7 @@ public class LinksCleaned extends Thread
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
-        showMessage("Copying person keys to links_cleaned", false, true);
+        showMessage("Copying links_original person keys to links_cleaned", false, true);
         String keysPerson = ""
             + "INSERT INTO links_cleaned.person_c "
             +       "( id_person, id_registration, id_source, registration_maintype, id_person_o ) "
@@ -326,7 +331,7 @@ public class LinksCleaned extends Thread
         //System.out.println( keysPerson );
         conCleaned.runQuery( keysPerson );              // Execute query
 
-        showMessage("Copying registration keys to links_cleaned", false, true);
+        showMessage("Copying links_original registration keys to links_cleaned", false, true);
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c "
             +      "( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq ) "
@@ -344,11 +349,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPreBasicNames( boolean go ) throws Exception
+    private void doPreBasicNames( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doPreBasicNames";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -456,11 +461,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemarks( boolean go ) throws Exception
+    private void doRemarks( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doRemarks";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -495,26 +500,26 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doNames( boolean go ) throws Exception
+    private void doNames( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doNames";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
-        if( almm ) {
+        if( alm ) {
             long start = System.currentTimeMillis();
-            almmFirstname = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_firstname", "original" );
-            int size = almmFirstname.sizeOld();
-            almmFirstname.free();
-            elapsedShowMessage( "almmFirstname [" + size + " records]", start, System.currentTimeMillis() );
+            almFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original" );
+            int size = almFirstname.sizeOld();
+            almFirstname.free();
+            elapsedShowMessage( "almFirstname [" + size + " records]", start, System.currentTimeMillis() );
 
             start = System.currentTimeMillis();
-            almmFamilyname = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_familyname", "original" );
-            size = almmFamilyname.sizeOld();
-            almmFamilyname.free();
-            elapsedShowMessage( "almmFamilyname [" + size + " records]", start, System.currentTimeMillis() );
+            almFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original" );
+            size = almFamilyname.sizeOld();
+            almFamilyname.free();
+            elapsedShowMessage( "almFamilyname [" + size + " records]", start, System.currentTimeMillis() );
         }
 
         long timeStart = System.currentTimeMillis();
@@ -641,11 +646,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doLocations( boolean go ) throws Exception
+    private void doLocations( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doLocations";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -687,11 +692,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doStatusSex( boolean go ) throws Exception
+    private void doStatusSex( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doStatusSex";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -720,11 +725,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRegType( boolean go ) throws Exception
+    private void doRegType( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doType";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -742,11 +747,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doSequence( boolean go ) throws Exception
+    private void doSequence( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doSequence";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -764,11 +769,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRelation( boolean go ) throws Exception
+    private void doRelation( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doRelation";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -786,11 +791,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doAge( boolean go ) throws Exception
+    private void doAge( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doAge";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -812,21 +817,21 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRole( boolean go ) throws Exception
+    private void doRole( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doRole";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
         showMessage( funcname + "...", false, true );
 
-        if( almm ) {
+        if( alm ) {
             long start = System.currentTimeMillis();
-            almmRole = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_role", "original" );
-            int size = almmRole.sizeOld();
-            elapsedShowMessage("almmRole [" + size + " records]", start, System.currentTimeMillis());
+            almRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original" );
+            int size = almRole.sizeOld();
+            elapsedShowMessage("almRole [" + size + " records]", start, System.currentTimeMillis());
         }
 
         long timeStart = System.currentTimeMillis();
@@ -842,7 +847,7 @@ public class LinksCleaned extends Thread
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
 
-        if( almm ) { almmRole.free(); }
+        if( alm ) { almRole.free(); }
     } // doRole
 
 
@@ -851,36 +856,37 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doOccupation( boolean go ) throws Exception
+    private void doOccupation( boolean go, int sourceInt ) throws Exception
     {
         boolean debug = false;
 
         String funcname = "doOccupation";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
-        if( almm ) {
+        if( alm ) {
             long start = System.currentTimeMillis();
             showMessage( funcname + "...", false, true );
 
             showMessage( "Loading reference table: occupation...", false, true );
-            almmOccupation = new TabletoArrayListMultiMap( conGeneral, conOr, "ref_occupation", "original" );
+            almOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original" );
 
-            //almmOccupation.contentsOld();
+            //almOccupation.contentsOld();
 
-            showMessage( "Number of rows in reference table: " + almmOccupation.sizeOld(), false, true );
+            showMessage( "Number of rows in reference table: " + almOccupation.sizeOld(), false, true );
 
             for( int i : sourceList ) {
                 showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
                 standardOccupation( debug, i );
             }
 
-            int size = almmOccupation.sizeOld();
-            almmOccupation.free();
+            showMessage( "Updating reference table: occupation", false, true );
+            almOccupation.updateTable();
+            almOccupation.free();
 
-            elapsedShowMessage( "almmOccupation [" + size + " records]", start, System.currentTimeMillis() );
+            elapsedShowMessage( funcname, start, System.currentTimeMillis() );
         }
 
         else
@@ -914,37 +920,39 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDates( boolean go ) throws Exception
+    private void doDates( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doDates";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        for( int i : sourceList ) {
-            showMessage( "Processing standardRegistrationDate for source: " + i + "...", false, true );
-            standardRegistrationDate( i );
+        doAge(  go, sourceInt );        // required for dates
+        doRole( go, sourceInt );        // required for dates
 
-            showMessage( "Processing standardDate for source: " + i + "...", false, true );
-            standardDate( i, "birth" );
-            standardDate( i, "mar" );
-            standardDate( i, "death" );
+        showMessage( "Processing standardRegistrationDate for source: " + sourceInt + "...", false, true );
+        standardRegistrationDate( sourceInt );
 
-            showMessage( "Processing setComplete for source: " + i + "...", false, true );
-            setValidDateComplete( i );
+        showMessage( "Processing standardDate for source: " + sourceInt + "...", false, true );
+        standardDate( sourceInt, "birth" );
+        standardDate( sourceInt, "mar" );
+        standardDate( sourceInt, "death" );
 
-            showMessage( "Processing minMaxValidDate for source: " + i + "...", false, true );
-            minMaxValidDate( i );
+        showMessage( "Processing setComplete for source: " + sourceInt + "...", false, true );
+        setValidDateComplete( sourceInt );
 
-            //fillMinMaxArrays( "" + i );
+        showMessage( "Processing minMaxValidDate for source: " + sourceInt + "...", false, true );
+        minMaxValidDate( sourceInt );
 
-            showMessage( "Processing minMaxDateMain for source: " + i + "...", false, true );
-            minMaxDateMain( i );
-        }
+        //fillMinMaxArrays( "" + i );
+
+        showMessage( "Processing minMaxDateMain for source: " + sourceInt + "...", false, true );
+        minMaxDateMain( sourceInt );
+
 
         // Fill empty dates with register dates: this is still buggy
         /*
@@ -969,7 +977,7 @@ public class LinksCleaned extends Thread
         // no function completeMinMaxDeath() : NO, not needed
 
 
-        showMessage( "Skipping registration_c updates", false, true );
+        if( showskip ) { showMessage( "Skipping registration_c updates", false, true ); }
         /*
         showMessage( "Running update queries...", false, true );
         // extra function to correct registration data
@@ -1021,11 +1029,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doMinMaxMarriage( boolean go ) throws Exception
+    private void doMinMaxMarriage( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doMinMaxMarriage";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -1054,11 +1062,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPartsToFullDate( boolean go ) throws Exception
+    private void doPartsToFullDate( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doPartsToFullDate";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -1080,11 +1088,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDaysSinceBegin( boolean go ) throws Exception
+    private void doDaysSinceBegin( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doDaysSinceBegin";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -1106,11 +1114,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPostTasks( boolean go ) throws Exception
+    private void doPostTasks( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doPostTasks";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -1132,11 +1140,11 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPrematch( boolean go ) throws Exception
+    private void doPrematch( boolean go, int sourceInt ) throws Exception
     {
         String funcname = "doPrematch";
         if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
@@ -2111,10 +2119,11 @@ public class LinksCleaned extends Thread
                     standardOccupationRecord( debug, sourceStr, id_person, occupation );
                 }
             }
-            //System.out.println( "after cleaning" );
-            almmOccupation.contentsNew();
-
-            showMessage( counter + " persons, " + empty + " without occupation", false, true );
+            if( alm ) {
+                int newocc = almOccupation.countNew();
+                showMessage( counter + " persons, " + empty + " without occupation, " + newocc + " new occupation", false, true );
+            }
+            else { showMessage( counter + " persons, " + empty + " without occupation", false, true ); }
         }
         catch( SQLException sex )
         { showMessage( "\ncounter: " + counter + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true ); }
@@ -2136,13 +2145,18 @@ public class LinksCleaned extends Thread
         {
             if( !occupation.isEmpty() )                 // check presence of the occupation
             {
-              //if( ttalOccupation.originalExists( occupation ) )       // occupation present in ref_occupation.original
-                if( almmOccupation.containsKey( occupation ) )
+                boolean exists = false;
+                if( alm ) { exists = almOccupation.contains( occupation ); }
+                else { exists = ttalOccupation.originalExists( occupation ); }       // occupation present in ref_occupation.original }
+                if( exists )
                 {
-                    System.out.println( "old" );
+                    //showMessage( "old: " + occupation, false, true );
                     if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
-                  //String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
-                    String refSCode = almmOccupation.standardCode(occupation);
+
+                    String refSCode = "";
+                    if( alm ) { refSCode = almOccupation.standardCode( occupation ); }
+                    else { refSCode = ttalOccupation.getStandardCodeByOriginal( occupation ); }
+
                     if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
 
                     if( refSCode.equals( SC_X ) )
@@ -2163,16 +2177,18 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, sourceNo, 45, occupation );      // warning 45
 
-                      //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
-                        String refOccupation = almmOccupation.standard(occupation);
+                        String refOccupation = "";
+                        if( alm ) { refOccupation = almOccupation.standard( occupation ); }
+                        else { refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation ); }
 
                         String query = PersonC.updateQuery("occupation", refOccupation, id_person);
                         conCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_Y ) )
                     {
-                      //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
-                        String refOccupation = almmOccupation.standard(occupation);
+                        String refOccupation = "";
+                        if( alm ) { refOccupation = almOccupation.standard(occupation); }
+                        else { refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation ); }
 
                         if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
 
@@ -2187,12 +2203,12 @@ public class LinksCleaned extends Thread
                 }
                 else        // not present, collect as new
                 {
-                    System.out.println( "new" );
+                    //showMessage( "new: " + occupation, false, true );
                     if( debug ) { showMessage( "Warning 41 (not in ref_): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                     addToReportPerson( id_person, sourceNo, 41, occupation );       // warning 41
 
-                  //ttalOccupation.addOriginal( occupation );                       // Add new Occupation "x"
-                    almmOccupation.add( occupation );                               // Add new Occupation "x"
+                    if( alm ) { almOccupation.add( occupation );  }
+                    else { ttalOccupation.addOriginal( occupation ); }
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
                     conCleaned.runQuery( query );
@@ -4925,12 +4941,12 @@ public class LinksCleaned extends Thread
 
                 int age = 0;
                 String death = "";
-                if (readPc) {
+                if( readPc ) {
                     String queryPc = "SELECT age_year, death FROM links_cleaned.person_c"
                             + " WHERE id_registration = '" + id_registration + "'"
                             + " AND role = '" + main_role + "'";
 
-                    ResultSet rs_pc = conCleaned.runQueryWithResult(queryPc);
+                    ResultSet rs_pc = conCleaned.runQueryWithResult( queryPc );
 
                     int countPc = 0;
 
@@ -4946,22 +4962,15 @@ public class LinksCleaned extends Thread
                         throw new Exception("minMaxMainAge: person_c count = " + countPc);
                     }
 
-                    if (age <= 0) {
-                        if (age_main_role.equals("y")) {
-                            age_main_role = "n";
-                        } else {
-                            if (date_type.equals("death_date") &&
-                                    death.equals("y") &&
-                                    age_reported.equals("n")) {
-                                age_reported = "a";
-                            }
-                        }
+                    if( age > 0 ) { done = true; }
+                    else {
+                        if( age_main_role.equals( "y" ) ) { age_main_role = "n"; }
+                        else { done = true; }
                     }
                 }
-
-                done = true;
+                else { done = true; }
             }
-        }
+        } // while
 
         return mmmas;
 
