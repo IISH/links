@@ -605,6 +605,7 @@ new FormModel {
 						name: "cbCdoRemarks"
 						"text": "Parse remarks"
 						"name": "cbCdoOpmerkingen"
+						"enabled": false
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoNames"
@@ -685,6 +686,7 @@ new FormModel {
 						name: "cbCdoPreBasicNames"
 						"text": "Basic names temp"
 						"name": "cbCdoPreBasicNames"
+						"enabled": false
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
 						name: "tbLOLCrefurl"

@@ -1337,6 +1337,7 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- cbCdoRemarks ----
 				cbCdoRemarks.setText("Parse remarks");
 				cbCdoRemarks.setName("cbCdoOpmerkingen");
+				cbCdoRemarks.setEnabled(false);
 
 				//---- cbCdoNames ----
 				cbCdoNames.setSelected(true);
@@ -1403,6 +1404,7 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- cbCdoPreBasicNames ----
 				cbCdoPreBasicNames.setText("Basic names temp");
 				cbCdoPreBasicNames.setName("cbCdoPreBasicNames");
+				cbCdoPreBasicNames.setEnabled(false);
 
 				//---- tbLOLCrefurl ----
 				tbLOLCrefurl.setName("tbLOLCrefurl");
@@ -2389,7 +2391,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "19-Sep-2014 16:38";
+            String timestamp1 = "22-Sep-2014 15:37";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
