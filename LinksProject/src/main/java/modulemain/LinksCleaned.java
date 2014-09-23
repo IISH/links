@@ -67,7 +67,7 @@ public class LinksCleaned extends Thread
     //private TableToArraysSet ttalFirstname;         // Names
     //private TableToArraysSet ttalFamilyname;        // names
 
-    private TableToArraysSet ttalLocation;
+    //private TableToArraysSet ttalLocation;
     //private TableToArraysSet ttalOccupation;
 
     private TableToArraysSet ttalStatusSex;
@@ -83,7 +83,7 @@ public class LinksCleaned extends Thread
     private TabletoArrayListMultimap almmFirstname;     // Names
     private TabletoArrayListMultimap almmFamilyname;    // Names
 
-    private TabletoArrayListMultimap almLocation;
+    private TabletoArrayListMultimap almmLocation;
     private TabletoArrayListMultimap almmOccupation;
 
     private TabletoArrayListMultimap almmRole;
@@ -92,11 +92,11 @@ public class LinksCleaned extends Thread
     private JTextArea  taLOLCoutput;
 
     // WHERE [...]id_source = ...   shortcuts
-    private String sourceFilter = "";
-    private String sourceFilterCleanPers = "";
-    private String sourceFilterOrigPers = "";
-    private String sourceFilterCleanReg = "";
-    private String sourceFilterOrigReg = "";
+    //private String sourceFilter = "";
+    //private String sourceFilterCleanPers = "";
+    //private String sourceFilterOrigPers = "";
+    //private String sourceFilterCleanReg = "";
+    //private String sourceFilterOrigReg = "";
 
     private MySqlConnector conOr;           // remote reference db
     private MySqlConnector conLog;
@@ -129,7 +129,7 @@ public class LinksCleaned extends Thread
     private String pass = "";
 
     private int teller = 0;
-    private int sourceId;
+    private int sourceIdGui;
 
     private int[] sourceList;                      // either sourceListAvail, or [sourceId] from GUI
 
@@ -172,7 +172,7 @@ public class LinksCleaned extends Thread
             ManagerGui mg
     )
     {
-        this.sourceId = sourceId;
+        this.sourceIdGui = sourceId;
 
         this.ref_url = ref_url;
         this.ref_user = ref_user;
@@ -219,9 +219,9 @@ public class LinksCleaned extends Thread
             createLogTable();                                   // Create log table with timestamp
 
             int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
-            sourceList  = createSourceList( sourceId, sourceListAvail );
+            sourceList  = createSourceList( sourceIdGui, sourceListAvail );
 
-            if( sourceId == 0 ) {
+            if( sourceIdGui == 0 ) {
                 String s = "Available source Ids: ";
                 for( int i : sourceListAvail ) { s = s + i + " "; }
                 showMessage( s, false, true );
@@ -233,47 +233,47 @@ public class LinksCleaned extends Thread
             for( int i : sourceList ) { s = s + i + " "; }
             showMessage( s, false, true );
 
-            if( sourceId != 0 ) { setSourceFilters(); }         // Set source filters
+            //if( sourceIdGui != 0 ) { setSourceFilters(); }         // Set source filters
 
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
             ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
 
-            for( int sourceInt : sourceList )
+            for( int sourceId : sourceList )
             {
-                doRenewData( dos.isDoRenewData(), sourceInt );                 // GUI cb: Remove previous data
+                doRenewData( dos.isDoRenewData(), sourceId );                 // GUI cb: Remove previous data
 
-                //doPreBasicNames( dos.isDoPreBasicNames(), sourceInt );         // GUI cb: Basic names temp
+                //doPreBasicNames( dos.isDoPreBasicNames(), sourceId );         // GUI cb: Basic names temp
 
-                //doRemarks( dos.isDoRemarks(), sourceInt );                     // GUI cb: Parse remarks
+                //doRemarks( dos.isDoRemarks(), sourceId );                     // GUI cb: Parse remarks
 
-                doNames( dos.isDoNames(), sourceInt );                         // GUI cb: Names
+                doNames( dos.isDoNames(), sourceId );                         // GUI cb: Names
 
-                doLocations( dos.isDoLocations(), sourceInt );                 // GUI cb: Locations
+                doLocations( dos.isDoLocations(), sourceId );                 // GUI cb: Locations
 
-                doStatusSex( dos.isDoStatusSex(), sourceInt );                 // GUI cb: Status and Sex
+                doStatusSex( dos.isDoStatusSex(), sourceId );                 // GUI cb: Status and Sex
 
-                doRegType( dos.isDoRegType(), sourceInt );                     // GUI cb: Registration Type
+                doRegType( dos.isDoRegType(), sourceId );                     // GUI cb: Registration Type
 
-                doSequence( dos.isDoSequence(), sourceInt );                   // GUI cb: Sequence
+                //doSequence( dos.isDoSequence(), sourceId );                   // GUI cb: Sequence
 
-                doRelation( dos.isDoRelation(), sourceInt );                   // GUI cb: Relation
+                //doRelation( dos.isDoRelation(), sourceId );                   // GUI cb: Relation
 
-                doOccupation( dos.isDoOccupation(), sourceInt );               // GUI cb: Occupation
+                doOccupation( dos.isDoOccupation(), sourceId );               // GUI cb: Occupation
 
-                //doAge( dos.isDoAgeYear(), sourceInt );                       // part of Dates
-                //doRole( dos.isDoRole(), sourceInt );                         // part of Dates
+                //doAge( dos.isDoAgeYear(), sourceId );                       // part of Dates
+                //doRole( dos.isDoRole(), sourceId );                         // part of Dates
 
-                doDates( dos.isDoDates(), sourceInt );                         // GUI cb: Dates
+                doDates( dos.isDoDates(), sourceId );                         // GUI cb: Dates
 
-                doMinMaxMarriage( dos.isDoMinMaxMarriage(), sourceInt );       // GUI cb: Min Max Marriage
+                doMinMaxMarriage( dos.isDoMinMaxMarriage(), sourceId );       // GUI cb: Min Max Marriage
 
-                doPartsToFullDate( dos.isDoPartsToFullDate(), sourceInt );     // GUI cb: Parts to Full Date
+                doPartsToFullDate( dos.isDoPartsToFullDate(), sourceId );     // GUI cb: Parts to Full Date
 
-                doDaysSinceBegin( dos.isDoDaysSinceBegin(), sourceInt );       // GUI cb: Days since begin
+                doDaysSinceBegin( dos.isDoDaysSinceBegin(), sourceId );       // GUI cb: Days since begin
 
-                doPostTasks( dos.isDoPostTasks(), sourceInt );                 // GUI cb: Post Tasks
+                doPostTasks( dos.isDoPostTasks(), sourceId );                 // GUI cb: Post Tasks
             }
 
             // Close db connections
@@ -283,15 +283,12 @@ public class LinksCleaned extends Thread
             conGeneral.close();
             conTemp.close();
 
-            for( int sourceInt : sourceList ) {
-                doPrematch( dos.isDoPrematch(), sourceInt );                   // GUI cb: Run PreMatch
+            for( int sourceId : sourceList ) {
+                doPrematch( dos.isDoPrematch(), sourceId );                   // GUI cb: Run PreMatch
             }
 
-            // Total time
-            timeExpand = System.currentTimeMillis() - begintime;
-            int iTimeEx = (int) (timeExpand / 1000);
-
-            showMessage("Conversion from Original to Cleaned is done; Total time: " + LinksSpecific.stopWatch(iTimeEx), false, true);
+            String msg = "Conversion from Original to Cleaned is done. ";
+            showTimingMessage( msg, begintime );
 
         } catch (Exception ex) {
             showMessage("Error: " + ex.getMessage(), false, true);
@@ -306,8 +303,10 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRenewData( boolean go, int sourceInt ) throws Exception
+    private void doRenewData( boolean go, int sourceId ) throws Exception
     {
+        String sourceStr = Integer.toString( sourceId );
+
         String funcname = "doRenewData";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -317,36 +316,37 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        // Delete all existing cleaned data
-        // Create queries
-        String deletePerson = "DELETE FROM person_c" + sourceFilter;
-        String deleteRegistration = "DELETE FROM registration_c" + sourceFilter;
+        // Delete cleaned data for given source
+        String deletePerson = "DELETE FROM person_c WHERE id_source = " + sourceStr;
+        String deleteRegist = "DELETE FROM registration_c WHERE id_source = " + sourceStr;
 
-        // Execute queries
-        showMessage("Deleting previous data", false, true);
-        conCleaned.runQuery(deletePerson);
-        conCleaned.runQuery(deleteRegistration);
+        showMessage( "Deleting previous data for source: " + sourceStr, false, true );
+        conCleaned.runQuery( deletePerson );
+        conCleaned.runQuery( deleteRegist );
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
         showMessage("Copying links_original person keys to links_cleaned", false, true);
         String keysPerson = ""
-            + "INSERT INTO links_cleaned.person_c "
-            +       "( id_person, id_registration, id_source, registration_maintype, id_person_o ) "
-            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o "
-            + "FROM links_original.person_o" + sourceFilterOrigPers;
+            + "INSERT INTO links_cleaned.person_c"
+            +      " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
+            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
+            + " FROM links_original.person_o"
+            + " WHERE person_o.id_source = " + sourceStr;
 
         //System.out.println( keysPerson );
-        conCleaned.runQuery( keysPerson );              // Execute query
+        conCleaned.runQuery( keysPerson );
 
         showMessage("Copying links_original registration keys to links_cleaned", false, true);
         String keysRegistration = ""
-            + "INSERT INTO links_cleaned.registration_c "
-            +      "( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq ) "
-            + "SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq "
-            + "FROM links_original.registration_o" + sourceFilterOrigReg;
+            + "INSERT INTO links_cleaned.registration_c"
+            +      " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
+            + " SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq"
+            + " FROM links_original.registration_o"
+            + " WHERE registration_o.id_source = " + sourceStr;
+
         //System.out.println( keysRegistration );
-        conCleaned.runQuery( keysRegistration );        // Execute query
+        conCleaned.runQuery( keysRegistration );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRenewData
@@ -358,7 +358,7 @@ public class LinksCleaned extends Thread
      * @throws Exception
      */
     /*
-    private void doPreBasicNames( boolean go, int sourceInt ) throws Exception
+    private void doPreBasicNames( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doPreBasicNames";
         if( !go ) {
@@ -471,7 +471,7 @@ public class LinksCleaned extends Thread
      * @throws Exception
      */
     /*
-    private void doRemarks( boolean go, int sourceInt ) throws Exception
+    private void doRemarks( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doRemarks";
         if( !go ) {
@@ -510,27 +510,13 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doNames( boolean go, int sourceInt ) throws Exception
+    private void doNames( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doNames";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
-
-        /*
-        long start = System.currentTimeMillis();
-        almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original" );
-        int size = almmFirstname.sizeOld();
-        almmFirstname.free();
-        elapsedShowMessage( "almFirstname [" + size + " records]", start, System.currentTimeMillis() );
-
-        start = System.currentTimeMillis();
-        almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original" );
-        size = almmFamilyname.sizeOld();
-        almmFamilyname.free();
-        elapsedShowMessage( "almFamilyname [" + size + " records]", start, System.currentTimeMillis() );
-        */
 
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
@@ -545,7 +531,7 @@ public class LinksCleaned extends Thread
         ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
         System.out.println(ts + " dos.isDoNames");
 
-        // Loading reference tables
+        // Loading Prepiece/Suffix/Alias reference tables
         start = System.currentTimeMillis();
         msg = "Loading Prepiece/Suffix/Alias reference tables";
         showMessage( msg + "...", false, true );
@@ -563,19 +549,22 @@ public class LinksCleaned extends Thread
             showMessage( "Deleting table links_temp.firstname_t", false, true );
             dropTable( conTemp, "links_temp", "firstname_t" );
         }
-
         createTempFirstnameTable();
         createTempFirstnameFile();
-        showMessage( "Loading Firstname reference table", false, true );
+
+        start = System.currentTimeMillis();
+        msg = "Loading Firstname reference table";
+        showMessage( msg + "...", false, true );
 
         //ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
         //showMessage( "Number of rows in reference table: " + ttalFirstname.countRows(), false, true );
         almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original" );
-        showMessage( "Number of rows in reference table: " + almmFirstname.sizeOld(), false, true );
+        showMessage( "Number of rows in reference table: " + almmFirstname.numkeys(), false, true );
+        showTimingMessage( msg, start );
 
         msg = "standardFirstname";
         showMessage( msg + "...", false, true );
-        runMethod( "standardFirstname" );
+        standardFirstname( sourceId );
         showTimingMessage( "standardFirstname", start );
 
         start = System.currentTimeMillis();
@@ -601,16 +590,20 @@ public class LinksCleaned extends Thread
 
         createTempFamilynameTable();
         createTempFamilynameFile();
-        showMessage( "Loading Familyname reference table", false, true );
+
+        start = System.currentTimeMillis();
+        msg = "Loading Familyname reference table";
+        showMessage( msg + "...", false, true );
 
         //ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
         //showMessage( "Number of rows in reference table: " + ttalFamilyname.countRows(), false, true );
         almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original" );
-        showMessage( "Number of rows in reference table: " + almmFamilyname.sizeOld(), false, true );
+        showMessage( "Number of rows in reference table: " + almmFamilyname.numkeys(), false, true );
+        showTimingMessage( msg, start );
 
         msg = "standardFamilyname";
         showMessage( msg + "...", false, true );
-        runMethod( "standardFamilyname" );
+        standardFamilyname( sourceId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
@@ -640,8 +633,9 @@ public class LinksCleaned extends Thread
         String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
         conCleaned.runQuery( qLower );
 
-        runMethod( "standardPrepiece" );
-        runMethod( "standardSuffix" );
+        standardPrepiece( sourceId );
+        standardSuffix( sourceId );
+
         showTimingMessage( msg, start );
 
         // Update reference
@@ -667,7 +661,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doLocations( boolean go, int sourceInt ) throws Exception
+    private void doLocations( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doLocations";
         if( !go ) {
@@ -680,28 +674,30 @@ public class LinksCleaned extends Thread
 
         showMessage( "Loading reference table: location...", false, true );
         long start = System.currentTimeMillis();
-        ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
+        //ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
+        almmLocation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_location", "original" );
         showTimingMessage( "Loading reference table: location ", start );
 
         start = System.currentTimeMillis();
-        runMethod( "standardRegistrationLocation" );
+        standardRegistrationLocation( sourceId );
         showTimingMessage( "standardRegistrationLocation ", start );
 
         start = System.currentTimeMillis();
-        runMethod( "standardBirthLocation" );
+        standardBirthLocation( sourceId );
         showTimingMessage( "standardBirthLocation ", start );
 
         start = System.currentTimeMillis();
-        runMethod( "standardMarLocation" );
+        standardMarLocation( sourceId );
         showTimingMessage( "standardMarLocation ", start );
 
         start = System.currentTimeMillis();
-        runMethod( "standardDeathLocation" );
+        standardDeathLocation( sourceId );
         showTimingMessage( "standardDeathLocation ", start );
 
         start = System.currentTimeMillis();
         showMessage( "Updating reference table: location...", false, true );
-        ttalLocation.updateTable();
+        //ttalLocation.updateTable();
+        almmLocation.updateTable();
         showTimingMessage( "Updating reference table: location ", start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -713,7 +709,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doStatusSex( boolean go, int sourceInt ) throws Exception
+    private void doStatusSex( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doStatusSex";
         if( !go ) {
@@ -729,8 +725,8 @@ public class LinksCleaned extends Thread
             ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
         }
 
-        runMethod( "standardSex" );
-        runMethod( "standardStatusSex" );
+        standardSex( sourceId );
+        standardStatusSex( sourceId );
 
         showMessage( "Updating reference table status_sex...", false, true );
         {
@@ -746,7 +742,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRegType( boolean go, int sourceInt ) throws Exception
+    private void doRegType( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doType";
         if( !go ) {
@@ -757,7 +753,7 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        runMethod( "standardType" );
+        standardType( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRegType
@@ -768,7 +764,8 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doSequence( boolean go, int sourceInt ) throws Exception
+    /*
+    private void doSequence( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doSequence";
         if( !go ) {
@@ -779,18 +776,19 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        runMethod( "standardSequence" );
+        standardSequence( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doSequence
-
+    */
 
     /**
      * Relation
      * @param go
      * @throws Exception
      */
-    private void doRelation( boolean go, int sourceInt ) throws Exception
+    /*
+    private void doRelation( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doRelation";
         if( !go ) {
@@ -801,18 +799,18 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        runMethod( "funcRelation" );
+        funcRelation( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRelation
-
+    */
 
     /**
      * Year Age
      * @param go
      * @throws Exception
      */
-    private void doAge( boolean go, int sourceInt ) throws Exception
+    private void doAge( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doAge";
         if( !go ) {
@@ -824,10 +822,8 @@ public class LinksCleaned extends Thread
 
         showMessage( funcname + "...", false, true );
 
-        for( int i : sourceList ) {
-            showMessage( "Processing standardAge for source: " + i + "...", false, true );
-            standardAge(i);
-        }
+        showMessage( "Processing standardAge for source: " + sourceId + "...", false, true );
+        standardAge( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doAge
@@ -838,7 +834,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRole( boolean go, int sourceInt ) throws Exception
+    private void doRole( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doRole";
         if( !go ) {
@@ -853,16 +849,15 @@ public class LinksCleaned extends Thread
         //ttalRole = new TableToArraysSet( conGeneral, conOr, "original", "role" );
         //int size = ttalRole.countRows();
         almmRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original" );
-        int size = almmRole.sizeOld();
+        almmRole.contentsOld();
+        int size = almmRole.numkeys();
 
         elapsedShowMessage( "almRole [" + size + " records]", start, System.currentTimeMillis() );
 
         long timeStart = System.currentTimeMillis();
 
-        for( int i : sourceList ) {
-            showMessage( "Processing standardRole for source: " + i + "...", false, true );
-            standardRole( i );
-        }
+        showMessage( "Processing standardRole for source: " + sourceId + "...", false, true );
+        standardRole( sourceId );
 
         //ttalRole.updateTable();
         //ttalRole.free();
@@ -878,7 +873,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doOccupation( boolean go, int sourceInt ) throws Exception
+    private void doOccupation( boolean go, int sourceId ) throws Exception
     {
         boolean debug = false;
 
@@ -888,20 +883,21 @@ public class LinksCleaned extends Thread
             return;
         }
 
-        long start = System.currentTimeMillis();
+        long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        showMessage( "Loading reference table: occupation...", false, true );
+        long start = System.currentTimeMillis();
+        String msg = "Loading reference table: occupation";
+        showMessage( msg + "...", false, true );
         //ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
         almmOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original" );
+        elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         //showMessage( "Number of rows in reference table: " + ttalOccupation.countRows(), false, true );
-        showMessage( "Number of rows in reference table: " + almmOccupation.sizeOld(), false, true );
+        showMessage( "Number of rows in reference table: " + almmOccupation.numkeys(), false, true );
 
-        for( int i : sourceList ) {
-            showMessage( "Processing standardOccupation for source: " + i + "...", false, true );
-            standardOccupation( debug, i );
-        }
+        showMessage( "Processing standardOccupation for source: " + sourceId + "...", false, true );
+        standardOccupation( debug, sourceId );
 
         showMessage( "Updating reference table: occupation", false, true );
         //ttalOccupation.updateTable();
@@ -909,7 +905,7 @@ public class LinksCleaned extends Thread
         //ttalOccupation.free();
         almmOccupation.free();
 
-        elapsedShowMessage( funcname, start, System.currentTimeMillis() );
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
     } // doOccupation
 
 
@@ -918,7 +914,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDates( boolean go, int sourceInt ) throws Exception
+    private void doDates( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doDates";
         if( !go ) {
@@ -929,27 +925,27 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        doAge(  go, sourceInt );        // required for dates
-        doRole( go, sourceInt );        // required for dates
+        doAge(  go, sourceId );        // required for dates
+        doRole( go, sourceId );        // required for dates
 
-        showMessage( "Processing standardRegistrationDate for source: " + sourceInt + "...", false, true );
-        standardRegistrationDate( sourceInt );
+        showMessage( "Processing standardRegistrationDate for source: " + sourceId + "...", false, true );
+        standardRegistrationDate( sourceId );
 
-        showMessage( "Processing standardDate for source: " + sourceInt + "...", false, true );
-        standardDate( sourceInt, "birth" );
-        standardDate( sourceInt, "mar" );
-        standardDate( sourceInt, "death" );
+        showMessage( "Processing standardDate for source: " + sourceId + "...", false, true );
+        standardDate( sourceId, "birth" );
+        standardDate( sourceId, "mar" );
+        standardDate( sourceId, "death" );
 
-        showMessage( "Processing setComplete for source: " + sourceInt + "...", false, true );
-        setValidDateComplete( sourceInt );
+        showMessage( "Processing setComplete for source: " + sourceId + "...", false, true );
+        setValidDateComplete( sourceId );
 
-        showMessage( "Processing minMaxValidDate for source: " + sourceInt + "...", false, true );
-        minMaxValidDate( sourceInt );
+        showMessage( "Processing minMaxValidDate for source: " + sourceId + "...", false, true );
+        minMaxValidDate( sourceId );
 
         //fillMinMaxArrays( "" + i );
 
-        showMessage( "Processing minMaxDateMain for source: " + sourceInt + "...", false, true );
-        minMaxDateMain( sourceInt );
+        showMessage( "Processing minMaxDateMain for source: " + sourceId + "...", false, true );
+        minMaxDateMain( sourceId );
 
 
         // Fill empty dates with register dates: this is still buggy
@@ -1027,7 +1023,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doMinMaxMarriage( boolean go, int sourceInt ) throws Exception
+    private void doMinMaxMarriage( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doMinMaxMarriage";
         if( !go ) {
@@ -1042,10 +1038,8 @@ public class LinksCleaned extends Thread
         {
             ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
 
-            for( int i : sourceList ) {
-                showMessage( "Processing minMaxMarriageYear for source: " + i + "...", false, true );
-                minMaxMarriageYear( setMarriageYear( i + "" ), refMinMaxMarriageYear );
-            }
+            showMessage( "Processing minMaxMarriageYear for source: " + sourceId + "...", false, true );
+            minMaxMarriageYear( setMarriageYear( "" + sourceId ), refMinMaxMarriageYear );
         }
         catch( Exception ex ) {
             showMessage( "Exception while running minMaxMarriageYear, properly ref_minmax_marriageyear error: " + ex.getMessage(), false, true );
@@ -1060,7 +1054,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPartsToFullDate( boolean go, int sourceInt ) throws Exception
+    private void doPartsToFullDate( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doPartsToFullDate";
         if( !go ) {
@@ -1071,11 +1065,8 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        for( int i : sourceList ) {
-            String sourceStr = "" + i;
-            showMessage( "processing partsToDate for source: " + i + "...", false, true );
-            partsToDate( sourceStr );
-        }
+        showMessage( "processing partsToDate for source: " + sourceId + "...", false, true );
+        partsToDate( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doPartsToFullDate
@@ -1086,7 +1077,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDaysSinceBegin( boolean go, int sourceInt ) throws Exception
+    private void doDaysSinceBegin( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doDaysSinceBegin";
         if( !go ) {
@@ -1097,11 +1088,8 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        for( int i : sourceList ) {
-            String sourceStr = "" + i;
-            showMessage( "Processing daysSinceBegin for source: " + i + "...", false, true );
-            daysSinceBegin( sourceStr );
-        }
+        showMessage( "Processing daysSinceBegin for source: " + sourceId + "...", false, true );
+        daysSinceBegin( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doDaysSinceBegin
@@ -1112,7 +1100,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPostTasks( boolean go, int sourceInt ) throws Exception
+    private void doPostTasks( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doPostTasks";
         if( !go ) {
@@ -1123,11 +1111,8 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        for( int i : sourceList ) {
-            String sourceStr = "" + i;
-            showMessage( "Processing postTasks for source: " + i + "...", false, true );
-            postTasks( sourceStr );
-        }
+        showMessage( "Processing postTasks for source: " + sourceId + "...", false, true );
+        postTasks( sourceId );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doPostTasks
@@ -1138,7 +1123,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPrematch( boolean go, int sourceInt ) throws Exception
+    private void doPrematch( boolean go, int sourceId ) throws Exception
     {
         String funcname = "doPrematch";
         if( !go ) {
@@ -1160,68 +1145,57 @@ public class LinksCleaned extends Thread
 
     /**
      * @param id
-     * @param id_souce
+     * @param souceNo
      * @param name
      * @return
      */
-    private String standardAlias( int id, String id_souce, String name ) throws Exception
+    private String standardAlias( int id, String souceNo, String name ) throws Exception
     {
-        dataset.ArrayListNonCase ag = ttalAlias.getArray("original");
+        dataset.ArrayListNonCase ag = ttalAlias.getArray( "original" );
 
-        // to lowercase
         name = name.toLowerCase();
 
-        for (Object ags : ag) {
-
+        for( Object ags : ag )
+        {
             String keyword = " " + ags.toString().toLowerCase() + " ";
 
-            if (name.contains(" " + keyword + " ")) {
-
-                // EC 17
-                addToReportPerson(id, id_souce, 17, name);
+            if( name.contains( " " + keyword + " " ) )
+            {
+                addToReportPerson( id, souceNo, 17, name );      // EC 17
 
                 // prepare on braces
-                if (keyword.contains("\\(") || keyword.contains("\\(")) {
-
-                    keyword = keyword.replaceAll("\\(", "").replaceAll("\\)", "");
+                if( keyword.contains( "\\(" ) || keyword.contains( "\\(" ) ) {
+                    keyword = keyword.replaceAll( "\\(", "" ).replaceAll( "\\)", "" );
                 }
 
-                String[] names = name.toLowerCase().split(keyword, 2);
+                String[] names = name.toLowerCase().split( keyword, 2 );
 
-                /*
-                we must clean the name because of the braces used in aliassen
-                 */
+                // we must clean the name because of the braces used in aliasses
 
                 // Set alias
-                PersonC.updateQuery("alias", LinksSpecific.funcCleanSides(funcCleanNaam(names[1])), id);
+                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides(cleanName( names[ 1 ] ) ), id );
 
-                return LinksSpecific.funcCleanSides(funcCleanNaam(names[0]));
+                return LinksSpecific.funcCleanSides( cleanName( names[ 0 ] ) );
             }
         }
+
         return name;
     } // standardAlias
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardBirthLocation( String sourceNo )
+    public void standardBirthLocation( int sourceId )
     {
-        String startQuery;
-        String id_source;
+        String sourceStr = Integer.toString( sourceId );
 
-        if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , birth_location FROM person_o" + sourceFilter + " AND birth_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceNo + " AND birth_location <> ''";
-            id_source = sourceNo;
-        }
+        String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + sourceStr + " AND birth_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
 
-            standardLocation( rs, "id_person", "birth_location", "birth_location", id_source, TableType.PERSON );
+            standardLocation( rs, "id_person", "birth_location", "birth_location", sourceStr, TableType.PERSON );
         } catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
         }
@@ -1231,9 +1205,10 @@ public class LinksCleaned extends Thread
     /**
      * @param type      // "birth", "mar", or "death"
      */
-    public void standardDate( int sourceInt, String type )
+    public void standardDate( int sourceId, String type )
     {
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
+
         int counter = 0;
         int step = 10000;
         int stepstate = step;
@@ -1300,24 +1275,17 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardDeathLocation( String sourceNo )
+    public void standardDeathLocation( int sourceId )
     {
-        String startQuery;
-        String id_source;
+        String sourceStr = Integer.toString( sourceId );
 
-        if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , death_location FROM person_o" + sourceFilter + " AND death_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceNo + " AND death_location <> ''";
-            id_source = sourceNo;
-        }
+        String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + sourceStr + " AND death_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
-            standardLocation( rs, "id_person", "death_location", "death_location", id_source, TableType.PERSON );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "death_location", "death_location", sourceStr, TableType.PERSON );
         } catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
         }
@@ -1325,93 +1293,56 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      * @throws Exception
      */
-    public void standardFirstname( String sourceNo )
+    public void standardFirstname( int sourceId )
     {
-        int counter = 0;
+        String sourceStr = Integer.toString( sourceId );
+
+        int count = 0;
+        int count_empty = 0;
         int step = 10000;
         int stepstate = step;
-        String id_source;
 
         try
         {
+            // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
-            String startQuery;
+            String selectQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceStr;
 
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , firstname FROM person_o" + sourceFilter + "";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , firstname FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            // startQuery = "SELECT id_person , firstname FROM person_o" + " WHERE id_source = 115";
-
-            ResultSet rsFirstName = con.createStatement().executeQuery( startQuery );
+            ResultSet rsFirstName = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
-            // con.createStatement().close();
-
-//            rsFirstName.setFetchSize(100000);
-//           while (rsFirstName.next()) {
-////
-////
-//////                int id_person = rsFirstName.getInt("id_person");
-//////                String firstname = rsFirstName.getString("firstname");
-//            }
-
-//            // close
-//            int iets = 0;
-//            rsFirstName = con.createStatement().executeQuery("SELECT 0;");
-//            con.createStatement().close();
-//            rsFirstName.close();
-//            rsFirstName = null;
-//
-//            con.close();
-//            System.gc();
-
 
             // get total
             rsFirstName.last();
             int total = rsFirstName.getRow();
             rsFirstName.beforeFirst();
 
-            int empty = 0;
-            int newfirstn = 0;
-
             while( rsFirstName.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage(counter + " of " + total, true, true);
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + " of " + total, true, true );
                     stepstate += step;
                 }
 
-                int id_person = rsFirstName.getInt("id_person");
-                String firstname = rsFirstName.getString("firstname");
+                int id_person = rsFirstName.getInt( "id_person" );
+                String firstname = rsFirstName.getString( "firstname" );
 
                 // Is firstname empty?
-                if (firstname != null && !firstname.isEmpty()) {
-
-                    // clean name
-                    firstname = funcCleanFirstName(firstname);
-
+                if( firstname != null && !firstname.isEmpty() )
+                {
+                    firstname = cleanFirstName( firstname );
                     firstname = firstname.toLowerCase();
 
-//                    if (id_person == 9363889) {
-//                        int iets = 9;
-//                    }
-
                     // Check name on aliasses
-                    String nameNoAlias = standardAlias(id_person, id_source, firstname);
+                    String nameNoAlias = standardAlias( id_person, sourceStr, firstname );
 
-                    // Check on serried spaces
-                    // Split name on spaces
-                    String[] names = nameNoAlias.split(" ");
+                    // Check on serried spaces; // Split name on spaces
+                    String[] names = nameNoAlias.split( " " );
                     boolean spaces = false;
 
                     ArrayList<String> preList  = new ArrayList<String>();
@@ -1425,9 +1356,8 @@ public class LinksCleaned extends Thread
                         }
                     }
 
-                    // EC
-                    if (spaces) {
-                        addToReportPerson(id_person, id_source, 1103, "");
+                    if( spaces ) {
+                        addToReportPerson( id_person, sourceStr, 1103, "" );      // EC 1103
                     }
 
                     // loop through names
@@ -1449,32 +1379,32 @@ public class LinksCleaned extends Thread
                             }
                             else if( standard_code.equals( SC_U ) )
                             {
-                                addToReportPerson( id_person, id_source, 1100, prename );           // EC 1100
+                                addToReportPerson( id_person, sourceStr, 1100, prename );           // EC 1100
                                 //postList.add( ttalFirstname.getStandardByOriginal( prename ) );
                                 postList.add( almmFirstname.standard( prename ) );
                             }
                             else if( standard_code.equals( SC_N ) )
                             {
-                                addToReportPerson( id_person, id_source, 1105, prename );           // EC 1105
+                                addToReportPerson( id_person, sourceStr, 1105, prename );           // EC 1105
                             }
                             else if( standard_code.equals( SC_X ) )
                             {
-                                addToReportPerson( id_person, id_source, 1109, prename );           // EC 1109
+                                addToReportPerson( id_person, sourceStr, 1109, prename );           // EC 1109
                                 postList.add(preList.get(i));
                             }
                             else {
-                                addToReportPerson( id_person, id_source, 1100, prename );           // EC 1100
+                                addToReportPerson( id_person, sourceStr, 1100, prename );           // EC 1100
                             }
                         }
                         else    // name does not exist in ref_firstname
                         {
                             // check on invalid token
-                            String nameNoInvalidChars = funcCleanNaam( prename );
+                            String nameNoInvalidChars = cleanName( prename );
 
                             // name contains invalid chars ?
                             if( ! prename.equalsIgnoreCase( nameNoInvalidChars ) )
                             {
-                                addToReportPerson( id_person, id_source, 1104, prename );  // EC 1104
+                                addToReportPerson( id_person, sourceStr, 1104, prename );  // EC 1104
 
                                 // Check if name exists in ref
                                 // Does this aprt exists in ref_name?
@@ -1492,27 +1422,26 @@ public class LinksCleaned extends Thread
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1100, nameNoInvalidChars );    // EC 1100
+                                        addToReportPerson( id_person, sourceStr, 1100, nameNoInvalidChars );    // EC 1100
                                         //postList.add( ttalFirstname.getStandardByOriginal( nameNoInvalidChars ) );
                                         postList.add( almmFirstname.standard( nameNoInvalidChars ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1105, nameNoInvalidChars );    // EC 1105
+                                        addToReportPerson( id_person, sourceStr, 1105, nameNoInvalidChars );    // EC 1105
                                     }
                                     else if( standard_code.equals( SC_X ) )
                                     {
-                                        addToReportPerson(id_person, id_source, 1109, nameNoInvalidChars);      // EC 1109
+                                        addToReportPerson(id_person, sourceStr, 1109, nameNoInvalidChars);      // EC 1109
                                         postList.add( nameNoInvalidChars );
                                     }
                                     else { // EC 1100, standard_code not invalid
-                                        addToReportPerson(id_person, id_source, 1100, nameNoInvalidChars);      // EC 1100
+                                        addToReportPerson(id_person, sourceStr, 1100, nameNoInvalidChars);      // EC 1100
                                     }
 
                                     continue;
                                 }
 
-                                // check if it ends witch suffix
                                 // Check on suffix
                                 ArrayListNonCase sfxO  = ttalSuffix.getArray( "original" );
                                 ArrayListNonCase sfxSc = ttalSuffix.getArray( "standard_code" );
@@ -1522,7 +1451,7 @@ public class LinksCleaned extends Thread
                                     if( nameNoInvalidChars.endsWith( " " + sfxO.get( j ).toString() )
                                         && sfxSc.get( j ).toString().equals( SC_Y ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1106, nameNoInvalidChars );  // EC 1106
+                                        addToReportPerson( id_person, sourceStr, 1106, nameNoInvalidChars );  // EC 1106
 
                                         nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + sfxO.get( j ).toString(), "" );
 
@@ -1534,10 +1463,10 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // check ref_prepiece
-                                String nameNoPieces = funcNamePrepiece( nameNoInvalidChars, id_person );
+                                String nameNoPieces = namePrepiece( nameNoInvalidChars, id_person );
 
                                 if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
-                                    addToReportPerson(id_person, id_source, 1107, nameNoInvalidChars);  // EC 1107
+                                    addToReportPerson(id_person, sourceStr, 1107, nameNoInvalidChars);  // EC 1107
                                 }
 
                                 // last check on ref
@@ -1555,27 +1484,26 @@ public class LinksCleaned extends Thread
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1100, nameNoPieces );    // EC 1100
+                                        addToReportPerson( id_person, sourceStr, 1100, nameNoPieces );    // EC 1100
                                         //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1105, nameNoPieces );    // EC 1105
+                                        addToReportPerson( id_person, sourceStr, 1105, nameNoPieces );    // EC 1105
                                     }
                                     else if( standard_code.equals( SC_X ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1109, nameNoPieces );   // EC 1109
+                                        addToReportPerson( id_person, sourceStr, 1109, nameNoPieces );   // EC 1109
                                         postList.add( nameNoPieces );
                                     }
                                     else { // EC 1100, standard_code not invalid
-                                        addToReportPerson( id_person, id_source, 1100, nameNoPieces );    // EC 1100
+                                        addToReportPerson( id_person, sourceStr, 1100, nameNoPieces );    // EC 1100
                                     }
                                 }
                                 else {
                                     // name must be added to ref_firstname with standard_code x
                                     //ttalFirstname.addOriginal( nameNoPieces );
-                                    newfirstn++;
                                     almmFirstname.add( nameNoPieces );
                                     postList.add( nameNoPieces );   // Also add name to postlist
                                 }
@@ -1592,7 +1520,7 @@ public class LinksCleaned extends Thread
                                     if( nameNoInvalidChars.equalsIgnoreCase( sfxO.get( j ).toString() )
                                         && sfxSc.get( j ).toString().equals( SC_Y ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1106, nameNoInvalidChars );  // EC 1106
+                                        addToReportPerson( id_person, sourceStr, 1106, nameNoInvalidChars );  // EC 1106
 
                                         nameNoInvalidChars = nameNoInvalidChars.replaceAll( sfxO.get( j ).toString(), "" );
 
@@ -1604,10 +1532,10 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // check ref_prepiece
-                                String nameNoPieces = funcNamePrepiece( nameNoInvalidChars, id_person );
+                                String nameNoPieces = namePrepiece( nameNoInvalidChars, id_person );
 
                                 if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
-                                    addToReportPerson(id_person, id_source, 1107, nameNoInvalidChars);   // EC 1107
+                                    addToReportPerson(id_person, sourceStr, 1107, nameNoInvalidChars);   // EC 1107
                                 }
 
                                 // last check on ref
@@ -1625,27 +1553,26 @@ public class LinksCleaned extends Thread
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1100, nameNoPieces );   // EC 1100
+                                        addToReportPerson( id_person, sourceStr, 1100, nameNoPieces );   // EC 1100
                                         //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1105, nameNoPieces );    // EC 1105
+                                        addToReportPerson( id_person, sourceStr, 1105, nameNoPieces );    // EC 1105
                                     }
                                     else if( standard_code.equals( SC_X ) )
                                     {
-                                        addToReportPerson( id_person, id_source, 1109, nameNoPieces );    // EC 1109
+                                        addToReportPerson( id_person, sourceStr, 1109, nameNoPieces );    // EC 1109
                                         postList.add( nameNoPieces );
                                     }
                                     else { // EC 1100, standard_code not invalid
-                                        addToReportPerson(id_person, id_source, 1100, nameNoPieces);    // EC 1100
+                                        addToReportPerson(id_person, sourceStr, 1100, nameNoPieces);    // EC 1100
                                     }
                                 }
                                 else {
                                     // name must be added to ref_firstname with standard_code x
                                     //ttalFirstname.addOriginal( nameNoPieces );
-                                    newfirstn++;
                                     almmFirstname.add( nameNoPieces );
                                     postList.add( nameNoPieces );   // Also add name to postlist
                                 }
@@ -1682,8 +1609,8 @@ public class LinksCleaned extends Thread
                 }
                 else    // First name is empty
                 {
-                    empty++;
-                    addToReportPerson( id_person, id_source, 1101, "" );        // EC 1101
+                    count_empty++;
+                    addToReportPerson( id_person, sourceStr, 1101, "" );        // EC 1101
                 }
 
                 // close this
@@ -1697,44 +1624,41 @@ public class LinksCleaned extends Thread
             rsFirstName.close();
             con.close();
 
-            showMessage( counter + " firstname records, " + empty + " without a firstname, " + newfirstn + " new firstnames", false, true );
+            int count_new = almmFirstname.newcount();
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new firstnames"; }
+            else if( count_new == 1 ) { strNew = "1 new firstname"; }
+            else { strNew = "" + count_new + " new firstnames"; }
+            showMessage( count + " firstname records, " + count_empty + " without a firstname, " + strNew, false, true );
         }
         catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Firstname: " + ex.getMessage(), false, true );
+            showMessage( count + " Exception while cleaning Firstname: " + ex.getMessage(), false, true );
         }
     } // standardFirstname
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      * @throws Exception
      */
-    public void standardFamilyname( String sourceNo )
+    public void standardFamilyname( int sourceId )
     {
-        int counter = 0;
+        String sourceStr = Integer.toString( sourceId );
+
+        int count = 0;
+        int count_empty = 0;
         int step = 10000;
         int stepstate = step;
 
         try {
+            String selectQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceStr;
 
-            String startQuery;
-            String id_source;
-
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , familyname FROM person_o" + sourceFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-
-            // create connection
+            // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
             // Read family names from table
-            ResultSet rsFamilyname = con.createStatement().executeQuery( startQuery );
+            ResultSet rsFamilyname = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
             // get total
@@ -1742,26 +1666,22 @@ public class LinksCleaned extends Thread
             int total = rsFamilyname.getRow();
             rsFamilyname.beforeFirst();
 
-            int empty = 0;
-            int newfamilyn = 0;
-
             while( rsFamilyname.next() )
             {
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + total, true, true);
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + " of " + total, true, true );
                     stepstate += step;
                 }
 
                 // Get family name
-                String familyname = rsFamilyname.getString("familyname");
-                int id_person = rsFamilyname.getInt("id_person");
+                String familyname = rsFamilyname.getString( "familyname" );
+                int id_person = rsFamilyname.getInt( "id_person" );
 
                 // Check is Familyname is not empty or null
-                if (familyname != null && !familyname.isEmpty())
+                if( familyname != null && !familyname.isEmpty() )
                 {
-                    familyname = funcCleanFamilyname(familyname);
-
+                    familyname = cleanFamilyname( familyname );
                     familyname = familyname.toLowerCase();
 
                     // familyname in ref_familyname ?
@@ -1780,53 +1700,53 @@ public class LinksCleaned extends Thread
                         }
                         else if( standard_code.equals( SC_U ) )
                         {
-                            addToReportPerson( id_person, id_source, 1000, familyname ); // EC 1000
+                            addToReportPerson( id_person, sourceStr, 1000, familyname ); // EC 1000
 
                             //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( familyname ).toLowerCase() + "\n" );
                             writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ).toLowerCase() + "\n" );
                         }
                         else if( standard_code.equals( SC_N ) )
                         {
-                            addToReportPerson( id_person, id_source, 1005, familyname );  // EC 1005
+                            addToReportPerson( id_person, sourceStr, 1005, familyname );  // EC 1005
                         }
                         else if( standard_code.equals( SC_X ) )
                         {
-                            addToReportPerson( id_person, id_source, 1009, familyname );  // EC 1009
+                            addToReportPerson( id_person, sourceStr, 1009, familyname );  // EC 1009
 
                             writerFamilyname.write( id_person + "," + familyname.toLowerCase() + "\n" );
                         }
                         else {
-                            addToReportPerson( id_person, id_source, 1010, familyname );  // EC 1010
+                            addToReportPerson( id_person, sourceStr, 1010, familyname );  // EC 1010
                         }
                     }
                     else        // Familyname does not exists in ref_familyname
                     {
-                        addToReportPerson( id_person, id_source, 1002, familyname );  // EC 1002
+                        addToReportPerson( id_person, sourceStr, 1002, familyname );  // EC 1002
 
                         String nameNoSerriedSpaces = familyname.replaceAll( " [ ]+", " " );
 
                         // Family name contains two or more serried spaces?
                         if( !nameNoSerriedSpaces.equalsIgnoreCase( familyname ) ) {
-                            addToReportPerson(id_person, id_source, 1003, familyname);  // EC 1003
+                            addToReportPerson(id_person, sourceStr, 1003, familyname);  // EC 1003
                         }
 
-                        String nameNoInvalidChars = funcCleanNaam( nameNoSerriedSpaces );
+                        String nameNoInvalidChars = cleanName( nameNoSerriedSpaces );
 
                         // Family name contains invalid chars ?
                         if( !nameNoSerriedSpaces.equalsIgnoreCase( nameNoInvalidChars ) ) {
-                            addToReportPerson( id_person, id_source, 1004, familyname );   // EC 1004
+                            addToReportPerson( id_person, sourceStr, 1004, familyname );   // EC 1004
                         }
 
                         // check if name has prepieces
-                        String nameNoPrePiece = funcNamePrepiece( nameNoInvalidChars, id_person );
+                        String nameNoPrePiece = namePrepiece( nameNoInvalidChars, id_person );
 
                         // Family name contains invalid chars ?
                         if( !nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
-                            addToReportPerson( id_person, id_source, 1008, familyname );  // EC 1008
+                            addToReportPerson( id_person, sourceStr, 1008, familyname );  // EC 1008
                         }
 
                         // Check on Aliasses
-                        String nameNoAlias = standardAlias( id_person, id_source, nameNoPrePiece );
+                        String nameNoAlias = standardAlias( id_person, sourceStr, nameNoPrePiece );
 
                         // Check on suffix
                         ArrayListNonCase sfxO = ttalSuffix.getArray( "original" );
@@ -1834,7 +1754,7 @@ public class LinksCleaned extends Thread
                         for( int i = 0; i < sfxO.size(); i++ )
                         {
                             if( nameNoAlias.endsWith( " " + sfxO.get( i ).toString() ) ) {
-                                addToReportPerson( id_person, id_source, 1006, nameNoAlias );      // EC 1006
+                                addToReportPerson( id_person, sourceStr, 1006, nameNoAlias );      // EC 1006
 
                                 nameNoAlias = nameNoAlias.replaceAll( " " + sfxO.get( i ).toString(), "" );
 
@@ -1861,29 +1781,28 @@ public class LinksCleaned extends Thread
                                 writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
                             }
                             else if( standard_code.equals( SC_U ) ) {
-                                addToReportPerson( id_person, id_source, 1000, nameNoSuffix );    // EC 1000
+                                addToReportPerson( id_person, sourceStr, 1000, nameNoSuffix );    // EC 1000
 
                                 //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( nameNoSuffix ).toLowerCase() + "\n" );
                                 writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
                             }
                             else if( standard_code.equals( SC_N ) ) {
-                                addToReportPerson( id_person, id_source, 1005, nameNoSuffix );     // EC 1005
+                                addToReportPerson( id_person, sourceStr, 1005, nameNoSuffix );     // EC 1005
                             }
                             else if( standard_code.equals( SC_X ) ) {
-                                addToReportPerson( id_person, id_source, 1009, nameNoSuffix );    // EC 1009
+                                addToReportPerson( id_person, sourceStr, 1009, nameNoSuffix );    // EC 1009
 
                                 writerFamilyname.write( id_person + "," + nameNoSuffix.toLowerCase() + "\n" );
                             }
                             else {
-                                addToReportPerson( id_person, id_source, 1010, nameNoSuffix );    // EC 1010
+                                addToReportPerson( id_person, sourceStr, 1010, nameNoSuffix );    // EC 1010
                             }
                         } else {
                             // add new familyname
                             //ttalFamilyname.addOriginal( nameNoSuffix );
-                            newfamilyn++;
                             almmFamilyname.add( nameNoSuffix );
 
-                            addToReportPerson( id_person, id_source, 1009, nameNoSuffix );    // EC 1009
+                            addToReportPerson( id_person, sourceStr, 1009, nameNoSuffix );    // EC 1009
 
                             writerFamilyname.write( id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n" );
 
@@ -1891,17 +1810,22 @@ public class LinksCleaned extends Thread
                     }
                 }
                 else {  // Familyname empty
-                    empty++;
-                    addToReportPerson( id_person, id_source, 1001, "" );  // EC 1001
+                    count_empty++;
+                    addToReportPerson( id_person, sourceStr, 1001, "" );  // EC 1001
                 }
             }
             con.close();
             rsFamilyname.close();
 
-            showMessage( counter + " familyname records, " + empty + " without a familyname, " + newfamilyn + " new familynames", false, true );
+            int count_new = almmFamilyname.newcount();
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new familynames"; }
+            else if( count_new == 1 ) { strNew = "1 new familyname"; }
+            else { strNew = "" + count_new + " new familynames"; }
+            showMessage( count + " familyname records, " + count_empty + " without a familyname, " + strNew, false, true );
         }
         catch( Exception ex) {
-            showMessage( counter + " Exception while cleaning familyname: " + ex.getMessage(), false, true );
+            showMessage( count + " Exception while cleaning familyname: " + ex.getMessage(), false, true );
         }
     } // standardFamilyname
 
@@ -1987,7 +1911,8 @@ public class LinksCleaned extends Thread
     private void standardLocation( ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
     throws Exception
     {
-        int counter = 0;
+        int count = 0;
+        int count_empty = 0;
         int step = 1000;
         int stepstate = step;
 
@@ -1995,9 +1920,9 @@ public class LinksCleaned extends Thread
         {
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
                     stepstate += step;
                 }
 
@@ -2008,57 +1933,76 @@ public class LinksCleaned extends Thread
                 {
                     location = location.toLowerCase();
 
-                    if( ttalLocation.originalExists( location ) )
-                    {
-                        String nieuwCode = ttalLocation.getStandardCodeByOriginal( location );
+                    //if( ttalLocation.originalExists( location ) )
+                    if( almmLocation.contains( location ) )
 
-                        if( nieuwCode == null ? SC_X == null : (nieuwCode.equals( SC_X )) )
+                    {
+                        //String refCode = ttalLocation.getStandardCodeByOriginal( location );
+                        String refCode = almmLocation.standardCode( location );
+
+                        if( refCode.equals( SC_X ) )             // EC 91
                         {
-                            // EC 91
-                            if( tt == TableType.REGISTRATION ) {
+                            if( tt == TableType.REGISTRATION )
+                            {
                                 addToReportRegistration( id, id_source, 91, location );
                                 String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
                                 conCleaned.runQuery( query );
-                            } else {
+                            }
+                            else
+                            {
                                 addToReportPerson( id, id_source, 91, location );
                                 String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
                                 conCleaned.runQuery( query );
                             }
                         }
-                        else if( nieuwCode == null ? SC_N == null : nieuwCode.equals( SC_N ))
+                        else if( refCode.equals( SC_N ) )       // EC 93
                         {
-                            // EC 93
-                            if (tt == TableType.REGISTRATION) {
+                            if( tt == TableType.REGISTRATION ) {
                                 addToReportRegistration( id, id_source, 93, location );
-                            } else {
+                            }
+                            else
+                            {
                                 addToReportPerson( id, id_source, 93, location );
                             }
                         }
-                        else if( nieuwCode == null ? SC_U == null : nieuwCode.equals( SC_U ))
+                        else if( refCode.equals( SC_U ) )       // EC 95
                         {
-                            // EC 95
-                            if( tt == TableType.REGISTRATION ) {
+                            if( tt == TableType.REGISTRATION )
+                            {
                                 addToReportRegistration( id, id_source, 95, location );
-                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+
+                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String locationnumber = almmLocation.locationno( location );
+
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
                                 conCleaned.runQuery( query );
-                            } else {
+                            }
+                            else
+                            {
                                 addToReportPerson( id, id_source, 95, location );
-                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+
+                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String locationnumber = almmLocation.locationno( location );
+
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
                                 conCleaned.runQuery( query );
                             }
-
-                            String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
                         }
-                        else if( nieuwCode == null ? SC_Y == null : nieuwCode.equals( SC_Y ))
+                        else if( refCode.equals( SC_Y ) )
                         {
-                            if( tt == TableType.REGISTRATION ) {
-                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                            if( tt == TableType.REGISTRATION )
+                            {
+                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String locationnumber = almmLocation.locationno( location );
+
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
                                 conCleaned.runQuery( query );
-                            } else {
-                                String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                            }
+                            else
+                            {
+                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
+                                String locationnumber = almmLocation.locationno( location );
+
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
                                 conCleaned.runQuery( query );
                             }
@@ -2073,47 +2017,54 @@ public class LinksCleaned extends Thread
                             }
                         }
                     }
-                    else
+                    else     // EC 91
                     {
-                        // EC 91
-                        if( tt == TableType.REGISTRATION ) {
+                        if( tt == TableType.REGISTRATION )
+                        {
                             addToReportRegistration( id, id_source, 91, location );
                             String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
                             conCleaned.runQuery( query );
-                        } else {
+                        }
+                        else
+                        {
                             addToReportPerson( id, id_source, 91, location );
                             String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
                             conCleaned.runQuery( query );
                         }
-                        ttalLocation.addOriginal( location );
+
+                        //ttalLocation.addOriginal( location );
+                        almmLocation.add( location );
                     }
                 }
+                else
+                { count_empty++ }
+
+                int count_new = almmLocation.newcount();
+                String strNew = "";
+                if( count_new == 0 ) { strNew = "no new locations"; }
+                else if( count_new == 1 ) { strNew = "1 new location"; }
+                else { strNew = "" + count_new + " new locations"; }
+                showMessage( count + " location records, " + count_empty + " without location, " + strNew, false, true );
             }
-        } catch( Exception ex ) {
-              throw new Exception( counter + " Exception while cleaning Location: " + ex.getMessage() );
+        }
+        catch( Exception ex ) {
+              throw new Exception( count + " Exception while cleaning Location: " + ex.getMessage() );
         }
     } // standardLocation
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardMarLocation( String sourceNo )
+    public void standardMarLocation( int sourceId )
     {
-        String startQuery;
-        String id_source;
+        String sourceStr = Integer.toString( sourceId );
 
-        if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_person , mar_location FROM person_o" + sourceFilter + " AND mar_location <> ''";
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceNo + " AND mar_location <> ''";
-            id_source = sourceNo;
-        }
+        String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + sourceStr + " AND mar_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
-            standardLocation( rs, "id_person", "mar_location", "mar_location", id_source, TableType.PERSON );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "mar_location", "mar_location", sourceStr, TableType.PERSON );
         } catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
         }
@@ -2122,15 +2073,15 @@ public class LinksCleaned extends Thread
 
     /**
      * @param debug
-     * @param sourceInt
+     * @param sourceId
      */
-    public void standardOccupation( boolean debug, int sourceInt )
+    public void standardOccupation( boolean debug, int sourceId )
     {
-        String sourceStr = Integer.toString( sourceInt );
-        int counter = 0;
+        String sourceStr = Integer.toString( sourceId );
+        int count = 0;
+        int count_empty = 0;
         int step = 1000;
         int stepstate = step;
-        int empty = 0;
 
         String query = "SELECT id_person , occupation FROM person_o WHERE id_source = " + sourceStr;
         if( debug ) { showMessage( query, false, true ); }
@@ -2141,32 +2092,35 @@ public class LinksCleaned extends Thread
 
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
                     stepstate += step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
                 String occupation = rs.getString( "occupation") != null ? rs.getString( "occupation" ).toLowerCase() : "";
                 if( occupation.isEmpty() ) {
-                    empty += 1;
+                    count_empty += 1;
                 }
                 else {
                     if( debug ) { showMessage( "id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                    System.out.println( "" + counter + " " + occupation );
+                    System.out.println( "" + count + " " + occupation );
                     standardOccupationRecord( debug, sourceStr, id_person, occupation );
                 }
             }
             //showMessage( counter + " persons, " + empty + " without occupation", false, true );
-            int newocc = almmOccupation.countNew();
-            showMessage( counter + " persons, " + empty + " without occupation, " + newocc + " new occupation", false, true );
+            int count_new = almmOccupation.newcount();
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new occupations"; }
+            else if( count_new == 1 ) { strNew = "1 new occupation"; }
+            else { strNew = "" + count_new + " new occupations"; }
+            showMessage( count + " occupation records, " + count_empty + " without occupation, " + strNew, false, true );
         }
         catch( SQLException sex )
-        { showMessage( "\ncounter: " + counter + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true ); }
+        { showMessage( "\ncounter: " + count + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true ); }
         catch( Exception jex )
-        { showMessage( "\ncounter: " + counter + " Exception while cleaning Occupation: " + jex.getMessage(), false, true ); }
-
+        { showMessage( "\ncounter: " + count + " Exception while cleaning Occupation: " + jex.getMessage(), false, true ); }
 
     } // standardOccupation
 
@@ -2255,41 +2209,32 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      * @throws Exception
      */
-    public void standardPrepiece( String sourceNo )
+    public void standardPrepiece( int sourceId )
     {
-        int counter = 0;
+        String sourceStr = Integer.toString( sourceId );
+
+        int count = 0;
         int step = 1000;
         int stepstate = step;
 
         try {
 
-            String startQuery;
-            String id_source;
+            String selectQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceStr + " AND prefix <> ''";
 
-            if (sourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , prefix FROM person_o" + sourceFilter + " AND prefix <> ''";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + sourceNo + " AND prefix <> ''";
-                id_source = sourceNo;
-            }
-
-            // create connection
-            Connection con = getConnection("links_original");
+            // WHY IS A LOCAL CONNECTION USED?
+            Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
             // Read family names from table
-            ResultSet rsPrepiece = con.createStatement().executeQuery( startQuery );
+            ResultSet rsPrepiece = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // Get count
+            // get total
             rsPrepiece.last();
-
-            int count = rsPrepiece.getRow();
-
+            int total = rsPrepiece.getRow();
             rsPrepiece.beforeFirst();
 
             while (rsPrepiece.next()) {
@@ -2299,110 +2244,110 @@ public class LinksCleaned extends Thread
                 String listTO = "";
                 String listTN = "";
 
-                counter++;
+                count++;
 
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + count, true, true);
+                if( count == stepstate ) {
+                    showMessage( count + " of " + total, true, true );
                     stepstate += step;
                 }
 
-                // test
-                if (counter != 398798) {
-                    continue;
-                }
+                int id_person = rsPrepiece.getInt( "id_person" );
+                String prepiece = rsPrepiece.getString( "prefix" ).toLowerCase();
 
-                int id_person = rsPrepiece.getInt("id_person");
-                String prepiece = rsPrepiece.getString("prefix").toLowerCase();
+                prepiece = cleanName( prepiece );
 
-                // clean
-                prepiece = funcCleanNaam(prepiece);
+                String[] prefixes = prepiece.split( " " );
 
-                // Split prefix
-                String[] prefixes = prepiece.split(" ");
-
-                for (String part : prefixes) {
-
-                    // Does Prefix exists in ref table
-                    if (ttalPrepiece.originalExists(part)) {
-
-                        String standard_code = ttalPrepiece.getStandardCodeByOriginal(part);
-                        String prefix = ttalPrepiece.getColumnByOriginal("prefix", part);
-                        String title_noble = ttalPrepiece.getColumnByOriginal("title_noble", part);
-                        String title_other = ttalPrepiece.getColumnByOriginal("title_other", part);
+                for( String part : prefixes )
+                {
+                    // Does Prefix exist in ref table
+                    if( ttalPrepiece.originalExists( part ) )
+                    {
+                        String standard_code = ttalPrepiece.getStandardCodeByOriginal( part );
+                        String prefix        = ttalPrepiece.getColumnByOriginal( "prefix", part );
+                        String title_noble   = ttalPrepiece.getColumnByOriginal( "title_noble", part );
+                        String title_other   = ttalPrepiece.getColumnByOriginal( "title_other", part );
 
                         // standard code x
-                        if (standard_code.equals(SC_X)) {
-                            // EC 81
-                            addToReportPerson(id_person, id_source, 81, part);
+                        if( standard_code.equals( SC_X ) )
+                        {
+                            addToReportPerson(id_person, sourceStr, 81, part);       // EC 81
 
                             listPF += part + " ";
-                        } else if (standard_code.equals(SC_N)) {
-                            // EC 83
-                            addToReportPerson(id_person, id_source, 83, part);
-                        } else if (standard_code.equals(SC_U)) {
-
-                            // EC 85
-                            addToReportPerson(id_person, id_source, 85, part);
-
-                            if (prefix != null && !prefix.isEmpty()) {
-                                listPF += prefix + " ";
-                            } else if (title_noble != null && !title_noble.isEmpty()) {
-                                listTN += title_noble + " ";
-                            } else if (title_other != null && !title_other.isEmpty()) {
-                                listTO += title_other + " ";
-                            }
-                        } else if (standard_code.equals(SC_Y)) {
-
-                            if (prefix != null && !prefix.isEmpty()) {
-                                listPF += prefix + " ";
-                            } else if (title_noble != null && !title_noble.isEmpty()) {
-                                listTN += title_noble + " ";
-                            } else if (title_other != null && !title_other.isEmpty()) {
-                                listTO += title_other + " ";
-                            }
-                        } else {
-                            // Standard_code invalid
-                            addToReportPerson(id_person, id_source, 89, part);
                         }
-                    } else { // Prefix not in ref
-                        addToReportPerson(id_person, id_source, 81, part);
+                        else if( standard_code.equals( SC_N ) )
+                        {
+                            addToReportPerson( id_person, sourceStr, 83, part );     // EC 83
+                        }
+                        else if( standard_code.equals( SC_U ) )
+                        {
+                            addToReportPerson( id_person, sourceStr, 85, part );     // EC 85
 
-                        // Add Prefix
-                        ttalPrepiece.addOriginal(part);
+                            if( prefix != null && !prefix.isEmpty() ) {
+                                listPF += prefix + " ";
+                            }
+                            else if( title_noble != null && !title_noble.isEmpty() ) {
+                                listTN += title_noble + " ";
+                            }
+                            else if( title_other != null && !title_other.isEmpty() ) {
+                                listTO += title_other + " ";
+                            }
+                        }
+                        else if( standard_code.equals( SC_Y ) )
+                        {
+                            if( prefix != null && !prefix.isEmpty() ) {
+                                listPF += prefix + " ";
+                            }
+                            else if( title_noble != null && !title_noble.isEmpty() ) {
+                                listTN += title_noble + " ";
+                            }
+                            else if( title_other != null && !title_other.isEmpty() ) {
+                                listTO += title_other + " ";
+                            }
+                        }
+                        else {  // Standard_code invalid
+                            addToReportPerson(id_person, sourceStr, 89, part);       // EC 89
+                        }
+                    }
+                    else    // Prefix not in ref
+                    {
+                        addToReportPerson(id_person, sourceStr, 81, part);           // EC 81
 
-                        // Add to list
-                        listPF += part + " ";
+                        ttalPrepiece.addOriginal(part);     // Add Prefix
 
+                        listPF += part + " ";               // Add to list
                     }
                 }
 
                 // write lists to person_c
-                if (!listTN.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("title_noble", listTN.substring(0, (listTN.length() - 1)), id_person));
+                if( !listTN.isEmpty() ) {
+                    conCleaned.runQuery( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
                 }
-                if (!listTO.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("title_other", listTO.substring(0, (listTO.length() - 1)), id_person));
+
+                if( !listTO.isEmpty() ) {
+                    conCleaned.runQuery( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
                 }
-                if (!listPF.isEmpty()) {
-                    conCleaned.runQuery(PersonC.updateQuery("prefix", listPF.substring(0, (listPF.length() - 1)), id_person));
+
+                if( !listPF.isEmpty() ) {
+                    conCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) ) ;
                 }
             }
 
-            // Free Resources
             rsPrepiece.close();
             con.close();
-        } catch (Exception e) {
-            showMessage(counter + " Exception while cleaning Prepiece: " + e.getMessage(), false, true);
+        }
+        catch( Exception ex ) {
+            showMessage(count + " Exception while cleaning Prepiece: " + ex.getMessage(), false, true );
         }
     } // standardPrepiece
 
 
     /**
-     * @param sourceInt
+     * @param sourceId
      */
-    public void standardRegistrationDate( int sourceInt )
+    public void standardRegistrationDate( int sourceId )
     {
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -2466,34 +2411,27 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardRegistrationLocation( String sourceNo )
+    public void standardRegistrationLocation( int sourceId )
     {
-        String startQuery;
-        String id_source;
+        String sourceStr = Integer.toString( sourceId );
 
-        if( sourceNo.isEmpty() ) {
-            startQuery = "SELECT id_registration , registration_location FROM registration_o" + sourceFilter;
-            id_source = this.sourceId + "";
-        } else {
-            startQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceNo;
-            id_source = sourceNo;
-        }
+        String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + sourceStr;
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
 
-            standardLocation( rs, "id_registration", "registration_location", "registration_location_no", id_source, TableType.REGISTRATION );
+            standardLocation( rs, "id_registration", "registration_location", "registration_location_no", sourceStr, TableType.REGISTRATION );
         } catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
         }
     } // standardRegistrationLocation
 
 
-    private void standardRole( int sourceInt )
+    private void standardRole( int sourceId )
     {
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
 
         /*
         String query = "UPDATE links_original.person_o, links_cleaned.person_c, links_general.ref_role "
@@ -2585,58 +2523,29 @@ public class LinksCleaned extends Thread
 
         try {
 
-            String startQuery;
+            String selectQuery = ""
+                + "SELECT "
+                + "id_registration , "
+                + "registration_maintype , "
+                + "registration_location_no , "
+                + "registration_year , "
+                + "registration_month , "
+                + "registration_seq , "
+                + "id_source "
+                + "FROM "
+                + "links_cleaned.registration_c "
+                + "WHERE id_source = " + SourceNo + " AND "
+                + "registration_location_no is not null AND "
+                + "registration_year     is not null AND "
+                + "registration_month    is not null "
+                + "ORDER BY "
+                + "registration_maintype , "
+                + "registration_location_no , "
+                + "registration_year , "
+                + "registration_month , "
+                + "registration_seq";
 
-            if (SourceNo.isEmpty()) {
-
-                startQuery = ""
-                    + "SELECT "
-                    + "id_registration , "
-                    + "registration_maintype , "
-                    + "registration_location_no , "
-                    + "registration_year , "
-                    + "registration_month , "
-                    + "registration_seq , "
-                    + "id_source "
-                    + "FROM "
-                    + "links_cleaned.registration_c "
-                    + sourceFilter + " AND "
-                    + "registration_location_no is not null AND "
-                    + "registration_year     is not null AND "
-                    + "registration_month    is not null "
-                    + "ORDER BY "
-                    + "registration_maintype , "
-                    + "registration_location_no , "
-                    + "registration_year , "
-                    + "registration_month , "
-                    + "registration_seq ";
-            }
-            else
-            {
-                startQuery = ""
-                    + "SELECT "
-                    + "id_registration , "
-                    + "registration_maintype , "
-                    + "registration_location_no , "
-                    + "registration_year , "
-                    + "registration_month , "
-                    + "registration_seq , "
-                    + "id_source "
-                    + "FROM "
-                    + "links_cleaned.registration_c "
-                    + "WHERE id_source = " + SourceNo + " AND "
-                    + "registration_location_no is not null AND "
-                    + "registration_year     is not null AND "
-                    + "registration_month    is not null "
-                    + "ORDER BY "
-                    + "registration_maintype , "
-                    + "registration_location_no , "
-                    + "registration_year , "
-                    + "registration_month , "
-                    + "registration_seq";
-            }
-
-            ResultSet rs = conCleaned.runQueryWithResult( startQuery );
+            ResultSet rs = conCleaned.runQueryWithResult( selectQuery );
 
             // Read first entry
             if (rs.next() == false) {
@@ -2724,10 +2633,12 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardSex( String sourceNo )
+    public void standardSex( int sourceId )
     {
+        String sourceStr = Integer.toString( sourceId );
+
         boolean debug = false;
         int counter = 0;
         int step = 1000;
@@ -2735,18 +2646,9 @@ public class LinksCleaned extends Thread
 
         try
         {
-            String startQuery;
-            String id_source;
+            String selectQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceStr;
 
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , sex FROM person_o" + sourceFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -2771,7 +2673,7 @@ public class LinksCleaned extends Thread
                         if( refSCode.equals( SC_X ) ) {
                             if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            addToReportPerson( id_person, id_source, 31, sex );     // warning 31
+                            addToReportPerson( id_person, sourceStr, 31, sex );     // warning 31
 
                             String query = PersonC.updateQuery( "sex", sex, id_person );
                             conCleaned.runQuery( query );
@@ -2779,12 +2681,12 @@ public class LinksCleaned extends Thread
                         else if( refSCode.equals( SC_N ) ) {
                             if( debug ) { showMessage( "Warning 33: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            addToReportPerson( id_person, id_source, 33, sex );     // warning 33
+                            addToReportPerson( id_person, sourceStr, 33, sex );     // warning 33
                         }
                         else if( refSCode.equals( SC_U ) ) {
                             if( debug ) { showMessage( "Warning 35: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            addToReportPerson( id_person, id_source, 35, sex );     // warning 35
+                            addToReportPerson( id_person, sourceStr, 35, sex );     // warning 35
 
                             String query = PersonC.updateQuery( "sex",
                                 ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
@@ -2800,7 +2702,7 @@ public class LinksCleaned extends Thread
                         else {     // Invalid standard code
                             if( debug ) { showMessage( "Warning 39: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            addToReportPerson( id_person, id_source, 39, sex );     // warning 39
+                            addToReportPerson( id_person, sourceStr, 39, sex );     // warning 39
                         }
                     }
                     else // not present in original
@@ -2808,7 +2710,7 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "not present in original", false, true ); }
                         if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                        addToReportPerson( id_person, id_source, 31, sex );         // warning 31
+                        addToReportPerson( id_person, sourceStr, 31, sex );         // warning 31
                         ttalStatusSex.addOriginal( sex );                               // Add new Sex "x" ??
 
                         String query = PersonC.updateQuery( "sex", sex, id_person );
@@ -2823,28 +2725,21 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardStatusSex( String sourceNo )
+    public void standardStatusSex( int sourceId )
     {
+        String sourceStr = Integer.toString( sourceId );
+
         int counter = 0;
         int step = 1000;
         int stepstate = step;
 
         try
         {
-            String startQuery;
-            String id_source;
+            String selectQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceStr;
 
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_person , sex , civil_status FROM person_o" + sourceFilter + " and civil_status is not null ";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -2867,16 +2762,16 @@ public class LinksCleaned extends Thread
                         String refSCode = this.ttalStatusSex.getStandardCodeByOriginal( civil_status );
 
                         if( refSCode.equals( SC_X ) ) {
-                            addToReportPerson( id_person, id_source, 61, civil_status );            // warning 61
+                            addToReportPerson( id_person, sourceStr, 61, civil_status );            // warning 61
 
                             String query = PersonC.updateQuery( "civil_status", civil_status, id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_N ) ) {
-                            addToReportPerson( id_person, id_source, 63, civil_status );            // warning 63
+                            addToReportPerson( id_person, sourceStr, 63, civil_status );            // warning 63
                         }
                         else if( refSCode.equals( SC_U ) ) {
-                            addToReportPerson( id_person, id_source, 65, civil_status );            // warning 65
+                            addToReportPerson( id_person, sourceStr, 65, civil_status );            // warning 65
 
                             String query = PersonC.updateQuery( "civil_status",
                                 ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
@@ -2885,7 +2780,7 @@ public class LinksCleaned extends Thread
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
                                 if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
                                     if( sex != "u" ) {
-                                        addToReportPerson(id_person, id_source, 68, civil_status);    // warning 68
+                                        addToReportPerson(id_person, sourceStr, 68, civil_status);    // warning 68
                                     }
                                 }
                             }
@@ -2916,11 +2811,11 @@ public class LinksCleaned extends Thread
                             conCleaned.runQuery( sexQuery );
                         }
                         else {          // Invalid SC
-                            addToReportPerson( id_person, id_source, 69, civil_status );            // warning 68
+                            addToReportPerson( id_person, sourceStr, 69, civil_status );            // warning 68
                         }
                     }
                     else {      // add to ref
-                        addToReportPerson( id_person, id_source, 61, civil_status );                // warning 61
+                        addToReportPerson( id_person, sourceStr, 61, civil_status );                // warning 61
 
                         ttalStatusSex.addOriginal( civil_status );                                      // Add new Status "x" ??
 
@@ -2936,117 +2831,106 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param bronnrsourceNo
+     * @param sourceId
      */
-    public void standardSuffix( String bronnrsourceNo )
+    public void standardSuffix( int sourceId )
     {
-        int counter = 0;
+        String sourceStr = Integer.toString( sourceId );
+
+        int count = 0;
         int step = 1000;
         int stepstate = step;
 
         try {
-            String startQuery;
-            String id_source;
+            String selectQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + sourceStr + " AND suffix <> ''";
 
-            if (bronnrsourceNo.isEmpty()) {
-                startQuery = "SELECT id_person , suffix FROM person_o" + sourceFilter + " AND suffix <> ''";
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + bronnrsourceNo + " AND suffix <> ''";
-                id_source = bronnrsourceNo;
-            }
-
-            // create connection
-            Connection con = getConnection("links_original");
+            // WHY IS A LOCAL CONNECTION USED?
+            Connection con = getConnection( "links_original" );
             con.isReadOnly();
 
             // Read family names from table
-            ResultSet rsSuffix = con.createStatement().executeQuery(startQuery);
+            ResultSet rsSuffix = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // Get count
+            // get total
             rsSuffix.last();
-
-            int count = rsSuffix.getRow();
-
+            int total = rsSuffix.getRow();
             rsSuffix.beforeFirst();
 
-            while (rsSuffix.next()) {
-
-                counter++;
-                if (counter == stepstate) {
-                    showMessage(counter + " of " + count, true, true);
+            while( rsSuffix.next() )
+            {
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + " of " + total, true, true );
                     stepstate += step;
                 }
 
-                int id_person = rsSuffix.getInt("id_person");
-                String suffix = rsSuffix.getString("suffix").toLowerCase();
+                int id_person = rsSuffix.getInt( "id_person" );
+                String suffix = rsSuffix.getString( "suffix" ).toLowerCase();
 
-                suffix = funcCleanNaam(suffix);
+                suffix = cleanName( suffix );
 
-                // Controleer of deze voorkomt in ref table
-                if (ttalSuffix.originalExists(suffix)) {
+                // Check occurrence in ref table
+                if( ttalSuffix.originalExists( suffix ) )
+                {
+                    String standard_code = ttalSuffix.getStandardCodeByOriginal( suffix );
 
-                    String standard_code = ttalSuffix.getStandardCodeByOriginal(suffix);
+                    if( standard_code.equals( SC_X ) )
+                    {
+                        addToReportPerson(id_person, sourceStr, 71, suffix);     // EC 71
 
-                    if (standard_code.equals(SC_X)) {
-
-                        // EC 71
-                        addToReportPerson(id_person, id_source, 71, suffix);
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-                    } else if (standard_code.equals(SC_N)) {
-
-                        // EC 73
-                        addToReportPerson(id_person, id_source, 73, suffix);
-
-                    } else if (standard_code.equals(SC_U)) {
-
-                        // EC 74
-                        addToReportPerson(id_person, id_source, 75, suffix);
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-
-                    } else if (standard_code.equals(SC_Y)) {
-
-                        String query = PersonC.updateQuery("suffix", suffix, id_person);
-                        conCleaned.runQuery(query);
-                    } else {
-
-                        // EC 75
-                        addToReportPerson(id_person, id_source, 79, suffix);
+                        String query = PersonC.updateQuery( "suffix", suffix, id_person );
+                        conCleaned.runQuery( query );
                     }
-                } // Standard code x
-                else {
+                    else if( standard_code.equals( SC_N ) )
+                    {
+                        addToReportPerson( id_person, sourceStr, 73, suffix );   // EC 73
+                    }
+                    else if( standard_code.equals( SC_U ) )
+                    {
+                        addToReportPerson( id_person, sourceStr, 75, suffix );   // EC 74
 
-                    // EC 71
-                    addToReportPerson(id_person, id_source, 71, suffix);
+                        String query = PersonC.updateQuery( "suffix", suffix, id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else if( standard_code.equals( SC_Y ) )
+                    {
+                        String query = PersonC.updateQuery( "suffix", suffix, id_person );
+                        conCleaned.runQuery( query );
+                    }
+                    else {
+                        addToReportPerson(id_person, sourceStr, 79, suffix);     // EC 75
+                    }
+                }
+                else // Standard code x
+                {
+                    addToReportPerson( id_person, sourceStr, 71, suffix);        // EC 71
 
                     ttalSuffix.addOriginal(suffix);
 
-                    String query = PersonC.updateQuery("suffix", suffix, id_person);
-                    conCleaned.runQuery(query);
+                    String query = PersonC.updateQuery( "suffix", suffix, id_person );
+                    conCleaned.runQuery( query );
 
                 }
             }
 
-            // Free resources
             rsSuffix.close();
             con.close();
 
-        } catch (Exception e) {
-            showMessage(counter + " Exception while cleaning Suffix: " + e.getMessage(), false, true);
+        }
+        catch( Exception ex ) {
+            showMessage( count + " Exception while cleaning Suffix: " + ex.getMessage(), false, true );
         }
     } // standardSuffix
 
 
     /**
-     * @param sourceNo
+     * @param sourceId
      */
-    public void standardType( String sourceNo )
+    public void standardType( int sourceId )
     {
+        String sourceStr = Integer.toString( sourceId );
+
         boolean debug = false;
         int counter = 0;
         int step = 1000;
@@ -3054,18 +2938,9 @@ public class LinksCleaned extends Thread
 
         try
         {
-            String startQuery;
-            String id_source;
+            String selectQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceStr;
 
-            if( sourceNo.isEmpty() ) {
-                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o" + sourceFilter;
-                id_source = this.sourceId + "";
-            } else {
-                startQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + sourceNo;
-                id_source = sourceNo;
-            }
-
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )      // process data from links_original
             {
@@ -3091,7 +2966,7 @@ public class LinksCleaned extends Thread
                     if( refSCode.equals( SC_X ) ) {
                         if( debug ) { showMessage( "Warning 51: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                        addToReportRegistration( id_registration, id_source, 51, registration_type );       // warning 51
+                        addToReportRegistration( id_registration, sourceStr, 51, registration_type );       // warning 51
 
                         String query = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
                         conCleaned.runQuery( query );
@@ -3099,12 +2974,12 @@ public class LinksCleaned extends Thread
                     else if( refSCode.equals( SC_N ) ) {
                         if( debug ) { showMessage( "Warning 53: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                        addToReportRegistration( id_registration, id_source, 53, registration_type );       // warning 53
+                        addToReportRegistration( id_registration, sourceStr, 53, registration_type );       // warning 53
                     }
                     else if( refSCode.equals( SC_U ) ) {
                         if( debug ) { showMessage( "Warning 55: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                        addToReportRegistration( id_registration, id_source, 55, registration_type );       // warning 55
+                        addToReportRegistration( id_registration, sourceStr, 55, registration_type );       // warning 55
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         conCleaned.runQuery( query );
@@ -3117,13 +2992,13 @@ public class LinksCleaned extends Thread
                     else {    // invalid SC
                         if( debug ) { showMessage( "Warning 59: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                        addToReportRegistration( id_registration, id_source, 59, registration_type );       // warning 59
+                        addToReportRegistration( id_registration, sourceStr, 59, registration_type );       // warning 59
                     }
                 }
                 else {      // not in reference; add to reference with "x"
                     if( debug ) { showMessage( "Warning 51: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                    addToReportRegistration( id_registration, id_source, 51, registration_type );           // warning 51
+                    addToReportRegistration( id_registration, sourceStr, 51, registration_type );           // warning 51
 
                     // add to links_general
                     conGeneral.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
@@ -3140,12 +3015,12 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceInt
+     * @param sourceId
      */
-    public void standardAge( int sourceInt )
+    public void standardAge( int sourceId )
     {
         boolean debug = false;
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -3257,14 +3132,14 @@ public class LinksCleaned extends Thread
      * Read distinct source ids from links_original.registration_o
      * @return
      */
-    private int[] createSourceList( int sourceId, int[] sourceListAvail )
+    private int[] createSourceList( int sourceIdGui, int[] sourceListAvail )
     {
         int[] idsInt;
 
-        if( sourceId == 0 ) { idsInt = sourceListAvail; }
+        if( sourceIdGui == 0 ) { idsInt = sourceListAvail; }
         else {
             idsInt = new int[ 1 ];
-            idsInt[ 0 ] = sourceId;
+            idsInt[ 0 ] = sourceIdGui;
         }
 
         return idsInt;
@@ -3287,6 +3162,7 @@ public class LinksCleaned extends Thread
      * @param MethodName
      * @throws Exception
      */
+    /*
     private void runMethod( String MethodName ) throws Exception
     {
         Class[] partypes = new Class[1];
@@ -3305,7 +3181,7 @@ public class LinksCleaned extends Thread
         }
 
     } // runMethod
-
+    */
 
     /**************************************************************************/
 
@@ -3728,7 +3604,7 @@ public class LinksCleaned extends Thread
         }
     } // functieOpmerkingenTeLocatie
 
-
+    /*
     private String functieOpmerkingenLocatie(String value) throws Exception {
         String locatie = LinksSpecific.functieOpmerkingenWaardeNaDubbelePunt(value);
 
@@ -3738,7 +3614,7 @@ public class LinksCleaned extends Thread
         // return event. bewerkte beroep
         return nieuweLocatie;
     } // functieOpmerkingenLocatie
-
+    */
 
     private HashMap functieOpmerkingenGebDatOverl(String currentPart) {
         String cleanValue = currentPart.replaceAll("[G|g]eboren", "");
@@ -3770,7 +3646,7 @@ public class LinksCleaned extends Thread
         return values;
     } // functieOpmerkingenGebDatOverl
 
-
+    /*
     private HashMap functieOpmerkingenLocatieEnDatum(String currentPart) throws Exception {
         String cleanValue = LinksSpecific.functieOpmerkingenWaardeNaDubbelePunt(currentPart);
 
@@ -3806,7 +3682,7 @@ public class LinksCleaned extends Thread
         //return
         return values;
     } // functieOpmerkingenLocatieEnDatum
-
+    */
 
     /**
      * Verwerk in de lijst, en geef evt. ander beroep terug
@@ -3874,6 +3750,7 @@ public class LinksCleaned extends Thread
     */
 
     // Verwerk in de lijst, en geef evt. ander locatie terug
+    /*
     private String functieVeldLocatie(String locatieTemp) throws Exception {
         if (locatieTemp != null) {
 
@@ -3905,7 +3782,7 @@ public class LinksCleaned extends Thread
         }
         return "";
     } // functieVeldLocatie
-
+    */
 
     private String divideValueDate( String valueToDevide )
     {
@@ -4126,17 +4003,25 @@ public class LinksCleaned extends Thread
      * @param name
      * @return
      */
-    private String funcCleanNaam(String name) {
+    private String cleanName( String name ) {
         return name.replaceAll("[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "");
-    } // funcCleanNaam
+    } // cleanName
 
-    private String funcCleanFirstName(String name) {
+    /**
+     * @param name
+     * @return
+     */
+    private String cleanFirstName( String name ) {
         return name.replaceAll("[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "");
-    } // funcCleanFirstName
+    } // cleanFirstName
 
-    private String funcCleanFamilyname(String name) {
+    /**
+     * @param name
+     * @return
+     */
+    private String cleanFamilyname( String name ) {
         return name.replaceAll("[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " ");
-    } // funcCleanFamilyname
+    } // cleanFamilyname
 
 
     /**
@@ -4210,21 +4095,22 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * WHERE [...]id_source = ...   shortcuts
+     *
      */
+    /*
     private void setSourceFilters()
     {
         showMessage( "Set source filters for: " + sourceId, false, true );
 
-        sourceFilter = " WHERE id_source = " + sourceId;
+        //sourceFilter = " WHERE id_source = " + sourceId;
 
-        sourceFilterCleanPers = " WHERE person_c.id_source = "       + sourceId;
-        sourceFilterOrigPers  = " WHERE person_o.id_source = "       + sourceId;
-        sourceFilterCleanReg  = " WHERE registration_c.id_source = " + sourceId;
-        sourceFilterOrigReg   = " WHERE registration_o.id_source = " + sourceId;
+        //sourceFilterCleanPers = " WHERE person_c.id_source = "       + sourceId;
+        //sourceFilterOrigPers  = " WHERE person_o.id_source = "       + sourceId;
+        //sourceFilterCleanReg  = " WHERE registration_c.id_source = " + sourceId;
+        //sourceFilterOrigReg   = " WHERE registration_o.id_source = " + sourceId;
 
     } // setSourceFilters
-
+    */
 
     /**
      * @param name
@@ -4232,11 +4118,11 @@ public class LinksCleaned extends Thread
      * @return
      * @throws Exception
      */
-    private String funcNamePrepiece(String name, int id) throws Exception {
+    private String namePrepiece( String name, int id ) throws Exception {
 
-        // if no spaces return familyname
-        if (!name.contains(" ")) {
-            return name;
+
+        if( !name.contains( " " ) ) {
+            return name;            // if no spaces return name
         }
 
         String fullName = "";
@@ -4245,63 +4131,70 @@ public class LinksCleaned extends Thread
         String list_TO = "";
         String list_PF = "";
 
-        // Split familyname
+        // Split name
         Queue<String> names = new LinkedList();
 
-        String[] namesArray = name.split(" ");
+        String[] namesArray = name.split( " " );
 
         for (int i = 0; i < namesArray.length; i++) {
             names.add(namesArray[i]);
         }
 
         // Check pieces
-        while (!names.isEmpty()) {
-
+        while( !names.isEmpty() )
+        {
             // Get part
             String part = names.poll();
 
-            if (ttalPrepiece.originalExists(part) && ttalPrepiece.getStandardCodeByOriginal(part).equalsIgnoreCase(SC_Y)) {
-
+            if( ttalPrepiece.originalExists( part ) && ttalPrepiece.getStandardCodeByOriginal( part ).equalsIgnoreCase( SC_Y ) )
+            {
                 // Add to person
-                if (ttalPrepiece.getColumnByOriginal("title_noble", part) != null && !ttalPrepiece.getColumnByOriginal("title_noble", part).isEmpty()) {
-                    list_TN += ttalPrepiece.getColumnByOriginal("title_noble", part) + " ";
-                } else if (ttalPrepiece.getColumnByOriginal("title_other", part) != null && !ttalPrepiece.getColumnByOriginal("title_other", part).isEmpty()) {
-                    list_TO += ttalPrepiece.getColumnByOriginal("title_other", part) + " ";
-                } else if (ttalPrepiece.getColumnByOriginal("prefix", part) != null && !ttalPrepiece.getColumnByOriginal("prefix", part).isEmpty()) {
-                    list_PF += ttalPrepiece.getColumnByOriginal("prefix", part) + " ";
+                if( ttalPrepiece.getColumnByOriginal( "title_noble", part ) != null && !ttalPrepiece.getColumnByOriginal( "title_noble", part ).isEmpty() )
+                {
+                    list_TN += ttalPrepiece.getColumnByOriginal( "title_noble", part ) + " ";
                 }
-            } else { // return name
-
-                while (!names.isEmpty()) {
+                else if( ttalPrepiece.getColumnByOriginal( "title_other", part ) != null && !ttalPrepiece.getColumnByOriginal( "title_other", part ).isEmpty() )
+                {
+                    list_TO += ttalPrepiece.getColumnByOriginal( "title_other", part ) + " ";
+                }
+                else if( ttalPrepiece.getColumnByOriginal( "prefix", part ) != null && !ttalPrepiece.getColumnByOriginal( "prefix", part ).isEmpty() )
+                {
+                    list_PF += ttalPrepiece.getColumnByOriginal( "prefix", part ) + " ";
+                }
+            }
+            else    // return name
+            {
+                while( !names.isEmpty() ) {
                     fullName += " " + names.poll();
                 }
 
-                // add part tot name
-                fullName = part + fullName;
+                fullName = part + fullName;      // add part to name
 
                 break;
             }
         }
 
         // remove last spaces
-        if (!list_TN.isEmpty()) {
-            list_TN = list_TN.substring(0, (list_TN.length() - 1));
+        if( !list_TN.isEmpty() ) {
+            list_TN = list_TN.substring( 0, ( list_TN.length() - 1 ) );
 
-            conCleaned.runQuery(PersonC.updateQuery("title_noble", list_TN, id));
+            conCleaned.runQuery( PersonC.updateQuery( "title_noble", list_TN, id ) );
         }
-        if (!list_TO.isEmpty()) {
-            list_TO = list_TO.substring(0, (list_TO.length() - 1));
 
-            conCleaned.runQuery(PersonC.updateQuery("title_other", list_TO, id));
+        if( !list_TO.isEmpty() ) {
+            list_TO = list_TO.substring( 0, ( list_TO.length() - 1 ) );
+
+            conCleaned.runQuery( PersonC.updateQuery( "title_other", list_TO, id ) );
         }
-        if (!list_PF.isEmpty()) {
-            list_PF = list_PF.substring(0, (list_PF.length() - 1));
 
-            conCleaned.runQuery(PersonC.updateQuery("prefix", list_PF, id));
+        if( !list_PF.isEmpty() ) {
+            list_PF = list_PF.substring( 0, ( list_PF.length() - 1 ) );
+
+            conCleaned.runQuery( PersonC.updateQuery( "prefix", list_PF, id ) );
         }
 
         return fullName;
-    } // funcNamePrepiece
+    } // namePrepiece
 
 
     /**
@@ -4606,6 +4499,7 @@ public class LinksCleaned extends Thread
      * @param sourceNo
      * @throws Exception
      */
+    /*
     public void funcRelation(String sourceNo) throws Exception {
 
         int counter = 0;
@@ -4651,9 +4545,9 @@ public class LinksCleaned extends Thread
 
                 counter++;
 
-                if (counter == 66563) {
-                    int ie = 0;
-                }
+                //if (counter == 66563) {
+                //    int ie = 0;
+                //}
 
 
                 if (counter == stepstate) {
@@ -4696,11 +4590,9 @@ public class LinksCleaned extends Thread
 
                     rsList.add(rs);
 
-                    /*
-                     * Proces the new list
-                     * Only if id is not -1
-                     * otherwise is is the first time
-                     */
+                    // Proces the new list
+                    // Only if id is not -1
+                    // otherwise is is the first time
 
                     if (currentId > -1) {
                         // walk through list
@@ -4753,7 +4645,7 @@ public class LinksCleaned extends Thread
             showMessage(counter + " Exception while running Relation: " + e.getMessage(), false, true);
         }
     } // funcRelation
-
+    */
 
     /**
      * @param id_person
@@ -5258,8 +5150,10 @@ public class LinksCleaned extends Thread
     } // setMarriageYear
 
 
-    private void partsToDate( String sourceStr )
+    private void partsToDate( int sourceId )
     {
+        String sourceStr = Integer.toString( sourceId );
+
         String query = "UPDATE links_cleaned.person_c SET "
             + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
             + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
@@ -5277,8 +5171,10 @@ public class LinksCleaned extends Thread
     } // partsToDate
 
 
-    private void daysSinceBegin( String sourceStr )
+    private void daysSinceBegin( int sourceId )
     {
+        String sourceStr = Integer.toString( sourceId );
+
         boolean debug = false;
 
         String query1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
@@ -5530,8 +5426,10 @@ public class LinksCleaned extends Thread
     } // dropTable
 
 
-    private void postTasks( String sourceStr ) throws Exception
+    private void postTasks( int sourceId ) throws Exception
     {
+        String sourceStr = Integer.toString( sourceId );
+
         /*
         String[] queries =
         {
@@ -5664,9 +5562,9 @@ public class LinksCleaned extends Thread
 
     // ---< Date functions >----------------------------------------------------
 
-    private void setValidDateComplete( int sourceInt ) throws Exception
+    private void setValidDateComplete( int sourceId ) throws Exception
     {
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
 
         String q = ""
             + " UPDATE links_cleaned.person_c"
@@ -5684,15 +5582,15 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param sourceInt
+     * @param sourceId
      * @throws Exception
      *
      * if the date is valid, set the min en max values of date, year, month, day equal to the given values
      * do this for birth, marriage and death
      */
-    private void minMaxValidDate( int sourceInt ) throws Exception
+    private void minMaxValidDate( int sourceId ) throws Exception
     {
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
 
         String q1 = ""
                 + "UPDATE person_c "
@@ -5747,13 +5645,13 @@ public class LinksCleaned extends Thread
 
     /**
      * minMaxDateMain
-     * @param sourceInt
+     * @param sourceId
      * @throws Exception
      */
-    public void minMaxDateMain( int sourceInt ) throws Exception
+    public void minMaxDateMain( int sourceId ) throws Exception
     {
         boolean debug = true;
-        String sourceStr = Integer.toString( sourceInt );
+        String sourceStr = Integer.toString( sourceId );
         int counter = 0;
         int step = 10000;
         int stepstate = step;

@@ -20,53 +20,68 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-15-Sep-2014 Latest change
+ * FL-23-Sep-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
     private boolean debug = true;
 
     // A hashed multimap to store key and values for a reference table for fast lookups.
-    private Multimap< String, String > oldMap = ArrayListMultimap.create();
+    private Multimap< String, String > oldMap;
 
     // A hashed set to store new originals.
-    private HashMultiset< String > newSet = HashMultiset.create();
+    private HashMultiset< String > newSet;
 
     private String tableName;
     private String keyColumn;             // column name used as index
-    ArrayList< String > columnNames = new ArrayList();
-    ArrayList< String > valueNames  = new ArrayList();
+
+    ArrayList< String > columnNames;
+    ArrayList< String > valueNames;
+
     private int numColumns;
+    private int numRows;
 
     int originalIdx;
     int standardIdx;
     int standardCodeIdx;
+    int locationNoIdx;      // only for ref_location
 
-    private MySqlConnector con;
-    private MySqlConnector con_or;
+    private MySqlConnector conn_read;
+    private MySqlConnector conn_write;
 
     ResultSet rs;
 
     /**
      * Constructor to load a reference table into an ArrayListMultiMap
      *
-     * "con_or" is only used in the 2 functions updateTable() and updateTableWithCode().
-     * As updateTableWithCode() is nowhere used by the project, we commented it out.
+     * "con_write" is only used in the 2 functions updateTable() and updateTableWithCode().
      *
-     * @param con           // "con" is normally conGeneral, i.e. the local links_general db
-     * @param con_or        // "con_or" is normally conOr, i.e. the remote links_general db (on node-030)
-     * @param keyColumn
+     * @param conn_read         // "conn_read"  is normally conGeneral, i.e. the local links_general db
+     * @param conn_write        // "conn_write" is normally conOr, i.e. the remote links_general db (on node-030)
      * @param tableName
+     * @param keyColumn
      */
-    public TabletoArrayListMultimap( MySqlConnector con, MySqlConnector con_or, String tableName, String keyColumn )
+    public TabletoArrayListMultimap( MySqlConnector conn_read, MySqlConnector conn_write, String tableName, String keyColumn )
     throws Exception
     {
-        this.con = con;
-        this.con_or = con_or;
-        this.tableName = tableName;
-        this.keyColumn = keyColumn;
+        this.conn_read  = conn_read;
+        this.conn_write = conn_write;
+        this.tableName  = tableName;
+        this.keyColumn  = keyColumn;
 
         if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " + tableName + " , index column: " + keyColumn ); }
+
+        oldMap = ArrayListMultimap.create();
+        newSet = HashMultiset.create();
+
+        columnNames = new ArrayList();
+        valueNames  = new ArrayList();
+
+        // invalid values
+        originalIdx     = -1;
+        standardIdx     = -1;
+        standardCodeIdx = -1;
+        locationNoIdx   = -1;
 
         /*
         ref_role:
@@ -124,9 +139,11 @@ public class TabletoArrayListMultimap
         */
 
 
-        String query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC";
+        //String query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC";
+        String query = "SELECT * FROM `" + tableName + "`";
+
         if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
-        ResultSet rs = con.runQueryWithResult( query );
+        ResultSet rs = conn_read.runQueryWithResult( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
         numColumns = rs_md.getColumnCount();
@@ -143,11 +160,12 @@ public class TabletoArrayListMultimap
             if( columnName.equals( "original" ) )      { originalIdx     = i - 1 - skip; }
             if( columnName.equals( "standard" ) )      { standardIdx     = i - 1 - skip; }
             if( columnName.equals( "standard_code" ) ) { standardCodeIdx = i - 1 - skip; }
+            if( columnName.equals( "location_id" ) )   { locationNoIdx   = i - 1 - skip; }
         }
 
         if( debug ) { tableInfo(); }
 
-        int nrow = 0;
+        numRows = 0;
         while( rs.next() )          // process each index value
         {
             /*
@@ -159,7 +177,7 @@ public class TabletoArrayListMultimap
             String standard_source = rs.getString( 6 );
             */
 
-            nrow++;
+            numRows++;
             String key = "";
             ArrayList< String > values = new ArrayList();
             for( int i = 0; i < numColumns; i++ )     // process each column
@@ -210,17 +228,23 @@ public class TabletoArrayListMultimap
 
 
     /**
-     * size existing reference table map
+     * Number of keys in the reference table multimap;
+     * that number is identical to the number of originals in the reference table
+     * But it is NOT the value of the size() function:
+     * size() gives the number of key-value pairs.
+     * So: size() = num_keys * num values per key.
      */
-    public int sizeOld() {
-        return oldMap.size();
+    public int numkeys()
+    {
+        //return oldMap.size();       // WRONG !
+        return numRows;
     }
 
 
     /**
      * size of new set (to be added to the reference table)
      */
-    public int sizeNew() { return newSet.size(); }
+    public int newcount() { return newSet.size(); }
 
 
     /**
@@ -261,6 +285,25 @@ public class TabletoArrayListMultimap
 
 
     /**
+     * return location_id for existing key, else empty string
+     * this is only used for ref_location
+     */
+    public String locationno( String key )
+    {
+        String location_no = "";
+
+        if( oldMap.containsKey( key ) ) {
+            Collection< String > collection = oldMap.get( key );
+            String[] values = collection.toArray( new String[ collection.size() ] );
+
+            location_no = values [ locationNoIdx ];
+        }
+
+        return location_no;
+    }
+
+
+    /**
      * return standard code for existing key
      * return "x" for entry of new set
      */
@@ -292,15 +335,6 @@ public class TabletoArrayListMultimap
             num++;
             System.out.printf( "%d %s\n", num, entry );
         }
-    }
-
-
-    /**
-     *
-     */
-    public int countNew()
-    {
-        return newSet.size();
     }
 
 
@@ -349,26 +383,27 @@ public class TabletoArrayListMultimap
     public void add( String entry )
     {
         newSet.add( entry );
+        //System.out.println( "set size: " + newSet.size() );
     }
 
 
     /**
-     * Write the new set entries to the reference table
+     * Insert the new set entries into the reference table
      */
     public void updateTable()
     throws Exception
     {
-        System.out.println( "updateTable" );
+        //System.out.println( "updateTable" );
 
         int num = 0;
         for( String entry : newSet.elementSet() ) {
-            num++;
-            System.out.printf( "%d %s\n", num, entry );
+            //num++;
+            //System.out.printf( "%d %s\n", num, entry );
             String[] fields = { "original", "standard_code" };
 
             String[] values = { LinksSpecific.funcPrepareForMysql( entry ), "x" };
 
-            con_or.insertIntoTable( tableName, fields, values );
+            conn_write.insertIntoTable( tableName, fields, values );
         }
     }
 
