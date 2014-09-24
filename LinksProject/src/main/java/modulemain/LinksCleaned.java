@@ -56,7 +56,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-15-Sep-2014 Latest change
+ * FL-24-Sep-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
@@ -512,6 +512,8 @@ public class LinksCleaned extends Thread
      */
     private void doNames( boolean go, int sourceId ) throws Exception
     {
+        String source = Integer.toString( sourceId );
+
         String funcname = "doNames";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -544,13 +546,13 @@ public class LinksCleaned extends Thread
         showTimingMessage( msg, start );
 
         // First name
-        start = System.currentTimeMillis();
-        if( doesTableExist( conTemp, "links_temp", "firstname_t" ) ) {
-            showMessage( "Deleting table links_temp.firstname_t", false, true );
-            dropTable( conTemp, "links_temp", "firstname_t" );
+        String tmp_firstname = "firstname_t_" + source;
+        if( doesTableExist( conTemp, "links_temp", tmp_firstname ) ) {
+            showMessage( "Deleting table links_temp." + tmp_firstname, false, true );
+            dropTable(conTemp, "links_temp", tmp_firstname);
         }
-        createTempFirstnameTable();
-        createTempFirstnameFile();
+        createTempFirstnameTable( source );
+        createTempFirstnameFile(  source );
 
         start = System.currentTimeMillis();
         msg = "Loading Firstname reference table";
@@ -558,8 +560,12 @@ public class LinksCleaned extends Thread
 
         //ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
         //showMessage( "Number of rows in reference table: " + ttalFirstname.countRows(), false, true );
-        almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original" );
-        showMessage( "Number of rows in reference table: " + almmFirstname.numkeys(), false, true );
+        almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original", "standard" );
+        int numrows = almmFirstname.numrows();
+        int numkeys = almmFirstname.numkeys();
+        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        if( numrows != numkeys )
+        { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
         showTimingMessage( msg, start );
 
         msg = "standardFirstname";
@@ -568,28 +574,27 @@ public class LinksCleaned extends Thread
         showTimingMessage( "standardFirstname", start );
 
         start = System.currentTimeMillis();
-
         //ttalFirstname.updateTable();
         //ttalFirstname.free();
         almmFirstname.updateTable();
         almmFirstname.free();
 
         writerFirstname.close();
-        loadFirstnameToTable();
-        updateFirstnameToPersonC();
-        removeFirstnameFile();
-        removeFirstnameTable();
+        loadFirstnameToTable(     source );
+        updateFirstnameToPersonC( source );
+        removeFirstnameFile(      source );
+        removeFirstnameTable(     source );
         showTimingMessage( "remains Firstname", start );
 
         // Family name
-        start = System.currentTimeMillis();
-        if( doesTableExist( conTemp, "links_temp", "familyname_t" ) ) {
-            showMessage( "Deleting table links_temp.familyname_t", false, true );
-            dropTable( conTemp, "links_temp", "familyname_t" );
+        String tmp_familyname = "familyname_t_" + source;
+        if( doesTableExist( conTemp, "links_temp",tmp_familyname  ) ) {
+            showMessage( "Deleting table links_temp." + tmp_familyname, false, true );
+            dropTable( conTemp, "links_temp", tmp_familyname );
         }
 
-        createTempFamilynameTable();
-        createTempFamilynameFile();
+        createTempFamilynameTable( source );
+        createTempFamilynameFile(  source );
 
         start = System.currentTimeMillis();
         msg = "Loading Familyname reference table";
@@ -597,8 +602,12 @@ public class LinksCleaned extends Thread
 
         //ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
         //showMessage( "Number of rows in reference table: " + ttalFamilyname.countRows(), false, true );
-        almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original" );
-        showMessage( "Number of rows in reference table: " + almmFamilyname.numkeys(), false, true );
+        almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original", "standard" );
+        numrows = almmFamilyname.numrows();
+        numkeys = almmFamilyname.numkeys();
+        showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
+        if( numrows != numkeys )
+        { showMessage( "Number of keys in arraylist multimap: " + almmFamilyname.numkeys(), false, true ); }
         showTimingMessage( msg, start );
 
         msg = "standardFamilyname";
@@ -616,10 +625,10 @@ public class LinksCleaned extends Thread
         almmFamilyname.free();
 
         writerFamilyname.close();
-        loadFamilynameToTable();
-        updateFamilynameToPersonC();
-        removeFamilynameFile();
-        removeFamilynameTable();
+        loadFamilynameToTable(     source );
+        updateFamilynameToPersonC( source );
+        removeFamilynameFile(      source );
+        removeFamilynameTable(     source );
         showTimingMessage( msg, start );
 
         // KM: Do not delete here.
@@ -670,13 +679,17 @@ public class LinksCleaned extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        showMessage( "Loading reference table: location...", false, true );
+        String msg = "Loading reference table: location";
+        showMessage( msg + "...", false, true );
         long start = System.currentTimeMillis();
         //ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
-        almmLocation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_location", "original" );
-        showTimingMessage( "Loading reference table: location ", start );
+        almmLocation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_location", "original", "location_no" );
+        showTimingMessage( msg, start );
+        int numrows = almmLocation.numrows();
+        int numkeys = almmLocation.numkeys();
+        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        if( numrows != numkeys )
+        { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
         start = System.currentTimeMillis();
         standardRegistrationLocation( sourceId );
@@ -848,7 +861,7 @@ public class LinksCleaned extends Thread
 
         //ttalRole = new TableToArraysSet( conGeneral, conOr, "original", "role" );
         //int size = ttalRole.countRows();
-        almmRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original" );
+        almmRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original", "standard" );
         almmRole.contentsOld();
         int size = almmRole.numkeys();
 
@@ -890,11 +903,15 @@ public class LinksCleaned extends Thread
         String msg = "Loading reference table: occupation";
         showMessage( msg + "...", false, true );
         //ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
-        almmOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original" );
+        almmOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original", "standard" );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         //showMessage( "Number of rows in reference table: " + ttalOccupation.countRows(), false, true );
-        showMessage( "Number of rows in reference table: " + almmOccupation.numkeys(), false, true );
+        int numrows = almmOccupation.numrows();
+        int numkeys = almmOccupation.numkeys();
+        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        if( numrows != numkeys )
+        { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
         showMessage( "Processing standardOccupation for source: " + sourceId + "...", false, true );
         standardOccupation( debug, sourceId );
@@ -1911,6 +1928,8 @@ public class LinksCleaned extends Thread
     private void standardLocation( ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
     throws Exception
     {
+        boolean debug = false;
+
         int count = 0;
         int count_empty = 0;
         int step = 1000;
@@ -1932,15 +1951,16 @@ public class LinksCleaned extends Thread
                 if( location != null && !location.isEmpty() )
                 {
                     location = location.toLowerCase();
-
+                    if( debug ) { System.out.println( "" + count + ": " + location ); }
                     //if( ttalLocation.originalExists( location ) )
                     if( almmLocation.contains( location ) )
 
                     {
-                        //String refCode = ttalLocation.getStandardCodeByOriginal( location );
-                        String refCode = almmLocation.standardCode( location );
+                        //String refSCode = ttalLocation.getStandardCodeByOriginal( location );
+                        String refSCode = almmLocation.standardCode( location );
+                        if( debug ) { System.out.println( "refSCode: " + refSCode );  }
 
-                        if( refCode.equals( SC_X ) )             // EC 91
+                        if( refSCode.equals( SC_X ) )             // EC 91
                         {
                             if( tt == TableType.REGISTRATION )
                             {
@@ -1955,7 +1975,7 @@ public class LinksCleaned extends Thread
                                 conCleaned.runQuery( query );
                             }
                         }
-                        else if( refCode.equals( SC_N ) )       // EC 93
+                        else if( refSCode.equals( SC_N ) )       // EC 93
                         {
                             if( tt == TableType.REGISTRATION ) {
                                 addToReportRegistration( id, id_source, 93, location );
@@ -1965,7 +1985,7 @@ public class LinksCleaned extends Thread
                                 addToReportPerson( id, id_source, 93, location );
                             }
                         }
-                        else if( refCode.equals( SC_U ) )       // EC 95
+                        else if( refSCode.equals( SC_U ) )       // EC 95
                         {
                             if( tt == TableType.REGISTRATION )
                             {
@@ -1988,7 +2008,7 @@ public class LinksCleaned extends Thread
                                 conCleaned.runQuery( query );
                             }
                         }
-                        else if( refCode.equals( SC_Y ) )
+                        else if( refSCode.equals( SC_Y ) )
                         {
                             if( tt == TableType.REGISTRATION )
                             {
@@ -2037,15 +2057,15 @@ public class LinksCleaned extends Thread
                     }
                 }
                 else
-                { count_empty++ }
-
-                int count_new = almmLocation.newcount();
-                String strNew = "";
-                if( count_new == 0 ) { strNew = "no new locations"; }
-                else if( count_new == 1 ) { strNew = "1 new location"; }
-                else { strNew = "" + count_new + " new locations"; }
-                showMessage( count + " location records, " + count_empty + " without location, " + strNew, false, true );
+                { count_empty++; }
             }
+
+            int count_new = almmLocation.newcount();
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new locations"; }
+            else if( count_new == 1 ) { strNew = "1 new location"; }
+            else { strNew = "" + count_new + " new locations"; }
+            showMessage( count + " location records, " + count_empty + " without location, " + strNew, false, true );
         }
         catch( Exception ex ) {
               throw new Exception( count + " Exception while cleaning Location: " + ex.getMessage() );
@@ -2088,7 +2108,7 @@ public class LinksCleaned extends Thread
 
         try
         {
-            ResultSet  rs = conOriginal.runQueryWithResult( query );           // Get occupation
+            ResultSet rs = conOriginal.runQueryWithResult( query );           // Get occupation
 
             while( rs.next() )
             {
@@ -5228,11 +5248,13 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFamilynameTable() throws Exception
+    private void createTempFamilynameTable( String source ) throws Exception
     {
-        showMessage( "Creating familyname_t table", false, true );
+        String tablename = "familyname_t_" + source;
 
-        String query = "CREATE  TABLE links_temp.familyname_t ("
+        showMessage( "Creating " + tablename + " table", false, true );
+
+        String query = "CREATE  TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " familyname VARCHAR(80) NULL ,"
             + " PRIMARY KEY (person_id) );";
@@ -5245,9 +5267,9 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFamilynameFile() throws Exception
+    private void createTempFamilynameFile( String source ) throws Exception
     {
-        String filename = "familyname_t.csv";
+        String filename = "familyname_t_" + source + ".csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
@@ -5259,52 +5281,57 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void loadFamilynameToTable() throws Exception
+    private void loadFamilynameToTable( String source ) throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Loading CSV data into temp table", false, true );
 
-        String query = "LOAD DATA LOCAL INFILE 'familyname_t.csv' INTO TABLE familyname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
+        String csvname   = "familyname_t_" + source + ".csv";
+        String tablename = "familyname_t_" + source;
+
+        String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
+            + " INTO TABLE " + tablename
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
+
         conTemp.runQuery( query );
 
-        elapsedShowMessage( "Loading CSV data into temp table", start, System.currentTimeMillis() );
     } // loadFamilynameToTable
 
 
     /**
      *
      */
-    private void updateFamilynameToPersonC() throws Exception
+    private void updateFamilynameToPersonC( String source ) throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Moving familynames from temp table to person_c", false, true );
 
-        {
-            String query = "UPDATE links_cleaned.person_c, links_temp.familyname_t"
-                    + " SET links_cleaned.person_c.familyname = links_temp.familyname_t.familyname"
-                    + " WHERE links_cleaned.person_c.id_person = links_temp.familyname_t.person_id;";
+        String tablename = "familyname_t_" + source;
 
-            conTemp.runQuery( query );
-        }
+        String query = "UPDATE links_cleaned.person_c, links_temp."   + tablename
+            + " SET links_cleaned.person_c.familyname = links_temp."  + tablename + ".familyname"
+            + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
-        elapsedShowMessage( "Moving familynames from temp table to person_c", start, System.currentTimeMillis() );
+        conTemp.runQuery( query );
     } // updateFamilynameToPersonC
 
 
-    public void removeFamilynameFile() throws Exception
+    public void removeFamilynameFile( String source ) throws Exception
     {
-        showMessage( "Removing familyname_t csv", false, true );
+        String csvname = "familyname_t_" + source + ".csv";
 
-        java.io.File f = new java.io.File("familyname_t.csv");
+        showMessage( "Removing " + csvname, false, true );
+
+        java.io.File f = new java.io.File( csvname );
         f.delete();
     } // removeFamilynameFile
 
 
-    public void removeFamilynameTable() throws Exception
+    public void removeFamilynameTable( String source ) throws Exception
     {
-        showMessage( "Removing familyname_t table", false, true );
+        String tablename = "familyname_t_" + source;
 
-        String query = "DROP TABLE IF EXISTS familyname_t;";
+        showMessage( "Removing table " + tablename, false, true );
+
+        String query = "DROP TABLE IF EXISTS " + tablename + ";";
 
         conTemp.runQuery( query );
     } // removeFamilynameTable
@@ -5313,11 +5340,13 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFirstnameTable() throws Exception
+    private void createTempFirstnameTable( String source ) throws Exception
     {
-        showMessage( "Creating firstname_t table", false, true );
+        String tablename = "firstname_t_" + source;
 
-        String query = "CREATE  TABLE links_temp.firstname_t ("
+        showMessage( "Creating " + tablename + " table", false, true );
+
+        String query = "CREATE  TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " firstname VARCHAR(80) NULL ,"
             + " PRIMARY KEY (person_id) );";
@@ -5329,9 +5358,9 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFirstnameFile() throws Exception
+    private void createTempFirstnameFile( String source ) throws Exception
     {
-        String filename = "firstname_t.csv";
+        String filename = "firstname_t_" + source + ".csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
@@ -5343,44 +5372,48 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void loadFirstnameToTable() throws Exception
+    private void loadFirstnameToTable( String source ) throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Loading CSV data into temp table", false, true );
 
-        String query = "LOAD DATA LOCAL INFILE 'firstname_t.csv' INTO TABLE firstname_t FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
-        conTemp.runQuery( query );
+        String csvname   = "firstname_t_" + source + ".csv";
+        String tablename = "firstname_t_" + source;
 
-        elapsedShowMessage( "Loading CSV data into temp table", start, System.currentTimeMillis() );
+        String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
+            + " INTO TABLE " + tablename
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
+
+        conTemp.runQuery( query );
     } // loadFirstnameToTable
 
 
     /**
      *
      */
-    private void updateFirstnameToPersonC() throws Exception
+    private void updateFirstnameToPersonC( String source ) throws Exception
     {
-        long start = System.currentTimeMillis();
         showMessage( "Moving first names from temp table to person_c...", false, true );
 
-        String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t"
-            + " SET links_cleaned.person_c.firstname = links_temp.firstname_t.firstname"
-            + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t.person_id;";
+        String tablename = "firstname_t_" + source;
+
+        String query = "UPDATE links_cleaned.person_c, links_temp."   + tablename
+            + " SET links_cleaned.person_c.firstname = links_temp."   + tablename + ".firstname"
+            + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
         conTemp.runQuery( query );
-
-        elapsedShowMessage( "Moving first names from temp table to person_c", start, System.currentTimeMillis() );
     } // updateFirstnameToPersonC
 
 
     /**
      * @throws Exception
      */
-    public void removeFirstnameFile() throws Exception
+    public void removeFirstnameFile( String source ) throws Exception
     {
-        showMessage( "Removing firstname_t csv file", false, true );
+        String csvname = "firstname_t_" + source + ".csv";
 
-        File f = new File( "firstname_t.csv" );
+        showMessage( "Removing " + csvname, false, true );
+
+        File f = new File( csvname );
         f.delete();
     } // removeFirstnameFile
 
@@ -5388,11 +5421,13 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    public void removeFirstnameTable() throws Exception
+    public void removeFirstnameTable( String source ) throws Exception
     {
-        showMessage( "Removing firstname_t table", false, true );
+        String tablename = "firstname_t_" + source;
 
-        String query = "DROP TABLE IF EXISTS firstname_t;";
+        showMessage( "Removing table " + tablename, false, true );
+
+        String query = "DROP TABLE IF EXISTS " + tablename + ";";
         conTemp.runQuery( query );
     } // removeFirstnameTable
 

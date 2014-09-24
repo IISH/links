@@ -3,6 +3,7 @@ package dataset;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,11 +21,14 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-23-Sep-2014 Latest change
+ * FL-24-Sep-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
-    private boolean debug = true;
+    private boolean debug = false;
+
+    private boolean check_duplicates  = false;
+    private boolean delete_duplicates = false;   // only used with check_duplicates = true
 
     // A hashed multimap to store key and values for a reference table for fast lookups.
     private Multimap< String, String > oldMap;
@@ -33,7 +37,8 @@ public class TabletoArrayListMultimap
     private HashMultiset< String > newSet;
 
     private String tableName;
-    private String keyColumn;             // column name used as index
+    private String keyColumn;           // column name used as index
+    private String standardColumn;      // column name used as standard (mostly "standard", but "location_no" for ref_location
 
     ArrayList< String > columnNames;
     ArrayList< String > valueNames;
@@ -44,7 +49,6 @@ public class TabletoArrayListMultimap
     int originalIdx;
     int standardIdx;
     int standardCodeIdx;
-    int locationNoIdx;      // only for ref_location
 
     private MySqlConnector conn_read;
     private MySqlConnector conn_write;
@@ -61,15 +65,24 @@ public class TabletoArrayListMultimap
      * @param tableName
      * @param keyColumn
      */
-    public TabletoArrayListMultimap( MySqlConnector conn_read, MySqlConnector conn_write, String tableName, String keyColumn )
+    public TabletoArrayListMultimap
+    (
+            MySqlConnector conn_read,
+            MySqlConnector conn_write,
+            String tableName,
+            String keyColumn,
+            String standardColumn
+    )
     throws Exception
     {
-        this.conn_read  = conn_read;
-        this.conn_write = conn_write;
-        this.tableName  = tableName;
-        this.keyColumn  = keyColumn;
+        this.conn_read      = conn_read;
+        this.conn_write     = conn_write;
+        this.tableName      = tableName;
+        this.keyColumn      = keyColumn;
+        this.standardColumn = standardColumn;
 
-        if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " + tableName + " , index column: " + keyColumn ); }
+        if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " +
+            tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
 
         oldMap = ArrayListMultimap.create();
         newSet = HashMultiset.create();
@@ -81,7 +94,6 @@ public class TabletoArrayListMultimap
         originalIdx     = -1;
         standardIdx     = -1;
         standardCodeIdx = -1;
-        locationNoIdx   = -1;
 
         /*
         ref_role:
@@ -138,9 +150,9 @@ public class TabletoArrayListMultimap
         }
         */
 
-
-        //String query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC";
-        String query = "SELECT * FROM `" + tableName + "`";
+        String query = "";
+        if( check_duplicates ) { query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC"; }
+        else { query = "SELECT * FROM `" + tableName + "`"; }
 
         if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
         ResultSet rs = conn_read.runQueryWithResult( query );
@@ -158,55 +170,15 @@ public class TabletoArrayListMultimap
             columnNames.add( columnName );
 
             if( columnName.equals( "original" ) )      { originalIdx     = i - 1 - skip; }
-            if( columnName.equals( "standard" ) )      { standardIdx     = i - 1 - skip; }
+            if( columnName.equals( standardColumn ) )  { standardIdx     = i - 1 - skip; }
             if( columnName.equals( "standard_code" ) ) { standardCodeIdx = i - 1 - skip; }
-            if( columnName.equals( "location_id" ) )   { locationNoIdx   = i - 1 - skip; }
         }
 
-        if( debug ) { tableInfo(); }
-
-        numRows = 0;
-        while( rs.next() )          // process each index value
-        {
-            /*
-            int  id_role           = rs.getInt(    1 );
-            String original        = rs.getString( 2 );     // index
-            String standard        = rs.getString( 3 );
-            int role_nr            = rs.getInt(    4 );
-            String standard_code   = rs.getString( 5 );
-            String standard_source = rs.getString( 6 );
-            */
-
-            numRows++;
-            String key = "";
-            ArrayList< String > values = new ArrayList();
-            for( int i = 0; i < numColumns; i++ )     // process each column
-            {
-                int c = i + 1;
-
-                int ct = rs_md.getColumnType( c );
-
-                String strValue = "";
-
-                if( ct == 4 ) {
-                    int intValue = rs.getInt( c );
-                    strValue = Integer.toString( intValue );
-                }
-                else if( ct == 1 || ct ==12 ) {
-                    strValue = rs.getString( c );
-                }
-                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
-
-                //if( strValue == null ) { strValue = ""; }
-
-                String columnName = columnNames.get( i );
-                if( columnName.equals( keyColumn ) ) { key = strValue; }
-                else { values.add( strValue ); }
-            }
-
-            for( String value : values ) { oldMap.put ( key, value ); }
-            values = null;
+        if( check_duplicates ) {
+            if( debug ) { tableInfo(); }
+            store_check( rs, rs_md );
         }
+        else { store( rs, rs_md ); }
 
         //tableContents( multiMapOld );
 
@@ -228,6 +200,168 @@ public class TabletoArrayListMultimap
 
 
     /**
+     * store table in multimap, and check for duplicates
+     */
+    public int store_check( ResultSet rs, ResultSetMetaData rs_md )
+    throws Exception
+    {
+        //System.out.println( "TabletoArrayListMultimap/store_check()" );
+
+        int ndups = 0;
+        boolean isdup = false;
+        numRows = 0;
+
+        while( rs.next() )          // process each index value
+        {
+            /*
+            int  id_role           = rs.getInt(    1 );
+            String original        = rs.getString( 2 );     // index
+            String standard        = rs.getString( 3 );
+            int role_nr            = rs.getInt(    4 );
+            String standard_code   = rs.getString( 5 );
+            String standard_source = rs.getString( 6 );
+            */
+
+            numRows++;
+            String key = "";
+            String original = "";
+            ArrayList< String > values = new ArrayList();
+
+            for( int i = 0; i < numColumns; i++ )     // process each column
+            {
+                int c = i + 1;
+
+                int ct = rs_md.getColumnType( c );
+
+                String strValue = "";
+
+                if( ct == 4 ) {
+                    int intValue = rs.getInt( c );
+                    strValue = Integer.toString( intValue );
+                }
+                else if( ct == 1 || ct ==12 ) {
+                    strValue = rs.getString( c );
+                }
+                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
+
+                String columnName = columnNames.get( i );
+
+                if( columnName.equals( keyColumn ) ) {
+                    original = strValue;
+                    // toLowerCase() is needed for Location keys; the others are already lowercase
+                    key = original.toLowerCase();
+
+                    if( check_duplicates && oldMap.containsKey( key ) ) { isdup = true; }
+                    else { isdup = false; }
+                }
+                else { values.add( strValue ); }
+            }
+
+            if( check_duplicates && isdup ) {
+                ndups++;
+                Collection< String > collection = oldMap.get( key );
+                String[] map_values = collection.toArray( new String[ collection.size() ] );
+
+                System.out.println( "multimap  original: " + key + " : " + Arrays.toString( map_values ) );
+                System.out.println( "duplicate original: " + original + " : " + values );
+
+                if( delete_duplicates ) {
+                    int id;
+                    int mapId = Integer.parseInt( map_values[ 0 ] );
+                    int dupId = Integer.parseInt( values.get( 0 ) );
+                    //System.out.println( "mapId: " + mapId + ", dupId: " + dupId );
+
+                    // delete highest (latest) id
+                    if( dupId > mapId ) { id = dupId; }
+                    else { id = mapId; }
+
+                    String column = columnNames.get( 0 );
+
+                    String query = "DELETE FROM `" + tableName + "` WHERE " + column + " = " + Integer.toString( id );
+                    System.out.println( query );
+
+                    try { conn_read.runQuery( query ); }
+                    catch( SQLException sex )
+                    { System.out.println( "SQLException while deleting duplicate: " + sex.getMessage() ); }
+                    catch( Exception jex )
+                    { System.out.println( "Exception while deleteing duplicate: " + jex.getMessage() ); }
+                }
+            }
+            else
+            {
+                for( String value : values ) { oldMap.put ( key, value ); }
+            }
+
+            values = null;
+        }
+
+        if( check_duplicates ) { System.out.printf( "%d duplicate originals\n\n", ndups ); }
+
+        return ndups;
+    }
+
+
+    /**
+     * store table in multimap
+     */
+    public void store( ResultSet rs, ResultSetMetaData rs_md )
+    throws Exception
+    {
+        //System.out.println( "TabletoArrayListMultimap/store()" );
+
+        numRows = 0;
+
+        while( rs.next() )          // process each index value
+        {
+            /*
+            int  id_role           = rs.getInt(    1 );
+            String original        = rs.getString( 2 );     // index
+            String standard        = rs.getString( 3 );
+            int role_nr            = rs.getInt(    4 );
+            String standard_code   = rs.getString( 5 );
+            String standard_source = rs.getString( 6 );
+            */
+
+            numRows++;
+            String key = "";
+            String original = "";
+            ArrayList< String > values = new ArrayList();
+
+            for( int i = 0; i < numColumns; i++ )     // process each column
+            {
+                int c = i + 1;
+
+                int ct = rs_md.getColumnType( c );
+
+                String strValue = "";
+
+                if( ct == 4 ) {
+                    int intValue = rs.getInt( c );
+                    strValue = Integer.toString( intValue );
+                }
+                else if( ct == 1 || ct ==12 ) {
+                    strValue = rs.getString( c );
+                }
+                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
+
+                String columnName = columnNames.get( i );
+
+                if( columnName.equals( keyColumn ) ) {
+                    original = strValue;
+                    // toLowerCase() is needed for Location keys; the others are already lowercase
+                    key = original.toLowerCase();
+                }
+                else { values.add( strValue ); }
+            }
+
+            for( String value : values ) { oldMap.put ( key, value ); }
+
+            values = null;
+        }
+    }
+
+
+    /**
      * Number of keys in the reference table multimap;
      * that number is identical to the number of originals in the reference table
      * But it is NOT the value of the size() function:
@@ -237,6 +371,20 @@ public class TabletoArrayListMultimap
     public int numkeys()
     {
         //return oldMap.size();       // WRONG !
+
+        Set< String > keys = oldMap.keySet();
+        return keys.size();
+    }
+
+
+    /**
+     * Sometimes the entries in the original column of the table are not unique;
+     * then numkeys != numrows.
+     * duplicate originals in the ref tables should be removed.
+     * @return
+     */
+    public int numrows()
+    {
         return numRows;
     }
 
@@ -296,7 +444,7 @@ public class TabletoArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            location_no = values [ locationNoIdx ];
+            location_no = values [ standardIdx ];
         }
 
         return location_no;
