@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-24-Sep-2014 Latest change
+ * FL-25-Sep-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
@@ -162,17 +162,24 @@ public class TabletoArrayListMultimap
         columnNames = new ArrayList();              // excluding the key column !
         int skip = 0;
 
-        for( int i = 1; i <= numColumns; i++ ) {
-            String columnName = rs_md.getColumnName(i);
+        for( int i = 0; i < numColumns; i++ )
+        {
+            int c = i + 1;                          // MySQL starts at 1
+
+            String columnName = rs_md.getColumnName( c );
             if( columnName.equals( "original" ) ) { skip = 1; }
             else { valueNames.add( columnName ); }
 
             columnNames.add( columnName );
 
-            if( columnName.equals( "original" ) )      { originalIdx     = i - 1 - skip; }
-            if( columnName.equals( standardColumn ) )  { standardIdx     = i - 1 - skip; }
-            if( columnName.equals( "standard_code" ) ) { standardCodeIdx = i - 1 - skip; }
+            if( columnName.equals( "original" ) )      { originalIdx     = i - skip; }
+            if( columnName.equals( standardColumn ) )  { standardIdx     = i - skip; }
+            if( columnName.equals( "standard_code" ) ) { standardCodeIdx = i - skip; }
         }
+
+        //System.out.println( "originalIdx: " + originalIdx );
+        //System.out.println( "standardIdx: " + standardIdx );
+        //System.out.println( "stdCodeIdx:  " + standardCodeIdx );
 
         if( check_duplicates ) {
             if( debug ) { tableInfo(); }
@@ -180,7 +187,7 @@ public class TabletoArrayListMultimap
         }
         else { store( rs, rs_md ); }
 
-        //tableContents( multiMapOld );
+        //contentsOld();
 
     } // TabletoArrayListMultiMap
 
@@ -227,9 +234,9 @@ public class TabletoArrayListMultimap
             String original = "";
             ArrayList< String > values = new ArrayList();
 
-            for( int i = 0; i < numColumns; i++ )     // process each column
+            for( int i = 0; i < numColumns; i++ )   // process each column
             {
-                int c = i + 1;
+                int c = i + 1;                      // MySQL starts at 1
 
                 int ct = rs_md.getColumnType( c );
 
@@ -246,7 +253,9 @@ public class TabletoArrayListMultimap
 
                 String columnName = columnNames.get( i );
 
-                if( columnName.equals( keyColumn ) ) {
+                //if( columnName.equals( keyColumn ) )
+                if( originalIdx == i )      // faster than string compare
+                {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
                     key = original.toLowerCase();
@@ -346,7 +355,9 @@ public class TabletoArrayListMultimap
 
                 String columnName = columnNames.get( i );
 
-                if( columnName.equals( keyColumn ) ) {
+                //if( columnName.equals( keyColumn ) )
+                if( originalIdx == i )      // faster than string compare
+                {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
                     key = original.toLowerCase();
@@ -427,14 +438,38 @@ public class TabletoArrayListMultimap
 
             standard = values [ standardIdx ];
         }
-
+        //System.out.println( "standard: " + standard );
         return standard;
     }
 
 
     /**
+     * return value of specified column for existing key, else empty string
+     */
+    public String value( String column, String key )
+    {
+        //System.out.println( "value(): key: " + key + ", column: " + column );
+        String value = "";
+
+        if( oldMap.containsKey( key ) ) {
+            Collection< String > collection = oldMap.get( key );
+            String[] values = collection.toArray( new String[ collection.size() ] );
+
+            for( int i = 0; i < numColumns; i++ ) {
+                String columnName = columnNames.get( i );
+                //System.out.println( column );
+                if( column.equals( columnName ) ) { value = values[ i ]; }
+            }
+        }
+
+        return value;
+    }
+
+
+    /**
      * return location_id for existing key, else empty string
-     * this is only used for ref_location
+     * this is only used for ref_location.
+     * one can also use value() to be more generic
      */
     public String locationno( String key )
     {
@@ -455,7 +490,7 @@ public class TabletoArrayListMultimap
      * return standard code for existing key
      * return "x" for entry of new set
      */
-    public String standardCode( String key )
+    public String code( String key )
     {
         String sc = "";     // we know nothing
 
@@ -510,7 +545,12 @@ public class TabletoArrayListMultimap
         Set< String > keys = oldMap.keySet();
         int nkeys = keys.size();
 
-        System.out.println( "Contents " + " (entries: " + nkeys + "):");
+        System.out.println( "Contents of " + tableName + ", standard: " + standardColumn + " [entries: " + nkeys + "]:" );
+        System.out.printf("original: ");
+        for( String col : columnNames ) {
+            if( !col.equals( "original" ) ) { System.out.printf( "%s ", col ); }
+        }
+        System.out.println( "" );
 
         int nrow = 0;
         for( String key : keys )

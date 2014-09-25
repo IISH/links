@@ -56,7 +56,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-24-Sep-2014 Latest change
+ * FL-25-Sep-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
@@ -69,12 +69,10 @@ public class LinksCleaned extends Thread
 
     //private TableToArraysSet ttalLocation;
     //private TableToArraysSet ttalOccupation;
-
-    private TableToArraysSet ttalStatusSex;
-
     private TableToArraysSet ttalRegistration;      // formerly used in standardType()
     private TableToArraysSet ttalReport;
     private TableToArraysSet ttalRole;
+    //private TableToArraysSet ttalStatusSex;
 
     // Table -> ArrayListMultiMap
     //private TabletoArrayListMultimap almmPrepiece;      // Names
@@ -85,8 +83,10 @@ public class LinksCleaned extends Thread
 
     private TabletoArrayListMultimap almmLocation;
     private TabletoArrayListMultimap almmOccupation;
-
     private TabletoArrayListMultimap almmRole;
+
+    private TabletoArrayListMultimap almmCivilstatus;
+    private TabletoArrayListMultimap almmSex;
 
     private JTextField tbLOLClatestOutput;
     private JTextArea  taLOLCoutput;
@@ -294,6 +294,8 @@ public class LinksCleaned extends Thread
             showMessage("Error: " + ex.getMessage(), false, true);
         }
     } // run
+
+
 
 
      /*---< functions corresponding to GUI Cleaning options >-----------------*/
@@ -718,7 +720,7 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * Status and Sex
+     * Sex and Civilstatus
      * @param go
      * @throws Exception
      */
@@ -733,18 +735,22 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        showMessage( "Loading reference table: status_sex...", false, true );
-        {
-            ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
-        }
+        showMessage( "Loading reference table: status_sex (sex as key)...", false, true );
+        //ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
+        almmSex = new TabletoArrayListMultimap( conGeneral, conOr, "ref_status_sex", "original", "standard_sex" );
+
+        showMessage( "Loading reference table: status_sex (civil status as key)...", false, true );
+        almmCivilstatus = new TabletoArrayListMultimap( conGeneral, conOr, "ref_status_sex", "original", "standard_civilstatus" );
 
         standardSex( sourceId );
-        standardStatusSex( sourceId );
+        standardCivilstatus( sourceId );
 
-        showMessage( "Updating reference table status_sex...", false, true );
-        {
-            ttalStatusSex.updateTable();
-        }
+        //ttalStatusSex.updateTable();
+        showMessage( "Updating reference table civil status", false, true );
+        almmCivilstatus.updateTable();
+
+        almmSex.free();
+        almmCivilstatus.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doStatusSex
@@ -1387,7 +1393,7 @@ public class LinksCleaned extends Thread
                         {
                             // Check the standard code
                             //String standard_code = ttalFirstname.getStandardCodeByOriginal( prename );
-                            String standard_code = almmFirstname.standardCode( prename );
+                            String standard_code = almmFirstname.code(prename);
 
                             if( standard_code.equals( SC_Y ) )
                             {
@@ -1430,7 +1436,7 @@ public class LinksCleaned extends Thread
                                 {
                                     // Check the standard code
                                     //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoInvalidChars );
-                                    String standard_code = almmFirstname.standardCode( nameNoInvalidChars );
+                                    String standard_code = almmFirstname.code(nameNoInvalidChars);
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
@@ -1492,7 +1498,7 @@ public class LinksCleaned extends Thread
                                 {
                                     // Check the standard code
                                     //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoPieces );
-                                    String standard_code = almmFirstname.standardCode( nameNoPieces );
+                                    String standard_code = almmFirstname.code(nameNoPieces);
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
@@ -1561,7 +1567,7 @@ public class LinksCleaned extends Thread
                                 {
                                     // Check the standard code
                                     //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoPieces );
-                                    String standard_code = almmFirstname.standardCode( nameNoPieces );
+                                    String standard_code = almmFirstname.code(nameNoPieces);
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
@@ -1707,7 +1713,7 @@ public class LinksCleaned extends Thread
                     {
                         // get standard_code
                         //String standard_code = ttalFamilyname.getStandardCodeByOriginal( familyname );
-                        String standard_code = almmFamilyname.standardCode( familyname );
+                        String standard_code = almmFamilyname.code(familyname);
 
                         // Check the standard code
                         if( standard_code.equals( SC_Y ) )
@@ -1789,7 +1795,7 @@ public class LinksCleaned extends Thread
                         {
                             // get standard_code
                             //String standard_code = ttalFamilyname.getStandardCodeByOriginal( nameNoSuffix );
-                            String standard_code = almmFamilyname.standardCode( nameNoSuffix );
+                            String standard_code = almmFamilyname.code(nameNoSuffix);
 
                             // Check the standard code
                             if( standard_code.equals( SC_Y ) )
@@ -1957,7 +1963,7 @@ public class LinksCleaned extends Thread
 
                     {
                         //String refSCode = ttalLocation.getStandardCodeByOriginal( location );
-                        String refSCode = almmLocation.standardCode( location );
+                        String refSCode = almmLocation.code(location);
                         if( debug ) { System.out.println( "refSCode: " + refSCode );  }
 
                         if( refSCode.equals( SC_X ) )             // EC 91
@@ -2165,7 +2171,7 @@ public class LinksCleaned extends Thread
                     if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
 
                     //String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
-                    String refSCode = almmOccupation.standardCode( occupation );
+                    String refSCode = almmOccupation.code(occupation);
 
                     if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
 
@@ -2658,9 +2664,11 @@ public class LinksCleaned extends Thread
     public void standardSex( int sourceId )
     {
         String sourceStr = Integer.toString( sourceId );
+        //System.out.println( "StandardSex()" );
 
         boolean debug = false;
-        int counter = 0;
+        int count = 0;
+        int count_empty = 0;
         int step = 1000;
         int stepstate = step;
 
@@ -2672,9 +2680,9 @@ public class LinksCleaned extends Thread
 
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
                     stepstate += step;
                 }
 
@@ -2685,9 +2693,12 @@ public class LinksCleaned extends Thread
 
                 if( sex != null && !sex.isEmpty() )                 // check presence of the gender
                 {
-                    if( ttalStatusSex.originalExists( sex ) )       // check presence in original
+                    //if( ttalStatusSex.originalExists( sex ) )     // check presence in original
+                    if( almmSex.contains( sex ) )                   // check presence in original
+
                     {
-                        String refSCode = ttalStatusSex.getStandardCodeByOriginal( sex );
+                        //String refSCode = ttalStatusSex.getStandardCodeByOriginal( sex );
+                        String refSCode = almmSex.code(sex);
                         if( debug ) { showMessage( "refSCode: " + refSCode , false, true ); }
 
                         if( refSCode.equals( SC_X ) ) {
@@ -2708,15 +2719,15 @@ public class LinksCleaned extends Thread
 
                             addToReportPerson( id_person, sourceStr, 35, sex );     // warning 35
 
-                            String query = PersonC.updateQuery( "sex",
-                                ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            //String query = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
                             if( debug ) { showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            String query = PersonC.updateQuery( "sex",
-                                ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            //String query = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
+                            String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
                             conCleaned.runQuery( query );
                         }
                         else {     // Invalid standard code
@@ -2731,15 +2742,25 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                         addToReportPerson( id_person, sourceStr, 31, sex );         // warning 31
-                        ttalStatusSex.addOriginal( sex );                               // Add new Sex "x" ??
+                        //ttalStatusSex.addOriginal( sex );                         // warning 31
+                        almmCivilstatus.add( sex );         // only almmCivilstatus is used for update
 
                         String query = PersonC.updateQuery( "sex", sex, id_person );
                         conCleaned.runQuery( query );
                     }
                 }
+                else { count_empty++; }
             }
-        } catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
+
+            int count_new = almmCivilstatus.newcount();     // only almmCivilstatus is used for update
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new genders"; }
+            else if( count_new == 1 ) { strNew = "1 new gender"; }
+            else { strNew = "" + count_new + " new genders"; }
+            showMessage( count + " gender records, " + count_empty + " without gender, " + strNew, false, true );
+        }
+        catch( Exception ex ) {
+            showMessage( count + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
         }
     } // standardSex
 
@@ -2747,11 +2768,13 @@ public class LinksCleaned extends Thread
     /**
      * @param sourceId
      */
-    public void standardStatusSex( int sourceId )
+    public void standardCivilstatus( int sourceId )
     {
         String sourceStr = Integer.toString( sourceId );
+        //System.out.println( "standardCivilstatus()" );
 
-        int counter = 0;
+        int count = 0;
+        int count_empty = 0;
         int step = 1000;
         int stepstate = step;
 
@@ -2763,23 +2786,26 @@ public class LinksCleaned extends Thread
 
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
                     stepstate += step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                //String sex = rs.getString( "sex" );
                 String sex = rs.getString( "sex" ) != null ? rs.getString( "sex" ).toLowerCase() : "";
-                //String civil_status = rs.getString( "civil_status" );
                 String civil_status = rs.getString( "civil_status" ) != null ? rs.getString( "civil_status" ).toLowerCase() : "";
+                //showMessage( "id: " + id_person + ", sex: " + sex + ", civil: " + civil_status, false, true );
 
-                if( civil_status != null && !civil_status.isEmpty() )   // check presence of civil status
+                if( civil_status != null && !civil_status.isEmpty() )       // check presence of civil status
                 {
-                    if( ttalStatusSex.originalExists( civil_status ) )  // check presence in original
+                    //if( ttalStatusSex.originalExists( civil_status ) )    // check presence in original
+                    if( almmCivilstatus.contains(civil_status) )          // check presence in original
+
                     {
-                        String refSCode = this.ttalStatusSex.getStandardCodeByOriginal( civil_status );
+                        //String refSCode = ttalStatusSex.getStandardCodeByOriginal( civil_status );
+                        String refSCode = almmCivilstatus.code(civil_status);
+                        //showMessage( "code: " + refSCode, false, true );
 
                         if( refSCode.equals( SC_X ) ) {
                             addToReportPerson( id_person, sourceStr, 61, civil_status );            // warning 61
@@ -2793,12 +2819,13 @@ public class LinksCleaned extends Thread
                         else if( refSCode.equals( SC_U ) ) {
                             addToReportPerson( id_person, sourceStr, 65, civil_status );            // warning 65
 
-                            String query = PersonC.updateQuery( "civil_status",
-                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            //String query = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard( civil_status ), id_person );
                             conCleaned.runQuery( query );
 
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
-                                if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
+                                //if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
+                                if( !sex.equalsIgnoreCase( this.almmCivilstatus.value( "standard_sex", civil_status) ) ) {
                                     if( sex != "u" ) {
                                         addToReportPerson(id_person, sourceStr, 68, civil_status);    // warning 68
                                     }
@@ -2806,28 +2833,28 @@ public class LinksCleaned extends Thread
                             }
                             else            // Sex is empty
                             {
-                                String sexQuery = PersonC.updateQuery( "sex",
-                                    ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                //String sexQuery = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
                                 conCleaned.runQuery( sexQuery );
                             }
 
-                            String sexQuery = PersonC.updateQuery( "civil_status",
-                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            //String sexQuery = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( sexQuery );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
-                            String query = PersonC.updateQuery( "civil_status",
-                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            //String query = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( query );
 
                             if( sex == null || sex.isEmpty() )  {      // Sex is empty
-                                String sexQuery = PersonC.updateQuery( "sex",
-                                    ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                //String sexQuery = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
+                                String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
                                 conCleaned.runQuery( sexQuery );
                             }
 
-                            String sexQuery = PersonC.updateQuery( "civil_status",
-                                ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            //String sexQuery = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
+                            String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( sexQuery );
                         }
                         else {          // Invalid SC
@@ -2837,15 +2864,25 @@ public class LinksCleaned extends Thread
                     else {      // add to ref
                         addToReportPerson( id_person, sourceStr, 61, civil_status );                // warning 61
 
-                        ttalStatusSex.addOriginal( civil_status );                                      // Add new Status "x" ??
+                        //ttalStatusSex.addOriginal( civil_status );                                  // Add new civil_status
+                        almmCivilstatus.add(civil_status);                                        // Add new civil_status
 
                         String query = PersonC.updateQuery( "civil_status", civil_status, id_person );  // Write to Person
                         conCleaned.runQuery( query );
                     }
                 }
+                else { count_empty++; }
             }
-        } catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
+
+            int count_new = almmSex.newcount();
+            String strNew = "";
+            if( count_new == 0 ) { strNew = "no new civil statusses"; }
+            else if( count_new == 1 ) { strNew = "1 new civil status"; }
+            else { strNew = "" + count_new + " new civil statusses"; }
+            showMessage( count + " civil status records, " + count_empty + " without civil status, " + strNew, false, true );
+        }
+        catch( Exception ex ) {
+            showMessage( count + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
         }
     } // standardStatusSex
 
