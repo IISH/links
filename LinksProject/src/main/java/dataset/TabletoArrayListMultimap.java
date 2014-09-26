@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-25-Sep-2014 Latest change
+ * FL-26-Sep-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
@@ -46,9 +46,9 @@ public class TabletoArrayListMultimap
     private int numColumns;
     private int numRows;
 
-    int originalIdx;
-    int standardIdx;
-    int standardCodeIdx;
+    int originalColOff;         // offset for "original" column in column name list
+    int standardValOff;         // offset for "standard" value in value list
+    int standardCodeValOff;     // offset for "standard_code" value in value list
 
     private MySqlConnector conn_read;
     private MySqlConnector conn_write;
@@ -91,9 +91,9 @@ public class TabletoArrayListMultimap
         valueNames  = new ArrayList();
 
         // invalid values
-        originalIdx     = -1;
-        standardIdx     = -1;
-        standardCodeIdx = -1;
+        originalColOff     = -1;
+        standardValOff     = -1;
+        standardCodeValOff = -1;
 
         /*
         ref_role:
@@ -160,26 +160,30 @@ public class TabletoArrayListMultimap
         ResultSetMetaData rs_md = rs.getMetaData();
         numColumns = rs_md.getColumnCount();
         columnNames = new ArrayList();              // excluding the key column !
-        int skip = 0;
+        int skip1 = 0;
 
         for( int i = 0; i < numColumns; i++ )
         {
             int c = i + 1;                          // MySQL starts at 1
 
             String columnName = rs_md.getColumnName( c );
-            if( columnName.equals( "original" ) ) { skip = 1; }
+            columnNames.add(columnName);
+
+            if( columnName.equals( "original" ) ) {
+                originalColOff = i;
+                skip1 = 1;
+            }
             else { valueNames.add( columnName ); }
 
-            columnNames.add( columnName );
-
-            if( columnName.equals( "original" ) )      { originalIdx     = i - skip; }
-            if( columnName.equals( standardColumn ) )  { standardIdx     = i - skip; }
-            if( columnName.equals( "standard_code" ) ) { standardCodeIdx = i - skip; }
+            if( columnName.equals( standardColumn ) )  { standardValOff = i - skip1; }
+            else if( columnName.equals( "standard_code" ) ) { standardCodeValOff = i - skip1; }
         }
 
-        //System.out.println( "originalIdx: " + originalIdx );
-        //System.out.println( "standardIdx: " + standardIdx );
-        //System.out.println( "stdCodeIdx:  " + standardCodeIdx );
+        if( debug ) {
+            System.out.println( "originalColOff: " + originalColOff );
+            System.out.println( "standardValOff: " + standardValOff );
+            System.out.println( "stdCodeValOff:  " + standardCodeValOff );
+        }
 
         if( check_duplicates ) {
             if( debug ) { tableInfo(); }
@@ -202,7 +206,7 @@ public class TabletoArrayListMultimap
         for ( String columnName : columnNames ) { System.out.printf( "%s ", columnName ); }
         System.out.println( "\n" );
 
-        System.out.printf( "standard offset: %s, standard_code offset: %s\n", standardIdx, standardCodeIdx );
+        System.out.printf( "standard offset: %s, standard_code offset: %s\n", standardValOff, standardCodeValOff );
     }
 
 
@@ -248,13 +252,14 @@ public class TabletoArrayListMultimap
                 }
                 else if( ct == 1 || ct ==12 ) {
                     strValue = rs.getString( c );
+                    if( strValue != null ) { strValue.toLowerCase(); }
                 }
                 else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
 
                 String columnName = columnNames.get( i );
 
-                //if( columnName.equals( keyColumn ) )
-                if( originalIdx == i )      // faster than string compare
+                if( columnName.equals( keyColumn ) )
+                //if( originalColOff == i )      // faster than string compare
                 {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
@@ -349,14 +354,15 @@ public class TabletoArrayListMultimap
                     strValue = Integer.toString( intValue );
                 }
                 else if( ct == 1 || ct ==12 ) {
-                    strValue = rs.getString( c );
+                    strValue = rs.getString(c);
+                    if( strValue != null ) { strValue.toLowerCase(); }
                 }
                 else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
 
                 String columnName = columnNames.get( i );
 
-                //if( columnName.equals( keyColumn ) )
-                if( originalIdx == i )      // faster than string compare
+                if( columnName.equals( keyColumn ) )
+                //if( originalColOff == i )      // faster than string compare
                 {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
@@ -436,7 +442,7 @@ public class TabletoArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            standard = values [ standardIdx ];
+            standard = values [ standardValOff ];
         }
         //System.out.println( "standard: " + standard );
         return standard;
@@ -479,7 +485,7 @@ public class TabletoArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            location_no = values [ standardIdx ];
+            location_no = values [ standardValOff ];
         }
 
         return location_no;
@@ -498,7 +504,7 @@ public class TabletoArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            sc = values[ standardCodeIdx ];
+            sc = values[ standardCodeValOff ];
         }
         else if( newSet.contains( key ) ) {
             sc = "x";
@@ -512,7 +518,10 @@ public class TabletoArrayListMultimap
      */
     public void contentsNew()
     {
-        System.out.println( "\n" + newSet.size() + " new entries:");
+        Set< String > newset = newSet.elementSet();
+        int size = newset.size();
+
+        System.out.println( "\n" + tableName + ": " + size + " new entries:");
         int num = 0;
         for( String entry : newSet.elementSet() ) {
             num++;
@@ -526,27 +535,11 @@ public class TabletoArrayListMultimap
      */
     public void contentsOld()
     {
-        /*
-        if (tableName == "ref_role") {
-            System.out.println("========================================================================");
-            System.out.println("     # ir                  original                  standard nr sc  ss");
-            System.out.println("------------------------------------------------------------------------");
-        }
-            //Object valuesObj = values.toArray();
-            //System.out.printf( "%06d %25s %2d %25s %2s %2s %3s\n", new Object[] { nrow, key, valuesObj } );
-            // nrow, id_role, original, standard, role_nr, standard_code, standard_source );
-
-        if( tableName == "ref_role" ) {
-            System.out.println( "========================================================================" );
-        }
-        }
-        */
-
         Set< String > keys = oldMap.keySet();
         int nkeys = keys.size();
 
         System.out.println( "Contents of " + tableName + ", standard: " + standardColumn + " [entries: " + nkeys + "]:" );
-        System.out.printf("original: ");
+        System.out.printf("  # original: ");
         for( String col : columnNames ) {
             if( !col.equals( "original" ) ) { System.out.printf( "%s ", col ); }
         }

@@ -641,6 +641,7 @@ new FormModel {
 						name: "cbLOLCdoSequence"
 						"text": "Sequence"
 						"name": "cbLOLCdoSequentie"
+						"enabled": false
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbCdoLocations"
@@ -652,6 +653,7 @@ new FormModel {
 						name: "cbCdoRelation"
 						"text": "Relation"
 						"name": "cbCdoRelation"
+						"enabled": false
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbLOLCdoMinMaxMarriage"
