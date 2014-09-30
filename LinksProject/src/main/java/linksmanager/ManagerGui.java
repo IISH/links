@@ -242,7 +242,6 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoDates = new JCheckBox();
 		cbCdoRefreshData = new JCheckBox();
 		cbCdoRegType = new JCheckBox();
-		cbLOLCdoSequence = new JCheckBox();
 		cbCdoLocations = new JCheckBox();
 		cbCdoRelation = new JCheckBox();
 		cbLOLCdoMinMaxMarriage = new JCheckBox();
@@ -1364,11 +1363,6 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoRegType.setText("Registration Type");
 				cbCdoRegType.setName("cbCdoType");
 
-				//---- cbLOLCdoSequence ----
-				cbLOLCdoSequence.setText("Sequence");
-				cbLOLCdoSequence.setName("cbLOLCdoSequentie");
-				cbLOLCdoSequence.setEnabled(false);
-
 				//---- cbCdoLocations ----
 				cbCdoLocations.setSelected(true);
 				cbCdoLocations.setText("Locations");
@@ -1450,36 +1444,17 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(bnLOLCstartProcess, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-										.addComponent(jLabel51, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 464, Short.MAX_VALUE)
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGap(0, 0, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(cbCdoPrematch, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
 												.addComponent(cbLOLCdoPostTasks, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)))
-										.addGroup(GroupLayout.Alignment.LEADING, pLOLCLayout.createSequentialGroup()
-											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-												.addComponent(cbCdoRefreshData, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoRemarks, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoRelation, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbLOLCdoSequence, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-												.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
-											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbCdoOccupation)
-												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
+												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
+												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE))
 											.addGap(27, 27, 27)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
@@ -1495,11 +1470,30 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))))
-									.addGap(26, 26, 26)))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)))
+										.addGroup(pLOLCLayout.createSequentialGroup()
+											.addGroup(pLOLCLayout.createParallelGroup()
+												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+													.addComponent(cbCdoRemarks, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoRelation, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
+													.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
+												.addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE))
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
+											.addGroup(pLOLCLayout.createParallelGroup()
+												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbLOLCdoPartsToFullDate, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoOccupation, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE))))
+									.addGap(26, 26, 26))
+								.addComponent(jLabel51, GroupLayout.DEFAULT_SIZE, 484, Short.MAX_VALUE))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGap(6, 6, 6)
@@ -1556,13 +1550,13 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 50, Short.MAX_VALUE)
 									.addComponent(jLabel51)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGap(15, 15, 15)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoRefreshData)
 										.addComponent(cbCdoOccupation))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoPreBasicNames)
 										.addComponent(cbCdoDates))
@@ -1582,9 +1576,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addComponent(cbCdoStatusSex)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoRegType)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbLOLCdoSequence)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGap(31, 31, 31)
 									.addComponent(cbCdoRelation)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbLOLCdoPostTasks)
@@ -1864,6 +1856,7 @@ public class ManagerGui extends javax.swing.JFrame
         }
 
         // Sequence
+        /*
         String doSequence = properties.getProperty( "doSequence" );
         if( doSequence != null ) {
             if (doSequence.equals("true")) {
@@ -1872,6 +1865,7 @@ public class ManagerGui extends javax.swing.JFrame
                 cbLOLCdoSequence.setSelected(false);
             }
         }
+        */
 
         // Relation
         String doRelation = properties.getProperty( "doRelation" );
@@ -2255,7 +2249,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoRegType.isSelected()) { dos.setDoRegType(true); }
 
-        if (cbLOLCdoSequence.isSelected()) { dos.setDoSequence(true); }
+        //if (cbLOLCdoSequence.isSelected()) { dos.setDoSequence(true); }
 
         if (cbLOLCdoPartsToFullDate.isSelected()) { dos.setDoPartsToFullDate(true); }
 
@@ -2393,7 +2387,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "26-Sep-2014 16:46";
+            String timestamp1 = "30-Sep-2014 14:08";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2546,7 +2540,6 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoDates;
 	private JCheckBox cbCdoRefreshData;
 	private JCheckBox cbCdoRegType;
-	private JCheckBox cbLOLCdoSequence;
 	private JCheckBox cbCdoLocations;
 	private JCheckBox cbCdoRelation;
 	private JCheckBox cbLOLCdoMinMaxMarriage;

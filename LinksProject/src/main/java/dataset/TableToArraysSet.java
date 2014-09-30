@@ -24,7 +24,7 @@ import modulemain.LinksSpecific;
  * FL-13-Aug-2014 Cor: ArrayList<ArrayListNonCase> is a case-insensitive variant of the standard ArrayList
  *                created by Omar.
  * FL-28-Aug-2014 Comment out some unused functions
- * FL-11-Sep-2014 Latest change
+ * FL-30-Sep-2014 Latest change
  */
 public class TableToArraysSet
 {
@@ -514,7 +514,7 @@ public class TableToArraysSet
 
         for (int i = 0; i < columnNew.get(columnNameNew.indexOf("original")).size(); i++) {
             String[] fields = {"original", "standard_code"};
-            String[] values = {LinksSpecific.funcPrepareForMysql(columnNew.get(columnNameNew.indexOf("original")).get(i).toString()), "x"};
+            String[] values = {LinksSpecific.prepareForMysql(columnNew.get(columnNameNew.indexOf("original")).get(i).toString()), "x"};
             this.con_or.insertIntoTable("ref_" + tableName, fields, values);
         }
     } // updateTable

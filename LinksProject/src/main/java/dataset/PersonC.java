@@ -20,18 +20,18 @@ public class PersonC {
      */
     public static String updateQuery( String field, String value , int id){
         return  "UPDATE " + table
-        + " SET " + field + " = '" + LinksSpecific.funcPrepareForMysql(value) + "'"
+        + " SET " + field + " = '" + LinksSpecific.prepareForMysql(value) + "'"
         + " WHERE " + idp + " = " + id;
     }
 
     public static String updateIntQuery( String field, String value , int id){
         return  "UPDATE " + table
-        + " SET " + field + " = " + LinksSpecific.funcPrepareForMysql(value)
+        + " SET " + field + " = " + LinksSpecific.prepareForMysql(value)
         + " WHERE " + idp + " = " + id;
     }
     
     public static String insertTempFamilyname( int id , String value ){
         return  "insert into familyname_t( person_id , familyname ) " +
-        " VALUES( " + id + ", '" + LinksSpecific.funcPrepareForMysql(value) + "' );";
+        " VALUES( " + id + ", '" + LinksSpecific.prepareForMysql(value) + "' );";
     }
 }

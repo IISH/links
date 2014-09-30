@@ -223,7 +223,7 @@ public class VariantLs {
                     }
 
                     // set highest frequency
-                    con.runQuery("UPDATE " + table + "_a SET name_b = '" + LinksSpecific.funcPrepareForMysql(nameB1) + "' WHERE id = " + id);
+                    con.runQuery("UPDATE " + table + "_a SET name_b = '" + LinksSpecific.prepareForMysql(nameB1) + "' WHERE id = " + id);
 
                     break;
 

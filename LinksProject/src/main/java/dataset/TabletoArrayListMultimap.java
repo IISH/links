@@ -21,11 +21,11 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-26-Sep-2014 Latest change
+ * FL-30-Sep-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
-    private boolean debug = false;
+    private boolean debug = true;
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
@@ -46,7 +46,7 @@ public class TabletoArrayListMultimap
     private int numColumns;
     private int numRows;
 
-    int originalColOff;         // offset for "original" column in column name list
+    int keyColOff;              // offset for key column (mostly "original") in column name list
     int standardValOff;         // offset for "standard" value in value list
     int standardCodeValOff;     // offset for "standard_code" value in value list
 
@@ -81,6 +81,10 @@ public class TabletoArrayListMultimap
         this.keyColumn      = keyColumn;
         this.standardColumn = standardColumn;
 
+        if( tableName.equals( "ref_report" ) ) { debug = true; }
+        else { debug = false; }
+
+
         if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " +
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
 
@@ -91,23 +95,11 @@ public class TabletoArrayListMultimap
         valueNames  = new ArrayList();
 
         // invalid values
-        originalColOff     = -1;
+        keyColOff          = -1;
         standardValOff     = -1;
         standardCodeValOff = -1;
 
         /*
-        ref_role:
-        +-----------------+------------------+------+-----+---------+----------------+
-        | Field           | Type             | Null | Key | Default | Extra          |  ct
-        +-----------------+------------------+------+-----+---------+----------------+
-        | id_role         | int(10) unsigned | NO   | PRI | NULL    | auto_increment |  4
-        | original        | varchar(60)      | YES  | MUL | NULL    |                |  12
-        | standard        | varchar(60)      | YES  | MUL | NULL    |                |  12
-        | role_nr         | int(10) unsigned | YES  | MUL | NULL    |                |  4
-        | standard_code   | char(1)          | YES  |     | NULL    |                |  1
-        | standard_source | varchar(20)      | YES  |     | NULL    |                |  12
-        +-----------------+------------------+------+-----+---------+----------------+
-
         Be aware that getColumnType just returns an integer, so you'll need to know what that integer means.
         According to the JDK docs, the integer returned corresponds to generic SQL data types as follows:
               -7    BIT
@@ -131,30 +123,13 @@ public class TabletoArrayListMultimap
               92    TIME
               93    TIMESTAMP
             1111    OTHER
-
-        i: 1, ct: 4, cn: id_role
-        i: 2, ct: 12, cn: original
-        i: 3, ct: 12, cn: standard
-        i: 4, ct: 4, cn: role_nr
-        i: 5, ct: 1, cn: standard_code
-        i: 6, ct: 12, cn: standard_source
-        */
-
-        // check column types
-        /*
-        for( int i = 1; i <= numCols; i++ )     // process each column
-        {
-            int ct = rsmd.getColumnType( i );
-            String cn = rsmd.getColumnName( i );
-            System.out.println( "i: " + i + ", ct: " + ct + ", cn: " + cn );
-        }
         */
 
         String query = "";
         if( check_duplicates ) { query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC"; }
         else { query = "SELECT * FROM `" + tableName + "`"; }
 
-        if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
+        //if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
         ResultSet rs = conn_read.runQueryWithResult( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
@@ -169,8 +144,8 @@ public class TabletoArrayListMultimap
             String columnName = rs_md.getColumnName( c );
             columnNames.add(columnName);
 
-            if( columnName.equals( "original" ) ) {
-                originalColOff = i;
+            if( columnName.equals( keyColumn ) ) {
+                keyColOff = i;
                 skip1 = 1;
             }
             else { valueNames.add( columnName ); }
@@ -180,7 +155,7 @@ public class TabletoArrayListMultimap
         }
 
         if( debug ) {
-            System.out.println( "originalColOff: " + originalColOff );
+            System.out.println( "keyColOff: "      + keyColOff );
             System.out.println( "standardValOff: " + standardValOff );
             System.out.println( "stdCodeValOff:  " + standardCodeValOff );
         }
@@ -191,6 +166,7 @@ public class TabletoArrayListMultimap
         }
         else { store( rs, rs_md ); }
 
+        if( debug ) { tableInfo(); }
         //contentsOld();
 
     } // TabletoArrayListMultiMap
@@ -224,15 +200,6 @@ public class TabletoArrayListMultimap
 
         while( rs.next() )          // process each index value
         {
-            /*
-            int  id_role           = rs.getInt(    1 );
-            String original        = rs.getString( 2 );     // index
-            String standard        = rs.getString( 3 );
-            int role_nr            = rs.getInt(    4 );
-            String standard_code   = rs.getString( 5 );
-            String standard_source = rs.getString( 6 );
-            */
-
             numRows++;
             String key = "";
             String original = "";
@@ -259,7 +226,7 @@ public class TabletoArrayListMultimap
                 String columnName = columnNames.get( i );
 
                 if( columnName.equals( keyColumn ) )
-                //if( originalColOff == i )      // faster than string compare
+                //if( keyColOff == i )      // faster than string compare
                 {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
@@ -327,15 +294,6 @@ public class TabletoArrayListMultimap
 
         while( rs.next() )          // process each index value
         {
-            /*
-            int  id_role           = rs.getInt(    1 );
-            String original        = rs.getString( 2 );     // index
-            String standard        = rs.getString( 3 );
-            int role_nr            = rs.getInt(    4 );
-            String standard_code   = rs.getString( 5 );
-            String standard_source = rs.getString( 6 );
-            */
-
             numRows++;
             String key = "";
             String original = "";
@@ -454,7 +412,7 @@ public class TabletoArrayListMultimap
      */
     public String value( String column, String key )
     {
-        //System.out.println( "value(): key: " + key + ", column: " + column );
+        if( debug ) { System.out.println( "value(): key: " + key + ", column: " + column ); }
         String value = "";
 
         if( oldMap.containsKey( key ) ) {
@@ -463,8 +421,11 @@ public class TabletoArrayListMultimap
 
             for( int i = 0; i < numColumns; i++ ) {
                 String columnName = columnNames.get( i );
-                //System.out.println( column );
-                if( column.equals( columnName ) ) { value = values[ i ]; }
+                if( debug ) { System.out.printf( "%s ", columnName ); }
+                if( column.equals( columnName ) ) {
+                    value = values[ i ];
+                    if( debug ) { System.out.println( column + ", value: " + value ); }
+                }
             }
         }
 
@@ -493,6 +454,15 @@ public class TabletoArrayListMultimap
 
 
     /**
+     *
+     */
+    public Set keySet()
+    {
+        return oldMap.keySet();
+    }
+
+
+    /**
      * return standard code for existing key
      * return "x" for entry of new set
      */
@@ -516,32 +486,15 @@ public class TabletoArrayListMultimap
     /**
      *
      */
-    public void contentsNew()
-    {
-        Set< String > newset = newSet.elementSet();
-        int size = newset.size();
-
-        System.out.println( "\n" + tableName + ": " + size + " new entries:");
-        int num = 0;
-        for( String entry : newSet.elementSet() ) {
-            num++;
-            System.out.printf( "%d %s\n", num, entry );
-        }
-    }
-
-
-    /**
-     *
-     */
     public void contentsOld()
     {
         Set< String > keys = oldMap.keySet();
         int nkeys = keys.size();
 
         System.out.println( "Contents of " + tableName + ", standard: " + standardColumn + " [entries: " + nkeys + "]:" );
-        System.out.printf("  # original: ");
+        System.out.printf("# %s: ", keyColumn );
         for( String col : columnNames ) {
-            if( !col.equals( "original" ) ) { System.out.printf( "%s ", col ); }
+            if( !col.equals( keyColumn ) ) { System.out.printf( "%s ", col ); }
         }
         System.out.println( "" );
 
@@ -554,6 +507,23 @@ public class TabletoArrayListMultimap
 
             System.out.printf( "%d %s : ", nrow, key );
             System.out.println( "" + Arrays.toString( values ) );
+        }
+    }
+
+
+    /**
+     *
+     */
+    public void contentsNew()
+    {
+        Set< String > newset = newSet.elementSet();
+        int size = newset.size();
+
+        System.out.println( "\n" + tableName + ": " + size + " new entries:");
+        int num = 0;
+        for( String entry : newSet.elementSet() ) {
+            num++;
+            System.out.printf( "%d %s\n", num, entry );
         }
     }
 
@@ -582,7 +552,7 @@ public class TabletoArrayListMultimap
             //System.out.printf( "%d %s\n", num, entry );
             String[] fields = { "original", "standard_code" };
 
-            String[] values = { LinksSpecific.funcPrepareForMysql( entry ), "x" };
+            String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
 
             conn_write.insertIntoTable( tableName, fields, values );
         }

@@ -8,7 +8,7 @@ import modulemain.LinksSpecific;
  */
 public class RegistrationC {
     public static String table = "registration_c";
-    public static String idp = "id_registration";
+    public static String idp   = "id_registration";
 
 
     /**
@@ -20,7 +20,7 @@ public class RegistrationC {
      */
     public static String updateQuery( String field , String value , int id ){
         return  "UPDATE IGNORE " + table
-        + " SET " + field + " = '" + LinksSpecific.funcPrepareForMysql( value ) + "'"
+        + " SET " + field + " = '" + LinksSpecific.prepareForMysql( value ) + "'"
         + " WHERE " + idp + " = " + id;
     }
 

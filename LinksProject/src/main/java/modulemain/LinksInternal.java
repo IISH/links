@@ -542,7 +542,7 @@ public class LinksInternal extends Thread {
 
         // Loop through array
         for (int i = 0; i < serperatedLine.length; i++) {
-            TempSerperatedLine[i] = LinksSpecific.funcPrepareForMysql(
+            TempSerperatedLine[i] = LinksSpecific.prepareForMysql(
                     LinksSpecific.funcCleanSides(serperatedLine[i]));
         }
 

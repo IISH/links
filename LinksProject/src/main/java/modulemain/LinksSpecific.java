@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-05-Sep-2014 Latest change
+ * FL-30-Sep-2014 Latest change
  */
 public class LinksSpecific
 {
@@ -92,7 +92,7 @@ public class LinksSpecific
 //        return line2;
 //    }
 
-    public static String funcPrepareForMysql(String line){
+    public static String prepareForMysql(String line){
         String line1 = line.replaceAll("\\\\", "\\\\\\\\");
         String line2 = line1.replaceAll("'", "\\\\'");
         //String line3 = line2.replaceAll("\"", "\\\\\"");

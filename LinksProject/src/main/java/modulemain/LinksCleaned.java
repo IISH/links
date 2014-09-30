@@ -56,36 +56,36 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-26-Sep-2014 Latest change
+ * FL-29-Sep-2014 Latest change
  */
 public class LinksCleaned extends Thread
 {
     // Table -> ArraysSet
-    private TableToArraysSet ttalPrepiece;          // Names
-    private TableToArraysSet ttalSuffix;            // Names
-    private TableToArraysSet ttalAlias;             // Names
-    //private TableToArraysSet ttalFirstname;         // Names
-    //private TableToArraysSet ttalFamilyname;        // names
-
-    //private TableToArraysSet ttalLocation;
-    //private TableToArraysSet ttalOccupation;
-    private TableToArraysSet ttalRegistration;      // formerly used in standardType()
-    private TableToArraysSet ttalReport;
-    private TableToArraysSet ttalRole;
-    //private TableToArraysSet ttalStatusSex;
+    //private TableToArraysSet ttalPrepiece;            // Names
+    //private TableToArraysSet ttalSuffix;              // Names
+    //private TableToArraysSet ttalAlias;               // Names
+    //private TableToArraysSet ttalFirstname;           // Names
+    //private TableToArraysSet ttalFamilyname;          // names
+    //private TableToArraysSet ttalLocation;            // Location
+    //private TableToArraysSet ttalOccupation;          // Occupation
+    //private TableToArraysSet ttalRegistration;        // formerly used in standardType()
+    private TableToArraysSet ttalReport;                // Report warnings
+    private TableToArraysSet ttalRole;                  // Role
+    //private TableToArraysSet ttalStatusSex;           // Civilstatus & Gender
 
     // Table -> ArrayListMultiMap
-    //private TabletoArrayListMultimap almmPrepiece;      // Names
-    //private TabletoArrayListMultimap almmSuffix;        // Names
-    //private TabletoArrayListMultimap almmAlias;         // Names
+    private TabletoArrayListMultimap almmPrepiece;      // Names
+    private TabletoArrayListMultimap almmSuffix;        // Names
+    private TabletoArrayListMultimap almmAlias;         // Names
     private TabletoArrayListMultimap almmFirstname;     // Names
     private TabletoArrayListMultimap almmFamilyname;    // Names
+    private TabletoArrayListMultimap almmLocation;      // Location
+    private TabletoArrayListMultimap almmOccupation;    // Occupation
+    //private TabletoArrayListMultimap almmReport;        // Report warnings
+    private TabletoArrayListMultimap almmRole;          // Role
+    private TabletoArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
+    private TabletoArrayListMultimap almmSex;           // Civilstatus & Gender
 
-    private TabletoArrayListMultimap almmLocation;
-    private TabletoArrayListMultimap almmOccupation;
-    //private TabletoArrayListMultimap almmRole;
-    private TabletoArrayListMultimap almmCivilstatus;
-    private TabletoArrayListMultimap almmSex;
 
     private JTextField tbLOLClatestOutput;
     private JTextArea  taLOLCoutput;
@@ -303,6 +303,8 @@ public class LinksCleaned extends Thread
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
             ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
+            //almmReport = new TabletoArrayListMultimap( conGeneral, null, "ref_report", "type", null );
+            //almmReport.contentsOld();
 
             for( int sourceId : sourceList )
             {
@@ -608,12 +610,13 @@ public class LinksCleaned extends Thread
         start = System.currentTimeMillis();
         msg = "Loading Prepiece/Suffix/Alias reference tables";
         showMessage( msg + "...", false, true );
-        ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
-        ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
-        ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
-        //almmPrepiece = new TabletoArrayListMultimap( conGeneral, conOr, "ref_prepiece", "original" );
-        //almmSuffix   = new TabletoArrayListMultimap( conGeneral, conOr, "ref_suffix",   "original" );
-        //almmAlias    = new TabletoArrayListMultimap( conGeneral, conOr, "ref_alias",    "original" );
+
+        //ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
+        //ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
+        //ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
+        almmPrepiece = new TabletoArrayListMultimap( conGeneral, conOr, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TabletoArrayListMultimap( conGeneral, conOr, "ref_suffix",   "original", "standard" );
+        almmAlias    = new TabletoArrayListMultimap( conGeneral, conOr, "ref_alias",    "original",  null );
         showTimingMessage( msg, start );
 
         // First name
@@ -723,12 +726,17 @@ public class LinksCleaned extends Thread
         msg = "Updating reference tables: Prepiece/Suffix/Alias...";
         showMessage( msg + "...", false, true );
 
-        ttalPrepiece.updateTable();
-        ttalSuffix.updateTable();
-        ttalAlias.updateTable();
-        //almmPrepiece.updateTable();
-        //almmSuffix.updateTable();
-        //almmAlias.updateTable();
+        //ttalPrepiece.updateTable();
+        //ttalSuffix.updateTable();
+        //ttalAlias.updateTable();
+
+        almmPrepiece.updateTable();
+        almmSuffix.updateTable();
+        almmAlias.updateTable();
+
+        almmAlias.free();
+        almmSuffix.free();
+        almmAlias.free();
 
         showTimingMessage( msg, start );
 
@@ -1243,12 +1251,17 @@ public class LinksCleaned extends Thread
 
     /**
      * @param id
-     * @param souce
+     * @param source
      * @param name
      * @return
      */
-    private String standardAlias( int id, String souce, String name ) throws Exception
+    private String standardAlias( int id, String source, String name )
+    throws Exception
     {
+        //boolean debug = true;
+        //if( debug ) { showMessage( "standardAlias() id: " + id + ", source: " + source + ", name: " + name, false, true ); }
+
+        /*
         dataset.ArrayListNonCase ag = ttalAlias.getArray( "original" );
 
         name = name.toLowerCase();
@@ -1259,7 +1272,7 @@ public class LinksCleaned extends Thread
 
             if( name.contains( " " + keyword + " " ) )
             {
-                addToReportPerson( id, souce, 17, name );      // EC 17
+                addToReportPerson( id, source, 17, name );      // EC 17
 
                 // prepare on braces
                 if( keyword.contains( "\\(" ) || keyword.contains( "\\(" ) ) {
@@ -1268,8 +1281,33 @@ public class LinksCleaned extends Thread
 
                 String[] names = name.toLowerCase().split( keyword, 2 );
 
-                // we must clean the name because of the braces used in aliasses
+                // we must clean the name because of the braces used in aliases
 
+                // Set alias
+                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides(cleanName( names[ 1 ] ) ), id );
+
+                return LinksSpecific.funcCleanSides( cleanName( names[ 0 ] ) );
+            }
+        }
+        */
+
+        name = name.toLowerCase();
+        Set< String > keys = almmAlias.keySet();
+
+        for( String keyword : keys )
+        {
+            if( name.contains( " " + keyword + " " ) )
+            {
+                addToReportPerson( id, source, 17, name );      // EC 17
+
+                // prepare on braces
+                if( keyword.contains( "\\(" ) || keyword.contains( "\\(" ) ) {
+                    keyword = keyword.replaceAll( "\\(", "" ).replaceAll( "\\)", "" );
+                }
+
+                String[] names = name.toLowerCase().split( keyword, 2 );
+
+                // we must clean the name because of the braces used in aliases
                 // Set alias
                 PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides(cleanName( names[ 1 ] ) ), id );
 
@@ -1428,7 +1466,7 @@ public class LinksCleaned extends Thread
                     firstname = cleanFirstName( firstname );
                     firstname = firstname.toLowerCase();
 
-                    // Check name on aliasses
+                    // Check name on aliases
                     String nameNoAlias = standardAlias( id_person, source, firstname );
 
                     // Check on serried spaces; // Split name on spaces
@@ -1533,6 +1571,7 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // Check on suffix
+                                /*
                                 ArrayListNonCase sfxO  = ttalSuffix.getArray( "original" );
                                 ArrayListNonCase sfxSc = ttalSuffix.getArray( "standard_code" );
 
@@ -1547,6 +1586,21 @@ public class LinksCleaned extends Thread
 
                                         // Set suffix
                                         String query = PersonC.updateQuery( "suffix", sfxO.get( j ).toString(), id_person );
+
+                                        conCleaned.runQuery( query );
+                                    }
+                                }
+                                */
+                                Set< String > keys = almmSuffix.keySet();
+                                for( String key : keys )
+                                {
+                                    if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
+                                    {
+                                        addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
+
+                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
+
+                                        String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
 
                                         conCleaned.runQuery( query );
                                     }
@@ -1600,8 +1654,8 @@ public class LinksCleaned extends Thread
                             }
                             else  // no invalid token
                             {
-                                // check if it ends with suffix
                                 // Check on suffix
+                                /*
                                 ArrayListNonCase sfxO  = ttalSuffix.getArray( "original" );
                                 ArrayListNonCase sfxSc = ttalSuffix.getArray( "standard_code" );
 
@@ -1616,6 +1670,21 @@ public class LinksCleaned extends Thread
 
                                         // Set suffix
                                         String query = PersonC.updateQuery( "suffix", sfxO.get( j ).toString(), id_person );
+
+                                        conCleaned.runQuery( query );
+                                    }
+                                }
+                                */
+                                Set< String > keys = almmSuffix.keySet();
+                                for( String key : keys )
+                                {
+                                    if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
+                                    {
+                                        addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
+
+                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
+
+                                        String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
 
                                         conCleaned.runQuery( query );
                                     }
@@ -1733,6 +1802,8 @@ public class LinksCleaned extends Thread
      */
     public void standardFamilyname( String source )
     {
+        boolean debug = false;
+
         int count = 0;
         int count_empty = 0;
         int step = 10000;
@@ -1765,6 +1836,7 @@ public class LinksCleaned extends Thread
                 // Get family name
                 String familyname = rsFamilyname.getString( "familyname" );
                 int id_person = rsFamilyname.getInt( "id_person" );
+                if( debug ) { showMessage("count: " + count + ", id_person: " + id_person + ", familyname: " + familyname, false, true); }
 
                 // Check is Familyname is not empty or null
                 if( familyname != null && !familyname.isEmpty() )
@@ -1779,6 +1851,7 @@ public class LinksCleaned extends Thread
                         // get standard_code
                         //String standard_code = ttalFamilyname.getStandardCodeByOriginal( familyname );
                         String standard_code = almmFamilyname.code(familyname);
+                        if( debug ) { showMessage( "code: " + standard_code, false, true ); }
 
                         // Check the standard code
                         if( standard_code.equals( SC_Y ) )
@@ -1809,6 +1882,7 @@ public class LinksCleaned extends Thread
                     }
                     else        // Familyname does not exists in ref_familyname
                     {
+                        if( debug ) { showMessage( "not in ref_familyname: " + familyname, false, true ); }
                         addToReportPerson( id_person, source, 1002, familyname );  // EC 1002
 
                         String nameNoSerriedSpaces = familyname.replaceAll( " [ ]+", " " );
@@ -1833,10 +1907,11 @@ public class LinksCleaned extends Thread
                             addToReportPerson( id_person, source, 1008, familyname );  // EC 1008
                         }
 
-                        // Check on Aliasses
+                        // Check on aliases
                         String nameNoAlias = standardAlias( id_person, source, nameNoPrePiece );
 
                         // Check on suffix
+                        /*
                         ArrayListNonCase sfxO = ttalSuffix.getArray( "original" );
 
                         for( int i = 0; i < sfxO.size(); i++ )
@@ -1848,6 +1923,20 @@ public class LinksCleaned extends Thread
 
                                 // Set alias
                                 PersonC.updateQuery( "suffix", sfxO.get( i ).toString(), id_person );
+                            }
+                        }
+                        */
+                        if( debug ) { showMessage( "suffix keySet()", false, true ); }
+                        Set< String > keys = almmSuffix.keySet();
+                        for( String key : keys )
+                        {
+                            if( debug ) { showMessage( "suffix key: " + key, false, true ); }
+                            if( nameNoAlias.endsWith( " " + key ) ) {
+                                addToReportPerson( id_person, source, 1006, nameNoAlias );      // EC 1006
+
+                                nameNoAlias = nameNoAlias.replaceAll( " " + key, "" );
+
+                                PersonC.updateQuery( "suffix", key, id_person );                // Set alias
                             }
                         }
 
@@ -2347,12 +2436,18 @@ public class LinksCleaned extends Thread
                 for( String part : prefixes )
                 {
                     // Does Prefix exist in ref table
-                    if( ttalPrepiece.originalExists( part ) )
+                    //if( ttalPrepiece.originalExists( part ) )
+                    if( almmPrepiece.contains( part ) )
                     {
-                        String standard_code = ttalPrepiece.getStandardCodeByOriginal( part );
-                        String prefix        = ttalPrepiece.getColumnByOriginal( "prefix", part );
-                        String title_noble   = ttalPrepiece.getColumnByOriginal( "title_noble", part );
-                        String title_other   = ttalPrepiece.getColumnByOriginal( "title_other", part );
+                        //String standard_code = ttalPrepiece.getStandardCodeByOriginal( part );
+                        //String prefix        = ttalPrepiece.getColumnByOriginal( "prefix", part );
+                        //String title_noble   = ttalPrepiece.getColumnByOriginal( "title_noble", part );
+                        //String title_other   = ttalPrepiece.getColumnByOriginal( "title_other", part );
+
+                        String standard_code = almmPrepiece.code( part );
+                        String prefix        = almmPrepiece.value( "prefix",      part );
+                        String title_noble   = almmPrepiece.value( "title_noble", part );
+                        String title_other   = almmPrepiece.value( "title_other", part );
 
                         // standard code x
                         if( standard_code.equals( SC_X ) )
@@ -2399,9 +2494,10 @@ public class LinksCleaned extends Thread
                     {
                         addToReportPerson(id_person, source, 81, part);           // EC 81
 
-                        ttalPrepiece.addOriginal(part);     // Add Prefix
+                        //ttalPrepiece.addOriginal( part );     // Add Prefix
+                        almmPrepiece.add( part );               // Add Prefix
 
-                        listPF += part + " ";               // Add to list
+                        listPF += part + " ";                   // Add to list
                     }
                 }
 
@@ -2981,9 +3077,11 @@ public class LinksCleaned extends Thread
                 suffix = cleanName( suffix );
 
                 // Check occurrence in ref table
-                if( ttalSuffix.originalExists( suffix ) )
+                //if( ttalSuffix.originalExists( suffix ) )
+                if( almmSuffix.contains( suffix ) )
                 {
-                    String standard_code = ttalSuffix.getStandardCodeByOriginal( suffix );
+                    //String standard_code = ttalSuffix.getStandardCodeByOriginal( suffix );
+                    String standard_code = almmSuffix.code( suffix );
 
                     if( standard_code.equals( SC_X ) )
                     {
@@ -3016,7 +3114,8 @@ public class LinksCleaned extends Thread
                 {
                     addToReportPerson( id_person, source, 71, suffix);        // EC 71
 
-                    ttalSuffix.addOriginal(suffix);
+                    //ttalSuffix.addOriginal( suffix );
+                    almmSuffix.add( suffix );
 
                     String query = PersonC.updateQuery( "suffix", suffix, id_person );
                     conCleaned.runQuery( query );
@@ -3515,7 +3614,7 @@ public class LinksCleaned extends Thread
                                     if ((leeftijd > 0) && (leeftijd < 115)) {
                                         insertValues.put(veld, leeftijd);
                                     } else {
-                                        // TODO: MELDING, ongeldige leeftijd
+                                        // TODO: message invalid age
 
                                         // Leeg de dataset
                                         insertValues.clear();
@@ -3544,7 +3643,7 @@ public class LinksCleaned extends Thread
                                     insertValues.put(veld, intJaartal);
                                 } else {
 
-                                    // TODO: MELDING ongeldig jaartal
+                                    // TODO: messahe invaled year
                                     insertValues.clear();
 
                                 }
@@ -3992,8 +4091,16 @@ public class LinksCleaned extends Thread
     private void addToReportRegistration( int id, String id_source, int errorCode, String value )
     throws Exception
     {
+        showMessage( "addToReportRegistration()", false, true );
+        String errorCodeStr = Integer.toString( errorCode );
+
         String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
         String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
+
+        //String cla = almmReport.value( "class",   errorCodeStr );
+        //String con = almmReport.value( "content", errorCodeStr );
+
+        System.out.println( "cla: " + cla + ", con: " + con );
 
         // WORKAROUND
         // replace error chars
@@ -4002,16 +4109,38 @@ public class LinksCleaned extends Thread
         value = value.replaceAll( "\\*", "" );
 
         con = con.replaceAll( "<.*>", value );
+        con = LinksSpecific.prepareForMysql( con );
 
-        con = LinksSpecific.funcPrepareForMysql( con );
-        //showMessage( con, false, true );
+        // get registration values from links_original.registration_o
+        String location = "";
+        String reg_type = "";
+        String date = "";
+        String sequence  = "";
+        String gui = "";
 
-        String query = ""
-            + " insert into links_logs.`" + logTableName + "`( reg_key , id_source , report_class , report_type , content , date_time )"
-            + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
-        showMessage( query, false, true );
+        String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+            + " FROM registration_o WHERE id_registration = " + id;
 
-        conLog.runQuery( query );
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            rs.next();
+            location = rs.getString( "registration_location" );
+            reg_type = rs.getString( "registration_type" );
+            date     = rs.getString( "registration_date" );
+            sequence = rs.getString( "registration_seq" );
+            gui      = rs.getString( "id_persist_registration" );
+        }
+        catch( Exception ex ) { showMessage(ex.getMessage(), false, true); }
+
+        // save to links_logs
+        String insertQuery = ""
+            + " INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( reg_key , id_source , report_class , report_type , content , date_time ,"
+            + " registration_location , registration_type , registration_date , registration_seq , gui )"
+            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
+            + " '" + location + "' , '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + gui + "' ) ; ";
+
+        conLog.runQuery( insertQuery );
     } // addToReportRegistration
 
 
@@ -4025,8 +4154,15 @@ public class LinksCleaned extends Thread
     private void addToReportPerson( int id, String id_source, int errorCode, String value )
     throws Exception
     {
+        showMessage( "addToReportPerson()", false, true );
+        String errorCodeStr = Integer.toString( errorCode );
+
         String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
         String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
+        //String cla = almmReport.value( "class",   errorCodeStr );
+        //String con = almmReport.value( "content", errorCodeStr );
+
+        System.out.println( "cla: " + cla + ", con: " + con );
 
         // WORKAROUND
         // replace error chars
@@ -4034,16 +4170,51 @@ public class LinksCleaned extends Thread
         value = value.replaceAll( "\\$", "" );
         value = value.replaceAll( "\\*", "" );
 
-
         con = con.replaceAll( "<.*>", value );
+        con = LinksSpecific.prepareForMysql( con );
 
-        con = LinksSpecific.funcPrepareForMysql( con );
+        // get id_registration from links_original.person_o
+        String id_registration = "";
+        String selectQuery1 = "SELECT id_registration FROM person_o WHERE id_person = " + id;
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery1 );
+            rs.next();
+            id_registration = rs.getString( "id_registration" );
+        }
+        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
 
-        String query = ""
-            + " insert into links_logs.`" + logTableName + "`( pers_key , id_source , report_class , report_type , content , date_time )"
-            + " values( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ) ; ";
+        // get registration values from links_original.registration_o
+        String location = "";
+        String reg_type = "";
+        String date = "";
+        String sequence  = "";
+        String gui = "";
 
-        conLog.runQuery( query );
+        if( !id_registration.isEmpty() ) {
+            String selectQuery2 = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+                    + " FROM registration_o WHERE id_registration = " + id_registration;
+
+            try {
+                ResultSet rs = conOriginal.runQueryWithResult( selectQuery2 );
+                rs.next();
+                location = rs.getString( "registration_location" );
+                reg_type = rs.getString( "registration_type" );
+                date     = rs.getString( "registration_date" );
+                sequence = rs.getString( "registration_seq" );
+                gui      = rs.getString( "id_persist_registration" );
+            }
+            catch( Exception ex ) { showMessage(ex.getMessage(), false, true); }
+        }
+
+        // save to links_logs
+        String insertQuery = ""
+            + " INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
+            + " location , reg_type , date , sequence , reg_key , gui )"
+            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
+            + " '" + location + "' , '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + id_registration + "' , '" + gui + "' ) ; ";
+
+        conLog.runQuery( insertQuery );
     } // addToReportPerson
 
 
@@ -4179,21 +4350,21 @@ public class LinksCleaned extends Thread
 
         String query = ""
             + " CREATE  TABLE `links_logs`.`" + logTableName + "` ("
-            + " `id_log` INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " `id_source` INT UNSIGNED NULL ,"
-            + " `archive` VARCHAR(30) NULL ,"
-            + " `location` VARCHAR(50) NULL ,"
-            + " `reg_type` VARCHAR(30) NULL ,"
-            + " `date` VARCHAR(20) NULL ,"
-            + " `sequence` VARCHAR(3) NULL ,"
-            + " `role` VARCHAR(30) NULL ,"
-            + " `table` VARCHAR(30) NULL ,"
-            + " `reg_key` INT UNSIGNED NULL ,"
-            + " `pers_key` INT UNSIGNED NULL ,"
+            + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " `id_source`    INT UNSIGNED NULL ,"
+            + " `archive`      VARCHAR(30) NULL ,"
+            + " `location`     VARCHAR(50) NULL ,"
+            + " `reg_type`     VARCHAR(30) NULL ,"
+            + " `date`         VARCHAR(20) NULL ,"
+            + " `sequence`     VARCHAR(3) NULL ,"
+            + " `role`         VARCHAR(30) NULL ,"
+            + " `gui`          VARCHAR(80) NULL ,"
+            + " `reg_key`      INT UNSIGNED NULL ,"
+            + " `pers_key`     INT UNSIGNED NULL ,"
             + " `report_class` VARCHAR(2) NULL ,"
-            + " `report_type` INT UNSIGNED NULL ,"
-            + " `content` VARCHAR(200) NULL ,"
-            + " `date_time` DATETIME NOT NULL ,"
+            + " `report_type`  INT UNSIGNED NULL ,"
+            + " `content`      VARCHAR(200) NULL ,"
+            + " `date_time`    DATETIME NOT NULL ,"
             + " PRIMARY KEY (`id_log`) );";
 
         conLog.runQuery( query );
@@ -4225,8 +4396,10 @@ public class LinksCleaned extends Thread
      * @return
      * @throws Exception
      */
-    private String namePrepiece( String name, int id ) throws Exception {
-
+    private String namePrepiece( String name, int id ) throws Exception
+    {
+        //boolean debug = true;
+        //if( debug ) { showMessage( "namePrepiece() name: " + name + ", id: " + id, false, true ); }
 
         if( !name.contains( " " ) ) {
             return name;            // if no spaces return name
@@ -4239,12 +4412,12 @@ public class LinksCleaned extends Thread
         String list_PF = "";
 
         // Split name
-        Queue<String> names = new LinkedList();
+        Queue< String > names = new LinkedList();
 
         String[] namesArray = name.split( " " );
 
-        for (int i = 0; i < namesArray.length; i++) {
-            names.add(namesArray[i]);
+        for( int i = 0; i < namesArray.length; i++ ) {
+            names.add( namesArray[ i ] );
         }
 
         // Check pieces
@@ -4253,9 +4426,11 @@ public class LinksCleaned extends Thread
             // Get part
             String part = names.poll();
 
-            if( ttalPrepiece.originalExists( part ) && ttalPrepiece.getStandardCodeByOriginal( part ).equalsIgnoreCase( SC_Y ) )
+            //if( ttalPrepiece.originalExists( part ) && ttalPrepiece.getStandardCodeByOriginal( part ).equalsIgnoreCase( SC_Y ) )
+            if( almmPrepiece.contains( part ) && almmPrepiece.code( part ).equalsIgnoreCase( SC_Y ) )
             {
                 // Add to person
+                /*
                 if( ttalPrepiece.getColumnByOriginal( "title_noble", part ) != null && !ttalPrepiece.getColumnByOriginal( "title_noble", part ).isEmpty() )
                 {
                     list_TN += ttalPrepiece.getColumnByOriginal( "title_noble", part ) + " ";
@@ -4268,6 +4443,20 @@ public class LinksCleaned extends Thread
                 {
                     list_PF += ttalPrepiece.getColumnByOriginal( "prefix", part ) + " ";
                 }
+                */
+                if( almmPrepiece.value( "title_noble", part ) != null && !almmPrepiece.value( "title_noble", part ).isEmpty() )
+                {
+                    list_TN += almmPrepiece.value( "title_noble", part ) + " ";
+                }
+                else if( almmPrepiece.value( "title_other", part ) != null && !almmPrepiece.value( "title_other", part ).isEmpty() )
+                {
+                    list_TO += almmPrepiece.value( "title_other", part ) + " ";
+                }
+                else if( almmPrepiece.value("prefix", part) != null && !almmPrepiece.value( "prefix", part ).isEmpty() )
+                {
+                    list_PF += almmPrepiece.value( "prefix", part) + " ";
+                }
+
             }
             else    // return name
             {
@@ -4603,86 +4792,64 @@ public class LinksCleaned extends Thread
     // ---< Previous Links basis functions, They are now part of links cleaned >---
 
     /**
-     * @param sourceNo
+     * @param source
      * @throws Exception
      */
-    /*
-    public void funcRelation(String sourceNo) throws Exception {
 
+    public void relation( String source ) throws Exception
+    {
         int counter = 0;
         int step = 1000;
         int stepstate = step;
 
         try {
 
-            String startQuery;
-            String idSource;
+            String selectQuery = "SELECT id_registration , id_person, role, sex FROM person_c WHERE id_source = " + source + " ORDER BY id_registration";
 
-            // source is given in GUI
-            if (sourceNo.isEmpty()) {
-
-                startQuery = "SELECT id_registration , id_person, role, sex FROM person_c " + sourceFilter + " ORDER BY id_registration";
-
-                idSource = this.sourceId + "";
-
-            } // per source
-            else {
-
-                startQuery = "SELECT id_registration , id_person, role, sex FROM person_c WHERE id_source = " + sourceNo + " ORDER BY id_registration";
-
-                idSource = sourceNo;
-            }
-
-            // Run ref query
-            ResultSet rsactRoleRef = conGeneral.runQueryWithResult("SELECT * FROM ref_relation");
-
+            ResultSet rsactRoleRef = conGeneral.runQueryWithResult( "SELECT * FROM ref_relation" );
 
             // create searchable list
             ActRoleSet ars = new ActRoleSet();
-            ars.addRessultSetToList(rsactRoleRef);
+            ars.addRessultSetToList( rsactRoleRef );
 
             // Run person query
-            ResultSet rsPersons = conCleaned.runQueryWithResult(startQuery);
+            ResultSet rsPersons = conCleaned.runQueryWithResult( selectQuery );
 
             int currentId = -1;
 
-            ArrayList<RelationSet> rsList = new ArrayList<RelationSet>();
+            ArrayList< RelationSet > rsList = new ArrayList< RelationSet >();
 
-            while (rsPersons.next()) {
-
+            while( rsPersons.next() )
+            {
                 counter++;
 
-                //if (counter == 66563) {
-                //    int ie = 0;
-                //}
-
-
-                if (counter == stepstate) {
-                    showMessage(counter + "", true, true);
+                if( counter == stepstate ) {
+                    showMessage( counter + "", true, true );
                     stepstate += step;
                 }
 
-                int id_registration = rsPersons.getInt("id_registration");
-                int id_person = rsPersons.getInt("id_person");
-                String role = rsPersons.getString("role");
-                String sex = rsPersons.getString("sex");
+                int id_registration = rsPersons.getInt( "id_registration" );
+                int id_person       = rsPersons.getInt( "id_person" );
+                String role         = rsPersons.getString( "role" );
+                String sex          = rsPersons.getString( "sex" );
 
-                // It is the same id
-                if (currentId == id_registration) {
+                if( currentId == id_registration )                 // It is the same id
+                {
                     RelationSet rs = new RelationSet();
 
                     // add
-                    rs.setIdPerson(id_person);
-                    rs.setRole(role);
-                    rs.setSex(sex);
+                    rs.setIdPerson( id_person );
+                    rs.setRole( role );
+                    rs.setSex( sex );
 
-                    rsList.add(rs);
-                } // new id, process old list
-                else {
+                    rsList.add( rs );
+                }
+                else     // new id, process old list
+                {
                     // we must save old list
-                    ArrayList<RelationSet> rsWorkingList = new ArrayList<RelationSet>(rsList);
+                    ArrayList< RelationSet > rsWorkingList = new ArrayList< RelationSet >( rsList );
 
-                    Collections.copy(rsWorkingList, rsList);
+                    Collections.copy( rsWorkingList, rsList );
 
                     // clear old list
                     rsList.clear();
@@ -4691,47 +4858,42 @@ public class LinksCleaned extends Thread
                     RelationSet rs = new RelationSet();
 
                     // add
-                    rs.setIdPerson(id_person);
-                    rs.setRole(role);
-                    rs.setSex(sex);
+                    rs.setIdPerson( id_person );
+                    rs.setRole( role );
+                    rs.setSex( sex );
 
-                    rsList.add(rs);
+                    rsList.add( rs );
 
                     // Proces the new list
                     // Only if id is not -1
                     // otherwise is is the first time
 
-                    if (currentId > -1) {
-                        // walk through list
-                        for (int i = 0; i < rsWorkingList.size(); i++) {
-
-                            // second walk
-                            for (int j = 0; j < rsWorkingList.size(); j++) {
-
-                                // check is it is itselfs
-                                if (i != j) {
-
+                    if( currentId > -1 )
+                    {
+                        for( int i = 0; i < rsWorkingList.size(); i++ )         // walk through list
+                        {
+                            for (int j = 0; j < rsWorkingList.size(); j++)      // second walk
+                            {
+                                if (i != j)
+                                {
                                     int id_person1 = rsWorkingList.get(i).getIdPerson();
                                     int id_person2 = rsWorkingList.get(j).getIdPerson();
-                                    String role1 = rsWorkingList.get(i).getRole();
-                                    String role2 = rsWorkingList.get(j).getRole();
-                                    String sex1 = rsWorkingList.get(i).getSex();
-                                    String sex2 = rsWorkingList.get(j).getSex();
+                                    String role1   = rsWorkingList.get(i).getRole();
+                                    String role2   = rsWorkingList.get(j).getRole();
+                                    String sex1    = rsWorkingList.get(i).getSex();
+                                    String sex2    = rsWorkingList.get(j).getSex();
 
-                                    // Get relation
-                                    String relation = ars.getRelatie(role1, role2, sex1, sex2);
+                                    String relation = ars.getRelatie( role1, role2, sex1, sex2 );     // Get relation
 
                                     // check is relation is fileld
-                                    if (relation.isEmpty()) {
-
-                                        // EC 101
-                                        addToReportPerson(id_person1, idSource, 101, id_person2 + "");
-                                    } else {
-
+                                    if( relation.isEmpty() ) {
+                                        addToReportPerson( id_person1, source, 101, id_person2 + "" );    // EC 101
+                                    }
+                                    else {
                                         // add to relation_c
                                         String query = ""
-                                                + "INSERT INTO relation_c( id_person1 , id_person2 , relation ) "
-                                                + "values( '" + id_person1 + "' , '" + id_person2 + "' , '" + relation + "' )";
+                                            + "INSERT INTO relation_c( id_person1 , id_person2 , relation ) "
+                                            + "values( '" + id_person1 + "' , '" + id_person2 + "' , '" + relation + "' )";
 
                                         //conCleaned.runQuery(query);
                                     }
@@ -4748,11 +4910,11 @@ public class LinksCleaned extends Thread
                     }
                 }
             }
-        } catch (Exception e) {
-            showMessage(counter + " Exception while running Relation: " + e.getMessage(), false, true);
+        } catch( Exception ex ) {
+            showMessage( counter + " Exception while running Relation: " + ex.getMessage(), false, true );
         }
-    } // funcRelation
-    */
+    } // relation
+
 
     /**
      * @param id_person
@@ -5546,46 +5708,8 @@ public class LinksCleaned extends Thread
 
     private void postTasks( String source ) throws Exception
     {
-        /*
-        String[] queries =
-        {
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2;",
-            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3;",
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4;",
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5;",
-            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6;",
-            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7;",
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8;",
-            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9;",
-
-            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v';",
-            "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-            "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-            "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
-            "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
-            "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-            "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11;",
-            "DROP TABLE links_match.male;",
-            "DROP TABLE links_match.female;",
-            "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%';",
-            "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);",
-            "UPDATE IGNORE links_cleaned.person_c "
-                + "SET "
-                + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
-                + "WHERE "
-                + "birth_date_valid = 1 "
-                + "AND "
-                + "mar_date_valid = 1 "
-                + "AND "
-                + "age_year is null "
-                + "AND "
-                + "( role = 7 OR role = 4 ) "
-                + "AND mar_date NOT LIKE '0-%' "
-                + "AND mar_date NOT LIKE '%-0-%' "
-                + "AND birth_date NOT LIKE '0-%' "
-                + "AND birth_date NOT LIKE '%-0-%' "
-        };
-        */
+        // Notice:
+        // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
         String[] queries =
         {
@@ -5601,13 +5725,13 @@ public class LinksCleaned extends Thread
             "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v' AND id_source = " + source,
 
 
-            "CREATE  TABLE links_match.male ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_match.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "CREATE  TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "INSERT INTO links_match.male(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+            "INSERT INTO links_match.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
 
-            "INSERT INTO links_match.female(id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+            "INSERT INTO links_match.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
 
             "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
                 + " AND id_source = " + source,
@@ -5617,30 +5741,27 @@ public class LinksCleaned extends Thread
 
             "DROP TABLE links_match.male;",
 
-            "DROP TABLE links_match.female;",
+            "DROP TABLE links_match.female;"
+        };
 
+        // suppressed queries
+        /*
+            // superfluous: must have been done in doNames
+            //"UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname) WHERE id_source = " + source,
 
-            "UPDATE links_cleaned.person_c SET firstname = '' , stillborn = 1 WHERE firstname like '%ood%ebore%' AND id_source = " + source,
-
-            "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname) WHERE id_source = " + source,
 
             "UPDATE IGNORE links_cleaned.person_c "
-                + "SET "
-                + "age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
-                + "WHERE "
-                + "birth_date_valid = 1 "
-                + "AND "
-                + "mar_date_valid = 1 "
-                + "AND "
-                + "age_year is null "
-                + "AND "
-                + "( role = 7 OR role = 4 ) "
-                + "AND mar_date NOT LIKE '0-%' "
-                + "AND mar_date NOT LIKE '%-0-%' "
+                + "SET age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
+                + "WHERE birth_date_valid = 1 "
+                + "AND mar_date_valid = 1 "
+                + "AND age_year is null "
+                + "AND ( role = 7 OR role = 4 ) "
+                + "AND mar_date   NOT LIKE '0-%' "
+                + "AND mar_date   NOT LIKE '%-0-%' "
                 + "AND birth_date NOT LIKE '0-%' "
                 + "AND birth_date NOT LIKE '%-0-%' "
                 + "AND id_source = " + source
-        };
+        */
 
         // Execute queries
         for( String s : queries ) {
