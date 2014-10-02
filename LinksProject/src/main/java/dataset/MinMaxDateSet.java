@@ -26,6 +26,7 @@ public final class MinMaxDateSet {
     private int     registrationMaintype;
     private int     registrationMainRole;
     private String  deathDate;
+    private String  death;
 
     
     public String getDate() {
@@ -36,6 +37,7 @@ public final class MinMaxDateSet {
         this.date = date;
     }
 
+
     public int getPersonAgeDay() {
         return personAgeDay;
     }
@@ -43,6 +45,7 @@ public final class MinMaxDateSet {
     public void setPersonAgeDay(int personAgeDay) {
         this.personAgeDay = personAgeDay;
     }
+
 
     public int getPersonAgeMonth() {
         return personAgeMonth;
@@ -52,6 +55,7 @@ public final class MinMaxDateSet {
         this.personAgeMonth = personAgeMonth;
     }
 
+
     public int getPersonAgeWeek() {
         return personAgeWeek;
     }
@@ -59,6 +63,7 @@ public final class MinMaxDateSet {
     public void setPersonAgeWeek(int personAgeWeek) {
         this.personAgeWeek = personAgeWeek;
     }
+
 
     public int getPersonAgeYear() {
         return personAgeYear;
@@ -68,6 +73,7 @@ public final class MinMaxDateSet {
         this.personAgeYear = personAgeYear;
     }
 
+
     public int getPersonBirthYear() {
         return personBirthYear;
     }
@@ -75,6 +81,7 @@ public final class MinMaxDateSet {
     public void setPersonBirthYear(int personBirthYear) {
         this.personBirthYear = personBirthYear;
     }
+
 
     public int getPersonId() {
         return personId;
@@ -84,6 +91,7 @@ public final class MinMaxDateSet {
         this.personId = personId;
     }
 
+
     public int getPersonRole() {
         return personRole;
     }
@@ -91,6 +99,7 @@ public final class MinMaxDateSet {
     public void setPersonRole(int personRole) {
         this.personRole = personRole;
     }
+
 
     public String getRegistrationDate() {
         return registrationDate;
@@ -100,6 +109,7 @@ public final class MinMaxDateSet {
         this.registrationDate = registrationDate;
     }
 
+
     public int getRegistrationId() {
         return registrationId;
     }
@@ -107,6 +117,7 @@ public final class MinMaxDateSet {
     public void setRegistrationId(int registrationId) {
         this.registrationId = registrationId;
     }
+
 
     public int getRegistrationMainRole() {
         return registrationMainRole;
@@ -116,6 +127,7 @@ public final class MinMaxDateSet {
         this.registrationMainRole = registrationMainRole;
     }
 
+
     public int getRegistrationMainType() {
         return registrationMaintype;
     }
@@ -123,6 +135,7 @@ public final class MinMaxDateSet {
     public void setRegistrationMaintype(int registrationMaintype) {
         this.registrationMaintype = registrationMaintype;
     }
+
 
     public int getSourceId() {
         return sourceId;
@@ -132,6 +145,7 @@ public final class MinMaxDateSet {
         this.sourceId = sourceId;
     }
 
+
     public String getTypeDate() {
         return typeDate;
     }
@@ -140,11 +154,18 @@ public final class MinMaxDateSet {
         this.typeDate = typeDate;
     }
 
+
     public String getDeathDate() {
         return deathDate;
     }
 
-    public void setDeathDate(String deathDate) {
+    public void setDeathDate( String deathDate) {
         this.deathDate = deathDate;
     }
+
+
+    public String getDeath() { return death; }
+
+    public void setDeath( String death ) { this.death = death; }
+
 }

@@ -25,7 +25,7 @@ import modulemain.LinksSpecific;
  */
 public class TabletoArrayListMultimap
 {
-    private boolean debug = true;
+    private boolean debug = false;
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
@@ -80,10 +80,6 @@ public class TabletoArrayListMultimap
         this.tableName      = tableName;
         this.keyColumn      = keyColumn;
         this.standardColumn = standardColumn;
-
-        if( tableName.equals( "ref_report" ) ) { debug = true; }
-        else { debug = false; }
-
 
         if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " +
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
@@ -142,7 +138,7 @@ public class TabletoArrayListMultimap
             int c = i + 1;                          // MySQL starts at 1
 
             String columnName = rs_md.getColumnName( c );
-            columnNames.add(columnName);
+            columnNames.add( columnName );
 
             if( columnName.equals( keyColumn ) ) {
                 keyColOff = i;
@@ -178,12 +174,15 @@ public class TabletoArrayListMultimap
     public void tableInfo() {
         System.out.printf( "\ntable name: %s, key: %s\n", tableName, keyColumn );
 
-        System.out.printf( "value names:\n" );
+        System.out.printf( "column names:\n" );
         for ( String columnName : columnNames ) { System.out.printf( "%s ", columnName ); }
         System.out.println( "\n" );
+        System.out.printf( "value names (without the key column):\n" );
+        for ( String valueName : valueNames ) { System.out.printf( "%s ", valueName ); }
+        System.out.println( "\n" );
 
-        System.out.printf( "standard offset: %s, standard_code offset: %s\n", standardValOff, standardCodeValOff );
-    }
+        System.out.printf( "standard value offset: %s, standard_code value offset: %s\n", standardValOff, standardCodeValOff );
+    } // tableInfo
 
 
     /**
@@ -279,7 +278,7 @@ public class TabletoArrayListMultimap
         if( check_duplicates ) { System.out.printf( "%d duplicate originals\n\n", ndups ); }
 
         return ndups;
-    }
+    } // store_check
 
 
     /**
@@ -333,7 +332,7 @@ public class TabletoArrayListMultimap
 
             values = null;
         }
-    }
+    } // store
 
 
     /**
@@ -349,7 +348,7 @@ public class TabletoArrayListMultimap
 
         Set< String > keys = oldMap.keySet();
         return keys.size();
-    }
+    } // numkeys
 
 
     /**
@@ -386,7 +385,7 @@ public class TabletoArrayListMultimap
         }
 
         return tf;
-    }
+    } // contains
 
 
     /**
@@ -404,7 +403,7 @@ public class TabletoArrayListMultimap
         }
         //System.out.println( "standard: " + standard );
         return standard;
-    }
+    } // standard
 
 
     /**
@@ -419,18 +418,19 @@ public class TabletoArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
-            for( int i = 0; i < numColumns; i++ ) {
-                String columnName = columnNames.get( i );
+            for( int i = 0; i < valueNames.size(); i++ ) {
+                String columnName = valueNames.get( i );
                 if( debug ) { System.out.printf( "%s ", columnName ); }
                 if( column.equals( columnName ) ) {
                     value = values[ i ];
                     if( debug ) { System.out.println( column + ", value: " + value ); }
+                    break;
                 }
             }
         }
 
         return value;
-    }
+    } // value
 
 
     /**
@@ -450,7 +450,7 @@ public class TabletoArrayListMultimap
         }
 
         return location_no;
-    }
+    } // locationno
 
 
     /**
@@ -480,7 +480,7 @@ public class TabletoArrayListMultimap
             sc = "x";
         }
         return sc;
-    }
+    } // code
 
 
     /**
@@ -508,7 +508,7 @@ public class TabletoArrayListMultimap
             System.out.printf( "%d %s : ", nrow, key );
             System.out.println( "" + Arrays.toString( values ) );
         }
-    }
+    } // contentsOld
 
 
     /**
@@ -525,7 +525,7 @@ public class TabletoArrayListMultimap
             num++;
             System.out.printf( "%d %s\n", num, entry );
         }
-    }
+    } // contentsNew
 
 
     /**
@@ -535,7 +535,7 @@ public class TabletoArrayListMultimap
     {
         newSet.add( entry );
         //System.out.println( "set size: " + newSet.size() );
-    }
+    } // add
 
 
     /**
@@ -556,7 +556,7 @@ public class TabletoArrayListMultimap
 
             conn_write.insertIntoTable( tableName, fields, values );
         }
-    }
+    } // updateTable
 
 
     /**
@@ -567,5 +567,5 @@ public class TabletoArrayListMultimap
         newSet = null;
         columnNames = null;
         valueNames  = null;
-    }
+    } // free
 }
