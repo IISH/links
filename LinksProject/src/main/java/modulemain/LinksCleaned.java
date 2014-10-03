@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.PrintStream;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -786,6 +787,10 @@ public class LinksCleaned extends Thread
         showTimingMessage( "standardMarLocation ", start );
 
         start = System.currentTimeMillis();
+        standardLivingLocation( source );
+        showTimingMessage( "standardLivingLocation ", start );
+
+        start = System.currentTimeMillis();
         standardDeathLocation( source );
         showTimingMessage( "standardDeathLocation ", start );
 
@@ -1261,7 +1266,7 @@ public class LinksCleaned extends Thread
      * @param name
      * @return
      */
-    private String standardAlias( int id, String source, String name )
+    private String standardAlias( int id, String source, String name, int errCode )
     throws Exception
     {
         //boolean debug = true;
@@ -1304,7 +1309,7 @@ public class LinksCleaned extends Thread
         {
             if( name.contains( " " + keyword + " " ) )
             {
-                addToReportPerson( id, source, 17, name );      // EC 17
+                addToReportPerson( id, source, errCode, name );      // firstname: EC 1107, familyname: EC 1007
 
                 // prepare on braces
                 if( keyword.contains( "\\(" ) || keyword.contains( "\\(" ) ) {
@@ -1415,6 +1420,22 @@ public class LinksCleaned extends Thread
     /**
      * @param source
      */
+    public void standardLivingLocation( String source )
+    {
+        String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
+        } catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+        }
+    } // standardLivingLocation
+
+
+    /**
+     * @param source
+     */
     public void standardDeathLocation( String source )
     {
         String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
@@ -1475,7 +1496,7 @@ public class LinksCleaned extends Thread
                     firstname = firstname.toLowerCase();
 
                     // Check name on aliases
-                    String nameNoAlias = standardAlias( id_person, source, firstname );
+                    String nameNoAlias = standardAlias( id_person, source, firstname, 1107 );
 
                     // Check on serried spaces; split name on spaces
                     String[] names = nameNoAlias.split( " " );
@@ -1930,7 +1951,7 @@ public class LinksCleaned extends Thread
                         }
 
                         // Check on aliases
-                        String nameNoAlias = standardAlias( id_person, source, nameNoPrePiece );
+                        String nameNoAlias = standardAlias( id_person, source, nameNoPrePiece, 1007 );
 
                         // Check on suffix
                         /*
@@ -2133,7 +2154,7 @@ public class LinksCleaned extends Thread
                 if( location != null && !location.isEmpty() )
                 {
                     location = location.toLowerCase();
-                    if( debug ) { System.out.println( "" + count + ": " + location ); }
+                    if( debug ) { System.out.println( "id_person: " + id + ", original: " + locationFieldO + ", location: " + location ); }
                     //if( ttalLocation.originalExists( location ) )
                     if( almmLocation.contains( location ) )
 
@@ -5059,7 +5080,9 @@ public class LinksCleaned extends Thread
     )
     throws Exception
     {
-        showMessage( "minMaxCalculation()", false, true );
+        boolean debug = false;
+
+        if( debug ) { showMessage( "minMaxCalculation()", false, true ); }
 
         String min_age_0 = "n";
         String max_age_0 = "n";
@@ -5081,7 +5104,8 @@ public class LinksCleaned extends Thread
                 + " AND age_reported = '"  + age_reported + "'"
                 + " AND age_main_role = '" + age_main_role  + "'";
 
-            System.out.println( query );
+            if( debug ) { System.out.println( query ); }
+
             ResultSet rs = conGeneral.runQueryWithResult( query );
 
             if( !rs.next() )
@@ -5089,6 +5113,7 @@ public class LinksCleaned extends Thread
                 addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
 
                 MinMaxYearSet mmj = new MinMaxYearSet();
+
                 return mmj;
             }
 
@@ -5113,6 +5138,7 @@ public class LinksCleaned extends Thread
                 age_reported,
                 age_main_role
             );
+
             age       = mmmas.getAgeYear();
             min_age_0 = mmmas.getMinAge0();
             max_age_0 = mmmas.getMaxAge0();
@@ -5121,14 +5147,10 @@ public class LinksCleaned extends Thread
             min_year = mmmas.getMinYear();
             max_year = mmmas.getMaxYear();
 
-            System.out.println( "age_year: "  + age );
-            System.out.println( "min_age_0: " + min_age_0 );
-            System.out.println( "max_age_0: " + max_age_0 );
-
-            System.out.println( "function: " + function );
-            System.out.println( "min_year: " + min_year );
-            System.out.println( "max_year: " + max_year );
+            if( debug ) { showMessage( "after minMaxMainAge() age: " + age + ", function: " + function + ", min_year: " + min_year + ", max_year: " + max_year, false, true ); }
         }
+
+        if( debug ) { showMessage( "minMaxCalculation() age: " + age + ", function: " + function + ", min_year: " + min_year + ", max_year: " + max_year, false, true ); }
 
         if( min_age_0 == "y" ) { age = 0; }
         if( max_age_0 == "y" ) { age = 0; }
@@ -5158,8 +5180,8 @@ public class LinksCleaned extends Thread
             if( maximum_year > reg_year ) {
                 mmj.SetMaxYear( reg_year );
             }
-            return mmj;
 
+            return mmj;
         }
         else if( function.equals( "D" ) )               // function D
         {
@@ -5211,21 +5233,26 @@ public class LinksCleaned extends Thread
     )
     throws Exception
     {
+        boolean debug = false;
+
         boolean done = false;
 
         MinMaxMainAgeSet mmmas = new MinMaxMainAgeSet();
+
+        if( debug ) { showMessage( "minMaxMainAge() function: " + mmmas.getFunction(), false, true ); }
+
         mmmas.setMinAge0( "n" );
         mmmas.setMaxAge0( "n" );
 
         while( !done )
         {
-            showMessage( "minMaxMainAge: age_main_role = " + age_main_role, false, true );
+            if( debug ) { showMessage( "minMaxMainAge(): age_main_role = " + age_main_role, false, true ); }
 
             String queryRef = "SELECT function, min_year, max_year, min_person, max_person FROM links_general.ref_date_minmax"
-                + " WHERE maintype = '" + main_type + "'"
-                + " AND role = '" + role + "'"
-                + " AND date_type = '" + date_type + "'"
-                + " AND age_reported = '" + age_reported + "'"
+                + " WHERE maintype = '"    + main_type + "'"
+                + " AND role = '"          + role + "'"
+                + " AND date_type = '"     + date_type + "'"
+                + " AND age_reported = '"  + age_reported + "'"
                 + " AND age_main_role = '" + age_main_role + "'";
 
             ResultSet rs_ref = conGeneral.runQueryWithResult( queryRef );
@@ -5243,8 +5270,8 @@ public class LinksCleaned extends Thread
                 max_person_role = rs_ref.getInt( "max_person" );
 
                 mmmas.setFunction( rs_ref.getString( "function" ) );
-                mmmas.setMinYear(rs_ref.getInt("min_year"));
-                mmmas.setMaxYear(rs_ref.getInt("max_year"));
+                mmmas.setMinYear(rs_ref.getInt( "min_year" ));
+                mmmas.setMaxYear(rs_ref.getInt( "max_year" ));
 
                 boolean readPc = false;
 
@@ -5272,16 +5299,16 @@ public class LinksCleaned extends Thread
 
                     int countPc = 0;
 
-                    while (rs_pc.next()) {
+                    while( rs_pc.next() ) {
                         countPc++;
-                        age = rs_pc.getInt("age_year");
-                        death = rs_pc.getString("death");
-                        mmmas.setAgeYear(age);
+                        age = rs_pc.getInt( "age_year" );
+                        death = rs_pc.getString( "death" );
+                        mmmas.setAgeYear( age );
                     }
 
-                    if (countPc != 1) {
-                        showMessage(queryPc, false, true);
-                        throw new Exception("minMaxMainAge: person_c count = " + countPc);
+                    if( countPc != 1 ) {
+                        showMessage( queryPc, false, true );
+                        throw new Exception( "minMaxMainAge: person_c count = " + countPc );
                     }
 
                     if( age > 0 ) { done = true; }
@@ -6020,6 +6047,27 @@ public class LinksCleaned extends Thread
         int step = 10000;
         int stepstate = step;
 
+        /*
+        // test
+        String countQuery = ""
+            + " SELECT COUNT(*) FROM person_c , registration_c"
+            + " WHERE person_c.id_registration = registration_c.id_registration"
+            + " AND valid_complete = 0"
+            + " AND links_cleaned.person_c.id_source = " + source
+            + " AND person_c.id_registration = 668084";
+
+        try
+        {
+            ResultSet rsCount = conCleaned.runQueryWithResult( countQuery );
+            rsCount.next();
+            int count = rsCount.getInt( "COUNT(*)" );
+            showMessage( "person count with id_registration = 668084: " + count, false, true );
+        }
+        catch( Exception ex ) {
+            showMessage( counter + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
+        }
+        */
+
         // Because this query acts on person_c and registration_c (instead of person_o and registration_o),
         // the cleaning options Age and Role must be run together with Dates.
         String startQuery = ""
@@ -6051,7 +6099,7 @@ public class LinksCleaned extends Thread
 
         if( debug ) {
             showMessage( "minMaxDateMain()", false, true );
-            showMessage( startQuery, false, true );
+            //showMessage( startQuery, false, true );
         }
 
         try
@@ -6245,8 +6293,10 @@ public class LinksCleaned extends Thread
                 }
                 else { if( debug ) { showMessage( "death date is valid: " + death_date, false, true ); } }
             }
-        } catch( Exception ex ) {
+        }
+        catch( Exception ex ) {
             showMessage( counter + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // minMaxDateMain
 
@@ -6374,10 +6424,10 @@ public class LinksCleaned extends Thread
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();            // New return set
 
             // day and month is similar to act date
-            returnSet.setMaxDay(inputregistrationYearMonthDday.getDay());
-            returnSet.setMaxMonth(inputregistrationYearMonthDday.getMonth());
-            returnSet.setMinDay(inputregistrationYearMonthDday.getDay());
-            returnSet.setMinMonth(inputregistrationYearMonthDday.getMonth());
+            returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
+            returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
+            returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
+            returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
             MinMaxYearSet mmj = minMaxCalculation(
                 inputInfo.getPersonId(),
