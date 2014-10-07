@@ -236,20 +236,17 @@ public class ManagerGui extends javax.swing.JFrame
 		jLabel45 = new JLabel();
 		tbLOLClatestOutput = new JTextField();
 		jLabel51 = new JLabel();
-		cbCdoRemarks = new JCheckBox();
 		cbCdoNames = new JCheckBox();
 		cbCdoStatusSex = new JCheckBox();
 		cbCdoDates = new JCheckBox();
 		cbCdoRefreshData = new JCheckBox();
 		cbCdoRegType = new JCheckBox();
 		cbCdoLocations = new JCheckBox();
-		cbCdoRelation = new JCheckBox();
 		cbLOLCdoMinMaxMarriage = new JCheckBox();
 		cbLOLCdoPartsToFullDate = new JCheckBox();
 		cbCdoDaysSinceBegin = new JCheckBox();
 		cbLOLCdoPostTasks = new JCheckBox();
 		cbCdoPrematch = new JCheckBox();
-		cbCdoPreBasicNames = new JCheckBox();
 		tbLOLCrefurl = new JTextField();
 		tbLOLCrefuser = new JTextField();
 		tbLOLCrefpass = new JTextField();
@@ -1333,11 +1330,6 @@ public class ManagerGui extends javax.swing.JFrame
 				jLabel51.setText("Tasks:");
 				jLabel51.setName("jLabel51");
 
-				//---- cbCdoRemarks ----
-				cbCdoRemarks.setText("Parse remarks");
-				cbCdoRemarks.setName("cbCdoOpmerkingen");
-				cbCdoRemarks.setEnabled(false);
-
 				//---- cbCdoNames ----
 				cbCdoNames.setSelected(true);
 				cbCdoNames.setText("First- and Familynames");
@@ -1355,7 +1347,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 				//---- cbCdoRefreshData ----
 				cbCdoRefreshData.setSelected(true);
-				cbCdoRefreshData.setText("Remove previous data");
+				cbCdoRefreshData.setText("Remove Previous Data");
 				cbCdoRefreshData.setName("cbCdoVernieuwen");
 
 				//---- cbCdoRegType ----
@@ -1367,11 +1359,6 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoLocations.setSelected(true);
 				cbCdoLocations.setText("Locations");
 				cbCdoLocations.setName("cbCdoLocations");
-
-				//---- cbCdoRelation ----
-				cbCdoRelation.setText("Relation");
-				cbCdoRelation.setName("cbCdoRelation");
-				cbCdoRelation.setEnabled(false);
 
 				//---- cbLOLCdoMinMaxMarriage ----
 				cbLOLCdoMinMaxMarriage.setSelected(true);
@@ -1385,7 +1372,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 				//---- cbCdoDaysSinceBegin ----
 				cbCdoDaysSinceBegin.setSelected(true);
-				cbCdoDaysSinceBegin.setText("Days since begin");
+				cbCdoDaysSinceBegin.setText("Days Since Begin");
 				cbCdoDaysSinceBegin.setName("cbCdoDaysSinceBegin");
 
 				//---- cbLOLCdoPostTasks ----
@@ -1396,11 +1383,6 @@ public class ManagerGui extends javax.swing.JFrame
 				//---- cbCdoPrematch ----
 				cbCdoPrematch.setText("Run PreMatch");
 				cbCdoPrematch.setName("cbCdoPrematch");
-
-				//---- cbCdoPreBasicNames ----
-				cbCdoPreBasicNames.setText("Basic names temp");
-				cbCdoPreBasicNames.setName("cbCdoPreBasicNames");
-				cbCdoPreBasicNames.setEnabled(false);
 
 				//---- tbLOLCrefurl ----
 				tbLOLCrefurl.setName("tbLOLCrefurl");
@@ -1476,15 +1458,11 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-													.addComponent(cbCdoRemarks, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoRelation, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoNames, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
-													.addComponent(cbCdoPreBasicNames, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE))
-												.addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE))
+												.addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoNames, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoLocations, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoStatusSex, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
+												.addComponent(cbCdoRegType, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE))
 											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
@@ -1550,7 +1528,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 50, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 54, Short.MAX_VALUE)
 									.addComponent(jLabel51)
 									.addGap(15, 15, 15)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1558,27 +1536,21 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoOccupation))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoPreBasicNames)
-										.addComponent(cbCdoDates))
+										.addComponent(cbCdoDates)
+										.addComponent(cbCdoNames))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoRemarks)
-										.addComponent(cbLOLCdoMinMaxMarriage))
+										.addComponent(cbLOLCdoMinMaxMarriage)
+										.addComponent(cbCdoLocations))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoNames)
-										.addComponent(cbLOLCdoPartsToFullDate))
+										.addComponent(cbLOLCdoPartsToFullDate)
+										.addComponent(cbCdoStatusSex))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoLocations)
-										.addComponent(cbCdoDaysSinceBegin))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoStatusSex)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoRegType)
-									.addGap(31, 31, 31)
-									.addComponent(cbCdoRelation)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(cbCdoDaysSinceBegin)
+										.addComponent(cbCdoRegType))
+									.addGap(112, 112, 112)
 									.addComponent(cbLOLCdoPostTasks)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addComponent(cbCdoPrematch)
@@ -1796,6 +1768,7 @@ public class ManagerGui extends javax.swing.JFrame
         }
 
         // Basic names temp
+        /*
         String doPreBasicNames = properties.getProperty( "doPreBasicNames" );
         if( doPreBasicNames != null ) {
             if (doPreBasicNames.equals("true")) {
@@ -1804,8 +1777,10 @@ public class ManagerGui extends javax.swing.JFrame
                 cbCdoPreBasicNames.setSelected(false);
             }
         }
+        */
 
         // Parse remarks
+        /*
         String doRemarks = properties.getProperty( "doRemarks" );
         if( doRemarks != null ) {
             if (doRemarks.equals("true")) {
@@ -1814,6 +1789,7 @@ public class ManagerGui extends javax.swing.JFrame
                 cbCdoRemarks.setSelected(false);
             }
         }
+        */
 
         // Names
         String doNames = properties.getProperty( "doNames" );
@@ -1868,6 +1844,7 @@ public class ManagerGui extends javax.swing.JFrame
         */
 
         // Relation
+        /*
         String doRelation = properties.getProperty( "doRelation" );
         if( doRelation != null ) {
             if (doRelation.equals("true")) {
@@ -1876,6 +1853,7 @@ public class ManagerGui extends javax.swing.JFrame
                 cbCdoRelation.setSelected(false);
             }
         }
+        */
 
         // Age
         /*
@@ -2239,7 +2217,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoDates.isSelected()) { dos.setDoDates(true); }
 
-        if (cbCdoRemarks.isSelected()) { dos.setDoRemarks(true); }
+        //if (cbCdoRemarks.isSelected()) { dos.setDoRemarks(true); }
 
         if (cbCdoStatusSex.isSelected()) { dos.setDoStatusSex(true); }
 
@@ -2257,7 +2235,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbLOLCdoMinMaxMarriage.isSelected()) { dos.setDoMinMaxMarriage(true); }
 
-        if (cbCdoRelation.isSelected()) { dos.setDoRelation(true); }
+        //if (cbCdoRelation.isSelected()) { dos.setDoRelation(true); }
 
         //if (cbLOLCdoRole.isSelected()) { dos.setDoRole(true); }
 
@@ -2265,7 +2243,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         if (cbCdoPrematch.isSelected()) { dos.setDoPrematch(true); }
 
-        if (cbCdoPreBasicNames.isSelected()) { dos.setDoPreBasicNames(true); }
+        //if (cbCdoPreBasicNames.isSelected()) { dos.setDoPreBasicNames(true); }
 
         int sourceId = 0;
         if (!tbLOLCSourceId.getText().isEmpty()) {
@@ -2387,7 +2365,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "06-Oct-2014 13:23";
+            String timestamp1 = "07-Oct-2014 17:28";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2534,20 +2512,17 @@ public class ManagerGui extends javax.swing.JFrame
 	private JLabel jLabel45;
 	private JTextField tbLOLClatestOutput;
 	private JLabel jLabel51;
-	private JCheckBox cbCdoRemarks;
 	private JCheckBox cbCdoNames;
 	private JCheckBox cbCdoStatusSex;
 	private JCheckBox cbCdoDates;
 	private JCheckBox cbCdoRefreshData;
 	private JCheckBox cbCdoRegType;
 	private JCheckBox cbCdoLocations;
-	private JCheckBox cbCdoRelation;
 	private JCheckBox cbLOLCdoMinMaxMarriage;
 	private JCheckBox cbLOLCdoPartsToFullDate;
 	private JCheckBox cbCdoDaysSinceBegin;
 	private JCheckBox cbLOLCdoPostTasks;
 	private JCheckBox cbCdoPrematch;
-	private JCheckBox cbCdoPreBasicNames;
 	private JTextField tbLOLCrefurl;
 	private JTextField tbLOLCrefuser;
 	private JTextField tbLOLCrefpass;

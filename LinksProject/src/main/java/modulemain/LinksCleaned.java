@@ -235,7 +235,6 @@ public class LinksCleaned extends Thread
                     doRenewData( dos.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
                     //doPreBasicNames( dos.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
-
                     //doRemarks( dos.isDoRemarks(), source );                     // GUI cb: Parse remarks
 
                     doNames( dos.isDoNames(), source );                         // GUI cb: Names
@@ -244,7 +243,7 @@ public class LinksCleaned extends Thread
 
                     doStatusSex( dos.isDoStatusSex(), source );                 // GUI cb: Status and Sex
 
-                    doRegType( dos.isDoRegType(), source );                     // GUI cb: Registration Type
+                    doRegistrationType( dos.isDoRegType(), source );            // GUI cb: Registration Type
 
                     //doSequence( dos.isDoSequence(), source );                   // GUI cb: Sequence
                     //doRelation( dos.isDoRelation(), source );                   // GUI cb: Relation
@@ -322,7 +321,6 @@ public class LinksCleaned extends Thread
                 doRenewData( dos.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
                 //doPreBasicNames( dos.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
-
                 //doRemarks( dos.isDoRemarks(), source );                     // GUI cb: Parse remarks
 
                 doNames( dos.isDoNames(), source );                         // GUI cb: Names
@@ -331,7 +329,7 @@ public class LinksCleaned extends Thread
 
                 doStatusSex( dos.isDoStatusSex(), source );                 // GUI cb: Status and Sex
 
-                doRegType( dos.isDoRegType(), source );                     // GUI cb: Registration Type
+                doRegistrationType( dos.isDoRegType(), source );            // GUI cb: Registration Type
 
                 //doSequence( dos.isDoSequence(), source );                   // GUI cb: Sequence
                 //doRelation( dos.isDoRelation(), source );                   // GUI cb: Relation
@@ -455,7 +453,7 @@ public class LinksCleaned extends Thread
      * @throws Exception
      */
     private void connectToDatabases()
-            throws Exception
+    throws Exception
     {
         showMessage( "Connecting to databases:", false, true );
 
@@ -480,8 +478,9 @@ public class LinksCleaned extends Thread
     } // connectToDatabases
 
 
-    private Connection getConnection(String dbName) throws Exception {
-
+    private Connection getConnection( String dbName )
+    throws Exception
+    {
         String driver = "org.gjt.mm.mysql.Driver";
 
         String _url = "jdbc:mysql://" + this.url + "/" + dbName + "?dontTrackOpenResources=true";
@@ -499,7 +498,7 @@ public class LinksCleaned extends Thread
 
 
     private void createLogTable()
-            throws Exception
+    throws Exception
     {
         showMessage( "Creating logging table: " + logTableName , false, true );
 
@@ -2306,98 +2305,6 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * @param source
-     */
-    public void standardRegistrationLocation( String source )
-    {
-        String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
-
-            standardLocation( rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
-        }
-        catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardRegistrationLocation
-
-
-    /**
-     * @param source
-     */
-    public void standardBirthLocation( String source )
-    {
-        String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
-
-            standardLocation( rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardBirthLocation
-
-
-    /**
-     * @param source
-     */
-    public void standardMarLocation( String source )
-    {
-        String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardMarLocation
-
-
-    /**
-     * @param source
-     */
-    public void standardLivingLocation( String source )
-    {
-        String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardLivingLocation
-
-
-    /**
-     * @param source
-     */
-    public void standardDeathLocation( String source )
-    {
-        String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
-
-        try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardDeathLocation
-
-
-    /**
      * @param rs
      * @param idFieldO
      * @param locationFieldO
@@ -2551,6 +2458,99 @@ public class LinksCleaned extends Thread
             throw new Exception( count + " Exception while cleaning Location: " + ex.getMessage() );
         }
     } // standardLocation
+
+
+    /**
+     * @param source
+     */
+    public void standardRegistrationLocation( String source )
+    {
+        String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+
+            standardLocation( rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardRegistrationLocation
+
+
+    /**
+     * @param source
+     */
+    public void standardBirthLocation( String source )
+    {
+        String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+
+            standardLocation( rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardBirthLocation
+
+
+    /**
+     * @param source
+     */
+    public void standardMarLocation( String source )
+    {
+        String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardMarLocation
+
+
+    /**
+     * @param source
+     */
+    public void standardLivingLocation( String source )
+    {
+        String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardLivingLocation
+
+
+    /**
+     * @param source
+     */
+    public void standardDeathLocation( String source )
+    {
+        String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
+
+        try {
+            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            standardLocation( rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardDeathLocation
+
 
     /*---< Civil status and Sex >---------------------------------------------*/
 
@@ -2827,6 +2827,7 @@ public class LinksCleaned extends Thread
         }
     } // standardCivilstatus
 
+
     /*---< Registration Type >------------------------------------------------*/
 
     /**
@@ -2834,7 +2835,7 @@ public class LinksCleaned extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRegType( boolean go, String source ) throws Exception
+    private void doRegistrationType( boolean go, String source ) throws Exception
     {
         String funcname = "doType";
         if( !go ) {
@@ -2845,16 +2846,16 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        standardType( source );
+        standardRegistrationType( source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-    } // doRegType
+    } // doRegistrationType
 
 
     /**
      * @param source
      */
-    public void standardType( String source )
+    public void standardRegistrationType( String source )
     {
         boolean debug = false;
         int counter = 0;
@@ -2937,7 +2938,7 @@ public class LinksCleaned extends Thread
             showMessage( "counter: " + counter + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // standardType
+    } // standardRegistrationType
 
 
     /*---< Occupation >-------------------------------------------------------*/
@@ -3127,6 +3128,7 @@ public class LinksCleaned extends Thread
             ex3.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardOccupationRecord
+
 
     /*---< Age, Role, Dates >-------------------------------------------------*/
 
@@ -3394,7 +3396,7 @@ public class LinksCleaned extends Thread
         {
             //String selectQuery = "SELECT id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
             String selectQuery = "SELECT id_registration , id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
-            if( debug ) { showMessage( selectQuery, false, true ); }
+            if( debug ) { showMessage( "standardAlive() " + selectQuery, false, true ); }
 
             ResultSet rs = conCleaned.runQueryWithResult( selectQuery );
 
@@ -3406,35 +3408,42 @@ public class LinksCleaned extends Thread
                     stepstate += step;
                 }
 
-                int id_person     = rs.getInt( "id_person" );
+                int id_person       = rs.getInt( "id_person" );
                 int id_registration = rs.getInt( "id_registration" );
-                int role          = rs.getInt( "role" );
-                String death      = rs.getString( "death" ) != null ? rs.getString( "death" ).toLowerCase() : "";
-                String occupation = rs.getString( "occupation" );
+                int role            = rs.getInt( "role" );
+                String death        = rs.getString( "death" );
+                String occupation   = rs.getString( "occupation" );
 
-                if( debug && id_registration == 668084 ) { System.out.printf( "%d: %d %d %s %s\n", count, id_person, role, death, occupation ); }
+                if( debug && id_registration == 668084 ) {
+                    showMessage( "count: " + count + ", id_person: " + id_person + ", role: " + role + ", death: " + death + ", occupation: " + occupation, false, true ); }
 
+                if( death != null ) { death = death.toLowerCase(); }
                 if( death == null || death.isEmpty() ) { count_empty++; }
 
-                if( role == 1 || role == 4 || role == 10 ) {
-                    if( debug && id_registration == 668084 ) { System.out.println( "role: " + role + " death -> 'a'" ); }
+                if( role == 1 || role == 4 || role == 7 || role == 10 ) {
+                    if( debug && id_registration == 668084 ) { showMessage( "role: " + role + ", death -> 'a'", false, true ); }
+
                     String updateQuery = PersonC.updateQuery( "death", "a", id_person );        // set death to a[live]
                     conCleaned.runQuery( updateQuery );
                 }
                 else
                 {
                     if( occupation != null ) {
-                        if( debug && id_registration == 668084 ) { System.out.println( "occupation: " + occupation + " death -> 'a'" ); }
+                        if( debug && id_registration == 668084 ) { showMessage( "occupation: " + occupation + ", death -> 'a'", false, true ); }
+
                         String updateQuery = PersonC.updateQuery( "death", "a", id_person );     // set death to a[live]
                         conCleaned.runQuery( updateQuery );
                     }
                     else
                     {
                         if( death == null ) {
-                            if( debug && id_registration == 668084 ) { System.out.println( " death -> 'n'" ); }
+                            if( debug && id_registration == 668084 ) { showMessage( "death: " + death + ", death -> 'n'", false, true ); }
+
                             String updateQuery = PersonC.updateQuery( "death", "n", id_person );     // set death to n[o]
                             conCleaned.runQuery( updateQuery );
                         }
+                        else
+                        { if( debug && id_registration == 668084 ) { showMessage( "death stays: " + death, false, true ); } }
                     }
                 }
             }
@@ -3914,7 +3923,7 @@ public class LinksCleaned extends Thread
             if( debug ) { showMessage( "not the deceased, role: " + inputInfo.getPersonRole() , false, true ); }
 
             // Days, month, weeks to years, round up
-            int ageinYears = roundUp(
+            int ageinYears = roundUpAge(
                     inputInfo.getPersonAgeYear(),
                     inputInfo.getPersonAgeMonth(),
                     inputInfo.getPersonAgeWeek(),
@@ -4240,7 +4249,7 @@ public class LinksCleaned extends Thread
     )
             throws Exception
     {
-        boolean debug = false;
+        boolean debug = true;
 
         if( debug ) { showMessage( "minMaxCalculation()", false, true ); }
 
@@ -4250,38 +4259,13 @@ public class LinksCleaned extends Thread
 
         String age_reported  = "";
         String function = "";
-        int min_year = 0;
-        int max_year = 0;
+        int min_year  = 0;
+        int max_year  = 0;
+        int main_role = 0;
 
         if( age > 0 )
         {
             age_reported  = "y";
-
-            String query = "SELECT function, min_year, max_year FROM ref_date_minmax"
-                + " WHERE maintype = '"    + main_type + "'"
-                + " AND role = '"          + role + "'"
-                + " AND date_type = '"     + date_type + "'"
-                + " AND age_reported = '"  + age_reported + "'"
-                + " AND age_main_role = '" + age_main_role  + "'";
-
-            if( debug ) { System.out.println( query ); }
-
-            ResultSet rs = conGeneral.runQueryWithResult( query );
-
-            if( !rs.next() )
-            {
-                addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
-
-                MinMaxYearSet mmj = new MinMaxYearSet();
-
-                return mmj;
-            }
-
-            rs.last();        // to last row
-
-            function = rs.getString( "function" );
-            min_year = rs.getInt( "min_year" );
-            max_year = rs.getInt( "max_year" );
         }
         else
         {
@@ -4299,6 +4283,7 @@ public class LinksCleaned extends Thread
                 age_main_role
             );
 
+            main_role = mmmas.getMainRole();
             age       = mmmas.getAgeYear();
             min_age_0 = mmmas.getMinAge0();
             max_age_0 = mmmas.getMaxAge0();
@@ -4307,16 +4292,57 @@ public class LinksCleaned extends Thread
             min_year = mmmas.getMinYear();
             max_year = mmmas.getMaxYear();
 
-            if( debug ) { showMessage( "after minMaxMainAge() age: " + age + ", function: " + function + ", min_year: " + min_year + ", max_year: " + max_year, false, true ); }
+            mmmas = null;
+
+            if( debug ) { showMessage( "after minMaxMainAge() age: " + age + ", function: " + function +
+                ", min_year: " + min_year + ", max_year: " + max_year + ", main_role: " + main_role, false, true ); }
+
+            if( role == main_role ) { age_main_role = "nvt"; }
+            else {
+                if( age > 0 ) { age_main_role = "y"; }
+                else { age_main_role = "n"; }
+            }
         }
 
-        if( debug ) { showMessage( "minMaxCalculation() age: " + age + ", function: " + function + ", min_year: " + min_year + ", max_year: " + max_year, false, true ); }
+        String query = "SELECT function, min_year, max_year FROM ref_date_minmax"
+            + " WHERE maintype = '"    + main_type + "'"
+            + " AND role = '"          + role + "'"
+            + " AND date_type = '"     + date_type + "'"
+            + " AND age_reported = '"  + age_reported + "'"
+            + " AND age_main_role = '" + age_main_role  + "'";
 
-        if( min_age_0 == "y" ) { age = 0; }
-        if( max_age_0 == "y" ) { age = 0; }
+        if( debug ) { showMessage( query, false, true ); }
 
-        int minimum_year = reg_year - age + min_year;
-        int maximum_year = reg_year - age + max_year;
+        ResultSet rs = conGeneral.runQueryWithResult( query );
+
+        if( !rs.next() )
+        {
+            if( debug ) { showMessage( "Not found", false, true ); }
+            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
+
+            MinMaxYearSet mmj = new MinMaxYearSet();
+
+            return mmj;
+        }
+
+        rs.last();        // to last row
+
+        function = rs.getString( "function" );
+        min_year = rs.getInt( "min_year" );
+        max_year = rs.getInt( "max_year" );
+
+        if( debug ) { showMessage( "minMaxCalculation() age: " + age + ", function: " + function +
+            ", min_year: " + min_year + ", max_year: " + max_year + ", main_role: " + main_role, false, true ); }
+
+        int agecopy = age;
+        if( min_age_0 == "y" ) { agecopy = 0; }
+        int minimum_year = reg_year - agecopy + min_year;
+        if( debug ) { showMessage( "minMaxCalculation() min_age_0: " + min_age_0 + ", agecopy: " + agecopy + ", min_year: " + min_year, false, true ); }
+
+        agecopy = age;
+        if( max_age_0 == "y" ) { agecopy = 0; }
+        int maximum_year = reg_year - agecopy + max_year;
+        if( debug ) { showMessage( "minMaxCalculation() max_age_0: " + max_age_0 + ", agecopy: " + agecopy + ", max_year: " + max_year, false, true ); }
 
         MinMaxYearSet mmj = new MinMaxYearSet();
 
@@ -4329,8 +4355,8 @@ public class LinksCleaned extends Thread
         else if( function.equals( "E" ) )               // If E, deceased
         {
             if( age < 14 ) {
-                mmj.SetMaxYear( 0 );
                 mmj.SetMinYear( 0 );
+                mmj.SetMaxYear( 0 );
             }
 
             return mmj;
@@ -4345,10 +4371,10 @@ public class LinksCleaned extends Thread
         }
         else if( function.equals( "D" ) )               // function D
         {
-            if( minimum_year > reg_year ) {
+            if( minimum_year > (reg_year - 14) ) {
                 mmj.SetMinYear( reg_year - 14 );
             }
-            if( maximum_year > reg_year ) {
+            if( maximum_year > (reg_year - 14) ) {
                 mmj.SetMaxYear( reg_year - 14 );
             }
 
@@ -4391,9 +4417,9 @@ public class LinksCleaned extends Thread
             String age_reported,
             String age_main_role
     )
-            throws Exception
+    throws Exception
     {
-        boolean debug = false;
+        boolean debug = true;
 
         boolean done = false;
 
@@ -4409,25 +4435,31 @@ public class LinksCleaned extends Thread
             if( debug ) { showMessage( "minMaxMainAge(): age_main_role = " + age_main_role, false, true ); }
 
             String queryRef = "SELECT function, min_year, max_year, min_person, max_person FROM links_general.ref_date_minmax"
-                    + " WHERE maintype = '"    + main_type + "'"
-                    + " AND role = '"          + role + "'"
-                    + " AND date_type = '"     + date_type + "'"
-                    + " AND age_reported = '"  + age_reported + "'"
-                    + " AND age_main_role = '" + age_main_role + "'";
+                + " WHERE maintype = '"    + main_type + "'"
+                + " AND role = '"          + role + "'"
+                + " AND date_type = '"     + date_type + "'"
+                + " AND age_reported = '"  + age_reported + "'"
+                + " AND age_main_role = '" + age_main_role + "'";
 
+            if( debug ) { showMessage( queryRef, false, true ); }
             ResultSet rs_ref = conGeneral.runQueryWithResult( queryRef );
 
             int min_person_role = 0;
             int max_person_role = 0;
 
             if( !rs_ref.next() ) {
+                if( debug ) { showMessage( "Not found; age_main_role = " + age_main_role, false, true ); }
+
                 if( age_main_role.equals( "nvt" ) ) { age_main_role = "y"; }
-                else { done = true; }
+                else { age_main_role = "n"; }
             }
             else
             {
+                if( debug ) { showMessage( "Found", false, true ); }
+
                 min_person_role = rs_ref.getInt( "min_person" );
                 max_person_role = rs_ref.getInt( "max_person" );
+                if( debug ) { showMessage( "min_person_role = " + min_person_role + ", max_person_role = " + max_person_role, false, true ); }
 
                 mmmas.setFunction( rs_ref.getString( "function" ) );
                 mmmas.setMinYear(rs_ref.getInt( "min_year" ));
@@ -4435,41 +4467,45 @@ public class LinksCleaned extends Thread
 
                 boolean readPc = false;
 
-                int main_role = 0;
+                int mm_main_role = 0;
                 if( min_person_role > 0 ) {
                     readPc = true;
-                    main_role = min_person_role;
+                    mm_main_role = min_person_role;
                 }
                 else { mmmas.setMinAge0( "y" ); }
 
                 if( max_person_role > 0 ) {
                     readPc = true;
-                    main_role = max_person_role;
+                    mm_main_role = max_person_role;
                 }
                 else { mmmas.setMaxAge0( "y" ); }
 
-                int age = 0;
-                String death = "";
                 if( readPc ) {
-                    String queryPc = "SELECT age_year, death FROM links_cleaned.person_c"
-                            + " WHERE id_registration = '" + id_registration + "'"
-                            + " AND role = '" + main_role + "'";
+                    String queryPc = "SELECT age_year, role FROM links_cleaned.person_c"
+                        + " WHERE id_registration = '" + id_registration + "'"
+                        + " AND role = '" + mm_main_role + "'";
 
                     ResultSet rs_pc = conCleaned.runQueryWithResult( queryPc );
 
+                    int age = 0;
+                    int main_role = 0;
                     int countPc = 0;
 
                     while( rs_pc.next() ) {
                         countPc++;
-                        age = rs_pc.getInt( "age_year" );
-                        death = rs_pc.getString( "death" );
+                        age       = rs_pc.getInt( "age_year" );
+                        main_role = rs_pc.getInt("role");
+
                         mmmas.setAgeYear( age );
+                        mmmas.setMainRole( main_role );
                     }
 
                     if( countPc != 1 ) {
                         showMessage( queryPc, false, true );
                         throw new Exception( "minMaxMainAge: person_c count = " + countPc );
                     }
+
+                    if( debug ) { showMessage( "minMaxMainAge() age: " + age + ", main_role: " + main_role, false, true ); }
 
                     if( age > 0 ) { done = true; }
                     else {
@@ -4493,7 +4529,7 @@ public class LinksCleaned extends Thread
      * @param day
      * @return
      */
-    public int roundUp(int year, int month, int week, int day)
+    public int roundUpAge( int year, int month, int week, int day )
     {
         int tempYear  = year;
         int tempMonth = month;
@@ -4524,7 +4560,7 @@ public class LinksCleaned extends Thread
         }
 
         return tempYear;
-    } // roundUp
+    } // roundUpAge
 
 
     /**
@@ -4565,11 +4601,11 @@ public class LinksCleaned extends Thread
                 if( dymd.isValidDate() )
                 {
                     String query = "UPDATE registration_c"
-                            + " SET registration_c.registration_date = '" + registration_date + "' , "
-                            + "registration_c.registration_day = "        + dymd.getDay() + " , "
-                            + "registration_c.registration_month = "      + dymd.getMonth() + " , "
-                            + "registration_c.registration_year = "       + dymd.getYear()
-                            + " WHERE registration_c.id_registration = "  + id_registration;
+                        + " SET registration_c.registration_date = '" + registration_date + "' , "
+                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
+                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
+                        + "registration_c.registration_year = "       + dymd.getYear()
+                        + " WHERE registration_c.id_registration = "  + id_registration;
 
                     conCleaned.runQuery( query );
                 }
@@ -4578,11 +4614,11 @@ public class LinksCleaned extends Thread
                     addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
 
                     String query = "UPDATE registration_c"
-                            + " SET registration_c.registration_date = '" + registration_date + "' , "
-                            + "registration_c.registration_day = "        + dymd.getDay() + " , "
-                            + "registration_c.registration_month = "      + dymd.getMonth() + " , "
-                            + "registration_c.registration_year = "       + dymd.getYear()
-                            + " WHERE registration_c.id_registration = "  + id_registration;
+                        + " SET registration_c.registration_date = '" + registration_date + "' , "
+                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
+                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
+                        + "registration_c.registration_year = "       + dymd.getYear()
+                        + " WHERE registration_c.id_registration = "  + id_registration;
 
                     conCleaned.runQuery( query );
                 }
@@ -4632,13 +4668,13 @@ public class LinksCleaned extends Thread
                 if( dymd.isValidDate() )
                 {
                     String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + dymd.getDay() + "-" + dymd.getMonth() + "-" + dymd.getYear() + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
-                            + "person_c." + type + "_date_valid = 1 "
-                            + "WHERE person_c.id_person = " + id_person;
+                        + "UPDATE person_c "
+                        + "SET person_c." + type + "_date = '" + dymd.getDay() + "-" + dymd.getMonth() + "-" + dymd.getYear() + "' , "
+                        + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                        + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                        + "person_c." + type + "_year = " + dymd.getYear() + " , "
+                        + "person_c." + type + "_date_valid = 1 "
+                        + "WHERE person_c.id_person = " + id_person;
 
                     conCleaned.runQuery(query);
                 }
@@ -4647,12 +4683,12 @@ public class LinksCleaned extends Thread
                     addToReportPerson( id_person, id_source + "", 211, dymd.getReports() );   // EC 211
 
                     String query = ""
-                            + "UPDATE person_c "
-                            + "SET person_c." + type + "_date = '" + date + "' , "
-                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                            + "person_c." + type + "_year = " + dymd.getYear() + " "
-                            + "WHERE person_c.id_person = " + id_person;
+                        + "UPDATE person_c "
+                        + "SET person_c." + type + "_date = '" + date + "' , "
+                        + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                        + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                        + "person_c." + type + "_year = " + dymd.getYear() + " "
+                        + "WHERE person_c.id_person = " + id_person;
 
                     conCleaned.runQuery(query);
                 }
@@ -4670,18 +4706,17 @@ public class LinksCleaned extends Thread
     private void setValidDateComplete( String source ) throws Exception
     {
         String q = ""
-                + " UPDATE links_cleaned.person_c"
-                + " SET"
-                + " valid_complete = 1"
-                + " WHERE"
-                + " birth_date_valid = 1 AND"
-                + " mar_date_valid   = 1 AND"
-                + " death_date_valid = 1 AND"
-                + " links_cleaned.person_c.id_source = " + source;
+            + " UPDATE links_cleaned.person_c"
+            + " SET"
+            + " valid_complete = 1"
+            + " WHERE"
+            + " birth_date_valid = 1 AND"
+            + " mar_date_valid   = 1 AND"
+            + " death_date_valid = 1 AND"
+            + " links_cleaned.person_c.id_source = " + source;
 
         conCleaned.runQuery( q );
     } // setValidDateComplete
-
 
 
     /**
@@ -4694,49 +4729,49 @@ public class LinksCleaned extends Thread
     private void minMaxValidDate( String source ) throws Exception
     {
         String q1 = ""
-                + "UPDATE person_c "
-                + "SET "
-                + "birth_date_min  = birth_date , "
-                + "birth_date_max  = birth_date , "
-                + "birth_year_min  = birth_year , "
-                + "birth_year_max  = birth_year , "
-                + "birth_month_min = birth_month , "
-                + "birth_month_max = birth_month , "
-                + "birth_day_min   = birth_day , "
-                + "birth_day_max   = birth_day "
-                + "WHERE "
-                + "birth_date_valid = 1 "
-                + "AND links_cleaned.person_c.id_source = " + source;
+            + "UPDATE person_c "
+            + "SET "
+            + "birth_date_min  = birth_date , "
+            + "birth_date_max  = birth_date , "
+            + "birth_year_min  = birth_year , "
+            + "birth_year_max  = birth_year , "
+            + "birth_month_min = birth_month , "
+            + "birth_month_max = birth_month , "
+            + "birth_day_min   = birth_day , "
+            + "birth_day_max   = birth_day "
+            + "WHERE "
+            + "birth_date_valid = 1 "
+            + "AND links_cleaned.person_c.id_source = " + source;
 
         String q2 = ""
-                + "UPDATE person_c "
-                + "SET "
-                + "mar_date_min  = mar_date , "
-                + "mar_date_max  = mar_date , "
-                + "mar_year_min  = mar_year , "
-                + "mar_year_max  = mar_year , "
-                + "mar_month_min = mar_month , "
-                + "mar_month_max = mar_month , "
-                + "mar_day_min   = mar_day , "
-                + "mar_day_max   = mar_day "
-                + "WHERE "
-                + "mar_date_valid = 1 "
-                + "AND links_cleaned.person_c.id_source = " + source;
+            + "UPDATE person_c "
+            + "SET "
+            + "mar_date_min  = mar_date , "
+            + "mar_date_max  = mar_date , "
+            + "mar_year_min  = mar_year , "
+            + "mar_year_max  = mar_year , "
+            + "mar_month_min = mar_month , "
+            + "mar_month_max = mar_month , "
+            + "mar_day_min   = mar_day , "
+            + "mar_day_max   = mar_day "
+            + "WHERE "
+            + "mar_date_valid = 1 "
+            + "AND links_cleaned.person_c.id_source = " + source;
 
         String q3 = ""
-                + "UPDATE person_c "
-                + "SET "
-                + "death_date_min  = death_date , "
-                + "death_date_max  = death_date , "
-                + "death_year_min  = death_year , "
-                + "death_year_max  = death_year , "
-                + "death_month_min = death_month , "
-                + "death_month_max = death_month , "
-                + "death_day_min   = death_day , "
-                + "death_day_max   = death_day "
-                + "WHERE "
-                + "death_date_valid = 1 "
-                + "AND links_cleaned.person_c.id_source = " + source;
+            + "UPDATE person_c "
+            + "SET "
+            + "death_date_min  = death_date , "
+            + "death_date_max  = death_date , "
+            + "death_year_min  = death_year , "
+            + "death_year_max  = death_year , "
+            + "death_month_min = death_month , "
+            + "death_month_max = death_month , "
+            + "death_day_min   = death_day , "
+            + "death_day_max   = death_day "
+            + "WHERE "
+            + "death_date_valid = 1 "
+            + "AND links_cleaned.person_c.id_source = " + source;
 
         conCleaned.runQuery( q1 );
         conCleaned.runQuery( q2 );
@@ -5246,6 +5281,7 @@ public class LinksCleaned extends Thread
     } // completeMinMaxMar
     */
 
+
     /*---< Min Max Marriage >-------------------------------------------------*/
 
     /**
@@ -5285,10 +5321,12 @@ public class LinksCleaned extends Thread
      * @param refMinMaxMarriageYear
      * @throws Exception
      */
-    private void minMaxMarriageYear(
-            ArrayList< MarriageYearPersonsSet > hjpsList,
-            ResultSet refMinMaxMarriageYear )
-            throws Exception
+    private void minMaxMarriageYear
+    (
+        ArrayList< MarriageYearPersonsSet > hjpsList,
+        ResultSet refMinMaxMarriageYear
+    )
+    throws Exception
     {
         int counter = 0;
         int step = 1000;
@@ -5620,9 +5658,9 @@ public class LinksCleaned extends Thread
         query6 += "AND id_source = " + source;
 
         String queryReg = "UPDATE registration_c SET "
-                + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
-                + "WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%' "
-                + "AND id_source = " + source;
+            + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
+            + "WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%' "
+            + "AND id_source = " + source;
 
         try
         {
@@ -5691,37 +5729,37 @@ public class LinksCleaned extends Thread
         // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
         String[] queries =
-            {
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8 AND id_source = " + source,
-                "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
+        {
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
 
-                "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v' AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v' AND id_source = " + source,
 
 
-                "CREATE TABLE links_match.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_match.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-                "CREATE TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-                "INSERT INTO links_match.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+            "INSERT INTO links_match.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
 
-                "INSERT INTO links_match.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+            "INSERT INTO links_match.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
 
-                "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-                        + " AND id_source = " + source,
+            "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                    + " AND id_source = " + source,
 
-                "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-                        + " AND id_source = " + source,
+            "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                    + " AND id_source = " + source,
 
-                "DROP TABLE links_match.male;",
+            "DROP TABLE links_match.male;",
 
-                "DROP TABLE links_match.female;"
-            };
+            "DROP TABLE links_match.female;"
+        };
 
         // suppressed queries
         /*
