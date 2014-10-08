@@ -57,7 +57,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-06-Oct-2014 Latest change
+ * FL-08-Oct-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -768,6 +768,8 @@ public class LinksCleaned extends Thread
      */
     private void doRenewData( boolean go, String source ) throws Exception
     {
+        boolean debug = true;
+
         String funcname = "doRenewData";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -782,12 +784,15 @@ public class LinksCleaned extends Thread
         String deleteRegist = "DELETE FROM registration_c WHERE id_source = " + source;
 
         showMessage( "Deleting previous data for source: " + source, false, true );
+        if( debug ) {
+            showMessage( deletePerson, false, true );
+            showMessage( deleteRegist, false, true );
+        }
         conCleaned.runQuery( deletePerson );
         conCleaned.runQuery( deleteRegist );
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
-        showMessage("Copying links_original person keys to links_cleaned", false, true);
         String keysPerson = ""
             + "INSERT INTO links_cleaned.person_c"
             +      " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
@@ -795,10 +800,10 @@ public class LinksCleaned extends Thread
             + " FROM links_original.person_o"
             + " WHERE person_o.id_source = " + source;
 
-        //System.out.println( keysPerson );
+        showMessage( "Copying links_original person keys to links_cleaned", false, true );
+        if( debug ) { showMessage( keysPerson, false, true ); }
         conCleaned.runQuery( keysPerson );
 
-        showMessage("Copying links_original registration keys to links_cleaned", false, true);
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c"
             +      " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
@@ -806,7 +811,8 @@ public class LinksCleaned extends Thread
             + " FROM links_original.registration_o"
             + " WHERE registration_o.id_source = " + source;
 
-        //System.out.println( keysRegistration );
+        showMessage( "Copying links_original registration keys to links_cleaned", false, true );
+        if( debug ) { showMessage( keysRegistration, false, true ); }
         conCleaned.runQuery( keysRegistration );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -4346,11 +4352,20 @@ public class LinksCleaned extends Thread
 
         MinMaxYearSet mmj = new MinMaxYearSet();
 
-        mmj.SetMaxYear( maximum_year );
         mmj.SetMinYear( minimum_year );
+        mmj.SetMaxYear( maximum_year );
 
-        if( function.equals( "A" ) ) {
-            return mmj;
+        // function "A" means: the contents of mmj is already OK
+        // function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
+
+        if( function.equals( "C" ) )                    // function C, check by reg year
+        {
+            if( maximum_year > reg_year ) { mmj.SetMaxYear( reg_year ); }
+        }
+        else if( function.equals( "D" ) )               // function D
+        {
+            if( minimum_year > (reg_year - 14) ) { mmj.SetMinYear( reg_year - 14 ); }
+            if( maximum_year > (reg_year - 14) ) { mmj.SetMaxYear( reg_year - 14 ); }
         }
         else if( function.equals( "E" ) )               // If E, deceased
         {
@@ -4358,42 +4373,17 @@ public class LinksCleaned extends Thread
                 mmj.SetMinYear( 0 );
                 mmj.SetMaxYear( 0 );
             }
-
-            return mmj;
-        }
-        else if( function.equals( "C" ) )               // function C, check by reg year
-        {
-            if( maximum_year > reg_year ) {
-                mmj.SetMaxYear( reg_year );
-            }
-
-            return mmj;
-        }
-        else if( function.equals( "D" ) )               // function D
-        {
-            if( minimum_year > (reg_year - 14) ) {
-                mmj.SetMinYear( reg_year - 14 );
-            }
-            if( maximum_year > (reg_year - 14) ) {
-                mmj.SetMaxYear( reg_year - 14 );
-            }
-
-            return mmj;
         }
         else if( function.equals( "F" ) )               // function F
         {
-            if( minimum_year < reg_year ) {
-                mmj.SetMinYear( reg_year );
-            }
-
-            return mmj;
+            if( minimum_year < reg_year ) { mmj.SetMinYear( reg_year ); }
         }
         else
         {
-            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
+            addToReportPerson( id_person, "0", 104, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
         }
 
-        return mmj;                                     // Function A
+        return mmj;
 
     } // minMaxCalculation
 
@@ -4637,7 +4627,9 @@ public class LinksCleaned extends Thread
      */
     public void standardDate( String source, String type )
     {
-        int counter = 0;
+        int count = 0;
+        int count_empty = 0;
+        int count_invalid = 0;
         int step = 10000;
         int stepstate = step;
 
@@ -4651,9 +4643,9 @@ public class LinksCleaned extends Thread
             while( rs.next() )
             {
                 // GUI info
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
                     stepstate += step;
                 }
 
@@ -4661,7 +4653,10 @@ public class LinksCleaned extends Thread
                 int id_source = rs.getInt( "id_source" );
                 String date   = rs.getString( type + "_date" );
 
-                if( date.isEmpty() ) { continue; }
+                if( date.isEmpty() ) {
+                    count_empty++;
+                    continue;
+                }
 
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
 
@@ -4680,6 +4675,7 @@ public class LinksCleaned extends Thread
                 }
                 else
                 {
+                    count_invalid++;
                     addToReportPerson( id_person, id_source + "", 211, dymd.getReports() );   // EC 211
 
                     String query = ""
@@ -4694,10 +4690,10 @@ public class LinksCleaned extends Thread
                 }
             }
 
-            showMessage( "Number of " + type + " records: " + counter, false, true );
+            showMessage( "Number of " + type + " records: " + count + ", empty dates: " + count_empty + ", invalid dates: " + count_invalid, false, true );
             rs = null;
         } catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
+            showMessage( count + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDate
