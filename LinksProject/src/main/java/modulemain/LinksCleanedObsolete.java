@@ -904,6 +904,275 @@ public void standardSequence( String SourceNo) throws Exception
     } // functieParseRemarks
     */
 
+
+// begin Obsolete Dates stuff
+
+        // deleted from doDates
+        /*
+        // superfluous, remove
+        standardFlaggedDate( "birth" );
+        standardFlaggedDate( "mar" );
+        standardFlaggedDate( "death" );
+        */
+
+        // FL-04-Sep-2014
+        // commented out function calls below: probably overlapping functionality with doMinMaxDate ?!
+
+        //showMessage( "Running completeMinMaxBirth...", false, true );
+        //completeMinMaxBirth();
+
+        //showMessage( "Running completeMinMaxMar...", false, true );
+        //completeMinMaxMar();
+
+        // no function completeMinMaxDeath() : NO, not needed
+
+        /*
+        if( showskip ) { showMessage( "Skipping registration_c updates", false, true ); }
+        showMessage( "Running update queries...", false, true );
+        // extra function to correct registration data
+        String q1 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.birth_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 1 AND p.role = 1;";
+        String q2 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date   WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 4;";
+        String q3 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.mar_date   WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 2 AND p.role = 7;";
+        String q4 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 3 AND p.role = 10;";
+        String q5 = "UPDATE links_cleaned.registration_c AS r, links_cleaned.person_c AS p SET r.registration_date = p.death_date WHERE r.registration_date IS NULL AND r.id_registration = p.id_registration AND r.registration_maintype = 7 AND p.role = 10;";
+
+        conCleaned.runQuery( q1 );
+        conCleaned.runQuery( q2 );
+        conCleaned.runQuery( q3 );
+        conCleaned.runQuery( q4 );
+        conCleaned.runQuery( q5 );
+        */
+
+        // the remains are copied from doMinMaxDate()
+        //minMaxValidDate();              // for all sources ? NO, per source, -> change
+
+
+/**
+ * @param type
+ */
+    /*
+    public void standardFlaggedDate( String type )
+    {
+        // Step vars
+        int counter = 0;
+        int step = 10000;
+        int stepstate = step;
+
+        try {
+            String startQuery;
+
+            startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_c WHERE ( ( " + type + "_date_flag = 2 ) OR ( " + type + "_date_flag = 3 ) ) AND " + type + "_date is not null";
+
+            ResultSet rs = conCleaned.runQueryWithResult( startQuery );
+
+            while( rs.next() )
+            {
+                // GUI info
+                counter++;
+                if (counter == stepstate) {
+                    showMessage(counter + "", true, true);
+                    stepstate += step;
+                }
+
+                int id_person = rs.getInt("id_person");
+                int id_source = rs.getInt("id_source");
+                String date = rs.getString(type + "_date");
+
+                if (date.isEmpty()) {
+                    continue;
+                }
+
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
+
+                if (dymd.isValidDate()) {
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + date + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " , "
+                            + "person_c." + type + "_date_valid = 1 "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                }
+                else {
+
+                    // EC 211
+                    addToReportPerson(id_person, id_source + "", 211, dymd.getReports());
+
+                    String query = ""
+                            + "UPDATE person_c "
+                            + "SET person_c." + type + "_date = '" + date + "' , "
+                            + "person_c." + type + "_day = " + dymd.getDay() + " , "
+                            + "person_c." + type + "_month = " + dymd.getMonth() + " , "
+                            + "person_c." + type + "_year = " + dymd.getYear() + " "
+                            + "WHERE person_c.id_person = " + id_person;
+
+                    conCleaned.runQuery(query);
+                }
+            }
+            rs = null;
+        }
+        catch (Exception ex) {
+            showMessage(counter + " Exception while cleaning " + type + " flagged date: " + ex.getMessage(), false, true);
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardFlaggedDate
+    */
+
+
+/**
+ * @throws Exception
+ */
+    /*
+    private void completeMinMaxBirth() throws Exception
+    {
+        String q1 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " mar_day_min     = birth_day ,"
+                + " mar_day_max     = birth_day ,"
+                + " mar_month_min   = birth_month ,"
+                + " mar_month_max   = birth_month ,"
+                + " mar_date_min    = CONCAT( birth_day , '-' , birth_month , '-' ,  birth_year + min_year ) ,"
+                + " mar_date_max    = CONCAT( birth_day , '-' , birth_month , '-' ,  birth_year + max_year ) ,"
+                + " mar_year_min    = birth_year + min_year ,"
+                + " mar_year_max    = birth_year + max_year ,"
+                + " mar_date_valid = 1"
+                + " WHERE"
+                + " links_cleaned.person_c.role             = 1 AND"
+                + " links_cleaned.person_c.birth_date_valid = 1 AND"
+                + " links_general.ref_date_minmax.role      = 1 AND"
+                + " links_general.ref_date_minmax.maintype  = 1 AND"
+                + " links_general.ref_date_minmax.date_type = 'marriage_date'";
+
+        String q2 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " death_day_min   = birth_day ,"
+                + " death_day_max   = birth_day ,"
+                + " death_month_min = birth_month ,"
+                + " death_month_max = birth_month ,"
+                + " death_date_min  = CONCAT( birth_day , '-' , birth_month , '-' ,  birth_year + min_year ) ,"
+                + " death_date_max  = CONCAT( birth_day , '-' , birth_month , '-' ,  birth_year + max_year ) ,"
+                + " death_year_min  = birth_year + min_year ,"
+                + " death_year_max  = birth_year + max_year ,"
+                + " death_date_valid = 1"
+                + " WHERE"
+                + " links_cleaned.person_c.role             = 1 AND"
+                + " links_cleaned.person_c.birth_date_valid = 1 AND"
+                + " links_general.ref_date_minmax.role      = 1 AND"
+                + " links_general.ref_date_minmax.maintype  = 1 AND"
+                + " links_general.ref_date_minmax.date_type = 'death_date'";
+
+        conCleaned.runQuery( q1 );
+        conCleaned.runQuery( q2 );
+    } // completeMinMaxBirth
+    */
+
+/**
+ * @throws Exception
+ */
+    /*
+    private void completeMinMaxMar() throws Exception
+    {
+        String q1 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " birth_day_min     = mar_day ,"
+                + " birth_day_max     = mar_day ,"
+                + " birth_month_min   = mar_month ,"
+                + " birth_month_max   = mar_month ,"
+                + " birth_date_min    = CONCAT( mar_day , '-' , mar_month , '-' ,  (mar_year - age_year) + min_year ) ,"
+                + " birth_date_max    = CONCAT( mar_day , '-' , mar_month , '-' ,  (mar_year - age_year) + max_year ) ,"
+                + " birth_year_min    = (mar_year - age_year) + min_year ,"
+                + " birth_year_max    = (mar_year - age_year) + max_year ,"
+                + " birth_date_valid  = 1"
+                + " WHERE"
+                + " ( (links_cleaned.person_c.age_year is not null ) AND ( links_cleaned.person_c.age_year <> '') ) AND"
+                + " links_cleaned.person_c.role = 4 AND"
+                + " links_cleaned.person_c.mar_date_valid       = 1 AND"
+                + " links_cleaned.person_c.birth_date_valid     = 0 AND"
+                + " links_general.ref_date_minmax.role          = 4 AND"
+                + " links_general.ref_date_minmax.maintype      = 2 AND"
+                + " links_general.ref_date_minmax.age_reported  = 'y' AND"
+                + " links_general.ref_date_minmax.date_type     = 'birth_date'";
+
+        String q2 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " birth_day_min     = mar_day ,"
+                + " birth_day_max     = mar_day ,"
+                + " birth_month_min   = mar_month ,"
+                + " birth_month_max   = mar_month ,"
+                + " birth_date_min    = CONCAT( mar_day , '-' , mar_month , '-' ,  (mar_year - age_year) + min_year ) ,"
+                + " birth_date_max    = CONCAT( mar_day , '-' , mar_month , '-' ,  (mar_year - age_year) + max_year ) ,"
+                + " birth_year_min    = (mar_year - age_year) + min_year ,"
+                + " birth_year_max    = (mar_year - age_year) + max_year ,"
+                + " birth_date_valid  = 1"
+                + " WHERE"
+                + " ( (links_cleaned.person_c.age_year is not null ) AND ( links_cleaned.person_c.age_year <> '') ) AND"
+                + " links_cleaned.person_c.role = 7 AND"
+                + " links_cleaned.person_c.mar_date_valid       = 1 AND"
+                + " links_cleaned.person_c.birth_date_valid     = 0 AND"
+                + " links_general.ref_date_minmax.role          = 7 AND"
+                + " links_general.ref_date_minmax.maintype      = 2 AND"
+                + " links_general.ref_date_minmax.age_reported  = 'y' AND"
+                + " links_general.ref_date_minmax.date_type     = 'birth_date'";
+
+        String q3 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " death_day_min     = mar_day ,"
+                + " death_day_max     = mar_day ,"
+                + " death_month_min   = mar_month ,"
+                + " death_month_max   = mar_month ,"
+                + " death_date_min    = CONCAT( mar_day , '-' , mar_month , '-' ,  mar_year ) ,"
+                + " death_date_max    = CONCAT( mar_day , '-' , mar_month , '-' ,  mar_year + ( max_year - age_year ) ) ,"
+                + " death_year_min    = mar_year ,"
+                + " death_year_max    = mar_year + ( max_year - age_year ) ,"
+                + " death_date_valid  = 1"
+                + " WHERE"
+                + " ( (links_cleaned.person_c.age_year is not null ) AND ( links_cleaned.person_c.age_year <> '') ) AND"
+                + " links_cleaned.person_c.role = 4 AND"
+                + " links_cleaned.person_c.mar_date_valid       = 1 AND"
+                + " links_general.ref_date_minmax.role          = 4 AND"
+                + " links_general.ref_date_minmax.maintype      = 2 AND"
+                + " links_general.ref_date_minmax.age_reported  = 'y' AND"
+                + " links_general.ref_date_minmax.date_type     = 'death_date'";
+
+        String q4 = ""
+                + " UPDATE links_cleaned.person_c, links_general.ref_date_minmax"
+                + " SET"
+                + " death_day_min     = mar_day ,"
+                + " death_day_max     = mar_day ,"
+                + " death_month_min   = mar_month ,"
+                + " death_month_max   = mar_month ,"
+                + " death_date_min    = CONCAT( mar_day , '-' , mar_month , '-' ,  mar_year ) ,"
+                + " death_date_max    = CONCAT( mar_day , '-' , mar_month , '-' ,  mar_year + ( max_year - age_year ) ) ,"
+                + " death_year_min    = mar_year ,"
+                + " death_year_max    = mar_year + ( max_year - age_year ) ,"
+                + " death_date_valid  = 1 "
+                + " WHERE"
+                + " ( (links_cleaned.person_c.age_year is not null ) AND ( links_cleaned.person_c.age_year <> '') ) AND"
+                + " links_cleaned.person_c.role = 7 AND"
+                + " links_cleaned.person_c.mar_date_valid       = 1 AND"
+                + " links_general.ref_date_minmax.role          = 7 AND"
+                + " links_general.ref_date_minmax.maintype      = 2 AND"
+                + " links_general.ref_date_minmax.age_reported  = 'y' AND"
+                + " links_general.ref_date_minmax.date_type     = 'death_date'";
+
+        conCleaned.runQuery( q1 );
+        conCleaned.runQuery( q2 );
+        conCleaned.runQuery( q3 );
+        conCleaned.runQuery( q4 );
+    } // completeMinMaxMar
+    */
+
+// end Obsolete Dates stuff
+
+
 /**
  * calls functieVeldBeroep()
  *
