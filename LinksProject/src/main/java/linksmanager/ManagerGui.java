@@ -256,6 +256,7 @@ public class ManagerGui extends javax.swing.JFrame
 		label4 = new JLabel();
 		tbLOLCrefdb = new JTextField();
 		cbCdoOccupation = new JCheckBox();
+		cbCdoDebug = new JCheckBox();
 		jPanel1 = new JPanel();
 		cbPdoUniqueNameTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
@@ -1326,8 +1327,7 @@ public class ManagerGui extends javax.swing.JFrame
 				tbLOLClatestOutput.setName("tbLOLClatestOutput");
 
 				//---- jLabel51 ----
-				jLabel51.setFont(new Font("Tahoma", Font.BOLD, 11));
-				jLabel51.setText("Tasks:");
+				jLabel51.setText("Cleaning Tasks:");
 				jLabel51.setName("jLabel51");
 
 				//---- cbCdoNames ----
@@ -1416,6 +1416,10 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoOccupation.setText("Occupation");
 				cbCdoOccupation.setName("cbCdoOccupation");
 
+				//---- cbCdoDebug ----
+				cbCdoDebug.setText("Debug Output");
+				cbCdoDebug.setName("cbCdoDebug");
+
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
 				pLOLCLayout.setHorizontalGroup(
@@ -1433,10 +1437,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbLOLCdoPostTasks, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
-												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE))
+												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE))
 											.addGap(27, 27, 27)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
 												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
@@ -1452,10 +1456,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 263, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 263, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 263, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 263, Short.MAX_VALUE)))
 										.addGroup(pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
@@ -1463,7 +1467,7 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoLocations, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbCdoStatusSex, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbCdoRegType, GroupLayout.PREFERRED_SIZE, 236, GroupLayout.PREFERRED_SIZE))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 34, Short.MAX_VALUE)
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(cbCdoDates, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbLOLCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
@@ -1471,7 +1475,10 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(cbCdoDaysSinceBegin, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
 												.addComponent(cbCdoOccupation, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE))))
 									.addGap(26, 26, 26))
-								.addComponent(jLabel51, GroupLayout.DEFAULT_SIZE, 484, Short.MAX_VALUE))
+								.addComponent(jLabel51, GroupLayout.DEFAULT_SIZE, 496, Short.MAX_VALUE)
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addComponent(cbCdoDebug)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 369, Short.MAX_VALUE)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGap(6, 6, 6)
@@ -1528,7 +1535,9 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 54, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
+									.addComponent(cbCdoDebug)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(jLabel51)
 									.addGap(15, 15, 15)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1756,6 +1765,15 @@ public class ManagerGui extends javax.swing.JFrame
         System.out.println( "mysql_links_username:\t" + user );
         System.out.println( "mysql_links_password:\t" + pass );
 
+        // Debug output ?
+        String doDebug = properties.getProperty( "doDebug" );
+        if( doDebug != null ) {
+            if (doDebug.equals("true")) {
+                cbCdoDebug.setSelected(true);
+            } else {
+                cbCdoDebug.setSelected(false);
+            }
+        }
 
         // Remove previous data ?
         String doRefreshData = properties.getProperty( "doRefreshData" );
@@ -1951,7 +1969,7 @@ public class ManagerGui extends javax.swing.JFrame
     }
 
 
-    // alle selectors
+    // all selectors
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         try {
             doc = LinksSpecific.LoadXmlFromfile(LinksSpecific.OpenFile("xml", false));
@@ -2209,6 +2227,8 @@ public class ManagerGui extends javax.swing.JFrame
         // new DoSet
         DoSet dos = new DoSet();
 
+        if( cbCdoDebug.isSelected() ) { dos.setDoDebug(true); }
+
         if( cbCdoOccupation.isSelected() ) { dos.setDoOccupation(true); }
 
         if( cbCdoRefreshData.isSelected() ) { dos.setDoRenewData(true); }
@@ -2365,7 +2385,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "09-Oct-2014 16:34";
+            String timestamp1 = "10-Oct-2014 16:36";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2532,6 +2552,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JLabel label4;
 	private JTextField tbLOLCrefdb;
 	private JCheckBox cbCdoOccupation;
+	private JCheckBox cbCdoDebug;
 	private JPanel jPanel1;
 	private JCheckBox cbPdoUniqueNameTables;
 	private JCheckBox cbPdoLevenshtein;
