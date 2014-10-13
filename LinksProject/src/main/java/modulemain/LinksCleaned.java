@@ -31,7 +31,7 @@ import dataset.Ages;
 import dataset.ArrayListNonCase;
 import dataset.DateYearMonthDaySet;
 import dataset.DivideMinMaxDatumSet;
-import dataset.DoSet;
+import dataset.Options;
 import dataset.MarriageYearPersonsSet;
 import dataset.MinMaxDateSet;
 import dataset.MinMaxMainAgeSet;
@@ -57,7 +57,6 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-13-Oct-2014 This the last version that contains the Omar ttal* code
  * FL-13-Oct-2014 Latest change
  *
  * TODO check all occurrences of TODO
@@ -65,19 +64,6 @@ import general.PrintLogger;
 
 public class LinksCleaned extends Thread
 {
-    // Table -> ArraysSet
-    //private TableToArraysSet ttalPrepiece;            // Names
-    //private TableToArraysSet ttalSuffix;              // Names
-    //private TableToArraysSet ttalAlias;               // Names
-    //private TableToArraysSet ttalFirstname;           // Names
-    //private TableToArraysSet ttalFamilyname;          // names
-    //private TableToArraysSet ttalLocation;            // Location
-    //private TableToArraysSet ttalOccupation;          // Occupation
-    //private TableToArraysSet ttalRegistration;        // formerly used in standardType()
-    //private TableToArraysSet ttalReport;              // Report warnings
-    //private TableToArraysSet ttalRole;                // Role
-    //private TableToArraysSet ttalStatusSex;           // Civilstatus & Gender
-
     // Table -> ArrayListMultiMap
     private TabletoArrayListMultimap almmPrepiece;      // Names
     private TabletoArrayListMultimap almmSuffix;        // Names
@@ -95,13 +81,6 @@ public class LinksCleaned extends Thread
     private JTextField tbLOLClatestOutput;
     private JTextArea  taLOLCoutput;
 
-    // WHERE [...]id_source = ...   shortcuts
-    //private String sourceFilter = "";
-    //private String sourceFilterCleanPers = "";
-    //private String sourceFilterOrigPers = "";
-    //private String sourceFilterCleanReg = "";
-    //private String sourceFilterOrigReg = "";
-
     private MySqlConnector conOr;           // remote reference db
     private MySqlConnector conLog;
     private MySqlConnector conCleaned;      // cleaned, from original
@@ -111,7 +90,7 @@ public class LinksCleaned extends Thread
 
     private Runtime r = Runtime.getRuntime();
     private String logTableName;
-    private DoSet dos;
+    private Options dos;
 
     private final static String SC_U = "u"; // Unknown Standard value assigned (although the original value is not valid)
     private final static String SC_X = "x"; //    X    Standard yet to be assigned
@@ -132,10 +111,9 @@ public class LinksCleaned extends Thread
     private String user = "";
     private String pass = "";
 
-    private int teller = 0;
     private int sourceIdGui;
 
-    private int[] sourceList;                      // either sourceListAvail, or [sourceId] from GUI
+    private int[] sourceList;                   // either sourceListAvail, or [sourceId] from GUI
 
     private String endl = ". OK.";              // ".";
 
@@ -171,7 +149,7 @@ public class LinksCleaned extends Thread
             int sourceId,
             JTextField tbLOLClatestOutput,
             JTextArea taLOLCoutput,
-            DoSet dos,
+            Options dos,
             general.PrintLogger plog,
             ManagerGui mg
     )
@@ -196,10 +174,10 @@ public class LinksCleaned extends Thread
         String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
         System.out.println( timestamp + "  linksCleaned()" );
 
-        System.out.println( "mysql_hsnref_hosturl:\t" + ref_url );
+        System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
         System.out.println( "mysql_hsnref_username:\t" + ref_user );
         System.out.println( "mysql_hsnref_password:\t" + ref_pass );
-        System.out.println( "mysql_hsnref_dbname:\t" + ref_db );
+        System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
     }
 
 
@@ -237,8 +215,8 @@ public class LinksCleaned extends Thread
 
                     doRenewData( debug, dos.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
-                    //doPreBasicNames( dos.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
-                    //doRemarks( dos.isDoRemarks(), source );                     // GUI cb: Parse remarks
+                    //doPreBasicNames( dos.isDoPreBasicNames(), source );               // GUI cb: Basic names temp
+                    //doRemarks( dos.isDoRemarks(), source );                           // GUI cb: Parse remarks
 
                     doNames( debug, dos.isDoNames(), source );                         // GUI cb: Names
 
@@ -248,13 +226,13 @@ public class LinksCleaned extends Thread
 
                     doRegistrationType( debug, dos.isDoRegType(), source );            // GUI cb: Registration Type
 
-                    //doSequence( dos.isDoSequence(), source );                   // GUI cb: Sequence
-                    //doRelation( dos.isDoRelation(), source );                   // GUI cb: Relation
+                    //doSequence( dos.isDoSequence(), source );                         // GUI cb: Sequence
+                    //doRelation( dos.isDoRelation(), source );                         // GUI cb: Relation
 
                     doOccupation( debug, dos.isDoOccupation(), source );               // GUI cb: Occupation
 
-                    //doAge( dos.isDoAgeYear(), source );                       // part of Dates
-                    //doRole( dos.isDoRole(), source );                         // part of Dates
+                    //doAge( dos.isDoAgeYear(), source );                               // part of Dates
+                    //doRole( dos.isDoRole(), source );                                 // part of Dates
                     doDates( debug, dos.isDoDates(), source );                         // GUI cb: Dates
 
                     doMinMaxMarriage( debug, dos.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
@@ -272,6 +250,7 @@ public class LinksCleaned extends Thread
 
                 msg = "Cleaning sourceId " + source + " is done";
                 showTimingMessage( msg, begintime );
+                System.out.println( msg );
             }
         }
 
@@ -309,7 +288,6 @@ public class LinksCleaned extends Thread
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
-            //ttalReport = new TableToArraysSet( conGeneral, conOr, "", "report" );
             almmReport = new TabletoArrayListMultimap( conGeneral, null, "ref_report", "type", null );
             //almmReport.contentsOld();
 
@@ -622,8 +600,6 @@ public class LinksCleaned extends Thread
 
         String errorCodeStr = Integer.toString( errorCode );
 
-        //String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
-        //String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
         String cla = almmReport.value( "class",   errorCodeStr );
         String con = almmReport.value( "content", errorCodeStr );
 
@@ -701,8 +677,6 @@ public class LinksCleaned extends Thread
 
         String errorCodeStr = Integer.toString( errorCode );
 
-        //String cla = ttalReport.getColumnByColumnInt( "type", "class",   errorCode );
-        //String con = ttalReport.getColumnByColumnInt( "type", "content", errorCode );
         String cla = almmReport.value( "class",   errorCodeStr );
         String con = almmReport.value( "content", errorCodeStr );
 
@@ -864,9 +838,6 @@ public class LinksCleaned extends Thread
         msg = "Loading Prepiece/Suffix/Alias reference tables";
         showMessage( msg + "...", false, true );
 
-        //ttalPrepiece = new TableToArraysSet( conGeneral, conOr, "original", "prepiece" );
-        //ttalSuffix   = new TableToArraysSet( conGeneral, conOr, "original", "suffix" );
-        //ttalAlias    = new TableToArraysSet( conGeneral, conOr, "original", "alias" );
         almmPrepiece = new TabletoArrayListMultimap( conGeneral, conOr, "ref_prepiece", "original", "prefix" );
         almmSuffix   = new TabletoArrayListMultimap( conGeneral, conOr, "ref_suffix",   "original", "standard" );
         almmAlias    = new TabletoArrayListMultimap( conGeneral, conOr, "ref_alias",    "original",  null );
@@ -885,8 +856,6 @@ public class LinksCleaned extends Thread
         msg = "Loading reference table: ref_firstname";
         showMessage( msg + "...", false, true );
 
-        //ttalFirstname = new TableToArraysSet( conGeneral, conOr, "original", "firstname" );
-        //showMessage( "Number of rows in reference table: " + ttalFirstname.countRows(), false, true );
         almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original", "standard" );
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
@@ -901,8 +870,6 @@ public class LinksCleaned extends Thread
         showTimingMessage( "standardFirstname", start );
 
         start = System.currentTimeMillis();
-        //ttalFirstname.updateTable();
-        //ttalFirstname.free();
         almmFirstname.updateTable();
         almmFirstname.free();
 
@@ -927,8 +894,6 @@ public class LinksCleaned extends Thread
         msg = "Loading reference table: ref_familyname";
         showMessage( msg + "...", false, true );
 
-        //ttalFamilyname = new TableToArraysSet( conGeneral, conOr, "original", "familyname" );
-        //showMessage( "Number of rows in reference table: " + ttalFamilyname.countRows(), false, true );
         almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original", "standard" );
         numrows = almmFamilyname.numrows();
         numkeys = almmFamilyname.numkeys();
@@ -946,8 +911,6 @@ public class LinksCleaned extends Thread
         msg = "remains Familyname";
         showMessage( msg + "...", false, true );
 
-        //ttalFamilyname.updateTable();
-        //ttalFamilyname.free();
         almmFamilyname.updateTable();
         almmFamilyname.free();
 
@@ -978,10 +941,6 @@ public class LinksCleaned extends Thread
         start = System.currentTimeMillis();
         msg = "Updating reference tables: Prepiece/Suffix/Alias...";
         showMessage( msg + "...", false, true );
-
-        //ttalPrepiece.updateTable();
-        //ttalSuffix.updateTable();
-        //ttalAlias.updateTable();
 
         almmPrepiece.updateTable();
         almmSuffix.updateTable();
@@ -1070,16 +1029,13 @@ public class LinksCleaned extends Thread
                     {
                         String prename = preList.get( i );       // does this name part exist in ref_firstname?
 
-                        //if( ttalFirstname.originalExists( prename ) )
                         if( almmFirstname.contains( prename ) )
                         {
                             // Check the standard code
-                            //String standard_code = ttalFirstname.getStandardCodeByOriginal( prename );
                             String standard_code = almmFirstname.code( prename );
 
                             if( standard_code.equals( SC_Y ) )
                             {
-                                //postList.add( ttalFirstname.getStandardByOriginal( prename ) );
                                 postList.add( almmFirstname.standard( prename ) );
 
                                 // stillbirth involves an extra query here.
@@ -1093,7 +1049,6 @@ public class LinksCleaned extends Thread
                             else if( standard_code.equals( SC_U ) )
                             {
                                 addToReportPerson( id_person, source, 1100, prename );           // EC 1100
-                                //postList.add( ttalFirstname.getStandardByOriginal( prename ) );
                                 postList.add( almmFirstname.standard( prename ) );
                             }
                             else if( standard_code.equals( SC_N ) )
@@ -1120,23 +1075,19 @@ public class LinksCleaned extends Thread
                                 addToReportPerson( id_person, source, 1104, prename );  // EC 1104
 
                                 // Check if name exists in ref
-                                // Does this aprt exists in ref_name?
-                                //if( ttalFirstname.originalExists( nameNoInvalidChars ) )
+                                // Does this part exists in ref_name?
                                 if( almmFirstname.contains( nameNoInvalidChars ) )
                                 {
                                     // Check the standard code
-                                    //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoInvalidChars );
                                     String standard_code = almmFirstname.code( nameNoInvalidChars );
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoInvalidChars ) );
                                         postList.add( almmFirstname.standard( nameNoInvalidChars ) );
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
                                         addToReportPerson( id_person, source, 1100, nameNoInvalidChars );    // EC 1100
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoInvalidChars ) );
                                         postList.add( almmFirstname.standard( nameNoInvalidChars ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
@@ -1156,26 +1107,6 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // Check on suffix
-                                /*
-                                ArrayListNonCase sfxO  = ttalSuffix.getArray( "original" );
-                                ArrayListNonCase sfxSc = ttalSuffix.getArray( "standard_code" );
-
-                                for( int j = 0; j < sfxO.size(); j++ )
-                                {
-                                    if( nameNoInvalidChars.endsWith( " " + sfxO.get( j ).toString() )
-                                        && sfxSc.get( j ).toString().equals( SC_Y ) )
-                                    {
-                                        addToReportPerson( id_person, source, 1106, nameNoInvalidChars );  // EC 1106
-
-                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + sfxO.get( j ).toString(), "" );
-
-                                        // Set suffix
-                                        String query = PersonC.updateQuery( "suffix", sfxO.get( j ).toString(), id_person );
-
-                                        conCleaned.runQuery( query );
-                                    }
-                                }
-                                */
                                 Set< String > keys = almmSuffix.keySet();
                                 for( String key : keys )
                                 {
@@ -1199,22 +1130,18 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // last check on ref
-                                //if( ttalFirstname.originalExists( nameNoPieces ) )
                                 if( almmFirstname.contains( nameNoPieces ) )
                                 {
                                     // Check the standard code
-                                    //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoPieces );
                                     String standard_code = almmFirstname.code(nameNoPieces);
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
                                         addToReportPerson( id_person, source, 1100, nameNoPieces );    // EC 1100
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
@@ -1232,7 +1159,6 @@ public class LinksCleaned extends Thread
                                 }
                                 else {
                                     // name must be added to ref_firstname with standard_code x
-                                    //ttalFirstname.addOriginal( nameNoPieces );
                                     almmFirstname.add( nameNoPieces );
                                     postList.add( nameNoPieces );   // Also add name to postlist
                                 }
@@ -1240,26 +1166,6 @@ public class LinksCleaned extends Thread
                             else  // no invalid token
                             {
                                 // Check on suffix
-                                /*
-                                ArrayListNonCase sfxO  = ttalSuffix.getArray( "original" );
-                                ArrayListNonCase sfxSc = ttalSuffix.getArray( "standard_code" );
-
-                                for( int j = 0; j < sfxO.size(); j++ )
-                                {
-                                    if( nameNoInvalidChars.equalsIgnoreCase( sfxO.get( j ).toString() )
-                                        && sfxSc.get( j ).toString().equals( SC_Y ) )
-                                    {
-                                        addToReportPerson( id_person, source, 1106, nameNoInvalidChars );  // EC 1106
-
-                                        nameNoInvalidChars = nameNoInvalidChars.replaceAll( sfxO.get( j ).toString(), "" );
-
-                                        // Set suffix
-                                        String query = PersonC.updateQuery( "suffix", sfxO.get( j ).toString(), id_person );
-
-                                        conCleaned.runQuery( query );
-                                    }
-                                }
-                                */
                                 Set< String > keys = almmSuffix.keySet();
                                 for( String key : keys )
                                 {
@@ -1283,22 +1189,18 @@ public class LinksCleaned extends Thread
                                 }
 
                                 // last check on ref
-                                //if( ttalFirstname.originalExists( nameNoPieces ) )
                                 if( almmFirstname.contains( nameNoPieces ) )
                                 {
                                     // Check the standard code
-                                    //String standard_code = ttalFirstname.getStandardCodeByOriginal( nameNoPieces );
                                     String standard_code = almmFirstname.code(nameNoPieces);
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
                                         addToReportPerson( id_person, source, 1100, nameNoPieces );   // EC 1100
-                                        //postList.add( ttalFirstname.getStandardByOriginal( nameNoPieces ) );
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
@@ -1316,7 +1218,6 @@ public class LinksCleaned extends Thread
                                 }
                                 else {
                                     // name must be added to ref_firstname with standard_code x
-                                    //ttalFirstname.addOriginal( nameNoPieces );
                                     almmFirstname.add( nameNoPieces );
                                     postList.add( nameNoPieces );   // Also add name to postlist
                                 }
@@ -1437,25 +1338,21 @@ public class LinksCleaned extends Thread
                     familyname = familyname.toLowerCase();
 
                     // familyname in ref_familyname ?
-                    //if( ttalFamilyname.originalExists( familyname ) )
                     if( almmFamilyname.contains( familyname ) )
                     {
                         // get standard_code
-                        //String standard_code = ttalFamilyname.getStandardCodeByOriginal( familyname );
                         String standard_code = almmFamilyname.code(familyname);
                         if( debug ) { showMessage( "code: " + standard_code, false, true ); }
 
                         // Check the standard code
                         if( standard_code.equals( SC_Y ) )
                         {
-                            //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( familyname ).toLowerCase() + "\n" );
                             writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ).toLowerCase() + "\n" );
                         }
                         else if( standard_code.equals( SC_U ) )
                         {
                             addToReportPerson( id_person, source, 1000, familyname ); // EC 1000
 
-                            //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( familyname ).toLowerCase() + "\n" );
                             writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ).toLowerCase() + "\n" );
                         }
                         else if( standard_code.equals( SC_N ) )
@@ -1503,21 +1400,6 @@ public class LinksCleaned extends Thread
                         String nameNoAlias = standardAlias( id_person, source, nameNoPrePiece, 1007 );
 
                         // Check on suffix
-                        /*
-                        ArrayListNonCase sfxO = ttalSuffix.getArray( "original" );
-
-                        for( int i = 0; i < sfxO.size(); i++ )
-                        {
-                            if( nameNoAlias.endsWith( " " + sfxO.get( i ).toString() ) ) {
-                                addToReportPerson( id_person, source, 1006, nameNoAlias );      // EC 1006
-
-                                nameNoAlias = nameNoAlias.replaceAll( " " + sfxO.get( i ).toString(), "" );
-
-                                // Set alias
-                                PersonC.updateQuery( "suffix", sfxO.get( i ).toString(), id_person );
-                            }
-                        }
-                        */
                         if( debug ) { showMessage( "suffix keySet()", false, true ); }
                         Set< String > keys = almmSuffix.keySet();
                         for( String key : keys )
@@ -1536,23 +1418,19 @@ public class LinksCleaned extends Thread
                         String nameNoSuffix = LinksSpecific.funcCleanSides( nameNoAlias );
 
                         // Check name in original
-                        //if( ttalFamilyname.originalExists( nameNoSuffix ) )
                         if( almmFamilyname.contains( nameNoSuffix ) )
                         {
                             // get standard_code
-                            //String standard_code = ttalFamilyname.getStandardCodeByOriginal( nameNoSuffix );
-                            String standard_code = almmFamilyname.code(nameNoSuffix);
+                            String standard_code = almmFamilyname.code( nameNoSuffix );
 
                             // Check the standard code
                             if( standard_code.equals( SC_Y ) )
                             {
-                                //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( nameNoSuffix ).toLowerCase() + "\n" );
                                 writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
                             }
                             else if( standard_code.equals( SC_U ) ) {
                                 addToReportPerson( id_person, source, 1000, nameNoSuffix );    // EC 1000
 
-                                //writerFamilyname.write( id_person + "," + ttalFamilyname.getStandardByOriginal( nameNoSuffix ).toLowerCase() + "\n" );
                                 writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
                             }
                             else if( standard_code.equals( SC_N ) ) {
@@ -1568,7 +1446,6 @@ public class LinksCleaned extends Thread
                             }
                         } else {
                             // add new familyname
-                            //ttalFamilyname.addOriginal( nameNoSuffix );
                             almmFamilyname.add( nameNoSuffix );
 
                             addToReportPerson( id_person, source, 1009, nameNoSuffix );    // EC 1009
@@ -1636,24 +1513,9 @@ public class LinksCleaned extends Thread
             // Get part
             String part = names.poll();
 
-            //if( ttalPrepiece.originalExists( part ) && ttalPrepiece.getStandardCodeByOriginal( part ).equalsIgnoreCase( SC_Y ) )
             if( almmPrepiece.contains( part ) && almmPrepiece.code( part ).equalsIgnoreCase( SC_Y ) )
             {
                 // Add to person
-                /*
-                if( ttalPrepiece.getColumnByOriginal( "title_noble", part ) != null && !ttalPrepiece.getColumnByOriginal( "title_noble", part ).isEmpty() )
-                {
-                    list_TN += ttalPrepiece.getColumnByOriginal( "title_noble", part ) + " ";
-                }
-                else if( ttalPrepiece.getColumnByOriginal( "title_other", part ) != null && !ttalPrepiece.getColumnByOriginal( "title_other", part ).isEmpty() )
-                {
-                    list_TO += ttalPrepiece.getColumnByOriginal( "title_other", part ) + " ";
-                }
-                else if( ttalPrepiece.getColumnByOriginal( "prefix", part ) != null && !ttalPrepiece.getColumnByOriginal( "prefix", part ).isEmpty() )
-                {
-                    list_PF += ttalPrepiece.getColumnByOriginal( "prefix", part ) + " ";
-                }
-                */
                 if( almmPrepiece.value( "title_noble", part ) != null && !almmPrepiece.value( "title_noble", part ).isEmpty() )
                 {
                     list_TN += almmPrepiece.value( "title_noble", part ) + " ";
@@ -1754,14 +1616,8 @@ public class LinksCleaned extends Thread
                 for( String part : prefixes )
                 {
                     // Does Prefix exist in ref table
-                    //if( ttalPrepiece.originalExists( part ) )
                     if( almmPrepiece.contains( part ) )
                     {
-                        //String standard_code = ttalPrepiece.getStandardCodeByOriginal( part );
-                        //String prefix        = ttalPrepiece.getColumnByOriginal( "prefix", part );
-                        //String title_noble   = ttalPrepiece.getColumnByOriginal( "title_noble", part );
-                        //String title_other   = ttalPrepiece.getColumnByOriginal( "title_other", part );
-
                         String standard_code = almmPrepiece.code( part );
                         String prefix        = almmPrepiece.value( "prefix",      part );
                         String title_noble   = almmPrepiece.value( "title_noble", part );
@@ -1812,7 +1668,6 @@ public class LinksCleaned extends Thread
                     {
                         addToReportPerson(id_person, source, 81, part);           // EC 81
 
-                        //ttalPrepiece.addOriginal( part );     // Add Prefix
                         almmPrepiece.add( part );               // Add Prefix
 
                         listPF += part + " ";                   // Add to list
@@ -1882,10 +1737,8 @@ public class LinksCleaned extends Thread
                 suffix = cleanName( suffix );
 
                 // Check occurrence in ref table
-                //if( ttalSuffix.originalExists( suffix ) )
                 if( almmSuffix.contains( suffix ) )
                 {
-                    //String standard_code = ttalSuffix.getStandardCodeByOriginal( suffix );
                     String standard_code = almmSuffix.code( suffix );
 
                     if( standard_code.equals( SC_X ) )
@@ -1919,7 +1772,6 @@ public class LinksCleaned extends Thread
                 {
                     addToReportPerson( id_person, source, 71, suffix);        // EC 71
 
-                    //ttalSuffix.addOriginal( suffix );
                     almmSuffix.add( suffix );
 
                     String query = PersonC.updateQuery( "suffix", suffix, id_person );
@@ -1951,36 +1803,6 @@ public class LinksCleaned extends Thread
         //boolean debug = true;
         //if( debug ) { showMessage( "standardAlias() id: " + id + ", source: " + source + ", name: " + name, false, true ); }
 
-        /*
-        dataset.ArrayListNonCase ag = ttalAlias.getArray( "original" );
-
-        name = name.toLowerCase();
-
-        for( Object ags : ag )
-        {
-            String keyword = " " + ags.toString().toLowerCase() + " ";
-
-            if( name.contains( " " + keyword + " " ) )
-            {
-                addToReportPerson( id, source, 17, name );      // EC 17
-
-                // prepare on braces
-                if( keyword.contains( "\\(" ) || keyword.contains( "\\(" ) ) {
-                    keyword = keyword.replaceAll( "\\(", "" ).replaceAll( "\\)", "" );
-                }
-
-                String[] names = name.toLowerCase().split( keyword, 2 );
-
-                // we must clean the name because of the braces used in aliases
-
-                // Set alias
-                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides(cleanName( names[ 1 ] ) ), id );
-
-                return LinksSpecific.funcCleanSides( cleanName( names[ 0 ] ) );
-            }
-        }
-        */
-
         name = name.toLowerCase();
         Set< String > keys = almmAlias.keySet();
 
@@ -1999,7 +1821,7 @@ public class LinksCleaned extends Thread
 
                 // we must clean the name because of the braces used in aliases
                 // Set alias
-                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides(cleanName( names[ 1 ] ) ), id );
+                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides( cleanName( names[ 1 ] ) ), id );
 
                 return LinksSpecific.funcCleanSides( cleanName( names[ 0 ] ) );
             }
@@ -2283,7 +2105,6 @@ public class LinksCleaned extends Thread
         String msg = "Loading reference table: location";
         showMessage( msg + "...", false, true );
         long start = System.currentTimeMillis();
-        //ttalLocation = new TableToArraysSet( conGeneral, conOr, "original", "location" );
         almmLocation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_location", "original", "location_no" );
         showTimingMessage( msg, start );
         int numrows = almmLocation.numrows();
@@ -2314,7 +2135,6 @@ public class LinksCleaned extends Thread
 
         start = System.currentTimeMillis();
         showMessage( "Updating reference table: location...", false, true );
-        //ttalLocation.updateTable();
         almmLocation.updateTable();
         showTimingMessage( "Updating reference table: location ", start );
 
@@ -2357,11 +2177,9 @@ public class LinksCleaned extends Thread
                 {
                     location = location.toLowerCase();
                     if( debug ) { System.out.println( "id_person: " + id + ", original: " + locationFieldO + ", location: " + location ); }
-                    //if( ttalLocation.originalExists( location ) )
                     if( almmLocation.contains( location ) )
 
                     {
-                        //String refSCode = ttalLocation.getStandardCodeByOriginal( location );
                         String refSCode = almmLocation.code( location );
                         if( debug ) { System.out.println( "refSCode: " + refSCode );  }
 
@@ -2396,7 +2214,6 @@ public class LinksCleaned extends Thread
                             {
                                 addToReportRegistration( id, id_source, 95, location );
 
-                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
@@ -2406,7 +2223,6 @@ public class LinksCleaned extends Thread
                             {
                                 addToReportPerson( id, id_source, 95, location );
 
-                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
@@ -2417,7 +2233,6 @@ public class LinksCleaned extends Thread
                         {
                             if( tt == TableType.REGISTRATION )
                             {
-                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
@@ -2425,7 +2240,6 @@ public class LinksCleaned extends Thread
                             }
                             else
                             {
-                                //String locationnumber = ttalLocation.getColumnByOriginal( "location_no", location );
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
@@ -2457,7 +2271,6 @@ public class LinksCleaned extends Thread
                             conCleaned.runQuery( query );
                         }
 
-                        //ttalLocation.addOriginal( location );
                         almmLocation.add( location );
                     }
                 }
@@ -2589,7 +2402,6 @@ public class LinksCleaned extends Thread
         showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
-        //ttalStatusSex = new TableToArraysSet( conGeneral, conOr, "original", "status_sex" );
         almmSex = new TabletoArrayListMultimap( conGeneral, conOr, "ref_status_sex", "original", "standard_sex" );
 
         showMessage("Loading reference table: status_sex (civil status as key)...", false, true);
@@ -2604,7 +2416,6 @@ public class LinksCleaned extends Thread
         standardSex( debug, source );
         standardCivilstatus( debug, source );
 
-        //ttalStatusSex.updateTable();
         showMessage("Updating reference table: ref_status_sex", false, true);
         almmCivilstatus.updateTable();
 
@@ -2646,11 +2457,9 @@ public class LinksCleaned extends Thread
 
                 if( sex != null && !sex.isEmpty() )                 // check presence of the gender
                 {
-                    //if( ttalStatusSex.originalExists( sex ) )     // check presence in original
                     if( almmSex.contains( sex ) )                   // check presence in original
 
                     {
-                        //String refSCode = ttalStatusSex.getStandardCodeByOriginal( sex );
                         String refSCode = almmSex.code(sex);
                         if( debug ) { showMessage( "refSCode: " + refSCode , false, true ); }
 
@@ -2672,14 +2481,12 @@ public class LinksCleaned extends Thread
 
                             addToReportPerson( id_person, source, 35, sex );     // warning 35
 
-                            //String query = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
                             String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
                             conCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
                             if( debug ) { showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                            //String query = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", sex ), id_person );
                             String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
                             conCleaned.runQuery( query );
                         }
@@ -2695,7 +2502,6 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                         addToReportPerson( id_person, source, 31, sex );         // warning 31
-                        //ttalStatusSex.addOriginal( sex );                         // warning 31
                         almmCivilstatus.add( sex );         // only almmCivilstatus is used for update
 
                         String query = PersonC.updateQuery( "sex", sex, id_person );
@@ -2752,11 +2558,9 @@ public class LinksCleaned extends Thread
 
                 if( civil_status != null && !civil_status.isEmpty() )       // check presence of civil status
                 {
-                    //if( ttalStatusSex.originalExists( civil_status ) )    // check presence in original
                     if( almmCivilstatus.contains(civil_status) )          // check presence in original
 
                     {
-                        //String refSCode = ttalStatusSex.getStandardCodeByOriginal( civil_status );
                         String refSCode = almmCivilstatus.code(civil_status);
                         //showMessage( "code: " + refSCode, false, true );
 
@@ -2772,12 +2576,10 @@ public class LinksCleaned extends Thread
                         else if( refSCode.equals( SC_U ) ) {
                             addToReportPerson( id_person, source, 65, civil_status );            // warning 65
 
-                            //String query = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
                             String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard( civil_status ), id_person );
                             conCleaned.runQuery( query );
 
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
-                                //if( !sex.equalsIgnoreCase( this.ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ) ) ) {
                                 if( !sex.equalsIgnoreCase( this.almmCivilstatus.value( "standard_sex", civil_status) ) ) {
                                     if( sex != "u" ) {
                                         addToReportPerson(id_person, source, 68, civil_status);    // warning 68
@@ -2786,27 +2588,22 @@ public class LinksCleaned extends Thread
                             }
                             else            // Sex is empty
                             {
-                                //String sexQuery = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
                                 String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
                                 conCleaned.runQuery( sexQuery );
                             }
 
-                            //String sexQuery = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
                             String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( sexQuery );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
-                            //String query = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
                             String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( query );
 
                             if( sex == null || sex.isEmpty() )  {      // Sex is empty
-                                //String sexQuery = PersonC.updateQuery( "sex", ttalStatusSex.getColumnByOriginal( "standard_sex", civil_status ), id_person );
                                 String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
                                 conCleaned.runQuery( sexQuery );
                             }
 
-                            //String sexQuery = PersonC.updateQuery( "civil_status", ttalStatusSex.getColumnByOriginal( "standard_civilstatus", civil_status ), id_person );
                             String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
                             conCleaned.runQuery( sexQuery );
                         }
@@ -2820,7 +2617,6 @@ public class LinksCleaned extends Thread
 
                         addToReportPerson( id_person, source, 61, civil_status );                // warning 61
 
-                        //ttalStatusSex.addOriginal( civil_status );                                  // Add new civil_status
                         almmCivilstatus.add(civil_status);                                        // Add new civil_status
 
                         String query = PersonC.updateQuery( "civil_status", civil_status, id_person );  // Write to Person
@@ -2980,11 +2776,9 @@ public class LinksCleaned extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_occupation";
         showMessage( msg + "...", false, true );
-        //ttalOccupation = new TableToArraysSet( conGeneral, conOr, "original", "occupation" );
         almmOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original", "standard" );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
-        //showMessage( "Number of rows in reference table: " + ttalOccupation.countRows(), false, true );
         int numrows = almmOccupation.numrows();
         int numkeys = almmOccupation.numkeys();
         showMessage( "Number of rows in reference table: " + numrows, false, true );
@@ -2995,9 +2789,7 @@ public class LinksCleaned extends Thread
         standardOccupation( debug, source );
 
         showMessage( "Updating reference table: ref_occupation", false, true );
-        //ttalOccupation.updateTable();
         almmOccupation.updateTable();
-        //ttalOccupation.free();
         almmOccupation.free();
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
@@ -3036,8 +2828,7 @@ public class LinksCleaned extends Thread
                     count_empty += 1;
                 }
                 else {
-                    if( debug ) { showMessage( "id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                    System.out.println( "" + count + " " + occupation );
+                    if( debug ) { showMessage( "count: " + count + ", id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                     standardOccupationRecord( debug, source, id_person, occupation );
                 }
             }
@@ -3073,14 +2864,12 @@ public class LinksCleaned extends Thread
             if( !occupation.isEmpty() )                 // check presence of the occupation
             {
                 boolean exists = false;
-                //exists = ttalOccupation.originalExists( occupation );
                 exists = almmOccupation.contains( occupation );
                 if( exists )
                 {
                     //showMessage( "old: " + occupation, false, true );
                     if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
 
-                    //String refSCode = ttalOccupation.getStandardCodeByOriginal( occupation );
                     String refSCode = almmOccupation.code(occupation);
 
                     if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
@@ -3103,7 +2892,6 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 45: id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                         addToReportPerson( id_person, sourceNo, 45, occupation );      // warning 45
 
-                        //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
                         String refOccupation = almmOccupation.standard( occupation );
 
                         String query = PersonC.updateQuery("occupation", refOccupation, id_person);
@@ -3111,7 +2899,6 @@ public class LinksCleaned extends Thread
                     }
                     else if( refSCode.equals( SC_Y ) )
                     {
-                        //String refOccupation = ttalOccupation.getColumnByOriginal( "standard", occupation );
                         String refOccupation = almmOccupation.standard(occupation);
 
                         if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
@@ -3131,7 +2918,6 @@ public class LinksCleaned extends Thread
                     if( debug ) { showMessage( "Warning 41 (not in ref_): id_person: " + id_person + ", occupation: " + occupation, false, true ); }
                     addToReportPerson( id_person, sourceNo, 41, occupation );       // warning 41
 
-                    //ttalOccupation.addOriginal( occupation );
                     almmOccupation.add( occupation );
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
@@ -3283,8 +3069,6 @@ public class LinksCleaned extends Thread
         String msg = "Loading reference table: ref_role";
         showMessage( msg + "...", false, true );
 
-        //ttalRole = new TableToArraysSet( conGeneral, conOr, "original", "role" );
-        //int size = ttalRole.countRows();
         almmRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original", "standard" );
         int size = almmRole.numkeys();
         showMessage( "Reference table: ref_role [" + size + " records]", false, true );
@@ -3292,8 +3076,6 @@ public class LinksCleaned extends Thread
         showMessage( "Processing standardRole for source: " + source + "...", false, true );
         standardRole( debug, source );
 
-        //ttalRole.updateTable();
-        //ttalRole.free();
         almmRole.updateTable();
         almmRole.free();
 
@@ -3354,16 +3136,13 @@ public class LinksCleaned extends Thread
                 if( role.isEmpty() ) { count_empty++; }
                 else
                 {
-                    //if( ttalRole.originalExists( role ) )       // present in ref_role.original
                     if( almmRole.contains( role ) )             // present in ref_role.original
                     {
-                        //String refSCode = ttalRole.getStandardCodeByOriginal( role );
                         String refSCode = almmRole.code( role );
                         if( debug ) { System.out.println( "refSCode: " + refSCode ); }
 
                         if( refSCode.equals( SC_Y ) ) {
                             if( debug ) { showMessage( "Standard Role: id_person: " + id_person + ", role: " + role, false, true ); }
-                            //String updateQuery = PersonC.updateQuery( "role", ttalRole.getColumnByOriginal( "role_nr", role ), id_person );
                             String role_nr = almmRole.value( "role_nr", role );
                             if( debug ) { showMessage( "role_nr: " + role_nr, false, true ); }
                             String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
@@ -3375,7 +3154,6 @@ public class LinksCleaned extends Thread
                             if( debug ) { showMessage( "Warning 101: id_person: " + id_person + ", role: " + role, false, true ); }
 
                             addToReportPerson( id_person, source, 101, role );      // report warning 101
-                            //ttalRole.addOriginal( role );                           // add new role
                             almmRole.add( role );                                   // add new role
                         }
                     }
@@ -3385,7 +3163,6 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "Warning 101: id_person: " + id_person + ", role: " + role, false, true ); }
 
                         addToReportPerson( id_person, source, 101, role );      // report warning 101
-                        //ttalRole.addOriginal( role );                           // add new role
                         almmRole.add( role );                                   // add new role
                     }
                 }

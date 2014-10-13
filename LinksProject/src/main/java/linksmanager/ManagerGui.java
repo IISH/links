@@ -13,7 +13,6 @@ import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -47,7 +46,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import connectors.CsvConnector;
-import dataset.DoSet;
+import dataset.Options;
 import enumdefinitions.IndexType;
 
 import modulemain.LinksCleaned;
@@ -59,7 +58,6 @@ import modulemain.LinksSpecific;
 import general.Functions;
 import general.PrintLogger;
 
-//import java.util.regex.*;         //test
 
 /**
  * @author Omar Azouguagh
@@ -2225,7 +2223,7 @@ public class ManagerGui extends javax.swing.JFrame
     private void bnLOLCstartProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bnLOLCstartProcessActionPerformed
 
         // new DoSet
-        DoSet dos = new DoSet();
+        Options dos = new Options();
 
         if( cbCdoDebug.isSelected() ) { dos.setDoDebug(true); }
 

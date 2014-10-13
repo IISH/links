@@ -25,8 +25,9 @@ package dataset;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-10-Oct-2014 Occupation added
+ * FL-10-Oct-2014 Renamed DoSet -> Options
  */
-public class DoSet
+public class Options
 {
     private boolean doDebug;
     private boolean doRenewData;

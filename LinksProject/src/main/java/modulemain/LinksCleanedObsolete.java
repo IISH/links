@@ -49,7 +49,14 @@
     private ArrayList<Integer> hpDeceasedDay          = new ArrayList<Integer>();
     */
 
+    // WHERE [...]id_source = ...   shortcuts
+    //private String sourceFilter = "";
+    //private String sourceFilterCleanPers = "";
+    //private String sourceFilterOrigPers = "";
+    //private String sourceFilterCleanReg = "";
+    //private String sourceFilterOrigReg = "";
 
+    //private int teller = 0;
 
 /**
  * Basic names temp
