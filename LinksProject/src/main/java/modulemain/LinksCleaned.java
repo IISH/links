@@ -57,7 +57,8 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
- * FL-10-Oct-2014 Latest change
+ * FL-13-Oct-2014 This the last version that contains the Omar ttal* code
+ * FL-13-Oct-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */

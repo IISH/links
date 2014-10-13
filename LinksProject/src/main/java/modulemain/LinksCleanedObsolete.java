@@ -3,8 +3,21 @@
  *
  * obsolete functions removed from LinksCleaned.java
  *
- * FL-17-Sep-2014 Latest change
+ * FL-13-Oct-2014 Latest change
  */
+
+    // Table -> ArraysSet
+    //private TableToArraysSet ttalPrepiece;            // Names
+    //private TableToArraysSet ttalSuffix;              // Names
+    //private TableToArraysSet ttalAlias;               // Names
+    //private TableToArraysSet ttalFirstname;           // Names
+    //private TableToArraysSet ttalFamilyname;          // names
+    //private TableToArraysSet ttalLocation;            // Location
+    //private TableToArraysSet ttalOccupation;          // Occupation
+    //private TableToArraysSet ttalRegistration;        // formerly used in standardType()
+    //private TableToArraysSet ttalReport;              // Report warnings
+    //private TableToArraysSet ttalRole;                // Role
+    //private TableToArraysSet ttalStatusSex;           // Civilstatus & Gender
 
     // old links_base
     // hp* objects directly used by 2 functions:
