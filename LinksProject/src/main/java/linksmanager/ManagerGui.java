@@ -13,6 +13,7 @@ import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Properties;
+import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -594,7 +595,7 @@ public class ManagerGui extends javax.swing.JFrame
 						.addGroup(pMainLayout.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(pMainLayout.createParallelGroup()
-								.addComponent(jScrollPane4, GroupLayout.DEFAULT_SIZE, 580, Short.MAX_VALUE)
+								.addComponent(jScrollPane4, GroupLayout.DEFAULT_SIZE, 583, Short.MAX_VALUE)
 								.addGroup(pMainLayout.createSequentialGroup()
 									.addGroup(pMainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(tMAINProjectName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -640,10 +641,10 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbMAINlolc))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addGroup(pMainLayout.createParallelGroup()
-										.addComponent(jScrollPane5, GroupLayout.DEFAULT_SIZE, 347, Short.MAX_VALUE)
+										.addComponent(jScrollPane5, GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
 										.addGroup(pMainLayout.createSequentialGroup()
 											.addComponent(jLabel41)
-											.addGap(0, 332, Short.MAX_VALUE)))))
+											.addGap(0, 335, Short.MAX_VALUE)))))
 							.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 							.addGroup(pMainLayout.createParallelGroup()
 								.addGroup(pMainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -841,7 +842,7 @@ public class ManagerGui extends javax.swing.JFrame
 							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 							.addComponent(jLabel2)
 							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 422, Short.MAX_VALUE)
+							.addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 425, Short.MAX_VALUE)
 							.addContainerGap())
 				);
 			}
@@ -1080,7 +1081,7 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(tfCTDLatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 							.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 							.addGroup(pCsvToDatabaseLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-								.addComponent(jScrollPane2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 440, Short.MAX_VALUE)
+								.addComponent(jScrollPane2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
 								.addGroup(GroupLayout.Alignment.LEADING, pCsvToDatabaseLayout.createSequentialGroup()
 									.addGroup(pCsvToDatabaseLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(tfCTDdelay, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -1257,7 +1258,7 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(jLabel46))
 									.addGap(18, 18, 18)
 									.addComponent(cbOrunCleaned))
-								.addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 556, Short.MAX_VALUE))
+								.addComponent(jScrollPane3, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE))
 							.addContainerGap())
 				);
 			}
@@ -1503,7 +1504,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 									.addGap(8, 8, 8)
-									.addComponent(jScrollPane6, GroupLayout.DEFAULT_SIZE, 565, Short.MAX_VALUE))
+									.addComponent(jScrollPane6, GroupLayout.PREFERRED_SIZE, 568, GroupLayout.PREFERRED_SIZE))
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGap(12, 12, 12)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -1533,7 +1534,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup()
 										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(label4))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 									.addComponent(cbCdoDebug)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(jLabel51)
@@ -1670,7 +1671,7 @@ public class ManagerGui extends javax.swing.JFrame
 							.addGap(12, 12, 12)
 							.addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
+							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
 							.addContainerGap())
 				);
 			}
@@ -1689,7 +1690,7 @@ public class ManagerGui extends javax.swing.JFrame
 		contentPaneLayout.setVerticalGroup(
 			contentPaneLayout.createParallelGroup()
 				.addGroup(contentPaneLayout.createSequentialGroup()
-					.addComponent(tpMain, GroupLayout.PREFERRED_SIZE, 668, GroupLayout.PREFERRED_SIZE)
+					.addComponent(tpMain, GroupLayout.PREFERRED_SIZE, 671, GroupLayout.PREFERRED_SIZE)
 					.addGap(0, 0, Short.MAX_VALUE))
 		);
 		pack();
@@ -2223,45 +2224,45 @@ public class ManagerGui extends javax.swing.JFrame
     private void bnLOLCstartProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bnLOLCstartProcessActionPerformed
 
         // new DoSet
-        Options dos = new Options();
+        Options opts = new Options();
 
-        if( cbCdoDebug.isSelected() ) { dos.setDoDebug(true); }
+        if( cbCdoDebug.isSelected() ) { opts.setDoDebug(true); }
 
-        if( cbCdoOccupation.isSelected() ) { dos.setDoOccupation(true); }
+        if( cbCdoOccupation.isSelected() ) { opts.setDoOccupation(true); }
 
-        if( cbCdoRefreshData.isSelected() ) { dos.setDoRenewData(true); }
+        if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData(true); }
         
-        if (cbCdoNames.isSelected()) { dos.setDoNames(true); }
+        if (cbCdoNames.isSelected()) { opts.setDoNames(true); }
 
-        if (cbCdoDates.isSelected()) { dos.setDoDates(true); }
+        if (cbCdoDates.isSelected()) { opts.setDoDates(true); }
 
-        //if (cbCdoRemarks.isSelected()) { dos.setDoRemarks(true); }
+        //if (cbCdoRemarks.isSelected()) { opts.setDoRemarks(true); }
 
-        if (cbCdoStatusSex.isSelected()) { dos.setDoStatusSex(true); }
+        if (cbCdoStatusSex.isSelected()) { opts.setDoStatusSex(true); }
 
-        //if (cbCdoAge.isSelected()) { dos.setDoAgeYear(true); }
+        //if (cbCdoAge.isSelected()) { opts.setDoAgeYear(true); }
 
-        if (cbCdoLocations.isSelected()) { dos.setDoLocations(true); }
+        if (cbCdoLocations.isSelected()) { opts.setDoLocations(true); }
 
-        if (cbCdoRegType.isSelected()) { dos.setDoRegType(true); }
+        if (cbCdoRegType.isSelected()) { opts.setDoRegType(true); }
 
-        //if (cbLOLCdoSequence.isSelected()) { dos.setDoSequence(true); }
+        //if (cbLOLCdoSequence.isSelected()) { opts.setDoSequence(true); }
 
-        if (cbLOLCdoPartsToFullDate.isSelected()) { dos.setDoPartsToFullDate(true); }
+        if (cbLOLCdoPartsToFullDate.isSelected()) { opts.setDoPartsToFullDate(true); }
 
-        if (cbCdoDaysSinceBegin.isSelected()) { dos.setDoDaysSinceBegin(true); }
+        if (cbCdoDaysSinceBegin.isSelected()) { opts.setDoDaysSinceBegin(true); }
 
-        if (cbLOLCdoMinMaxMarriage.isSelected()) { dos.setDoMinMaxMarriage(true); }
+        if (cbLOLCdoMinMaxMarriage.isSelected()) { opts.setDoMinMaxMarriage(true); }
 
-        //if (cbCdoRelation.isSelected()) { dos.setDoRelation(true); }
+        //if (cbCdoRelation.isSelected()) { opts.setDoRelation(true); }
 
-        //if (cbLOLCdoRole.isSelected()) { dos.setDoRole(true); }
+        //if (cbLOLCdoRole.isSelected()) { opts.setDoRole(true); }
 
-        if (cbLOLCdoPostTasks.isSelected()) { dos.setDoPostTasks(true); }
+        if (cbLOLCdoPostTasks.isSelected()) { opts.setDoPostTasks(true); }
 
-        if (cbCdoPrematch.isSelected()) { dos.setDoPrematch(true); }
+        if (cbCdoPrematch.isSelected()) { opts.setDoPrematch(true); }
 
-        //if (cbCdoPreBasicNames.isSelected()) { dos.setDoPreBasicNames(true); }
+        //if (cbCdoPreBasicNames.isSelected()) { opts.setDoPreBasicNames(true); }
 
         int sourceId = 0;
         if (!tbLOLCSourceId.getText().isEmpty()) {
@@ -2277,21 +2278,26 @@ public class ManagerGui extends javax.swing.JFrame
         String db_ref_pass = tbLOLCrefpass.getText();     // from Tab Cleaned
         String db_ref_db   = tbLOLCrefdb.getText();       // from Tab Cleaned
 
-        LinksCleaned lolc = new LinksCleaned(
-             db_ref_url,
-             db_ref_user,
-             db_ref_pass,
-             db_ref_db,
-             db_url,
-             db_user,
-             db_pass,
-             sourceId,
+        opts.setLogger( plog );
+        opts.setSourceId( sourceId );
+
+        opts.setDb_ref_url(  db_ref_url );
+        opts.setDb_ref_user( db_ref_user );
+        opts.setDb_ref_pass( db_ref_pass );
+        opts.setDb_ref_db(   db_ref_db );
+        opts.setDb_url(      db_url );
+        opts.setDb_user(     db_user );
+        opts.setDb_pass(     db_pass );
+
+        tbLOLClatestOutput.setText( "" );
+        taLOLCoutput.setText( "" );
+
+        LinksCleaned linkscleaned = new LinksCleaned(
+             opts,
              tbLOLClatestOutput,
              taLOLCoutput,
-             dos,
-             plog,
-             this);
-        lolc.start();
+             this );
+        linkscleaned.start();
     }//GEN-LAST:event_bnLOLCstartProcessActionPerformed
 
     private void tfBILODeleteSourceKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tfBILODeleteSourceKeyReleased
@@ -2383,7 +2389,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "10-Oct-2014 16:36";
+            String timestamp1 = "14-Oct-2014 15:35";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

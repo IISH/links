@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package dataset;
 
+import general.PrintLogger;
+
 /**
  * @author Omar Azouguagh
  * @author Fons Laan
@@ -26,9 +28,24 @@ package dataset;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-10-Oct-2014 Occupation added
  * FL-10-Oct-2014 Renamed DoSet -> Options
+ * FL-14-Oct-2014 DB opts
  */
 public class Options
 {
+     PrintLogger plog;
+
+     private int sourceId;
+
+     // db options
+     private String db_ref_url;
+     private String db_ref_user;
+     private String db_ref_pass;
+     private String db_ref_db;
+     private String db_url;
+     private String db_user;
+     private String db_pass;
+
+    // cleaning options
     private boolean doDebug;
     private boolean doRenewData;
     //private boolean doPreBasicNames;
@@ -51,27 +68,60 @@ public class Options
     private boolean doPrematch;
 
 
-    /**
-     * @param doDebug
-     */
+    public void setLogger( PrintLogger plog ) { this.plog = plog; }
+
+    public PrintLogger getLogger() { return plog; }
+
+
+    public void setSourceId( int sourceId ) { this.sourceId = sourceId; }
+
+    public int getSourceId() { return sourceId; }
+
+
+    // db options
+    public void setDb_ref_url( String db_ref_url ) { this.db_ref_url = db_ref_url; }
+
+    public String getDb_ref_url() { return db_ref_url; }
+
+
+    public void setDb_ref_user( String db_ref_user ) { this.db_ref_user = db_ref_user; }
+
+    public String getDb_ref_user() { return db_ref_user; }
+
+
+    public void setDb_ref_pass( String db_ref_pass ) { this.db_ref_pass = db_ref_pass; }
+
+    public String getDb_ref_pass() { return db_ref_pass; }
+
+
+    public void setDb_ref_db( String db_ref_db ) { this.db_ref_db = db_ref_db; }
+
+    public String getDb_ref_db() { return db_ref_db; }
+
+
+    public void setDb_url( String db_url ) { this.db_url = db_url; }
+
+    public String getDb_url() { return db_url; }
+
+
+    public void setDb_user( String db_user ) { this.db_user = db_user; }
+
+    public String getDb_user() { return db_user; }
+
+
+    public void setDb_pass( String db_pass ) { this.db_pass = db_pass; }
+
+    public String getDb_pass() { return db_pass; }
+
+
+    // cleaning options
     public void setDoDebug( boolean doDebug ) { this.doDebug = doDebug; }
 
-    /**
-     * @return
-     */
     public boolean isDoDebug() { return doDebug; }
 
 
-    /**
-     * @return
-     */
-    public boolean isDoRenewData() {
-        return doRenewData;
-    }
+    public boolean isDoRenewData() { return doRenewData; }
 
-    /**
-     * @param doRenewData
-     */
     public void setDoRenewData( boolean doRenewData ) {
         this.doRenewData = doRenewData;
     }
@@ -81,38 +131,18 @@ public class Options
     //public boolean isDoPreBasicNames() { return doPreBasicNames; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoNames() { return doNames; }
 
-    /**
-     * @param doNames
-     */
     public void setDoNames( boolean doNames ) { this.doNames = doNames; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoLocations() { return doLocations; }
 
-    /**
-     * @param doLocations
-     */
     public void setDoLocations( boolean doLocations ) { this.doLocations = doLocations; }
 
 
-    /**
-     *
-     * @return
-     */
     public boolean isDoStatusSex() { return doStatusSex; }
 
-    /**
-     *
-     * @param doStatusSex
-     */
     public void setDoStatusSex( boolean doStatusSex ) { this.doStatusSex = doStatusSex; }
 
 
@@ -124,25 +154,13 @@ public class Options
     //public void setDoRelation( boolean doRelation ) { this.doRelation = doRelation; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoRegType() { return doRegType; }
 
-    /**
-     * @param doRegType
-     */
     public void setDoRegType( boolean doRegType ) { this.doRegType = doRegType; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoOccupation() { return doOccupation; }
 
-    /**
-     * @param doOccupation
-     */
     public void setDoOccupation( boolean doOccupation ) { this.doOccupation = doOccupation; }
 
 
@@ -154,14 +172,8 @@ public class Options
     //public void setDoRole( boolean doRole ) { this.doRole = doRole; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoDates() { return doDates; }
 
-    /**
-     * @param doDates
-     */
     public void setDoDates( boolean doDates ) { this.doDates = doDates; }
 
 
@@ -173,58 +185,28 @@ public class Options
     //public void setDoRemarks( boolean doRemarks ) { this.doRemarks = doRemarks; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoMinMaxMarriage() { return doMinMaxMarriage; }
 
-    /**
-     * @param doMinMaxMarriage
-     */
     public void setDoMinMaxMarriage( boolean doMinMaxMarriage ) { this.doMinMaxMarriage = doMinMaxMarriage; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoPartsToFullDate() { return doPartsToFullDate; }
 
-    /**
-     * @param doPartsToFullDate
-     */
     public void setDoPartsToFullDate( boolean doPartsToFullDate ) { this.doPartsToFullDate = doPartsToFullDate; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoDaysSinceBegin() { return doDaysSinceBegin; }
 
-    /**
-     * @param doDaysSinceBegin
-     */
     public void setDoDaysSinceBegin( boolean doDaysSinceBegin ) { this.doDaysSinceBegin = doDaysSinceBegin; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoPostTasks() { return doPostTasks; }
 
-    /**
-     * @param doPostTasks
-     */
     public void setDoPostTasks( boolean doPostTasks ) { this.doPostTasks = doPostTasks; }
 
 
-    /**
-     * @return
-     */
     public boolean isDoPrematch() { return doPrematch; }
 
-    /**
-     * @param doPrematch
-     */
     public void setDoPrematch( boolean doPrematch ) { this.doPrematch = doPrematch; }
 
 }

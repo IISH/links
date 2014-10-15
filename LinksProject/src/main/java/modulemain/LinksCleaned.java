@@ -1,7 +1,5 @@
 package modulemain;
 
-import java.lang.reflect.Method;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintStream;
@@ -13,22 +11,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import dataset.ActRoleSet;
-import dataset.Ages;
-import dataset.ArrayListNonCase;
 import dataset.DateYearMonthDaySet;
 import dataset.DivideMinMaxDatumSet;
 import dataset.Options;
@@ -38,8 +27,6 @@ import dataset.MinMaxMainAgeSet;
 import dataset.MinMaxYearSet;
 import dataset.PersonC;
 import dataset.RegistrationC;
-import dataset.RelationSet;
-import dataset.TableToArraysSet;
 import dataset.TabletoArrayListMultimap;
 
 import connectors.MySqlConnector;
@@ -57,6 +44,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
+ * FL-13-Oct-2014 Removed ttal code
  * FL-13-Oct-2014 Latest change
  *
  * TODO check all occurrences of TODO
@@ -78,19 +66,18 @@ public class LinksCleaned extends Thread
     private TabletoArrayListMultimap almmSex;           // Civilstatus & Gender
 
 
-    private JTextField tbLOLClatestOutput;
-    private JTextArea  taLOLCoutput;
+    private JTextField outputLine;
+    private JTextArea  outputArea;
 
-    private MySqlConnector conOr;           // remote reference db
-    private MySqlConnector conLog;
-    private MySqlConnector conCleaned;      // cleaned, from original
-    private MySqlConnector conGeneral;      // local reference db
-    private MySqlConnector conOriginal;     // original data from A2A
-    private MySqlConnector conTemp;
+    private MySqlConnector dbconRefWrite;       // [remote] reference db for writing new occurrences
+    private MySqlConnector dbconRefRead;        // [local] reference db for reading
+    private MySqlConnector dbconLog;            // logging of errors/warnings
+    private MySqlConnector dbconOriginal;       // original data from A2A
+    private MySqlConnector dbconCleaned;        // cleaned, from original
 
     private Runtime r = Runtime.getRuntime();
     private String logTableName;
-    private Options dos;
+    private Options opts;
 
     private final static String SC_U = "u"; // Unknown Standard value assigned (although the original value is not valid)
     private final static String SC_X = "x"; //    X    Standard yet to be assigned
@@ -102,12 +89,12 @@ public class LinksCleaned extends Thread
 
     private ManagerGui mg;
 
-    private String ref_url = "";       // reference db access
+    private String ref_url = "";            // reference db access
     private String ref_user = "";
     private String ref_pass = "";
     private String ref_db = "";
 
-    private String url = "";           // links db's access
+    private String url = "";                // links db's access
     private String user = "";
     private String pass = "";
 
@@ -123,52 +110,36 @@ public class LinksCleaned extends Thread
     /**
      * Constructor
      *
-     * @param ref_url
-     * @param ref_user
-     * @param ref_pass
-     * @param ref_db
-     * @param url
-     * @param user
-     * @param pass
-     * @param sourceId
-     * @param tbLOLClatestOutput
-     * @param taLOLCoutput
-     * @param dos
-     * @param plog
+     * @param outputLine
+     * @param outputArea
+     * @param opts
      * @param mg
      */
     public LinksCleaned
     (
-            String ref_url,
-            String ref_user,
-            String ref_pass,
-            String ref_db,
-            String url,
-            String user,
-            String pass,
-            int sourceId,
-            JTextField tbLOLClatestOutput,
-            JTextArea taLOLCoutput,
-            Options dos,
-            general.PrintLogger plog,
+            Options opts,
+            JTextField outputLine,
+            JTextArea outputArea,
             ManagerGui mg
     )
     {
-        this.sourceIdGui = sourceId;
+        this.opts = opts;
 
-        this.ref_url = ref_url;
-        this.ref_user = ref_user;
-        this.ref_pass = ref_pass;
-        this.ref_db = ref_db;
+        this.plog = opts.getLogger();
+        this.sourceIdGui = opts.getSourceId();
 
-        this.url = url;
-        this.user = user;
-        this.pass = pass;
+        this.ref_url  = opts.getDb_ref_url();
+        this.ref_user = opts.getDb_ref_user();
+        this.ref_pass = opts.getDb_ref_pass();
+        this.ref_db   = opts.getDb_ref_db();
 
-        this.tbLOLClatestOutput = tbLOLClatestOutput;
-        this.taLOLCoutput = taLOLCoutput;
-        this.dos = dos;
-        this.plog = plog;
+        this.url  = opts.getDb_url();
+        this.user = opts.getDb_user();
+        this.pass = opts.getDb_pass();
+
+        this.outputLine = outputLine;
+        this.outputArea = outputArea;
+
         this.mg = mg;
 
         String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
@@ -211,37 +182,29 @@ public class LinksCleaned extends Thread
 
                 try
                 {
-                    boolean debug = dos.isDoDebug();
+                    boolean debug = opts.isDoDebug();
 
-                    doRenewData( debug, dos.isDoRenewData(), source );                 // GUI cb: Remove previous data
+                    doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
-                    //doPreBasicNames( dos.isDoPreBasicNames(), source );               // GUI cb: Basic names temp
-                    //doRemarks( dos.isDoRemarks(), source );                           // GUI cb: Parse remarks
+                    doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
 
-                    doNames( debug, dos.isDoNames(), source );                         // GUI cb: Names
+                    doLocations( debug, opts.isDoLocations(), source );                 // GUI cb: Locations
 
-                    doLocations( debug, dos.isDoLocations(), source );                 // GUI cb: Locations
+                    doStatusSex( debug, opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
 
-                    doStatusSex( debug, dos.isDoStatusSex(), source );                 // GUI cb: Status and Sex
+                    doRegistrationType( debug, opts.isDoRegType(), source );            // GUI cb: Registration Type
 
-                    doRegistrationType( debug, dos.isDoRegType(), source );            // GUI cb: Registration Type
+                    doOccupation( debug, opts.isDoOccupation(), source );               // GUI cb: Occupation
 
-                    //doSequence( dos.isDoSequence(), source );                         // GUI cb: Sequence
-                    //doRelation( dos.isDoRelation(), source );                         // GUI cb: Relation
+                    doDates( debug, opts.isDoDates(), source );                         // GUI cb: Dates
 
-                    doOccupation( debug, dos.isDoOccupation(), source );               // GUI cb: Occupation
+                    doMinMaxMarriage( debug, opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
 
-                    //doAge( dos.isDoAgeYear(), source );                               // part of Dates
-                    //doRole( dos.isDoRole(), source );                                 // part of Dates
-                    doDates( debug, dos.isDoDates(), source );                         // GUI cb: Dates
+                    doPartsToFullDate( debug, opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
 
-                    doMinMaxMarriage( debug, dos.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
+                    doDaysSinceBegin( debug, opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
 
-                    doPartsToFullDate( debug, dos.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
-
-                    doDaysSinceBegin( debug, dos.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
-
-                    doPostTasks( debug, dos.isDoPostTasks(), source );                 // GUI cb: Post Tasks
+                    doPostTasks( debug, opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
                 }
                 catch( Exception ex ) {
                     showMessage( "Error: " + ex.getMessage(), false, true );
@@ -261,10 +224,11 @@ public class LinksCleaned extends Thread
             int ncores = Runtime.getRuntime().availableProcessors();
             plog.show( "Available cores: " + ncores );
 
-            long begintime = System.currentTimeMillis();
             logTableName = LinksSpecific.getLogTableName();
 
-            clearTextFields();                                  // Clear output text fields on form
+            outputLine.setText( "" );
+            outputArea.setText( "" );
+
             connectToDatabases();                               // Create databases connectors
             createLogTable();                                   // Create log table with timestamp
 
@@ -288,7 +252,7 @@ public class LinksCleaned extends Thread
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
-            almmReport = new TabletoArrayListMultimap( conGeneral, null, "ref_report", "type", null );
+            almmReport = new TabletoArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
             //almmReport.contentsOld();
 
             for( int sourceId : sourceList )
@@ -299,51 +263,51 @@ public class LinksCleaned extends Thread
                 ct.start();
 
                 /*
-                doRenewData( dos.isDoRenewData(), source );                 // GUI cb: Remove previous data
+                doRenewData( opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
-                //doPreBasicNames( dos.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
-                //doRemarks( dos.isDoRemarks(), source );                     // GUI cb: Parse remarks
+                //doPreBasicNames( opts.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
+                //doRemarks( opts.isDoRemarks(), source );                     // GUI cb: Parse remarks
 
-                doNames( dos.isDoNames(), source );                         // GUI cb: Names
+                doNames( opts.isDoNames(), source );                         // GUI cb: Names
 
-                doLocations( dos.isDoLocations(), source );                 // GUI cb: Locations
+                doLocations( opts.isDoLocations(), source );                 // GUI cb: Locations
 
-                doStatusSex( dos.isDoStatusSex(), source );                 // GUI cb: Status and Sex
+                doStatusSex( opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
 
-                doRegistrationType( dos.isDoRegType(), source );            // GUI cb: Registration Type
+                doRegistrationType( opts.isDoRegType(), source );            // GUI cb: Registration Type
 
-                //doSequence( dos.isDoSequence(), source );                   // GUI cb: Sequence
-                //doRelation( dos.isDoRelation(), source );                   // GUI cb: Relation
+                //doSequence( opts.isDoSequence(), source );                   // GUI cb: Sequence
+                //doRelation( opts.isDoRelation(), source );                   // GUI cb: Relation
 
-                doOccupation( dos.isDoOccupation(), source );               // GUI cb: Occupation
+                doOccupation( opts.isDoOccupation(), source );               // GUI cb: Occupation
 
-                //doAge( dos.isDoAgeYear(), source );                       // part of Dates
-                //doRole( dos.isDoRole(), source );                         // part of Dates
-                doDates( dos.isDoDates(), source );                         // GUI cb: Dates
+                //doAge( opts.isDoAgeYear(), source );                       // part of Dates
+                //doRole( opts.isDoRole(), source );                         // part of Dates
+                doDates( opts.isDoDates(), source );                         // GUI cb: Dates
 
-                doMinMaxMarriage( dos.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
+                doMinMaxMarriage( opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
 
-                doPartsToFullDate( dos.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
+                doPartsToFullDate( opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
 
-                doDaysSinceBegin( dos.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
+                doDaysSinceBegin( opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
 
-                doPostTasks( dos.isDoPostTasks(), source );                 // GUI cb: Post Tasks
+                doPostTasks( opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
                 */
             }
 
             /*
             // we need to open/close the connections in the threads
             // Close db connections
-            conOriginal.close();
-            conLog.close();
-            conCleaned.close();
-            conGeneral.close();
-            conTemp.close();
+            dbconRefWrite.close();
+            dbconRefRead.close();
+            dbconLog.close();
+            dbconOriginal.close();
+            dbconCleaned.close();
             */
 
             for( int sourceId : sourceList ) {
                 String source = Integer.toString( sourceId );
-                doPrematch( dos.isDoPrematch(), source );                   // GUI cb: Run PreMatch
+                doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
             }
 
             //String msg = "Conversion from Original to Cleaned is done. ";
@@ -368,7 +332,7 @@ public class LinksCleaned extends Thread
         ArrayList< String > ids = new ArrayList();
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( query );
+            ResultSet rs = dbconOriginal.runQueryWithResult( query );
             while( rs.next() ) {
                 String id = rs.getString( "id_source" );
                 if( id == null || id.isEmpty() ) { break; }
@@ -417,43 +381,30 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * clear GUI output text fields
-     */
-    public void clearTextFields() {
-        //String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-        //System.out.println( timestamp + " clearTextFields()" );
-
-        tbLOLClatestOutput.setText( "" );
-        taLOLCoutput.setText( "" );
-    } // clearTextFields
-
-
-    /**
      * @throws Exception
      */
     private void connectToDatabases()
     throws Exception
     {
+        boolean debug = false;
+
         showMessage( "Connecting to databases:", false, true );
 
-        //showMessage( "links_general (ref)", false, true );
-        showMessage( ref_db + " (ref)", false, true );
-        conOr = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        if( debug ) { showMessage( ref_db + " (ref)", false, true ); }
+        dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
-        showMessage( "links_general", false, true );
-        conGeneral = new MySqlConnector( url, "links_general", user, pass );
+        if( debug ) { showMessage( "links_general", false, true ); }
+        dbconRefRead = new MySqlConnector( url, "links_general", user, pass );
 
-        showMessage( "links_original", false, true );
-        conOriginal = new MySqlConnector( url, "links_original", user, pass );
+        if( debug ) { showMessage( "links_original", false, true ); }
+        dbconOriginal = new MySqlConnector( url, "links_original", user, pass );
 
-        showMessage( "links_logs", false, true );
-        conLog = new MySqlConnector( url, "links_logs", user, pass );
+        if( debug ) { showMessage( "links_logs", false, true ); }
+        dbconLog = new MySqlConnector( url, "links_logs", user, pass );
 
-        showMessage( "links_cleaned", false, true );
-        conCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
+        if( debug ) { showMessage( "links_cleaned", false, true ); }
+        dbconCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
 
-        showMessage( "links_temp", false, true );
-        conTemp = new MySqlConnector( url, "links_temp", user, pass );
     } // connectToDatabases
 
 
@@ -500,7 +451,7 @@ public class LinksCleaned extends Thread
                 + " `date_time`    DATETIME NOT NULL ,"
                 + " PRIMARY KEY (`id_log`) );";
 
-        conLog.runQuery( query );
+        dbconLog.runQuery( query );
 
     } // createLogTable
 
@@ -512,7 +463,7 @@ public class LinksCleaned extends Thread
      */
     private void showMessage( String logText, boolean isMinOnly, boolean newLine )
     {
-        tbLOLClatestOutput.setText( logText );
+        outputLine.setText( logText );
 
         if( !isMinOnly ) {
             String newLineToken = "";
@@ -523,7 +474,7 @@ public class LinksCleaned extends Thread
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
-                taLOLCoutput.append( ts + " " );
+                outputArea.append( ts + " " );
                 // System.out.printf( "%s ", ts );
                 //logger.info( logText );
                 try { plog.show( logText ); }
@@ -533,7 +484,7 @@ public class LinksCleaned extends Thread
                 }
             }
 
-            taLOLCoutput.append( logText + newLineToken );
+            outputArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );
             try { plog.show( logText ); }
             catch( Exception ex ) {
@@ -550,7 +501,7 @@ public class LinksCleaned extends Thread
     {
         String newLineToken = "\r\n";
 
-        taLOLCoutput.append( newLineToken );
+        outputArea.append( newLineToken );
 
         try { plog.show( newLineToken ); }
         catch( Exception ex ) {
@@ -625,7 +576,7 @@ public class LinksCleaned extends Thread
                 + " FROM registration_o WHERE id_registration = " + id;
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
             rs.next();
             location = rs.getString( "registration_location" );
             reg_type = rs.getString( "registration_type" );
@@ -658,7 +609,7 @@ public class LinksCleaned extends Thread
             showQuery = false;
         }
 
-        conLog.runQuery( insertQuery );
+        dbconLog.runQuery( insertQuery );
     } // addToReportRegistration
 
 
@@ -695,7 +646,7 @@ public class LinksCleaned extends Thread
         String id_registration = "";
         String selectQuery1 = "SELECT id_registration FROM person_o WHERE id_person = " + id;
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery1 );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery1 );
             rs.next();
             id_registration = rs.getString( "id_registration" );
         }
@@ -716,7 +667,7 @@ public class LinksCleaned extends Thread
                     + " FROM registration_o WHERE id_registration = " + id_registration;
 
             try {
-                ResultSet rs = conOriginal.runQueryWithResult( selectQuery2 );
+                ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery2 );
                 rs.next();
                 location = rs.getString( "registration_location" );
                 reg_type = rs.getString( "registration_type" );
@@ -739,7 +690,7 @@ public class LinksCleaned extends Thread
                 + " '" + location + "' , '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + id_registration + "' , '" + guid + "' ) ; ";
         if( debug ) { showMessage( insertQuery, false, true ); }
 
-        conLog.runQuery( insertQuery );
+        dbconLog.runQuery( insertQuery );
     } // addToReportPerson
 
     /*---< End Helper functions >---------------------------------------------*/
@@ -774,8 +725,8 @@ public class LinksCleaned extends Thread
             showMessage( deletePerson, false, true );
             showMessage( deleteRegist, false, true );
         }
-        conCleaned.runQuery( deletePerson );
-        conCleaned.runQuery( deleteRegist );
+        dbconCleaned.runQuery( deletePerson );
+        dbconCleaned.runQuery( deleteRegist );
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
@@ -788,7 +739,7 @@ public class LinksCleaned extends Thread
 
         showMessage( "Copying links_original person keys to links_cleaned", false, true );
         if( debug ) { showMessage( keysPerson, false, true ); }
-        conCleaned.runQuery( keysPerson );
+        dbconCleaned.runQuery( keysPerson );
 
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c"
@@ -799,7 +750,7 @@ public class LinksCleaned extends Thread
 
         showMessage( "Copying links_original registration keys to links_cleaned", false, true );
         if( debug ) { showMessage( keysRegistration, false, true ); }
-        conCleaned.runQuery( keysRegistration );
+        dbconCleaned.runQuery( keysRegistration );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doRenewData
@@ -823,6 +774,8 @@ public class LinksCleaned extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
+        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
+
         String mmss = "";
         String msg = "";
         String ts = "";                               // timestamp
@@ -831,32 +784,34 @@ public class LinksCleaned extends Thread
         long stop = 0;
 
         ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
-        System.out.println(ts + " dos.isDoNames");
+        System.out.println(ts + " opts.isDoNames");
 
         // Loading Prepiece/Suffix/Alias reference tables
         start = System.currentTimeMillis();
         msg = "Loading Prepiece/Suffix/Alias reference tables";
         showMessage( msg + "...", false, true );
 
-        almmPrepiece = new TabletoArrayListMultimap( conGeneral, conOr, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TabletoArrayListMultimap( conGeneral, conOr, "ref_suffix",   "original", "standard" );
-        almmAlias    = new TabletoArrayListMultimap( conGeneral, conOr, "ref_alias",    "original",  null );
+        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
         showTimingMessage( msg, start );
+
+        showMessage( "links_temp", false, true );
 
         // First name
         String tmp_firstname = "firstname_t_" + source;
-        if( doesTableExist( conTemp, "links_temp", tmp_firstname ) ) {
+        if( doesTableExist( dbconTemp, "links_temp", tmp_firstname ) ) {
             showMessage( "Deleting table links_temp." + tmp_firstname, false, true );
-            dropTable( conTemp, "links_temp", tmp_firstname );
+            dropTable( dbconTemp, "links_temp", tmp_firstname );
         }
-        createTempFirstnameTable( source );
+        createTempFirstnameTable( dbconTemp, source );
         createTempFirstnameFile(  source );
 
         start = System.currentTimeMillis();
         msg = "Loading reference table: ref_firstname";
         showMessage( msg + "...", false, true );
 
-        almmFirstname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_firstname", "original", "standard" );
+        almmFirstname = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
         showMessage( "Number of rows in reference table: " + numrows, false, true );
@@ -874,27 +829,27 @@ public class LinksCleaned extends Thread
         almmFirstname.free();
 
         writerFirstname.close();
-        loadFirstnameToTable(     source );
-        updateFirstnameToPersonC( source );
+        loadFirstnameToTable(     dbconTemp, source );
+        updateFirstnameToPersonC( dbconTemp, source );
         removeFirstnameFile(      source );
-        removeFirstnameTable(     source );
+        removeFirstnameTable(     dbconTemp, source );
         showTimingMessage( "remains Firstname", start );
 
         // Family name
         String tmp_familyname = "familyname_t_" + source;
-        if( doesTableExist( conTemp, "links_temp",tmp_familyname  ) ) {
+        if( doesTableExist( dbconTemp, "links_temp",tmp_familyname  ) ) {
             showMessage( "Deleting table links_temp." + tmp_familyname, false, true );
-            dropTable( conTemp, "links_temp", tmp_familyname );
+            dropTable( dbconTemp, "links_temp", tmp_familyname );
         }
 
-        createTempFamilynameTable( source );
+        createTempFamilynameTable( dbconTemp, source );
         createTempFamilynameFile(  source );
 
         start = System.currentTimeMillis();
         msg = "Loading reference table: ref_familyname";
         showMessage( msg + "...", false, true );
 
-        almmFamilyname = new TabletoArrayListMultimap( conGeneral, conOr, "ref_familyname", "original", "standard" );
+        almmFamilyname = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
         numrows = almmFamilyname.numrows();
         numkeys = almmFamilyname.numkeys();
         showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
@@ -915,10 +870,10 @@ public class LinksCleaned extends Thread
         almmFamilyname.free();
 
         writerFamilyname.close();
-        loadFamilynameToTable(     source );
-        updateFamilynameToPersonC( source );
+        loadFamilynameToTable(     dbconTemp, source );
+        updateFamilynameToPersonC( dbconTemp, source );
         removeFamilynameFile(      source );
-        removeFamilynameTable(     source );
+        removeFamilynameTable(     dbconTemp, source );
         showTimingMessage( msg, start );
 
         // KM: Do not delete here.
@@ -930,7 +885,7 @@ public class LinksCleaned extends Thread
         msg = "Converting names to lowercase";
         showMessage( msg + "...", false, true ) ;
         String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
-        conCleaned.runQuery( qLower );
+        dbconCleaned.runQuery( qLower );
 
         standardPrepiece( source );
         standardSuffix( source );
@@ -949,6 +904,8 @@ public class LinksCleaned extends Thread
         almmPrepiece.free();
         almmSuffix.free();
         almmAlias.free();
+
+        dbconTemp.close();
 
         showTimingMessage( msg, start );
 
@@ -1042,7 +999,7 @@ public class LinksCleaned extends Thread
                                 // it should be written to the csv file, and then via the temp table to person_c
                                 if( stillbirth == null && 1 == 0 ) {
                                     String updateQuery = PersonC.updateQuery( "stillbirth", stillbirth, id_person );
-                                    conCleaned.runQuery( updateQuery );
+                                    dbconCleaned.runQuery( updateQuery );
                                     if( stillbirth.equals( "y" ) ) { count_still++; }
                                 }
                             }
@@ -1118,7 +1075,7 @@ public class LinksCleaned extends Thread
 
                                         String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
 
-                                        conCleaned.runQuery( query );
+                                        dbconCleaned.runQuery( query );
                                     }
                                 }
 
@@ -1177,7 +1134,7 @@ public class LinksCleaned extends Thread
 
                                         String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
 
-                                        conCleaned.runQuery( query );
+                                        dbconCleaned.runQuery( query );
                                     }
                                 }
 
@@ -1241,7 +1198,7 @@ public class LinksCleaned extends Thread
                     // if vn not empty write to vn
                     if( !vn.isEmpty() ) {
                         //String query = PersonC.updateQuery("firstname", vn, id_person);
-                        //conCleaned.runQuery(query);
+                        //dbconCleaned.runQuery(query);
 
                         writerFirstname.write( id_person + "," + vn.trim().toLowerCase() + "\n" );
 
@@ -1546,19 +1503,19 @@ public class LinksCleaned extends Thread
         if( !list_TN.isEmpty() ) {
             list_TN = list_TN.substring( 0, ( list_TN.length() - 1 ) );
 
-            conCleaned.runQuery( PersonC.updateQuery( "title_noble", list_TN, id ) );
+            dbconCleaned.runQuery( PersonC.updateQuery( "title_noble", list_TN, id ) );
         }
 
         if( !list_TO.isEmpty() ) {
             list_TO = list_TO.substring( 0, ( list_TO.length() - 1 ) );
 
-            conCleaned.runQuery( PersonC.updateQuery( "title_other", list_TO, id ) );
+            dbconCleaned.runQuery( PersonC.updateQuery( "title_other", list_TO, id ) );
         }
 
         if( !list_PF.isEmpty() ) {
             list_PF = list_PF.substring( 0, ( list_PF.length() - 1 ) );
 
-            conCleaned.runQuery( PersonC.updateQuery( "prefix", list_PF, id ) );
+            dbconCleaned.runQuery( PersonC.updateQuery( "prefix", list_PF, id ) );
         }
 
         return fullName;
@@ -1676,15 +1633,15 @@ public class LinksCleaned extends Thread
 
                 // write lists to person_c
                 if( !listTN.isEmpty() ) {
-                    conCleaned.runQuery( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
+                    dbconCleaned.runQuery( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
                 }
 
                 if( !listTO.isEmpty() ) {
-                    conCleaned.runQuery( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
+                    dbconCleaned.runQuery( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
                 }
 
                 if( !listPF.isEmpty() ) {
-                    conCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) ) ;
+                    dbconCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) ) ;
                 }
             }
 
@@ -1746,7 +1703,7 @@ public class LinksCleaned extends Thread
                         addToReportPerson(id_person, source, 71, suffix);     // EC 71
 
                         String query = PersonC.updateQuery( "suffix", suffix, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else if( standard_code.equals( SC_N ) )
                     {
@@ -1757,12 +1714,12 @@ public class LinksCleaned extends Thread
                         addToReportPerson( id_person, source, 75, suffix );   // EC 74
 
                         String query = PersonC.updateQuery( "suffix", suffix, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else if( standard_code.equals( SC_Y ) )
                     {
                         String query = PersonC.updateQuery( "suffix", suffix, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else {
                         addToReportPerson(id_person, source, 79, suffix);     // EC 75
@@ -1775,7 +1732,7 @@ public class LinksCleaned extends Thread
                     almmSuffix.add( suffix );
 
                     String query = PersonC.updateQuery( "suffix", suffix, id_person );
-                    conCleaned.runQuery( query );
+                    dbconCleaned.runQuery( query );
 
                 }
             }
@@ -1861,7 +1818,7 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFamilynameTable( String source ) throws Exception
+    private void createTempFamilynameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         String tablename = "familyname_t_" + source;
 
@@ -1872,7 +1829,7 @@ public class LinksCleaned extends Thread
                 + " familyname VARCHAR(80) NULL ,"
                 + " PRIMARY KEY (person_id) );";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
 
     } // createTempFamilynameTable
 
@@ -1894,7 +1851,7 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void loadFamilynameToTable( String source ) throws Exception
+    private void loadFamilynameToTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Loading CSV data into temp table", false, true );
 
@@ -1905,7 +1862,7 @@ public class LinksCleaned extends Thread
                 + " INTO TABLE " + tablename
                 + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
 
     } // loadFamilynameToTable
 
@@ -1913,7 +1870,7 @@ public class LinksCleaned extends Thread
     /**
      *
      */
-    private void updateFamilynameToPersonC( String source ) throws Exception
+    private void updateFamilynameToPersonC( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Moving familynames from temp table to person_c", false, true );
 
@@ -1923,7 +1880,7 @@ public class LinksCleaned extends Thread
                 + " SET links_cleaned.person_c.familyname = links_temp."  + tablename + ".familyname"
                 + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
     } // updateFamilynameToPersonC
 
 
@@ -1938,7 +1895,7 @@ public class LinksCleaned extends Thread
     } // removeFamilynameFile
 
 
-    public void removeFamilynameTable( String source ) throws Exception
+    public void removeFamilynameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         String tablename = "familyname_t_" + source;
 
@@ -1946,14 +1903,14 @@ public class LinksCleaned extends Thread
 
         String query = "DROP TABLE IF EXISTS " + tablename + ";";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
     } // removeFamilynameTable
 
 
     /**
      * @throws Exception
      */
-    private void createTempFirstnameTable( String source ) throws Exception
+    private void createTempFirstnameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         String tablename = "firstname_t_" + source;
 
@@ -1966,7 +1923,7 @@ public class LinksCleaned extends Thread
                 + " stillbirth VARCHAR(3) NULL ,"
                 + " PRIMARY KEY (person_id) );";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
     } // createTempFirstnameTable
 
 
@@ -1987,7 +1944,7 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    private void loadFirstnameToTable( String source ) throws Exception
+    private void loadFirstnameToTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Loading CSV data into temp table", false, true );
 
@@ -1998,14 +1955,14 @@ public class LinksCleaned extends Thread
                 + " INTO TABLE " + tablename
                 + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
 
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
     } // loadFirstnameToTable
 
 
     /**
      *
      */
-    private void updateFirstnameToPersonC( String source ) throws Exception
+    private void updateFirstnameToPersonC( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Moving first names from temp table to person_c...", false, true );
 
@@ -2015,7 +1972,7 @@ public class LinksCleaned extends Thread
                 + " SET links_cleaned.person_c.firstname = links_temp."   + tablename + ".firstname"
                 + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
-        conTemp.runQuery(query);
+        dbconTemp.runQuery(query);
     } // updateFirstnameToPersonC
 
 
@@ -2036,14 +1993,14 @@ public class LinksCleaned extends Thread
     /**
      * @throws Exception
      */
-    public void removeFirstnameTable( String source ) throws Exception
+    public void removeFirstnameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         String tablename = "firstname_t_" + source;
 
         showMessage( "Removing table " + tablename, false, true );
 
         String query = "DROP TABLE IF EXISTS " + tablename + ";";
-        conTemp.runQuery( query );
+        dbconTemp.runQuery( query );
     } // removeFirstnameTable
 
 
@@ -2081,7 +2038,7 @@ public class LinksCleaned extends Thread
     {
         showMessage( "deleteRows() deleting empty links_cleaned.person_c records.", false, true );
         String q1 = "DELETE FROM links_cleaned.person_c WHERE ( familyname = '' OR familyname is null ) AND ( firstname = '' OR firstname is null )";
-        conCleaned.runQuery( q1 );
+        dbconCleaned.runQuery( q1 );
     } // deleteRows
     */
 
@@ -2105,7 +2062,7 @@ public class LinksCleaned extends Thread
         String msg = "Loading reference table: location";
         showMessage( msg + "...", false, true );
         long start = System.currentTimeMillis();
-        almmLocation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_location", "original", "location_no" );
+        almmLocation = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
         showTimingMessage( msg, start );
         int numrows = almmLocation.numrows();
         int numkeys = almmLocation.numkeys();
@@ -2189,13 +2146,13 @@ public class LinksCleaned extends Thread
                             {
                                 addToReportRegistration( id, id_source, 91, location );
                                 String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                             else
                             {
                                 addToReportPerson( id, id_source, 91, location );
                                 String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                         }
                         else if( refSCode.equals( SC_N ) )       // EC 93
@@ -2217,7 +2174,7 @@ public class LinksCleaned extends Thread
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                             else
                             {
@@ -2226,7 +2183,7 @@ public class LinksCleaned extends Thread
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                         }
                         else if( refSCode.equals( SC_Y ) )
@@ -2236,14 +2193,14 @@ public class LinksCleaned extends Thread
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = RegistrationC.updateIntQuery( locationFieldC, locationnumber, id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                             else
                             {
                                 String locationnumber = almmLocation.locationno( location );
 
                                 String query = PersonC.updateIntQuery( locationFieldC, locationnumber, id );
-                                conCleaned.runQuery( query );
+                                dbconCleaned.runQuery( query );
                             }
                         }
                         else
@@ -2262,13 +2219,13 @@ public class LinksCleaned extends Thread
                         {
                             addToReportRegistration( id, id_source, 91, location );
                             String query = RegistrationC.updateIntQuery( locationFieldC, "10010", id );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
                         else
                         {
                             addToReportPerson( id, id_source, 91, location );
                             String query = PersonC.updateIntQuery( locationFieldC, "10010", id );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
 
                         almmLocation.add( location );
@@ -2299,7 +2256,7 @@ public class LinksCleaned extends Thread
         String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             standardLocation( rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
         }
@@ -2318,7 +2275,7 @@ public class LinksCleaned extends Thread
         String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             standardLocation( rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
         }
@@ -2337,7 +2294,7 @@ public class LinksCleaned extends Thread
         String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
             standardLocation( rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
@@ -2355,7 +2312,7 @@ public class LinksCleaned extends Thread
         String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
             standardLocation( rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
@@ -2373,7 +2330,7 @@ public class LinksCleaned extends Thread
         String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
 
         try {
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
             standardLocation( rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
@@ -2402,10 +2359,10 @@ public class LinksCleaned extends Thread
         showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
-        almmSex = new TabletoArrayListMultimap( conGeneral, conOr, "ref_status_sex", "original", "standard_sex" );
+        almmSex = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
 
         showMessage("Loading reference table: status_sex (civil status as key)...", false, true);
-        almmCivilstatus = new TabletoArrayListMultimap( conGeneral, conOr, "ref_status_sex", "original", "standard_civilstatus" );
+        almmCivilstatus = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
 
         int numrows = almmCivilstatus.numrows();
         int numkeys = almmCivilstatus.numkeys();
@@ -2440,7 +2397,7 @@ public class LinksCleaned extends Thread
         {
             String selectQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -2469,7 +2426,7 @@ public class LinksCleaned extends Thread
                             addToReportPerson( id_person, source, 31, sex );     // warning 31
 
                             String query = PersonC.updateQuery( "sex", sex, id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_N ) ) {
                             if( debug ) { showMessage( "Warning 33: id_person: " + id_person + ", sex: " + sex, false, true ); }
@@ -2482,13 +2439,13 @@ public class LinksCleaned extends Thread
                             addToReportPerson( id_person, source, 35, sex );     // warning 35
 
                             String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
                             if( debug ) { showMessage( "Standard sex: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
                             String query = PersonC.updateQuery( "sex", almmSex.standard(sex), id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
                         else {     // Invalid standard code
                             if( debug ) { showMessage( "Warning 39: id_person: " + id_person + ", sex: " + sex, false, true ); }
@@ -2505,7 +2462,7 @@ public class LinksCleaned extends Thread
                         almmCivilstatus.add( sex );         // only almmCivilstatus is used for update
 
                         String query = PersonC.updateQuery( "sex", sex, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                 }
                 else { count_empty++; }
@@ -2541,7 +2498,7 @@ public class LinksCleaned extends Thread
         {
             String selectQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -2568,7 +2525,7 @@ public class LinksCleaned extends Thread
                             addToReportPerson( id_person, source, 61, civil_status );            // warning 61
 
                             String query = PersonC.updateQuery( "civil_status", civil_status, id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
                         }
                         else if( refSCode.equals( SC_N ) ) {
                             addToReportPerson( id_person, source, 63, civil_status );            // warning 63
@@ -2577,7 +2534,7 @@ public class LinksCleaned extends Thread
                             addToReportPerson( id_person, source, 65, civil_status );            // warning 65
 
                             String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard( civil_status ), id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
 
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
                                 if( !sex.equalsIgnoreCase( this.almmCivilstatus.value( "standard_sex", civil_status) ) ) {
@@ -2589,23 +2546,23 @@ public class LinksCleaned extends Thread
                             else            // Sex is empty
                             {
                                 String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
-                                conCleaned.runQuery( sexQuery );
+                                dbconCleaned.runQuery( sexQuery );
                             }
 
                             String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
-                            conCleaned.runQuery( sexQuery );
+                            dbconCleaned.runQuery( sexQuery );
                         }
                         else if( refSCode.equals( SC_Y ) ) {
                             String query = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
-                            conCleaned.runQuery( query );
+                            dbconCleaned.runQuery( query );
 
                             if( sex == null || sex.isEmpty() )  {      // Sex is empty
                                 String sexQuery = PersonC.updateQuery( "sex", almmCivilstatus.value("standard_sex", civil_status), id_person );
-                                conCleaned.runQuery( sexQuery );
+                                dbconCleaned.runQuery( sexQuery );
                             }
 
                             String sexQuery = PersonC.updateQuery( "civil_status", almmCivilstatus.standard(civil_status), id_person );
-                            conCleaned.runQuery( sexQuery );
+                            dbconCleaned.runQuery( sexQuery );
                         }
                         else {          // Invalid SC
                             addToReportPerson( id_person, source, 69, civil_status );            // warning 68
@@ -2620,7 +2577,7 @@ public class LinksCleaned extends Thread
                         almmCivilstatus.add(civil_status);                                        // Add new civil_status
 
                         String query = PersonC.updateQuery( "civil_status", civil_status, id_person );  // Write to Person
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                 }
                 else { count_empty++; }
@@ -2679,7 +2636,7 @@ public class LinksCleaned extends Thread
         {
             String selectQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )      // process data from links_original
             {
@@ -2696,7 +2653,7 @@ public class LinksCleaned extends Thread
 
                 String refQuery = "SELECT * FROM ref_registration WHERE main_type = " +
                         registration_maintype + " AND original = '" + registration_type + "'";
-                ResultSet ref = conGeneral.runQueryWithResult( refQuery );
+                ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
 
                 if( ref.next() )        // compare with reference
                 {
@@ -2708,7 +2665,7 @@ public class LinksCleaned extends Thread
                         addToReportRegistration( id_registration, source, 51, registration_type );       // warning 51
 
                         String query = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_N ) ) {
                         if( debug ) { showMessage( "Warning 53: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
@@ -2721,12 +2678,12 @@ public class LinksCleaned extends Thread
                         addToReportRegistration( id_registration, source, 55, registration_type );       // warning 55
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     } else if( refSCode.equals( SC_Y ) ) {
                         if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else {    // invalid SC
                         if( debug ) { showMessage( "Warning 59: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
@@ -2741,11 +2698,11 @@ public class LinksCleaned extends Thread
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51
 
                     // add to links_general
-                    conGeneral.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
+                    dbconRefRead.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
 
                     // update links_cleaned_.registration_c
                     String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
-                    conCleaned.runQuery( query );
+                    dbconCleaned.runQuery( query );
                 }
             }
         } catch( Exception ex ) {
@@ -2776,7 +2733,7 @@ public class LinksCleaned extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_occupation";
         showMessage( msg + "...", false, true );
-        almmOccupation = new TabletoArrayListMultimap( conGeneral, conOr, "ref_occupation", "original", "standard" );
+        almmOccupation = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         int numrows = almmOccupation.numrows();
@@ -2812,7 +2769,7 @@ public class LinksCleaned extends Thread
 
         try
         {
-            ResultSet rs = conOriginal.runQueryWithResult( query );           // Get occupation
+            ResultSet rs = dbconOriginal.runQueryWithResult( query );           // Get occupation
 
             while( rs.next() )
             {
@@ -2880,7 +2837,7 @@ public class LinksCleaned extends Thread
                         addToReportPerson( id_person, sourceNo, 41, occupation );      // warning 41
 
                         String query = PersonC.updateQuery( "occupation", occupation, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_N ) )
                     {
@@ -2895,7 +2852,7 @@ public class LinksCleaned extends Thread
                         String refOccupation = almmOccupation.standard( occupation );
 
                         String query = PersonC.updateQuery("occupation", refOccupation, id_person);
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_Y ) )
                     {
@@ -2904,7 +2861,7 @@ public class LinksCleaned extends Thread
                         if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
 
                         String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                     else      // Invalid standard code
                     {
@@ -2921,7 +2878,7 @@ public class LinksCleaned extends Thread
                     almmOccupation.add( occupation );
 
                     String query = PersonC.updateQuery( "occupation", occupation, id_person );
-                    conCleaned.runQuery( query );
+                    dbconCleaned.runQuery( query );
                 }
             }
         }
@@ -2975,7 +2932,7 @@ public class LinksCleaned extends Thread
             String selectQuery = "SELECT id_person , age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
             if( debug ) { showMessage( selectQuery, false, true ); }
 
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -3036,7 +2993,7 @@ public class LinksCleaned extends Thread
                     }
 
                     if( debug ) { showMessage( updateQuery, false, true ); }
-                    conCleaned.runQuery( updateQuery );
+                    dbconCleaned.runQuery( updateQuery );
                     //System.out.println( "after update of: " + counter );
                 }
             }
@@ -3069,7 +3026,7 @@ public class LinksCleaned extends Thread
         String msg = "Loading reference table: ref_role";
         showMessage( msg + "...", false, true );
 
-        almmRole = new TabletoArrayListMultimap( conGeneral, conOr, "ref_role", "original", "standard" );
+        almmRole = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
         int size = almmRole.numkeys();
         showMessage( "Reference table: ref_role [" + size + " records]", false, true );
 
@@ -3101,7 +3058,7 @@ public class LinksCleaned extends Thread
             + "AND links_original.person_o.id_source = " + source;
 
         try {
-            conCleaned.runQuery( query );
+            dbconCleaned.runQuery( query );
         }
         catch( Exception ex ) {
             showMessage( "Exception while running standardRole: " + ex.getMessage(), false, true );
@@ -3119,7 +3076,7 @@ public class LinksCleaned extends Thread
         {
             String selectQuery = "SELECT id_person , role FROM links_original.person_o WHERE id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -3147,7 +3104,7 @@ public class LinksCleaned extends Thread
                             if( debug ) { showMessage( "role_nr: " + role_nr, false, true ); }
                             String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
                             if( debug ) { showMessage( updateQuery, false, true ); }
-                            conCleaned.runQuery( updateQuery );
+                            dbconCleaned.runQuery( updateQuery );
                         }
                         else
                         {
@@ -3192,7 +3149,7 @@ public class LinksCleaned extends Thread
             String selectQuery = "SELECT id_registration , id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
             if( debug ) { showMessage( "standardAlive() " + selectQuery, false, true ); }
 
-            ResultSet rs = conCleaned.runQueryWithResult( selectQuery );
+            ResultSet rs = dbconCleaned.runQueryWithResult( selectQuery );
 
             while( rs.next() )
             {
@@ -3218,7 +3175,7 @@ public class LinksCleaned extends Thread
                     if( debug && id_registration == 668084 ) { showMessage( "role: " + role + ", death -> 'a'", false, true ); }
 
                     String updateQuery = PersonC.updateQuery( "death", "a", id_person );        // set death to a[live]
-                    conCleaned.runQuery( updateQuery );
+                    dbconCleaned.runQuery( updateQuery );
                 }
                 else
                 {
@@ -3226,7 +3183,7 @@ public class LinksCleaned extends Thread
                         if( debug && id_registration == 668084 ) { showMessage( "occupation: " + occupation + ", death -> 'a'", false, true ); }
 
                         String updateQuery = PersonC.updateQuery( "death", "a", id_person );     // set death to a[live]
-                        conCleaned.runQuery( updateQuery );
+                        dbconCleaned.runQuery( updateQuery );
                     }
                     else
                     {
@@ -3234,7 +3191,7 @@ public class LinksCleaned extends Thread
                             if( debug && id_registration == 668084 ) { showMessage( "death: " + death + ", death -> 'n'", false, true ); }
 
                             String updateQuery = PersonC.updateQuery( "death", "n", id_person );     // set death to n[o]
-                            conCleaned.runQuery( updateQuery );
+                            dbconCleaned.runQuery( updateQuery );
                         }
                         else
                         { if( debug && id_registration == 668084 ) { showMessage( "death stays: " + death, false, true ); } }
@@ -3272,10 +3229,17 @@ public class LinksCleaned extends Thread
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
         standardRegistrationDate( debug, source );
 
-        showMessage( "Processing standardDate for source: " + source + "...", false, true );
-        standardDate( debug, source, "birth" );
-        standardDate( debug, source, "mar" );
-        standardDate( debug, source, "death" );
+        String type = "birth";
+        showMessage( "Processing standardDate for source: " + source + " for: " + type + "...", false, true );
+        standardDate( debug, source, type );
+
+        type = "mar";
+        showMessage( "Processing standardDate for source: " + source + " for: " + type + "...", false, true );
+        standardDate( debug, source, type );
+
+        type = "death";
+        showMessage( "Processing standardDate for source: " + source + " for: " + type + "...", false, true );
+        standardDate( debug, source, type );
 
         // Fill empty dates with registration dates
         flagBirthDate( debug );
@@ -3337,7 +3301,7 @@ public class LinksCleaned extends Thread
 
         try
         {
-            ResultSet rsPersons = conCleaned.runQueryWithResult( startQuery );            // Run person query
+            ResultSet rsPersons = dbconCleaned.runQueryWithResult( startQuery );            // Run person query
 
             // Count hits
             rsPersons.last();
@@ -3467,7 +3431,7 @@ public class LinksCleaned extends Thread
                             + type_date + "_day_max"   + " = " + ddmdBirth.getMaxDay()
                             + " WHERE person_c.id_person = "   + id_person;
 
-                    conCleaned.runQuery( queryBirth );
+                    dbconCleaned.runQuery( queryBirth );
                 }
                 else { if( debug ) { showMessage( "birth date is valid: " + birth_date, false, true ); } }
 
@@ -3495,7 +3459,7 @@ public class LinksCleaned extends Thread
                             + type_date + "_day_max"   + " = " + ddmdMarriage.getMaxDay()
                             + " WHERE person_c.id_person = "   + id_person;
 
-                    conCleaned.runQuery( queryMar );
+                    dbconCleaned.runQuery( queryMar );
                 }
                 else { if( debug ) { showMessage( "mar date is valid: " + mar_date, false, true ); } }
 
@@ -3523,7 +3487,7 @@ public class LinksCleaned extends Thread
                             + type_date + "_day_max"   + " = " + ddmdDeath.getMaxDay()
                             + " WHERE person_c.id_person = "   + id_person;
 
-                    conCleaned.runQuery( queryDeath );
+                    dbconCleaned.runQuery( queryDeath );
                 }
                 else { if( debug ) { showMessage( "death date is valid: " + death_date, false, true ); } }
             }
@@ -4042,7 +4006,7 @@ public class LinksCleaned extends Thread
 
         if( debug ) { showMessage( query, false, true ); }
 
-        ResultSet rs = conGeneral.runQueryWithResult( query );
+        ResultSet rs = dbconRefRead.runQueryWithResult( query );
 
         if( !rs.next() )
         {
@@ -4154,7 +4118,7 @@ public class LinksCleaned extends Thread
                 + " AND age_main_role = '" + age_main_role + "'";
 
             if( debug ) { showMessage( queryRef, false, true ); }
-            ResultSet rs_ref = conGeneral.runQueryWithResult( queryRef );
+            ResultSet rs_ref = dbconRefRead.runQueryWithResult( queryRef );
 
             int min_person_role = 0;
             int max_person_role = 0;
@@ -4178,8 +4142,8 @@ public class LinksCleaned extends Thread
                 mmmas.setMaxYear(rs_ref.getInt( "max_year" ));
 
                 boolean readPc = false;
-
                 int mm_main_role = 0;
+
                 if( min_person_role > 0 ) {
                     readPc = true;
                     mm_main_role = min_person_role;
@@ -4192,23 +4156,32 @@ public class LinksCleaned extends Thread
                 }
                 else { mmmas.setMaxAge0( "y" ); }
 
+                if( debug ) { showMessage( "querying person_c: " + readPc, false, true ); }
                 if( readPc ) {
-                    String queryPc = "SELECT age_year, role FROM links_cleaned.person_c"
+                    String queryPc = "SELECT age_day, age_week, age_month, age_year, role FROM links_cleaned.person_c"
                         + " WHERE id_registration = '" + id_registration + "'"
                         + " AND role = '" + mm_main_role + "'";
 
-                    ResultSet rs_pc = conCleaned.runQueryWithResult( queryPc );
+                    if( debug ) { showMessage( queryPc, false, true ); }
+                    ResultSet rs_pc = dbconCleaned.runQueryWithResult( queryPc );
 
-                    int age = 0;
+                    int age_day = 0;
+                    int age_week = 0;
+                    int age_month = 0;
+                    int age_year = 0;
+
                     int main_role = 0;
                     int countPc = 0;
 
                     while( rs_pc.next() ) {
                         countPc++;
-                        age       = rs_pc.getInt( "age_year" );
-                        main_role = rs_pc.getInt("role");
+                        age_day   = rs_pc.getInt( "age_day" );
+                        age_week  = rs_pc.getInt( "age_week" );
+                        age_month = rs_pc.getInt( "age_month" );
+                        age_year  = rs_pc.getInt( "age_year" );
+                        main_role = rs_pc.getInt( "role" );
 
-                        mmmas.setAgeYear( age );
+                        mmmas.setAgeYear( age_year );
                         mmmas.setMainRole( main_role );
                     }
 
@@ -4217,9 +4190,15 @@ public class LinksCleaned extends Thread
                         throw new Exception( "minMaxMainAge: person_c count = " + countPc );
                     }
 
-                    if( debug ) { showMessage( "minMaxMainAge() age: " + age + ", main_role: " + main_role, false, true ); }
+                    if( debug ) { showMessage( "minMaxMainAge() age_day: " + age_day + ", age_week: " + age_week + ", age_month: " + age_month + ", age_year: " + age_year + ", main_role: " + main_role, false, true ); }
 
-                    if( age > 0 ) { done = true; }
+                    if( age_day > 0 || age_week > 0 || age_month > 0 ) {
+                        int iyear = age_month / 12;
+                        age_year += ( 1 + iyear );
+                        mmmas.setAgeYear( age_year );
+                    }
+
+                    if( age_year > 0 ) { done = true; }
                     else {
                         if( age_main_role.equals( "y" ) ) { age_main_role = "n"; }
                         else { done = true; }
@@ -4288,7 +4267,7 @@ public class LinksCleaned extends Thread
         {
             String startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( startQuery );
 
             while( rs.next() )
             {
@@ -4319,7 +4298,7 @@ public class LinksCleaned extends Thread
                         + "registration_c.registration_year = "       + dymd.getYear()
                         + " WHERE registration_c.id_registration = "  + id_registration;
 
-                    conCleaned.runQuery( query );
+                    dbconCleaned.runQuery( query );
                 }
                 else         // Error occured
                 {
@@ -4332,7 +4311,7 @@ public class LinksCleaned extends Thread
                         + "registration_c.registration_year = "       + dymd.getYear()
                         + " WHERE registration_c.id_registration = "  + id_registration;
 
-                    conCleaned.runQuery( query );
+                    dbconCleaned.runQuery( query );
                 }
             }
             rs = null;
@@ -4360,7 +4339,7 @@ public class LinksCleaned extends Thread
             String startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_o WHERE " + type + "_date is not null";
             startQuery =  startQuery + " AND id_source = " + source;
 
-            ResultSet rs = conOriginal.runQueryWithResult( startQuery );
+            ResultSet rs = dbconOriginal.runQueryWithResult( startQuery );
 
             while( rs.next() )
             {
@@ -4393,7 +4372,7 @@ public class LinksCleaned extends Thread
                         + "person_c." + type + "_date_valid = 1 "
                         + "WHERE person_c.id_person = " + id_person;
 
-                    conCleaned.runQuery(query);
+                    dbconCleaned.runQuery( query );
                 }
                 else
                 {
@@ -4414,7 +4393,7 @@ public class LinksCleaned extends Thread
                         + "person_c." + type + "_year = " + dymd.getYear() + " "
                         + "WHERE person_c.id_person = " + id_person;
 
-                    conCleaned.runQuery(query);
+                    dbconCleaned.runQuery( query );
                 }
             }
 
@@ -4482,9 +4461,9 @@ public class LinksCleaned extends Thread
             + "death_date_valid = 1 "
             + "AND links_cleaned.person_c.id_source = " + source;
 
-        conCleaned.runQuery( q1 );
-        conCleaned.runQuery( q2 );
-        conCleaned.runQuery( q3 );
+        dbconCleaned.runQuery( q1 );
+        dbconCleaned.runQuery( q2 );
+        dbconCleaned.runQuery( q3 );
     } // minMaxValidDate
 
 
@@ -4650,9 +4629,9 @@ public class LinksCleaned extends Thread
             + " AND person_c.id_registration = registration_c.id_registration; ";
 
         try {
-            conCleaned.runQuery( query1 );
-            conCleaned.runQuery( query2 );
-            conCleaned.runQuery( query3) ;
+            dbconCleaned.runQuery( query1 );
+            dbconCleaned.runQuery( query2 );
+            dbconCleaned.runQuery( query3) ;
         }
         catch( Exception ex ) {
             showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
@@ -4703,9 +4682,9 @@ public class LinksCleaned extends Thread
             + " AND person_c.id_registration = registration_c.id_registration; ";
 
         try {
-            conCleaned.runQuery( query1 );
-            conCleaned.runQuery( query2 );
-            conCleaned.runQuery( query3 );
+            dbconCleaned.runQuery( query1 );
+            dbconCleaned.runQuery( query2 );
+            dbconCleaned.runQuery( query3 );
 
         }
         catch( Exception ex ) {
@@ -4758,9 +4737,9 @@ public class LinksCleaned extends Thread
             + " AND person_c.id_registration = registration_c.id_registration; ";
 
         try {
-            conCleaned.runQuery( query1 );
-            conCleaned.runQuery( query2 );
-            conCleaned.runQuery( query3 );
+            dbconCleaned.runQuery( query1 );
+            dbconCleaned.runQuery( query2 );
+            dbconCleaned.runQuery( query3 );
 
         }
         catch( Exception ex ) {
@@ -4790,7 +4769,7 @@ public class LinksCleaned extends Thread
 
         try
         {
-            ResultSet refMinMaxMarriageYear = conGeneral.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
+            ResultSet refMinMaxMarriageYear = dbconRefRead.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
 
             showMessage( "Processing minMaxMarriageYear for source: " + source + "...", false, true );
             minMaxMarriageYear( setMarriageYear(  source ), refMinMaxMarriageYear );
@@ -4910,7 +4889,7 @@ public class LinksCleaned extends Thread
                             + " WHERE"
                             + " id_person = " + role2Id;
 
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
 
                     // Role 2, max year
@@ -4925,7 +4904,7 @@ public class LinksCleaned extends Thread
                             + " mar_day_max = " + hjpsList.get(i).getMarriageDayMax()
                             + " WHERE"
                             + " id_person = " + role2Id;
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
 
                     }
 
@@ -4941,7 +4920,7 @@ public class LinksCleaned extends Thread
                             + " WHERE"
                             + " id_person = " + role1Id;
 
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
 
                     // Role 1, max year
@@ -4956,7 +4935,7 @@ public class LinksCleaned extends Thread
                             + " WHERE"
                             + " id_person = " + role1Id;
 
-                        conCleaned.runQuery( query );
+                        dbconCleaned.runQuery( query );
                     }
                 }
             }
@@ -5030,7 +5009,7 @@ public class LinksCleaned extends Thread
             + " WHERE registration_c.id_registration = pers.id_registration ORDER BY pers.id_registration;";
         */
 
-        ResultSet minmaxjaarRs = conCleaned.runQueryWithResult( query );
+        ResultSet minmaxjaarRs = dbconCleaned.runQueryWithResult( query );
 
         ArrayList< MarriageYearPersonsSet > hjpsList = new ArrayList< MarriageYearPersonsSet >();
 
@@ -5093,7 +5072,7 @@ public class LinksCleaned extends Thread
                 + "WHERE id_source = " + source;
 
         try {
-            conCleaned.runQuery( query );
+            dbconCleaned.runQuery( query );
         }
         catch( Exception ex ) {
             showMessage( "Exception while Creating full dates from parts: " + ex.getMessage(), false, true );
@@ -5151,25 +5130,25 @@ public class LinksCleaned extends Thread
         try
         {
             if( debug ) { showMessage( "q1", false, true ); }
-            conCleaned.runQuery( query1 );
+            dbconCleaned.runQuery( query1 );
 
             if( debug ) { showMessage( "q2", false, true ); }
-            conCleaned.runQuery( query2 );
+            dbconCleaned.runQuery( query2 );
 
             if( debug ) { showMessage( "q3", false, true ); }
-            conCleaned.runQuery( query3 );
+            dbconCleaned.runQuery( query3 );
 
             if( debug ) { showMessage( "q4", false, true ); }
-            conCleaned.runQuery( query4 );
+            dbconCleaned.runQuery( query4 );
 
             if( debug ) { showMessage( "q5", false, true ); }
-            conCleaned.runQuery( query5 );
+            dbconCleaned.runQuery( query5 );
 
             if( debug ) { showMessage( "q6", false, true ); }
-            conCleaned.runQuery( query6 );
+            dbconCleaned.runQuery( query6 );
 
             if( debug ) { showMessage( "q7", false, true ); }
-            conCleaned.runQuery( queryReg );
+            dbconCleaned.runQuery( queryReg );
         }
         catch( Exception ex ) {
             showMessage( "Exception while computing days since 1-1-1: " + ex.getMessage(), false, true );
@@ -5266,7 +5245,7 @@ public class LinksCleaned extends Thread
 
         // Execute queries
         for( String s : queries ) {
-            conCleaned.runQuery( s );
+            dbconCleaned.runQuery( s );
         }
     } // postTasks
 
