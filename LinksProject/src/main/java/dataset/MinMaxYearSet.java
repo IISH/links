@@ -2,65 +2,44 @@ package dataset;
 
 /**
  * MinMaxJaar dataset
- * Used to return a min and an max Jaar
- * @author oaz
+ * Used to return a min and an max Year
+ *
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * FL-16-Oct-2014 Latest change
  */
 public class MinMaxYearSet {
 
     // Private vars
-    private int MinYear ;
-    private int MaxYear ;
+    private int minYear ;
+    private int maxYear ;
+
+
+    /**
+     * @return minYear
+     */
+    public int getMinYear( ) { return this.minYear ; }
 
 
 
     /**
-     * Use this method to get MinYear
-     * @return MinYear
+     * @return maxYear
      */
-    public int GetMinYear( ){
-
-        // Return var
-        return this.MinYear ;
-
-    }
+    public int getMaxYear( ) { return this.maxYear ; }
 
 
 
     /**
-     * Use this method to get MaxYear
-     * @return MaxYear
+     * @param minYear
      */
-    public int GetMaxYear( ){
-
-        // Return var
-        return this.MaxYear ;
-
-    }
+    public void setMinYear( int minYear ) { this.minYear = minYear ; }
 
 
 
     /**
-     * Use this method to set MinYear
-     * @param value value to set MinYear
+     * @param maxYear
      */
-    public void SetMinYear( int value ){
-
-        // Set var with value
-        this.MinYear = value ;
-
-    }
-
-
-
-    /**
-     * Use this method to set MaxYear
-     * @param value value to set MaxYear
-     */
-    public void SetMaxYear( int value ){
-
-        // Set var with value
-        this.MaxYear = value ;
-
-    }
+    public void setMaxYear( int maxYear ) { this.maxYear = maxYear ; }
 
 }

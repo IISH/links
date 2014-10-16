@@ -3565,8 +3565,8 @@ public class LinksCleaned extends Thread
                     inputInfo.getDeath(),
                     inputInfo.getPersonAgeYear() );
 
-            returnSet.setMinYear( mmj.GetMinYear() );
-            returnSet.setMaxYear( mmj.GetMaxYear() );
+            returnSet.setMinYear( mmj.getMinYear() );
+            returnSet.setMaxYear( mmj.getMaxYear() );
 
             return returnSet;
         } // age is given in years
@@ -3602,8 +3602,8 @@ public class LinksCleaned extends Thread
                     inputInfo.getDeath(),
                     AgeInYears );
 
-            returnSet.setMinYear(mmj.GetMinYear());
-            returnSet.setMaxYear(mmj.GetMaxYear());
+            returnSet.setMinYear(mmj.getMinYear());
+            returnSet.setMaxYear(mmj.getMaxYear());
 
             return returnSet;
         } // birth year given
@@ -3639,8 +3639,8 @@ public class LinksCleaned extends Thread
                     inputInfo.getDeath(),
                     ageinYears );
 
-            returnSet.setMinYear(mmj.GetMinYear());
-            returnSet.setMaxYear(mmj.GetMaxYear());
+            returnSet.setMinYear(mmj.getMinYear());
+            returnSet.setMaxYear(mmj.getMaxYear());
 
             return returnSet;
         } // not the deceased
@@ -3845,7 +3845,7 @@ public class LinksCleaned extends Thread
             // new date -> date - (days - 1)
 
             int mindays = (days + 4) * -1;
-            int maxdays = (days - 4) * -1;
+            //int maxdays = (days - 4) * -1;    //NO, set to registration date (below)
 
             // min date
             String minDate = addTimeToDate(
@@ -3856,12 +3856,15 @@ public class LinksCleaned extends Thread
                     mindays);
 
             // max date
+            /*
             String maxDate = addTimeToDate(
                     useYear,
                     useMonth,
                     useDay,
                     TimeType.DAY,
                     maxdays);
+            */
+            String maxDate = inputInfo.getRegistrationDate();
 
 
             // New date to return value
@@ -3869,7 +3872,7 @@ public class LinksCleaned extends Thread
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
 
-            // Checken if max date niet later than actdate
+            // Check if max date not later than registration date
             DateYearMonthDaySet dymd = checkMaxDate(
                     computedMaxDate.getYear(),
                     computedMaxDate.getMonth(),
@@ -3894,7 +3897,7 @@ public class LinksCleaned extends Thread
         // No age given
         DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
 
-        // day and month similar to act date
+        // day and month similar to registration date
         returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
         returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
         returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
@@ -3911,8 +3914,8 @@ public class LinksCleaned extends Thread
                 inputInfo.getDeath(),
                 0 );
 
-        returnSet.setMinYear( mmj.GetMinYear() );
-        returnSet.setMaxYear( mmj.GetMaxYear() );
+        returnSet.setMinYear( mmj.getMinYear() );
+        returnSet.setMaxYear( mmj.getMaxYear() );
 
         return returnSet;
     } // minMaxDate
@@ -4039,31 +4042,34 @@ public class LinksCleaned extends Thread
 
         MinMaxYearSet mmj = new MinMaxYearSet();
 
-        mmj.SetMinYear( minimum_year );
-        mmj.SetMaxYear( maximum_year );
+        mmj.setMinYear( minimum_year );
+        mmj.setMaxYear( maximum_year );
 
         // function "A" means: the contents of mmj is already OK
         // function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
 
         if( function.equals( "C" ) )                    // function C, check by reg year
         {
-            if( maximum_year > reg_year ) { mmj.SetMaxYear( reg_year ); }
+            if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
         }
         else if( function.equals( "D" ) )               // function D
         {
-            if( minimum_year > (reg_year - 14) ) { mmj.SetMinYear( reg_year - 14 ); }
-            if( maximum_year > (reg_year - 14) ) { mmj.SetMaxYear( reg_year - 14 ); }
+            if( minimum_year > (reg_year - 14) ) { mmj.setMinYear( reg_year - 14 ); }
+            if( maximum_year > (reg_year - 14) ) { mmj.setMaxYear( reg_year - 14 ); }
         }
         else if( function.equals( "E" ) )               // If E, deceased
         {
-            if( age < 14 ) {
-                mmj.SetMinYear( 0 );
-                mmj.SetMaxYear( 0 );
-            }
+            if( minimum_year > reg_year ) { mmj.setMinYear( reg_year ); }
+            if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
         }
         else if( function.equals( "F" ) )               // function F
         {
-            if( minimum_year < reg_year ) { mmj.SetMinYear( reg_year ); }
+            if( minimum_year < reg_year ) { mmj.setMinYear( reg_year ); }
+        }
+        else if( function.equals( "G" ) )               // function F
+        {
+            if( minimum_year < reg_year ) { mmj.setMinYear( reg_year ); }
+            if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
         }
         else
         {
@@ -4194,6 +4200,8 @@ public class LinksCleaned extends Thread
 
                     if( age_day > 0 || age_week > 0 || age_month > 0 ) {
                         int iyear = age_month / 12;
+                        // Adding 1 is only for getting proper values of date range estimates (e.g., of parents of a baby that only lived a few days).
+                        // the person_c.age_year should not be changed; it may be 0
                         age_year += ( 1 + iyear );
                         mmmas.setAgeYear( age_year );
                     }
