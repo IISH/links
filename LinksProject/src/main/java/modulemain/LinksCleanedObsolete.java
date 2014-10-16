@@ -1,7 +1,7 @@
 /**
  * @author Fons Laan
  *
- * obsolete functions removed from LinksCleaned.java
+ * obsolete functions removed from LinksCleanedThread.java
  *
  * FL-13-Oct-2014 Latest change
  */

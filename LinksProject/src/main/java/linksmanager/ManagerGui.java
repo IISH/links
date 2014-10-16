@@ -13,7 +13,6 @@ import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -43,6 +42,7 @@ import javax.swing.event.ListSelectionListener;
 //import org.apache.logging.log4j.Logger;
 //import org.apache.logging.log4j.status.StatusLogger;
 
+import modulemain.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -50,11 +50,7 @@ import connectors.CsvConnector;
 import dataset.Options;
 import enumdefinitions.IndexType;
 
-import modulemain.LinksCleaned;
-import modulemain.LinksInternal;
-import modulemain.LinksOriginal;
-import modulemain.LinksPrematch;
-import modulemain.LinksSpecific;
+import modulemain.LinksCleanedThread;
 
 import general.Functions;
 import general.PrintLogger;
@@ -2292,12 +2288,13 @@ public class ManagerGui extends javax.swing.JFrame
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
 
-        LinksCleaned linkscleaned = new LinksCleaned(
+        LinksCleaned linksCleaned = new LinksCleaned(
              opts,
              tbLOLClatestOutput,
              taLOLCoutput,
              this );
-        linkscleaned.start();
+
+        linksCleaned.start();
     }//GEN-LAST:event_bnLOLCstartProcessActionPerformed
 
     private void tfBILODeleteSourceKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tfBILODeleteSourceKeyReleased
@@ -2389,7 +2386,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "16-Oct-2014 13:45";
+            String timestamp1 = "16-Oct-2014 15:42";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

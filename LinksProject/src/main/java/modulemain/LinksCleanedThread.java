@@ -50,7 +50,7 @@ import general.PrintLogger;
  * TODO check all occurrences of TODO
  */
 
-public class LinksCleaned extends Thread
+public class LinksCleanedThread extends Thread
 {
     // Table -> ArrayListMultiMap
     private TabletoArrayListMultimap almmPrepiece;      // Names
@@ -64,7 +64,6 @@ public class LinksCleaned extends Thread
     private TabletoArrayListMultimap almmRole;          // Role
     private TabletoArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
     private TabletoArrayListMultimap almmSex;           // Civilstatus & Gender
-
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -115,7 +114,7 @@ public class LinksCleaned extends Thread
      * @param opts
      * @param mg
      */
-    public LinksCleaned
+    public LinksCleanedThread
     (
             Options opts,
             JTextField outputLine,
@@ -142,6 +141,7 @@ public class LinksCleaned extends Thread
 
         this.mg = mg;
 
+        /*
         String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
         System.out.println( timestamp + "  linksCleaned()" );
 
@@ -149,16 +149,18 @@ public class LinksCleaned extends Thread
         System.out.println( "mysql_hsnref_username:\t" + ref_user );
         System.out.println( "mysql_hsnref_password:\t" + ref_pass );
         System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
+        */
     }
 
 
     @Override
     /**
-     * Begin
+     * run
      */
     public void run()
     {
 
+        /*
         class CleaningThread extends Thread
         {
             String source;
@@ -216,13 +218,13 @@ public class LinksCleaned extends Thread
                 System.out.println( msg );
             }
         }
-
+        */
 
         try {
-            plog.show( "Links Match Manager 2.0" );
-            plog.show( "LinksCleaned/run()" );
-            int ncores = Runtime.getRuntime().availableProcessors();
-            plog.show( "Available cores: " + ncores );
+            //plog.show( "Links Match Manager 2.0" );
+            plog.show( "LinksCleanedThread/run()" );
+            //int ncores = Runtime.getRuntime().availableProcessors();
+            //plog.show( "Available cores: " + ncores );
 
             logTableName = LinksSpecific.getLogTableName();
 
@@ -257,42 +259,33 @@ public class LinksCleaned extends Thread
 
             for( int sourceId : sourceList )
             {
+                boolean debug = opts.isDoDebug();
                 String source = Integer.toString( sourceId );
 
-                CleaningThread ct = new CleaningThread( source );
-                ct.start();
+                //CleaningThread ct = new CleaningThread( source );
+                //ct.start();
 
-                /*
-                doRenewData( opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
+                doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
-                //doPreBasicNames( opts.isDoPreBasicNames(), source );         // GUI cb: Basic names temp
-                //doRemarks( opts.isDoRemarks(), source );                     // GUI cb: Parse remarks
+                doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
 
-                doNames( opts.isDoNames(), source );                         // GUI cb: Names
+                doLocations( debug, opts.isDoLocations(), source );                 // GUI cb: Locations
 
-                doLocations( opts.isDoLocations(), source );                 // GUI cb: Locations
+                doStatusSex( debug, opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
 
-                doStatusSex( opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
+                doRegistrationType( debug, opts.isDoRegType(), source );            // GUI cb: Registration Type
 
-                doRegistrationType( opts.isDoRegType(), source );            // GUI cb: Registration Type
+                doOccupation( debug, opts.isDoOccupation(), source );               // GUI cb: Occupation
 
-                //doSequence( opts.isDoSequence(), source );                   // GUI cb: Sequence
-                //doRelation( opts.isDoRelation(), source );                   // GUI cb: Relation
+                doDates( debug, opts.isDoDates(), source );                         // GUI cb: Dates
 
-                doOccupation( opts.isDoOccupation(), source );               // GUI cb: Occupation
+                doMinMaxMarriage( debug, opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
 
-                //doAge( opts.isDoAgeYear(), source );                       // part of Dates
-                //doRole( opts.isDoRole(), source );                         // part of Dates
-                doDates( opts.isDoDates(), source );                         // GUI cb: Dates
+                doPartsToFullDate( debug, opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
 
-                doMinMaxMarriage( opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
+                doDaysSinceBegin( debug, opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
 
-                doPartsToFullDate( opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
-
-                doDaysSinceBegin( opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
-
-                doPostTasks( opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
-                */
+                doPostTasks( debug, opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
             }
 
             /*
@@ -4069,6 +4062,10 @@ public class LinksCleaned extends Thread
         else if( function.equals( "G" ) )               // function F
         {
             if( minimum_year < reg_year ) { mmj.setMinYear( reg_year ); }
+            if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
+        }
+        else if( function.equals( "H" ) )               // function H
+        {
             if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
         }
         else
