@@ -25,7 +25,7 @@ import modulemain.LinksSpecific;
  */
 public class TabletoArrayListMultimap
 {
-    private boolean debug = false;
+    private boolean debug = true;
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
@@ -289,6 +289,30 @@ public class TabletoArrayListMultimap
     {
         //System.out.println( "TabletoArrayListMultimap/store()" );
 
+        /*
+        -7  BIT
+        -6  TINYINT
+        -5  BIGINT
+        -4  LONGVARBINARY
+        -3  VARBINARY
+        -2  BINARY
+        -1  LONGVARCHAR
+         0  NULL
+         1  CHAR
+         2  NUMERIC
+         3  DECIMAL
+         4  INTEGER
+         5  SMALLINT
+         6  FLOAT
+         7  REAL
+         8  DOUBLE
+        12  VARCHAR
+        91  DATE
+        92  TIME
+        93  TIMESTAMP
+        1111    OTHER
+        */
+
         numRows = 0;
 
         while( rs.next() )          // process each index value
@@ -306,7 +330,7 @@ public class TabletoArrayListMultimap
 
                 String strValue = "";
 
-                if( ct == 4 ) {
+                if( ct == -6 || ct == 4 ) {
                     int intValue = rs.getInt( c );
                     strValue = Integer.toString( intValue );
                 }
