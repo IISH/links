@@ -4787,24 +4787,10 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        /*
-        try
-        {
-            ResultSet refMinMaxMarriageYear = dbconRefRead.runQueryWithResult( "SELECT * FROM ref_minmax_marriageyear" );
+        almmMarriageYear = new TabletoArrayListMultimap( dbconRefRead, null, "ref_minmax_marriageyear", "role_A", "role_B" );
+        //almmMarriageYear.contentsOld();
 
-            showMessage( "Processing minMaxMarriageYear for source: " + source + "...", false, true );
-            minMaxMarriageYear( debug, setMarriageYear( debug, source ), refMinMaxMarriageYear );
-        }
-        catch( Exception ex ) {
-            showMessage( "Exception in doMinMaxMarriageYear: " + ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-        */
-
-        almmMarriageYear = new TabletoArrayListMultimap( dbconRefRead, null, "ref_minmax_marriageyear", "id_minmax_marriageyear", null );
-        almmMarriageYear.contentsOld();
-
-        standardMinMaxMarriageYear( debug, source );
+        minMaxMarriageYear( debug, source );
 
         almmMarriageYear.free();
 
@@ -4817,7 +4803,7 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void standardMinMaxMarriageYear
+    private void minMaxMarriageYear
     (
         boolean debug,
         String source
@@ -4830,7 +4816,7 @@ public class LinksCleanedThread extends Thread
         int step = 1000;
         int stepstate = step;
 
-        String selectQuery = ""
+        String selectQueryA = ""
             + " SELECT "
             + " person_c.id_person ,"
             + " person_c.id_registration ,"
@@ -4845,260 +4831,163 @@ public class LinksCleanedThread extends Thread
             + " FROM person_c"
             + " WHERE id_source = " + source;
 
-        if( debug ) { showMessage( "standardMinMaxMarriageYear() " + selectQuery, false, true ); }
+        if( debug ) { showMessage( "standardMinMaxMarriageYear() " + selectQueryA, false, true ); }
 
-        try
-        {
-            ResultSet rs = dbconCleaned.runQueryWithResult( selectQuery );
+        try {
+            ResultSet rsA = dbconCleaned.runQueryWithResult(selectQueryA);
 
-            while( rs.next() )
-            {
+            while (rsA.next()) {
                 count++;
-                if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                if (count == stepstate) {
+                    showMessage(count + "", true, true);
                     stepstate += step;
                 }
 
-                int id_person = rs.getInt( "id_person" );
-                int role = rs.getInt( "role" );
-                int main_type = rs.getInt( "registration_maintype" );
+                int id_personA = rsA.getInt("id_person");
+                int id_registration = rsA.getInt("id_registration");
+                int roleA = rsA.getInt("role");
 
-                /*
-                role.
-                String role1 = almmMarriageYear.value( "role1", role );
+                int mar_day_minA   = rsA.getInt( "mar_day_min" );
+                int mar_day_maxA   = rsA.getInt( "mar_day_max" );
+                int mar_month_minA = rsA.getInt( "mar_month_min" );
+                int mar_month_maxA = rsA.getInt( "mar_month_max" );
+                int mar_year_minA  = rsA.getInt( "mar_year_min" );
+                int mar_year_maxA  = rsA.getInt( "mar_year_max" );
 
-                if( debug ) { showMessage( "role: " + role + " -> " + role1, false, true ); }
-                */
+                if( ( mar_year_minA == 0 && mar_month_minA == 0 && mar_day_minA == 0 ) ||
+                    ( mar_year_maxA == 0 && mar_month_maxA == 0 && mar_day_maxA == 0 ) )
+                { continue; }       // do nothing
 
+                String minA = "";
+                String maxA = "";
+                if( debug ) {
+                    minA = "[" + mar_year_minA + "." + mar_month_minA + "." + mar_day_minA + "]";
+                    maxA = "[" + mar_year_maxA + "." + mar_month_maxA + "." + mar_day_maxA + "]";
+
+                    showMessage( "id_person: " + id_personA, false, true);
+                    showMessage( "roleA: " + roleA + " " + minA + "-" + maxA, false, true );
+                }
+
+                String roleB = almmMarriageYear.standard( Integer.toString( roleA ) );
+                String selectQueryB = ""
+                    + " SELECT "
+                    + " person_c.id_person ,"
+                    + " person_c.registration_maintype ,"
+                    + " person_c.role ,"
+                    + " person_c.mar_day_min ,"
+                    + " person_c.mar_day_max ,"
+                    + " person_c.mar_month_min ,"
+                    + " person_c.mar_month_max ,"
+                    + " person_c.mar_year_min ,"
+                    + " person_c.mar_year_max"
+                    + " FROM person_c"
+                    + " WHERE person_c.id_registration = " + id_registration
+                    + " AND role = " + roleB;
+
+                ResultSet rsB = dbconCleaned.runQueryWithResult(selectQueryB);
+
+                int id_personB     = 0;
+                int mar_day_minB   = 0;
+                int mar_day_maxB   = 0;
+                int mar_month_minB = 0;
+                int mar_month_maxB = 0;
+                int mar_year_minB  = 0;
+                int mar_year_maxB  = 0;
+
+                int countB = 0;
+                while (rsB.next()) {
+                    countB++;
+                    id_personB     = rsB.getInt( "id_person" );
+                    mar_day_minB   = rsB.getInt( "mar_day_min" );
+                    mar_day_maxB   = rsB.getInt( "mar_day_max" );
+                    mar_month_minB = rsB.getInt( "mar_month_min" );
+                    mar_month_maxB = rsB.getInt( "mar_month_max" );
+                    mar_year_minB  = rsB.getInt( "mar_year_min" );
+                    mar_year_maxB  = rsB.getInt( "mar_year_max" );
+                }
+
+                if( countB == 0 ) {
+                    showMessage( "No match for roleB: " + roleB, false, true );
+                    continue;
+                }
+                else if( countB != 1 ) {
+                    showMessage( "standardMinMaxMarriageYear() id_person: " + id_personA + "has multiple roleB matches", false, true );
+                    addToReportPerson( id_personA, source + "", 107, "" );
+                }
+
+                String minB = "";
+                String maxB = "";
+                if( debug ) {
+                    minB = "[" + mar_year_minB + "." + mar_month_minB + "." + mar_day_minB + "]";
+                    maxB = "[" + mar_year_maxB + "." + mar_month_maxB + "." + mar_day_maxB + "]";
+                    showMessage( "roleB: " + roleB + " " + minB + "-" + maxB, false, true );
+                }
+
+                // choose greater of min dates
+                if( ! datesEqual( mar_year_minA, mar_month_minA, mar_day_minA, mar_year_minB, mar_month_minB, + mar_day_minB ) )
+                {
+                    if( dateLeftIsGreater( mar_year_minA, mar_month_minA, mar_day_minA, mar_year_minB, mar_month_minB, + mar_day_minB ) ) {
+                        if( debug ) { showMessage( "update id_personB: " + id_personB + " with minimum " + minA, false, true ); }
+
+                        String updateQuery = ""
+                            + "UPDATE links_cleaned.person_c SET"
+                            + " mar_day_min = "   + mar_day_minA   + " , "
+                            + " mar_month_min = " + mar_month_minA + " , "
+                            + " mar_year_min = "  + mar_year_minA
+                            + " WHERE id_person = " + "" + id_personB;
+
+                        if( debug) { showMessage( updateQuery, false, true ); }
+                        dbconCleaned.runQuery( updateQuery );
+                    }
+                    else {
+                        if( debug ) { showMessage( "update id_personA: " + id_personA + " with minimum " + minB, false, true ); }
+
+                        String updateQuery = ""
+                            + "UPDATE links_cleaned.person_c SET"
+                            + " mar_day_min = "   + mar_day_minB   + " , "
+                            + " mar_month_min = " + mar_month_minB + " , "
+                            + " mar_year_min = "  + mar_year_minB
+                            + " WHERE id_person = " + "" + id_personA;
+
+                        if( debug) { showMessage( updateQuery, false, true ); }
+                        dbconCleaned.runQuery( updateQuery );
+                    }
+                }
+
+                 // choose lesser of max dates
+                if( ! datesEqual( mar_year_maxA, mar_month_maxA, mar_day_maxA, mar_year_maxB, mar_month_maxB, + mar_day_maxB ) )
+                {
+                    if( dateLeftIsGreater( mar_year_maxA, mar_month_maxA, mar_day_maxA, mar_year_maxB, mar_month_maxB, + mar_day_maxB ) ) {
+                        if( debug ) { showMessage( "update id_personA: " + id_personA + " with maximum " + maxB, false, true ); }
+
+                        String updateQuery = ""
+                            + "UPDATE links_cleaned.person_c SET"
+                            + " mar_day_max = "   + mar_day_maxB   + " , "
+                            + " mar_month_max = " + mar_month_maxB + " , "
+                            + " mar_year_max = "  + mar_year_maxB
+                            + " WHERE id_person = " + "" + id_personA;
+
+                        if( debug) { showMessage( updateQuery, false, true ); }
+                        dbconCleaned.runQuery( updateQuery );
+                    }
+                    else {
+                        if( debug ) { showMessage( "update id_personB: " + id_personB + " with maximun " + maxA, false, true ); }
+
+                        String updateQuery = ""
+                            + "UPDATE links_cleaned.person_c SET"
+                            + " mar_day_max = "   + mar_day_maxA   + " , "
+                            + " mar_month_max = " + mar_month_maxA + " , "
+                            + " mar_year_max = "  + mar_year_maxA
+                            + " WHERE id_person = " + "" + id_personB;
+
+                        if( debug) { showMessage( updateQuery, false, true ); }
+                        dbconCleaned.runQuery( updateQuery );
+                    }
+                }
             }
-
         }
         catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
 
-    } // standardMinMaxMarriageYear
-
-
-    /**
-     * @param source
-     * @return
-     * @throws Exception
-     */
-    private ArrayList< MarriageYearPersonsSet > setMarriageYear( boolean debug, String source )
-    throws Exception
-    {
-        String query = ""
-            + " SELECT "
-            + " person_c.id_person ,"
-            + " person_c.id_registration ,"
-            + " person_c.registration_maintype ,"
-            + " person_c.role ,"
-            + " person_c.mar_day_min ,"
-            + " person_c.mar_day_max ,"
-            + " person_c.mar_month_min ,"
-            + " person_c.mar_month_max ,"
-            + " person_c.mar_year_min ,"
-            + " person_c.mar_year_max"
-            + " FROM person_c"
-            + " WHERE id_source = " + source;
-
-        if( debug ) { showMessage( "setMarriageYear() query: " + query, false , true ); }
-
-        ResultSet minmaxjaarRs = dbconCleaned.runQueryWithResult( query );
-
-        ArrayList< MarriageYearPersonsSet > mypsList = new ArrayList< MarriageYearPersonsSet >();
-
-        while( minmaxjaarRs.next() )
-        {
-            MarriageYearPersonsSet myps = new MarriageYearPersonsSet();
-
-            myps.setIdRegistration( minmaxjaarRs.getInt( "id_registration" ) );
-            myps.setRegistrationMainType( minmaxjaarRs.getInt( "registration_maintype" ) );
-            myps.setIdPerson( minmaxjaarRs.getInt( "id_person" ) );
-            myps.setRole( minmaxjaarRs.getInt( "role" ) );
-
-            myps.setMarriageDayMin(   minmaxjaarRs.getInt( "mar_day_min" ) );
-            myps.setMarriageDayMax(   minmaxjaarRs.getInt( "mar_day_max" ) );
-            myps.setMarriageMonthMin( minmaxjaarRs.getInt( "mar_month_min" ) );
-            myps.setMarriageMonthMax( minmaxjaarRs.getInt( "mar_month_max" ) );
-            myps.setMarriageYearMin(  minmaxjaarRs.getInt( "mar_year_min" ) );
-            myps.setMarriageYearMax(  minmaxjaarRs.getInt( "mar_year_max" ) );
-
-            mypsList.add( myps );
-        }
-
-        return mypsList;
-    } // setMarriageYear
-
-
-    /**
-     * @param mypsList
-     * @param refMinMaxMarriageYear
-     * @throws Exception
-     */
-    private void minMaxMarriageYear
-    (
-        boolean debug,
-        ArrayList< MarriageYearPersonsSet > mypsList,
-        ResultSet refMinMaxMarriageYear
-    )
-    throws Exception
-    {
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
-
-        if( debug ) { showMessage( "minMaxMarriageYear() : " + mypsList.size() + " hits", false, true ); }
-
-        // Loop through all persons
-        for( int i = 0; i < mypsList.size(); i++ )
-        {
-            counter++;
-
-            if( counter == stepstate ) {
-                showMessage( counter + "", true, true );
-                stepstate += step;
-            }
-
-            // walk through
-            refMinMaxMarriageYear.beforeFirst();
-
-            boolean role1Found = false;
-            int role1 = 0;      // role1 not used ?
-            int role2 = 0;
-
-            while( refMinMaxMarriageYear.next() )
-            {
-                int tempRht   = refMinMaxMarriageYear.getInt( "maintype" );
-                int tempRole1 = refMinMaxMarriageYear.getInt( "role1" );
-                int tempRole2 = refMinMaxMarriageYear.getInt( "role2" );
-
-                //if( debug ) { showMessage( "ref_minmax_marriageyear: maintype: " + tempRht + ", role1: " + tempRole1 + ", role2: " + tempRole2, false, true ); }
-
-                if( ( tempRole1 == mypsList.get( i ).getRole() ) &&
-                        tempRht == ( mypsList.get( i ).getRegistrationMainType() ) ) {
-
-                    role1Found = true;
-                    role1      = tempRole1;
-                    role2      = tempRole2;
-
-                    break;      // role1 found
-                }
-            }
-
-            // check if role 1
-            if( ! role1Found )
-            { showMessage( "minMaxMarriageYear() role 1 not found", false, true ); }
-            else        // role1 found; search for role 2
-            {
-                boolean role2Found = false;
-                int role2Id = 0;
-
-                int role2MarYearMin  = 0;
-                int role2MarYearMax  = 0;
-                int role2MarMonthMin = 0;
-                int role2MarMonthMax = 0;
-                int role2MarDayMin   = 0;
-                int role2MarDayMax   = 0;
-
-                // walk trough all persons of registration
-                for( int j = (((i - 7) > 0) ? i - 7 : 0); j < ((i + 7) > mypsList.size() ? mypsList.size() : i + 7); j++ )
-                {
-                    if( (role2 == mypsList.get( j ).getRole()) &&
-                        (mypsList.get( i ).getIdRegistration() == mypsList.get( j ).getIdRegistration()) )
-                    {
-                        // Role 2 found
-                        role2Found       = true;
-                        role2Id          = mypsList.get( j ).getIdPerson();
-                        role2MarYearMin  = mypsList.get( j ).getMarriageYearMin();
-                        role2MarYearMax  = mypsList.get( j ).getMarriageYearMax();
-                        role2MarMonthMin = mypsList.get( j ).getMarriageMonthMin();
-                        role2MarMonthMax = mypsList.get( j ).getMarriageMonthMax();
-                        role2MarDayMin   = mypsList.get( j ).getMarriageDayMin();
-                        role2MarDayMax   = mypsList.get( j ).getMarriageDayMax();
-
-                        break;
-                    }
-                }
-
-                // check is role 2
-                if( ! role2Found )
-                { showMessage( "minMaxMarriageYear() role 2 not found", false, true ); }
-                else
-                {
-                    int role1Id          = mypsList.get( i ).getIdPerson();
-                    int role1MarYearMax  = mypsList.get( i ).getMarriageYearMax();
-                    int role1MarYearMin  = mypsList.get( i ).getMarriageYearMin();
-                    int role1MarMonthMax = mypsList.get( i ).getMarriageMonthMax();
-                    int role1MarMonthMin = mypsList.get( i ).getMarriageMonthMin();
-                    int role1MarDayMax   = mypsList.get( i ).getMarriageDayMax();
-                    int role1MarDayMin   = mypsList.get( i ).getMarriageDayMin();
-
-                    // role1 min > role2 min
-                    if( dateLeftIsGreater( role1MarYearMin, role1MarMonthMin, role1MarDayMin, role2MarYearMin, role2MarMonthMin, role2MarDayMin ) )
-                    {
-                        String query = ""
-                            + " UPDATE person_c"
-                            + " SET"
-                            + " mar_year_min = "  + mypsList.get( i ).getMarriageYearMin() + ","
-                            + " mar_month_min = " + mypsList.get( i ).getMarriageMonthMin() + ","
-                            + " mar_day_min = "   + mypsList.get( i ).getMarriageDayMin()
-                            + " WHERE"
-                            + " id_person = " + role2Id;
-
-                        if( debug ) { showMessage( "role1 min > role2 min: " + query, false, true ); }
-                        dbconCleaned.runQuery( query );
-                    }
-
-                    // role2 max > role1 max
-                    if( dateLeftIsGreater( role2MarYearMax, role2MarMonthMax, role2MarDayMax, role1MarYearMax, role1MarMonthMax, role1MarDayMax ) )
-                    {
-                        String query = ""
-                            + " UPDATE person_c"
-                            + " SET"
-                            + " mar_year_max = "  + mypsList.get( i ).getMarriageYearMax() + ","
-                            + " mar_month_max = " + mypsList.get( i ).getMarriageMonthMax() + ","
-                            + " mar_day_max = "   + mypsList.get( i ).getMarriageDayMax()
-                            + " WHERE"
-                            + " id_person = " + role2Id;
-
-                        if( debug ) { showMessage( "role2 max > role1 max: " + query, false, true ); }
-                        dbconCleaned.runQuery( query );
-                    }
-
-                    // role2 min > role1 min
-                    if( dateLeftIsGreater( role2MarYearMin, role2MarMonthMin, role2MarDayMin, role1MarYearMin, role1MarMonthMin, role1MarDayMin ) )
-                    {
-                        // Query
-                        String query = "UPDATE person_c"
-                            + " SET"
-                            + " mar_year_min = "  + role2MarYearMin + ","
-                            + " mar_month_min = " + role2MarMonthMin + ","
-                            + " mar_day_min = "   + role2MarDayMin
-                            + " WHERE"
-                            + " id_person = " + role1Id;
-
-                        if( debug ) { showMessage( "role2 min > role1 min: " + query, false, true ); }
-                        dbconCleaned.runQuery( query );
-                    }
-
-                    // role1 max > role2 max
-                    if( dateLeftIsGreater( role1MarYearMax, role1MarMonthMax, role1MarDayMax, role2MarYearMax, role2MarMonthMax, role2MarDayMax ) )
-                    {
-                        // Query
-                        String query = "UPDATE person_c"
-                            + " SET"
-                            + " mar_year_max = "  + role2MarYearMax + ","
-                            + " mar_month_max = " + role2MarMonthMax + ","
-                            + " mar_day_max = "   + role2MarDayMax
-                            + " WHERE"
-                            + " id_person = " + role1Id;
-
-                        if( debug ) { showMessage( "role1 max > role2 max: " + query, false, true ); }
-                        dbconCleaned.runQuery( query );
-                    }
-                }
-            }
-        }
     } // minMaxMarriageYear
 
 
@@ -5125,6 +5014,23 @@ public class LinksCleanedThread extends Thread
 
         return false;
     } // dateLeftIsGreater
+
+
+    /**
+     * @param lYear
+     * @param lMonth
+     * @param lDay
+     * @param rYear
+     * @param rMonth
+     * @param rDay
+     * @return
+     */
+    private boolean datesEqual( int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay )
+    {
+        if( lYear == rYear && lMonth == rMonth && lDay == rDay ) { return true; }
+
+        return false;
+    } // datesEqual
 
 
     /*---< Parts to Full Date >-----------------------------------------------*/

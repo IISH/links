@@ -25,7 +25,7 @@ import modulemain.LinksSpecific;
  */
 public class TabletoArrayListMultimap
 {
-    private boolean debug = true;
+    private boolean debug = false;
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
