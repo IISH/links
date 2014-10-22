@@ -357,8 +357,8 @@ public class LinksSpecific
         }
 
         // eerst de data er uit met regex
-        Pattern regex = Pattern.compile("[0-9]+");
-        Matcher m = regex.matcher(date);
+        Pattern regex = Pattern.compile( "[0-9]+" );
+        Matcher m = regex.matcher( date );
 
         //
         int day = 0;
@@ -366,73 +366,80 @@ public class LinksSpecific
         int year = 0;
         
         // day
-        if(m.find()){
-            day = Integer.parseInt(m.group());
+        if( m.find() ) {
+            day = Integer.parseInt( m.group() );
         }
 
         //month
-        if(m.find()){
-            month = Integer.parseInt(m.group());
+        if( m.find() ){
+            month = Integer.parseInt( m.group() );
         }
 
         //year
-        if(m.find()){
-            year = Integer.parseInt(m.group());
+        if( m.find() ) {
+            year = Integer.parseInt( m.group() );
         }
 
         // they are divided, now we check the value on errors
-        if( (year > 1680) && ( year < 1960 ) ){
-            dymd.setYear(year);
+        if( (year > 1680) && ( year < 2014 ) ) {
+            dymd.setYear( year );
         }
         else {
             // MELDING
             dymd.setReportYear( Integer.toString( year ) );
-            dymd.setYear(0);
+            //dymd.setYear( 0 );
+            dymd.setYear( year );
         }
 
          // they are divided, now we check the value on errors
         if( (month > 0) && ( month < 13 ) ){
-            dymd.setMonth(month);
+            dymd.setMonth( month );
         }
         else {
             // MELDING
             dymd.setReportMonth( Integer.toString( month ) );
-            dymd.setMonth(0);
+            //dymd.setMonth( 0 );
+            dymd.setMonth( month );
         }
 
         // check day number
         if( ( day < 1 ) && ( day > 31 ) ){
             // MELDING
             dymd.setReportDay( Integer.toString( day ) );
-            dymd.setDay(0);
+            //dymd.setDay( 0 );
+            dymd.setDay( day );
         }
 
         //check if day is 31 in wrong month
         else if( ( day == 31 ) && ( ( month == 2 ) || ( month == 4 ) || ( month == 6 ) || ( month == 9 ) || ( month == 11 ) ) ){
             // MELDING
             dymd.setReportDay( Integer.toString( day ) );
-            dymd.setDay(0);
+            //dymd.setDay( 0 );
+            dymd.setDay( day );
         }
         // Check if februari has 30 days
         else if( ( month == 2 ) && ( day == 30 ) ){
             // MELDING
             dymd.setReportDay( Integer.toString( day ) );
-            dymd.setDay(0);
+            //dymd.setDay( 0 );
+            dymd.setDay( day );
         }
         // leap year calculation
         else if ( ( month == 2 ) && ( day == 29 ) ){
             if( ( year % 4 == 0 ) && ( year % 100 != 0 ) || ( year % 400 == 0 ) ) { // is leap year
-                dymd.setDay(day);
+                dymd.setDay( day );
             }
             else {
                 // MELDING
                 dymd.setReportDay( Integer.toString( day ) );
-                dymd.setDay(0);
+                //dymd.setDay( 0 );
+                dymd.setDay( day );
             }
         }
         else { //februari with 28 or lesser days
-            dymd.setDay(day);
+            dymd.setDay( day );
         }
+
         return dymd;
     }
 

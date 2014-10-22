@@ -29,6 +29,7 @@ import general.PrintLogger;
  * FL-10-Oct-2014 Occupation added
  * FL-10-Oct-2014 Renamed DoSet -> Options
  * FL-14-Oct-2014 DB opts
+ * FL-22-Oct-2014 dbg
  */
 public class Options
 {
@@ -47,24 +48,39 @@ public class Options
 
     // cleaning options
     private boolean doDebug;
+
     private boolean doRenewData;
-    //private boolean doPreBasicNames;
+    private boolean dbgRenewData;
+
     private boolean doNames;
+    private boolean dbgNames;
+
     private boolean doLocations;
+    private boolean dbgLocations;
+
     private boolean doStatusSex;
-    //private boolean doSequence;
-    //private boolean doRelation;
+    private boolean dbgStatusSex;
+
     private boolean doRegType;
+    private boolean dbgRegType;
+
     private boolean doOccupation;
-    //private boolean doAgeYear;
-    //private boolean doRole;
+    private boolean dbgOccupation;
+
     private boolean doDates;
-    //private boolean doMinMaxDate;
-    //private boolean doRemarks;
+    private boolean dbgDates;
+
     private boolean doMinMaxMarriage;
+    private boolean dbgMinMaxMarriage;
+
     private boolean doPartsToFullDate;
+    private boolean dbgPartsToFullDate;
+
     private boolean doDaysSinceBegin;
+    private boolean dbgDaysSinceBegin;
+
     private boolean doPostTasks;
+
     private boolean doPrematch;
 
 
@@ -120,85 +136,74 @@ public class Options
     public boolean isDoDebug() { return doDebug; }
 
 
-    public boolean isDoRenewData() { return doRenewData; }
+    public boolean  isDoRenewData() { return  doRenewData; }
+    public boolean isDbgRenewData() { return dbgRenewData; }
 
-    public void setDoRenewData( boolean doRenewData ) {
-        this.doRenewData = doRenewData;
-    }
-
-
-    //public void setDoPreBasicNames(boolean doPreBasicNames) { this.doPreBasicNames = doPreBasicNames; }
-    //public boolean isDoPreBasicNames() { return doPreBasicNames; }
+    public void  setDoRenewData( boolean  doRenewData ) { this.doRenewData  =  doRenewData; }
+    public void setDbgRenewData( boolean dbgRenewData ) { this.dbgRenewData = dbgRenewData; }
 
 
-    public boolean isDoNames() { return doNames; }
+    public boolean  isDoNames() { return  doNames; }
+    public boolean isDbgNames() { return dbgNames; }
 
-    public void setDoNames( boolean doNames ) { this.doNames = doNames; }
-
-
-    public boolean isDoLocations() { return doLocations; }
-
-    public void setDoLocations( boolean doLocations ) { this.doLocations = doLocations; }
+    public void  setDoNames( boolean  doNames ) { this.doNames  = doNames; }
+    public void setDbgNames( boolean dbgNames ) { this.dbgNames = doNames; }
 
 
-    public boolean isDoStatusSex() { return doStatusSex; }
+    public boolean  isDoLocations() { return  doLocations; }
+    public boolean isDbgLocations() { return dbgLocations; }
 
-    public void setDoStatusSex( boolean doStatusSex ) { this.doStatusSex = doStatusSex; }
-
-
-    //public boolean isDoSequence() { return doSequence; }
-    //public void setDoSequence( boolean doSequence ) { this.doSequence = doSequence; }
+    public void  setDoLocations( boolean  doLocations ) { this.doLocations  =  doLocations; }
+    public void setDbgLocations( boolean dbgLocations ) { this.dbgLocations = dbgLocations; }
 
 
-    //public boolean isDoRelation() { return doRelation; }
-    //public void setDoRelation( boolean doRelation ) { this.doRelation = doRelation; }
+    public boolean  isDoStatusSex() { return  doStatusSex; }
+    public boolean isDbgStatusSex() { return dbgStatusSex; }
+
+    public void  setDoStatusSex( boolean  doStatusSex ) { this.doStatusSex  =  doStatusSex; }
+    public void setDbgStatusSex( boolean dbgStatusSex ) { this.dbgStatusSex = dbgStatusSex; }
 
 
-    public boolean isDoRegType() { return doRegType; }
+    public boolean  isDoRegType() { return  doRegType; }
+    public boolean isDbgRegType() { return dbgRegType; }
 
-    public void setDoRegType( boolean doRegType ) { this.doRegType = doRegType; }
-
-
-    public boolean isDoOccupation() { return doOccupation; }
-
-    public void setDoOccupation( boolean doOccupation ) { this.doOccupation = doOccupation; }
+    public void  setDoRegType( boolean  doRegType ) { this.doRegType  =  doRegType; }
+    public void setDbgRegType( boolean dbgRegType ) { this.dbgRegType = dbgRegType; }
 
 
-    //public boolean isDoAgeYear() { return doAgeYear; }
-    //public void setDoAgeYear( boolean doAgeYear ) { this.doAgeYear = doAgeYear; }
+    public boolean  isDoOccupation() { return  doOccupation; }
+    public boolean isDbgOccupation() { return dbgOccupation; }
+
+    public void  setDoOccupation( boolean  doOccupation ) { this.doOccupation  =  doOccupation; }
+    public void setDbgOccupation( boolean dbgOccupation ) { this.dbgOccupation = dbgOccupation; }
 
 
-    //public boolean isDoRole() { return doRole; }
-    //public void setDoRole( boolean doRole ) { this.doRole = doRole; }
+    public boolean  isDoDates() { return  doDates; }
+    public boolean isDbgDates() { return dbgDates; }
+
+    public void  setDoDates( boolean  doDates ) { this.doDates  =  doDates; }
+    public void setDbgDates( boolean dbgDates ) { this.dbgDates = dbgDates; }
 
 
-    public boolean isDoDates() { return doDates; }
+    public boolean  isDoMinMaxMarriage() { return  doMinMaxMarriage; }
+    public boolean isDbgMinMaxMarriage() { return dbgMinMaxMarriage; }
 
-    public void setDoDates( boolean doDates ) { this.doDates = doDates; }
-
-
-    //public boolean isDoMinMaxDate() { return doMinMaxDate; }
-    //public void setDoMinMaxDate( boolean doMinMaxDate ) { this.doMinMaxDate = doMinMaxDate; }
+    public void  setDoMinMaxMarriage( boolean  doMinMaxMarriage ) { this.doMinMaxMarriage  =  doMinMaxMarriage; }
+    public void setDbgMinMaxMarriage( boolean dbgMinMaxMarriage ) { this.dbgMinMaxMarriage = dbgMinMaxMarriage; }
 
 
-    //public boolean isDoRemarks() { return doRemarks; }
-    //public void setDoRemarks( boolean doRemarks ) { this.doRemarks = doRemarks; }
+    public boolean  isDoPartsToFullDate() { return  doPartsToFullDate; }
+    public boolean isDbgPartsToFullDate() { return dbgPartsToFullDate; }
+
+    public void  setDoPartsToFullDate( boolean  doPartsToFullDate ) { this.doPartsToFullDate  =  doPartsToFullDate; }
+    public void setDbgPartsToFullDate( boolean dbgPartsToFullDate ) { this.dbgPartsToFullDate = dbgPartsToFullDate; }
 
 
-    public boolean isDoMinMaxMarriage() { return doMinMaxMarriage; }
+    public boolean  isDoDaysSinceBegin() { return  doDaysSinceBegin; }
+    public boolean isDbgDaysSinceBegin() { return dbgDaysSinceBegin; }
 
-    public void setDoMinMaxMarriage( boolean doMinMaxMarriage ) { this.doMinMaxMarriage = doMinMaxMarriage; }
-
-
-    public boolean isDoPartsToFullDate() { return doPartsToFullDate; }
-
-    public void setDoPartsToFullDate( boolean doPartsToFullDate ) { this.doPartsToFullDate = doPartsToFullDate; }
-
-
-    public boolean isDoDaysSinceBegin() { return doDaysSinceBegin; }
-
-    public void setDoDaysSinceBegin( boolean doDaysSinceBegin ) { this.doDaysSinceBegin = doDaysSinceBegin; }
-
+    public void  setDoDaysSinceBegin( boolean  doDaysSinceBegin ) { this.doDaysSinceBegin  =  doDaysSinceBegin; }
+    public void setDbgDaysSinceBegin( boolean dbgDaysSinceBegin ) { this.dbgDaysSinceBegin = dbgDaysSinceBegin; }
 
     public boolean isDoPostTasks() { return doPostTasks; }
 

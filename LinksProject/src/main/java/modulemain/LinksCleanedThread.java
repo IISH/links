@@ -45,7 +45,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-13-Oct-2014 Latest change
+ * FL-21-Oct-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -185,8 +185,6 @@ public class LinksCleanedThread extends Thread
 
                 try
                 {
-                    boolean debug = opts.isDoDebug();
-
                     doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
                     doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
@@ -222,6 +220,8 @@ public class LinksCleanedThread extends Thread
         */
 
         try {
+            long begintime = System.currentTimeMillis();
+
             //plog.show( "Links Match Manager 2.0" );
             plog.show( "LinksCleanedThread/run()" );
             //int ncores = Runtime.getRuntime().availableProcessors();
@@ -232,10 +232,10 @@ public class LinksCleanedThread extends Thread
             outputLine.setText( "" );
             outputArea.setText( "" );
 
-            connectToDatabases();                               // Create databases connectors
-            createLogTable();                                   // Create log table with timestamp
+            connectToDatabases();                                       // Create databases connectors
+            createLogTable();                                           // Create log table with timestamp
 
-            int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
+            int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
             sourceList  = createSourceList( sourceIdGui, sourceListAvail );
 
             if( sourceIdGui == 0 ) {
@@ -250,8 +250,6 @@ public class LinksCleanedThread extends Thread
             for( int i : sourceList ) { s = s + i + " "; }
             showMessage( s, false, true );
 
-            //if( sourceIdGui != 0 ) { setSourceFilters(); }         // Set source filters
-
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
@@ -260,33 +258,37 @@ public class LinksCleanedThread extends Thread
 
             for( int sourceId : sourceList )
             {
-                boolean debug = opts.isDoDebug();
+                boolean debug = false;
                 String source = Integer.toString( sourceId );
 
                 //CleaningThread ct = new CleaningThread( source );
                 //ct.start();
 
-                doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
+                doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
 
-                doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
+                doNames( opts.isDbgNames(), opts.isDoNames(), source );                                 // GUI cb: Names
 
-                doLocations( debug, opts.isDoLocations(), source );                 // GUI cb: Locations
+                doLocations( opts.isDbgLocations(), opts.isDoLocations(), source );                     // GUI cb: Locations
 
-                doStatusSex( debug, opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
+                doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source );                     // GUI cb: Status and Sex
 
-                doRegistrationType( debug, opts.isDoRegType(), source );            // GUI cb: Registration Type
+                doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source );                  // GUI cb: Registration Type
 
-                doOccupation( debug, opts.isDoOccupation(), source );               // GUI cb: Occupation
+                doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
-                doDates( debug, opts.isDoDates(), source );                         // GUI cb: Dates
+                doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
-                doMinMaxMarriage( debug, opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
+                doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
 
-                doPartsToFullDate( debug, opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
+                doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source );   // GUI cb: Parts to Full Date
 
-                doDaysSinceBegin( debug, opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
+                doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source );      // GUI cb: Days since begin
 
-                doPostTasks( debug, opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
+                doPostTasks( false, opts.isDoPostTasks(), source );                                     // GUI cb: Post Tasks
+
+                String msg = "Cleaning sourceId " + sourceId + " is done";
+                showTimingMessage( msg, begintime );
+                System.out.println( msg );
             }
 
             /*
@@ -617,7 +619,7 @@ public class LinksCleanedThread extends Thread
     private void addToReportPerson( int id, String id_source, int errorCode, String value )
     throws Exception
     {
-        boolean debug = true;
+        boolean debug = false;
         if( debug ) { showMessage( "addToReportPerson()", false, true ); }
 
         String errorCodeStr = Integer.toString( errorCode );
@@ -815,7 +817,7 @@ public class LinksCleanedThread extends Thread
 
         msg = "standardFirstname";
         showMessage( msg + "...", false, true );
-        standardFirstname( source );
+        standardFirstname( debug, source );
         showTimingMessage( "standardFirstname", start );
 
         start = System.currentTimeMillis();
@@ -853,7 +855,7 @@ public class LinksCleanedThread extends Thread
 
         msg = "standardFamilyname";
         showMessage( msg + "...", false, true );
-        standardFamilyname( source );
+        standardFamilyname( debug, source );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
@@ -911,7 +913,7 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardFirstname( String source )
+    public void standardFirstname( boolean debug, String source )
     {
         int count = 0;
         int count_empty = 0;
@@ -954,7 +956,7 @@ public class LinksCleanedThread extends Thread
                     firstname = firstname.toLowerCase();
 
                     // Check name on aliases
-                    String nameNoAlias = standardAlias( id_person, source, firstname, 1107 );
+                    String nameNoAlias = standardAlias( debug, id_person, source, firstname, 1107 );
 
                     // Check on serried spaces; split name on spaces
                     String[] names = nameNoAlias.split( " " );
@@ -1074,7 +1076,7 @@ public class LinksCleanedThread extends Thread
                                 }
 
                                 // check ref_prepiece
-                                String nameNoPieces = namePrepiece( nameNoInvalidChars, id_person );
+                                String nameNoPieces = namePrepiece( debug, nameNoInvalidChars, id_person );
 
                                 if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
                                     addToReportPerson(id_person, source, 1107, nameNoInvalidChars);  // EC 1107
@@ -1133,7 +1135,7 @@ public class LinksCleanedThread extends Thread
                                 }
 
                                 // check ref_prepiece
-                                String nameNoPieces = namePrepiece( nameNoInvalidChars, id_person );
+                                String nameNoPieces = namePrepiece( debug, nameNoInvalidChars, id_person );
 
                                 if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
                                     addToReportPerson(id_person, source, 1107, nameNoInvalidChars);   // EC 1107
@@ -1244,10 +1246,8 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardFamilyname( String source )
+    public void standardFamilyname( boolean debug, String source )
     {
-        boolean debug = false;
-
         int count = 0;
         int count_empty = 0;
         int step = 10000;
@@ -1340,7 +1340,7 @@ public class LinksCleanedThread extends Thread
                         }
 
                         // check if name has prepieces
-                        String nameNoPrePiece = namePrepiece( nameNoInvalidChars, id_person );
+                        String nameNoPrePiece = namePrepiece( debug, nameNoInvalidChars, id_person );
 
                         // Family name contains invalid chars ?
                         if( !nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
@@ -1348,7 +1348,7 @@ public class LinksCleanedThread extends Thread
                         }
 
                         // Check on aliases
-                        String nameNoAlias = standardAlias( id_person, source, nameNoPrePiece, 1007 );
+                        String nameNoAlias = standardAlias( debug, id_person, source, nameNoPrePiece, 1007 );
 
                         // Check on suffix
                         if( debug ) { showMessage( "suffix keySet()", false, true ); }
@@ -1434,11 +1434,8 @@ public class LinksCleanedThread extends Thread
      * @return
      * @throws Exception
      */
-    private String namePrepiece( String name, int id ) throws Exception
+    private String namePrepiece( boolean debug, String name, int id ) throws Exception
     {
-        //boolean debug = true;
-        //if( debug ) { showMessage( "namePrepiece() name: " + name + ", id: " + id, false, true ); }
-
         if( !name.contains( " " ) ) {
             return name;            // if no spaces return name
         }
@@ -1748,12 +1745,9 @@ public class LinksCleanedThread extends Thread
      * @param name
      * @return
      */
-    private String standardAlias( int id, String source, String name, int errCode )
+    private String standardAlias( boolean debug, int id, String source, String name, int errCode )
             throws Exception
     {
-        //boolean debug = true;
-        //if( debug ) { showMessage( "standardAlias() id: " + id + ", source: " + source + ", name: " + name, false, true ); }
-
         name = name.toLowerCase();
         Set< String > keys = almmAlias.keySet();
 
@@ -2065,23 +2059,23 @@ public class LinksCleanedThread extends Thread
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
         start = System.currentTimeMillis();
-        standardRegistrationLocation( source );
+        standardRegistrationLocation( debug, source );
         showTimingMessage( "standardRegistrationLocation ", start );
 
         start = System.currentTimeMillis();
-        standardBirthLocation( source );
+        standardBirthLocation( debug, source );
         showTimingMessage( "standardBirthLocation ", start );
 
         start = System.currentTimeMillis();
-        standardMarLocation( source );
+        standardMarLocation( debug, source );
         showTimingMessage( "standardMarLocation ", start );
 
         start = System.currentTimeMillis();
-        standardLivingLocation( source );
+        standardLivingLocation( debug, source );
         showTimingMessage( "standardLivingLocation ", start );
 
         start = System.currentTimeMillis();
-        standardDeathLocation( source );
+        standardDeathLocation( debug, source );
         showTimingMessage( "standardDeathLocation ", start );
 
         start = System.currentTimeMillis();
@@ -2101,11 +2095,9 @@ public class LinksCleanedThread extends Thread
      * @param id_source
      * @param tt
      */
-    private void standardLocation( ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
+    private void standardLocation( boolean debug, ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
             throws Exception
     {
-        boolean debug = false;
-
         int count = 0;
         int count_empty = 0;
         int step = 1000;
@@ -2245,14 +2237,14 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardRegistrationLocation( String source )
+    public void standardRegistrationLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
-            standardLocation( rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
+            standardLocation( debug, rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2264,14 +2256,14 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardBirthLocation( String source )
+    public void standardBirthLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
 
-            standardLocation( rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
+            standardLocation( debug, rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2283,13 +2275,13 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardMarLocation( String source )
+    public void standardMarLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
+            standardLocation( debug, rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2301,13 +2293,13 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardLivingLocation( String source )
+    public void standardLivingLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
+            standardLocation( debug, rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2319,13 +2311,13 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardDeathLocation( String source )
+    public void standardDeathLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
+            standardLocation( debug, rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -2904,7 +2896,7 @@ public class LinksCleanedThread extends Thread
         showMessage( funcname + "...", false, true );
 
         showMessage( "Processing standardAge for source: " + source + "...", false, true );
-        standardAge( source );
+        standardAge( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doAge
@@ -2913,10 +2905,8 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardAge( String source )
+    public void standardAge( boolean debug, String source )
     {
-        boolean debug = false;
-
         int counter = 0;
         int step = 1000;
         int stepstate = step;
@@ -4298,7 +4288,7 @@ public class LinksCleanedThread extends Thread
                 }
 
                 // Get Opmerking
-                int id_registration = rs.getInt( "id_registration" );
+                int id_registration      = rs.getInt( "id_registration" );
                 String registration_date = rs.getString( "registration_date" );
 
                 if( registration_date == null ) {
@@ -4309,30 +4299,59 @@ public class LinksCleanedThread extends Thread
 
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
 
-                if( dymd.isValidDate() )
+                if( ! dymd.isValidDate() )
                 {
-                    String query = "UPDATE registration_c"
-                        + " SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
-                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
-                        + "registration_c.registration_year = "       + dymd.getYear()
-                        + " WHERE registration_c.id_registration = "  + id_registration;
+                    if( debug ) { showMessage( "registration_date: " + registration_date, false, true ); }
 
-                    dbconCleaned.runQuery( query );
-                }
-                else         // Error occured
-                {
                     addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
 
-                    String query = "UPDATE registration_c"
-                        + " SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = "        + dymd.getDay() + " , "
-                        + "registration_c.registration_month = "      + dymd.getMonth() + " , "
-                        + "registration_c.registration_year = "       + dymd.getYear()
-                        + " WHERE registration_c.id_registration = "  + id_registration;
+                    int day   = dymd.getDay();
+                    int month = dymd.getMonth();
+                    int year  = dymd.getYear();
 
-                    dbconCleaned.runQuery( query );
+                    if( month == 2 && day > 28 ) {
+                        day = 1;
+                        month = 3;
+                        dymd.setDay( day );
+                        dymd.setMonth( month );
+                    }
+
+                    if( day > 30 && ( month == 4 || month == 6 || month == 9 || month == 11 ) ) {
+                        day = 1;
+                        month += 1;
+                        dymd.setDay( day );
+                        dymd.setMonth( month );
+                    }
+
+                    if( day > 31 ) {
+                        day = 1;
+                        month += 1;
+                        if( month > 12 ) {
+                            month = 1;
+                            year += 1;
+                        }
+                        dymd.setDay( day );
+                        dymd.setMonth( month );
+                        dymd.setYear( year );
+                    }
+
+                    if( month > 12 ) {
+                        month = 12;
+                        dymd.setMonth( month );
+                    }
+
+                    registration_date = String.format( "%02d-%02d-%04d", day, month, year );
                 }
+
+                String query = "UPDATE registration_c"
+                    + " SET registration_c.registration_date = '" + registration_date + "' , "
+                    + "registration_c.registration_day = "        + dymd.getDay() + " , "
+                    + "registration_c.registration_month = "      + dymd.getMonth() + " , "
+                    + "registration_c.registration_year = "       + dymd.getYear()
+                    + " WHERE registration_c.id_registration = "  + id_registration;
+
+                dbconCleaned.runQuery( query );
+
             }
             rs = null;
         }
@@ -4543,7 +4562,7 @@ public class LinksCleanedThread extends Thread
         // year is greater than age year
         if (pYear > rYear) {
 
-            //return akterdatum
+            //return registration date
             DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
             dy.setYear(rYear);
             dy.setMonth(rMonth);
@@ -4564,7 +4583,7 @@ public class LinksCleanedThread extends Thread
 
         // years are equal, rest must be checked
 
-        // month is higher than act month
+        // month is higher than registration month
         if (pMonth > rMonth) {
 
             // return return act month
@@ -4587,7 +4606,7 @@ public class LinksCleanedThread extends Thread
 
         // months are equal, check rest
 
-        // day is higher than act day
+        // day is higher than registration day
         if (pDay > rDay) {
 
             // return act date
@@ -4598,7 +4617,7 @@ public class LinksCleanedThread extends Thread
             return dy;
         }
 
-        // day is lower or similar to act day
+        // day is lower or similar to registration day
         DateYearMonthDaySet dy = new DateYearMonthDaySet( "" );
         dy.setYear(pYear);
         dy.setMonth(pMonth);
@@ -4803,15 +4822,9 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void minMaxMarriageYear
-    (
-        boolean debug,
-        String source
-    )
+    private void minMaxMarriageYear( boolean debug, String source )
     throws Exception
     {
-        debug = true;
-
         int count = 0;
         int step = 1000;
         int stepstate = step;
@@ -5127,25 +5140,25 @@ public class LinksCleanedThread extends Thread
 
         try
         {
-            if( debug ) { showMessage( "q1", false, true ); }
+            if( debug ) { showMessage( query1, false, true ); }
             dbconCleaned.runQuery( query1 );
 
-            if( debug ) { showMessage( "q2", false, true ); }
+            if( debug ) { showMessage( query2, false, true ); }
             dbconCleaned.runQuery( query2 );
 
-            if( debug ) { showMessage( "q3", false, true ); }
+            if( debug ) { showMessage( query3, false, true ); }
             dbconCleaned.runQuery( query3 );
 
-            if( debug ) { showMessage( "q4", false, true ); }
+            if( debug ) { showMessage( query4, false, true ); }
             dbconCleaned.runQuery( query4 );
 
-            if( debug ) { showMessage( "q5", false, true ); }
+            if( debug ) { showMessage( query5, false, true ); }
             dbconCleaned.runQuery( query5 );
 
-            if( debug ) { showMessage( "q6", false, true ); }
+            if( debug ) { showMessage( query6, false, true ); }
             dbconCleaned.runQuery( query6 );
 
-            if( debug ) { showMessage( "q7", false, true ); }
+            if( debug ) { showMessage( queryReg, false, true ); }
             dbconCleaned.runQuery( queryReg );
         }
         catch( Exception ex ) {
