@@ -65,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-09-Sep-2014 Latest change
+ * FL-24-Oct-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -1476,14 +1476,16 @@ public class ManagerGui extends javax.swing.JFrame
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
 												.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
-												.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
-												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE))
-											.addGap(27, 27, 27)
+												.addComponent(jLabel44, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE)
+												.addComponent(jLabel43, GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE))
+											.addGap(33, 33, 33)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-												.addComponent(tbLOLCurl, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCuser, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-												.addComponent(tbLOLCSourceId, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)))
+												.addComponent(tbLOLCuser, GroupLayout.Alignment.TRAILING)
+												.addComponent(tbLOLCpass)
+												.addGroup(pLOLCLayout.createSequentialGroup()
+													.addComponent(tbLOLCurl, GroupLayout.PREFERRED_SIZE, 257, GroupLayout.PREFERRED_SIZE)
+													.addGap(0, 0, Short.MAX_VALUE))
+												.addComponent(tbLOLCSourceId)))
 										.addGroup(GroupLayout.Alignment.LEADING, pLOLCLayout.createSequentialGroup()
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
@@ -1493,11 +1495,11 @@ public class ManagerGui extends javax.swing.JFrame
 												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
 											.addGap(22, 22, 22)
 											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE))))
-									.addGap(26, 26, 26))
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefdb, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))))
+									.addGap(20, 20, 20))
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
 										.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1589,7 +1591,7 @@ public class ManagerGui extends javax.swing.JFrame
 											.addGroup(pLOLCLayout.createParallelGroup()
 												.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 												.addComponent(label4))
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 101, Short.MAX_VALUE)
 											.addComponent(jLabel51)
 											.addGap(15, 15, 15)
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -2450,7 +2452,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "22-Oct-2014 13:43";
+            String timestamp1 = "24-Oct-2014 17:21";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

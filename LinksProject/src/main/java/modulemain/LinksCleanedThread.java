@@ -107,6 +107,8 @@ public class LinksCleanedThread extends Thread
     private PrintLogger plog;
     private boolean showskip = false;
 
+    private int count_step = 10000;              // used to be 1000
+
     /**
      * Constructor
      *
@@ -119,7 +121,7 @@ public class LinksCleanedThread extends Thread
     (
             Options opts,
             JTextField outputLine,
-            JTextArea outputArea,
+            JTextArea  outputArea,
             ManagerGui mg
     )
     {
@@ -569,7 +571,7 @@ public class LinksCleanedThread extends Thread
         String guid = "";
 
         String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
-                + " FROM registration_o WHERE id_registration = " + id;
+            + " FROM registration_o WHERE id_registration = " + id;
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -585,25 +587,16 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        boolean showQuery = false;
-        if( location.startsWith( "'") ) {         // 's Gravenhage, etcetera
-            //location = "'" + location;
-            showQuery = true;
-        }
-
         // save to links_logs
         String insertQuery = ""
-                + " INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( reg_key , id_source , report_class , report_type , content , date_time ,"
-                + " location , reg_type , date , sequence , guid )"
-                + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
-                + " \"" + location + "\" ,"
-                + " '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + guid + "' ) ; ";
+            + " INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( reg_key , id_source , report_class , report_type , content , date_time ,"
+            + " location , reg_type , date , sequence , guid )"
+            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
+            + " \"" + location + "\" ,"
+            + " '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + guid + "' ) ; ";
 
-        if( debug || showQuery ) {
-            showMessage( insertQuery, false, true );
-            showQuery = false;
-        }
+        if( debug ) { showMessage( insertQuery, false, true ); }
 
         dbconLog.runQuery( insertQuery );
     } // addToReportRegistration
@@ -658,9 +651,12 @@ public class LinksCleanedThread extends Thread
         String sequence  = "";
         String guid = "";
 
-        if( !id_registration.isEmpty() ) {
+        if( !id_registration.isEmpty() )
+        {
             String selectQuery2 = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
-                    + " FROM registration_o WHERE id_registration = " + id_registration;
+                 + " FROM registration_o WHERE id_registration = " + id_registration;
+
+            if( debug ) { showMessage( selectQuery2, false, true ); }
 
             try {
                 ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery2 );
@@ -679,11 +675,12 @@ public class LinksCleanedThread extends Thread
 
         // save to links_logs
         String insertQuery = ""
-                + " INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
-                + " location , reg_type , date , sequence , reg_key , guid )"
-                + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
-                + " '" + location + "' , '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + id_registration + "' , '" + guid + "' ) ; ";
+            + " INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
+            + " location , reg_type , date , sequence , reg_key , guid )"
+            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
+            + " \"" + location + "\" ,"
+            + " '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + id_registration + "' , '" + guid + "' ) ; ";
         if( debug ) { showMessage( insertQuery, false, true ); }
 
         dbconLog.runQuery( insertQuery );
@@ -918,8 +915,7 @@ public class LinksCleanedThread extends Thread
         int count = 0;
         int count_empty = 0;
         int count_still = 0;
-        int step = 10000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -942,7 +938,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + " of " + total, true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person     = rsFirstName.getInt( "id_person" );
@@ -1236,7 +1232,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " firstname records, " + count_empty + " without a firstname, " + strNew + ", " + strStill, false, true );
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Firstname: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Firstname: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardFirstname
@@ -1250,8 +1246,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 10000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try {
             String selectQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + source;
@@ -1274,7 +1269,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + " of " + total, true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 // Get family name
@@ -1422,7 +1417,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " familyname records, " + count_empty + " without a familyname, " + strNew, false, true );
         }
         catch( Exception ex) {
-            showMessage( count + " Exception while cleaning familyname: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning familyname: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardFamilyname
@@ -1520,8 +1515,7 @@ public class LinksCleanedThread extends Thread
     public void standardPrepiece( String source )
     {
         int count = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try {
 
@@ -1551,7 +1545,7 @@ public class LinksCleanedThread extends Thread
 
                 if( count == stepstate ) {
                     showMessage( count + " of " + total, true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rsPrepiece.getInt( "id_person" );
@@ -1640,7 +1634,7 @@ public class LinksCleanedThread extends Thread
             con.close();
         }
         catch( Exception ex ) {
-            showMessage(count + " Exception while cleaning Prepiece: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Prepiece: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardPrepiece
@@ -1652,8 +1646,7 @@ public class LinksCleanedThread extends Thread
     public void standardSuffix( String source )
     {
         int count = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try {
             String selectQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + source + " AND suffix <> ''";
@@ -1676,7 +1669,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + " of " + total, true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rsSuffix.getInt( "id_person" );
@@ -1733,7 +1726,7 @@ public class LinksCleanedThread extends Thread
 
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Suffix: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Suffix: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardSuffix
@@ -2041,10 +2034,14 @@ public class LinksCleanedThread extends Thread
     private void doLocations( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doLocations";
+
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
 
         long timeStart = System.currentTimeMillis();
         String msg = "Loading reference table: location";
@@ -2100,8 +2097,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -2110,7 +2106,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id = rs.getInt( idFieldO );
@@ -2229,7 +2225,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " location records, " + count_empty + " without location, " + strNew, false, true );
         }
         catch( Exception ex ) {
-            throw new Exception( count + " Exception while cleaning Location: " + ex.getMessage() );
+            throw new Exception( "count: " + count + " Exception while cleaning Location: " + ex.getMessage() );
         }
     } // standardLocation
 
@@ -2376,8 +2372,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -2390,7 +2385,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -2462,7 +2457,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " gender records, " + count_empty + " without gender, " + strNew, false, true );
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardSex
@@ -2475,8 +2470,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         int count_sex_new = almmCivilstatus.newcount();     // standardSex also writes to almmCivilstatus
 
@@ -2491,7 +2485,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -2577,7 +2571,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " civil status records, " + count_empty + " without civil status, " + strNew, false, true );
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardCivilstatus
@@ -2614,9 +2608,8 @@ public class LinksCleanedThread extends Thread
      */
     public void standardRegistrationType( boolean debug, String source )
     {
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
+        int count = 0;
+        int stepstate = count_step;
 
         try
         {
@@ -2626,19 +2619,17 @@ public class LinksCleanedThread extends Thread
 
             while( rs.next() )      // process data from links_original
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
-                    stepstate += step;
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
+                    stepstate += count_step;
                 }
 
                 int id_registration = rs.getInt( "id_registration" );
                 int registration_maintype = rs.getInt( "registration_maintype" );
-                registration_maintype = 2;
                 String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
-                String refQuery = "SELECT * FROM ref_registration WHERE main_type = " +
-                        registration_maintype + " AND original = '" + registration_type + "'";
+                String refQuery = "SELECT * FROM ref_registration WHERE main_type = " + registration_maintype + " AND original = '" + registration_type + "'";
                 ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
 
                 if( ref.next() )        // compare with reference
@@ -2692,7 +2683,7 @@ public class LinksCleanedThread extends Thread
                 }
             }
         } catch( Exception ex ) {
-            showMessage( "counter: " + counter + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationType
@@ -2708,6 +2699,7 @@ public class LinksCleanedThread extends Thread
     private void doOccupation( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doOccupation";
+
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
@@ -2747,8 +2739,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         String query = "SELECT id_person , occupation FROM person_o WHERE id_source = " + source;
         if( debug ) { showMessage( query, false, true ); }
@@ -2762,7 +2753,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -2772,10 +2763,10 @@ public class LinksCleanedThread extends Thread
                 }
                 else {
                     if( debug ) { showMessage( "count: " + count + ", id_person: " + id_person + ", occupation: " + occupation, false, true ); }
-                    standardOccupationRecord( debug, source, id_person, occupation );
+                    standardOccupationRecord( debug, count, source, id_person, occupation );
                 }
             }
-            //showMessage( counter + " persons, " + empty + " without occupation", false, true );
+
             int count_new = almmOccupation.newcount();
             String strNew = "";
             if( count_new == 0 ) { strNew = "no new occupations"; }
@@ -2784,11 +2775,11 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " occupation records, " + count_empty + " without occupation, " + strNew, false, true );
         }
         catch( SQLException sex ) {
-            showMessage( "\ncounter: " + count + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true );
+            showMessage( "count: " + count + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true );
             sex.printStackTrace( new PrintStream( System.out ) );
         }
         catch( Exception jex ) {
-            showMessage( "\ncounter: " + count + " Exception while cleaning Occupation: " + jex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Occupation: " + jex.getMessage(), false, true );
             jex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -2800,7 +2791,7 @@ public class LinksCleanedThread extends Thread
      * @param id_person
      * @param occupation
      */
-    public void standardOccupationRecord( boolean debug, String source, int id_person, String occupation )
+    public void standardOccupationRecord( boolean debug, int count, String source, int id_person, String occupation )
     {
         try
         {
@@ -2869,7 +2860,7 @@ public class LinksCleanedThread extends Thread
             }
         }
         catch( Exception ex3 ) {
-            showMessage( "Exception while cleaning Occupation: " + ex3.getMessage(), false, true);
+            showMessage( "count: " + count + " Exception while cleaning Occupation: " + ex3.getMessage(), false, true);
             ex3.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardOccupationRecord
@@ -2907,9 +2898,8 @@ public class LinksCleanedThread extends Thread
      */
     public void standardAge( boolean debug, String source )
     {
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
+        int count = 0;
+        int stepstate = count_step;
 
         try {
 
@@ -2920,10 +2910,10 @@ public class LinksCleanedThread extends Thread
 
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
-                    stepstate += step;
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -2931,8 +2921,6 @@ public class LinksCleanedThread extends Thread
                 int age_month = rs.getInt( "age_month" );
                 int age_week  = rs.getInt( "age_week" );
                 int age_day   = rs.getInt( "age_day" );
-
-                //System.out.printf("%d: %d %d %d %d %d\n", counter, id_person, age_year, age_month, age_week, age_day);
 
                 boolean update = false;
 
@@ -2955,36 +2943,35 @@ public class LinksCleanedThread extends Thread
                     if( age_day > 0 || age_week > 0 || age_month > 0 || age_year > 0 )
                     {
                         updateQuery = "UPDATE links_cleaned.person_c"
-                                + " SET"
-                                + " age_year = "  + age_year  + " ,"
-                                + " age_month = " + age_month + " ,"
-                                + " age_week = "  + age_week  + " ,"
-                                + " age_day = "   + age_day   + " ,"
-                                + " death = 'a'"
-                                + " WHERE id_person = " + id_person
-                                + " AND id_source = " + source;
+                            + " SET"
+                            + " age_year = "  + age_year  + " ,"
+                            + " age_month = " + age_month + " ,"
+                            + " age_week = "  + age_week  + " ,"
+                            + " age_day = "   + age_day   + " ,"
+                            + " death = 'a'"
+                            + " WHERE id_person = " + id_person
+                            + " AND id_source = " + source;
                     }
                     else
                     {
                         updateQuery = "UPDATE links_cleaned.person_c"
-                                + " SET"
-                                + " age_year = "  + age_year  + " ,"
-                                + " age_month = " + age_month + " ,"
-                                + " age_week = "  + age_week  + " ,"
-                                + " age_day = "   + age_day
-                                + " WHERE id_person = " + id_person
-                                + " AND id_source = " + source;
+                            + " SET"
+                            + " age_year = "  + age_year  + " ,"
+                            + " age_month = " + age_month + " ,"
+                            + " age_week = "  + age_week  + " ,"
+                            + " age_day = "   + age_day
+                            + " WHERE id_person = " + id_person
+                            + " AND id_source = " + source;
                     }
 
                     if( debug ) { showMessage( updateQuery, false, true ); }
                     dbconCleaned.runQuery( updateQuery );
-                    //System.out.println( "after update of: " + counter );
                 }
             }
-            showMessage( counter + " person records", false, true );
+            //showMessage( count + " person records", false, true );
         }
         catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Age: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Age: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAge
@@ -3053,8 +3040,7 @@ public class LinksCleanedThread extends Thread
         int count = 0;
         int count_empty = 0;
         int count_noref = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -3067,7 +3053,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -3111,7 +3097,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " person records, " + count_empty + " without a role, and " + count_noref + " without a standard role", false, true );
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Role: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Role: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRole
@@ -3124,8 +3110,7 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int count_empty = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -3140,7 +3125,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person       = rs.getInt( "id_person" );
@@ -3185,7 +3170,7 @@ public class LinksCleanedThread extends Thread
             showMessage( count + " person records, " + count_empty + " without alive specification", false, true );
         }
         catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning Alive: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Alive: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAlive
@@ -3248,9 +3233,8 @@ public class LinksCleanedThread extends Thread
      */
     public void minMaxDateMain( boolean debug, String source ) throws Exception
     {
-        int counter = 0;
-        int step = 10000;
-        int stepstate = step;
+        int count = 0;
+        int stepstate = count_step;
 
         // Because this query acts on person_c and registration_c (instead of person_o and registration_o),
         // the cleaning options Age and Role must be run together with (i.e. before) Dates.
@@ -3298,11 +3282,11 @@ public class LinksCleanedThread extends Thread
 
             while( rsPersons.next() )
             {
-                counter++;
+                count++;
 
-                if( counter == stepstate ) {
-                    showMessage( counter + " of " + total, true, true );
-                    stepstate += step;
+                if( count == stepstate ) {
+                    showMessage( count + " of " + total, true, true );
+                    stepstate += count_step;
                 }
 
                 // Get
@@ -3477,7 +3461,7 @@ public class LinksCleanedThread extends Thread
             }
         }
         catch( Exception ex ) {
-            showMessage( counter + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // minMaxDateMain
@@ -3539,15 +3523,15 @@ public class LinksCleanedThread extends Thread
             }
 
             MinMaxYearSet mmj = minMaxCalculation(
-                    debug,
-                    inputInfo.getPersonId(),
-                    inputInfo.getRegistrationId(),
-                    inputregistrationYearMonthDday.getYear(),
-                    inputInfo.getRegistrationMainType(),
-                    inputInfo.getTypeDate(),
-                    inputInfo.getPersonRole(),
-                    inputInfo.getDeath(),
-                    inputInfo.getPersonAgeYear() );
+                debug,
+                inputInfo.getPersonId(),
+                inputInfo.getRegistrationId(),
+                inputregistrationYearMonthDday.getYear(),
+                inputInfo.getRegistrationMainType(),
+                inputInfo.getTypeDate(),
+                inputInfo.getPersonRole(),
+                inputInfo.getDeath(),
+                inputInfo.getPersonAgeYear() );
 
             returnSet.setMinYear( mmj.getMinYear() );
             returnSet.setMaxYear( mmj.getMaxYear() );
@@ -3576,15 +3560,15 @@ public class LinksCleanedThread extends Thread
             returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
             MinMaxYearSet mmj = minMaxCalculation(
-                    debug,
-                    inputInfo.getPersonId(),
-                    inputInfo.getRegistrationId(),
-                    regis_year,
-                    inputInfo.getRegistrationMainType(),
-                    inputInfo.getTypeDate(),
-                    inputInfo.getPersonRole(),
-                    inputInfo.getDeath(),
-                    AgeInYears );
+                debug,
+                inputInfo.getPersonId(),
+                inputInfo.getRegistrationId(),
+                regis_year,
+                inputInfo.getRegistrationMainType(),
+                inputInfo.getTypeDate(),
+                inputInfo.getPersonRole(),
+                inputInfo.getDeath(),
+                AgeInYears );
 
             returnSet.setMinYear(mmj.getMinYear());
             returnSet.setMaxYear(mmj.getMaxYear());
@@ -3599,10 +3583,10 @@ public class LinksCleanedThread extends Thread
 
             // Days, month, weeks to years, round up
             int ageinYears = roundUpAge(
-                    inputInfo.getPersonAgeYear(),
-                    inputInfo.getPersonAgeMonth(),
-                    inputInfo.getPersonAgeWeek(),
-                    inputInfo.getPersonAgeDay() );
+                inputInfo.getPersonAgeYear(),
+                inputInfo.getPersonAgeMonth(),
+                inputInfo.getPersonAgeWeek(),
+                inputInfo.getPersonAgeDay() );
 
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();            // New return set
 
@@ -3613,18 +3597,18 @@ public class LinksCleanedThread extends Thread
             returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
             MinMaxYearSet mmj = minMaxCalculation(
-                    debug,
-                    inputInfo.getPersonId(),
-                    inputInfo.getRegistrationId(),
-                    inputregistrationYearMonthDday.getYear(),
-                    inputInfo.getRegistrationMainType(),
-                    inputInfo.getTypeDate(),
-                    inputInfo.getPersonRole(),
-                    inputInfo.getDeath(),
-                    ageinYears );
+                debug,
+                inputInfo.getPersonId(),
+                inputInfo.getRegistrationId(),
+                inputregistrationYearMonthDday.getYear(),
+                inputInfo.getRegistrationMainType(),
+                inputInfo.getTypeDate(),
+                inputInfo.getPersonRole(),
+                inputInfo.getDeath(),
+                ageinYears );
 
-            returnSet.setMinYear(mmj.getMinYear());
-            returnSet.setMaxYear(mmj.getMaxYear());
+            returnSet.setMinYear( mmj.getMinYear() );
+            returnSet.setMaxYear( mmj.getMaxYear() );
 
             return returnSet;
         } // not the deceased
@@ -3690,19 +3674,19 @@ public class LinksCleanedThread extends Thread
 
             // Min date
             String minDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays );
 
             // Max date
             String maxDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdays );
 
             // New date return return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
@@ -3710,12 +3694,12 @@ public class LinksCleanedThread extends Thread
 
             // Checken if max date not later than actdate
             DateYearMonthDaySet dymd = checkMaxDate(
-                    computedMaxDate.getYear(),
-                    computedMaxDate.getMonth(),
-                    computedMaxDate.getDay(),
-                    useYear,
-                    useMonth,
-                    useDay);
+                computedMaxDate.getYear(),
+                computedMaxDate.getMonth(),
+                computedMaxDate.getDay(),
+                useYear,
+                useMonth,
+                useDay );
 
             // returnen
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -3744,19 +3728,19 @@ public class LinksCleanedThread extends Thread
 
             // Min date
             String minDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindagen);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindagen );
 
             // Max date
             String maxDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdagen);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdagen );
 
             // New date to return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
@@ -3790,19 +3774,19 @@ public class LinksCleanedThread extends Thread
 
             // Min date
             String minDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays );
 
             // Max datum
             String maxDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                maxdays );
 
             // date to return values
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
@@ -3833,21 +3817,12 @@ public class LinksCleanedThread extends Thread
 
             // min date
             String minDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    mindays);
+                useYear,
+                useMonth,
+                useDay,
+                TimeType.DAY,
+                mindays );
 
-            // max date
-            /*
-            String maxDate = addTimeToDate(
-                    useYear,
-                    useMonth,
-                    useDay,
-                    TimeType.DAY,
-                    maxdays);
-            */
             String maxDate = inputInfo.getRegistrationDate();
 
 
@@ -3858,12 +3833,12 @@ public class LinksCleanedThread extends Thread
 
             // Check if max date not later than registration date
             DateYearMonthDaySet dymd = checkMaxDate(
-                    computedMaxDate.getYear(),
-                    computedMaxDate.getMonth(),
-                    computedMaxDate.getDay(),
-                    useYear,
-                    useMonth,
-                    useDay);
+                computedMaxDate.getYear(),
+                computedMaxDate.getMonth(),
+                computedMaxDate.getDay(),
+                useYear,
+                useMonth,
+                useDay );
 
             // return
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -3888,15 +3863,15 @@ public class LinksCleanedThread extends Thread
         returnSet.setMinMonth( inputregistrationYearMonthDday.getMonth() );
 
         MinMaxYearSet mmj = minMaxCalculation(
-                debug,
-                inputInfo.getPersonId(),
-                inputInfo.getRegistrationId(),
-                inputregistrationYearMonthDday.getYear(),
-                inputInfo.getRegistrationMainType(),
-                inputInfo.getTypeDate(),
-                inputInfo.getPersonRole(),
-                inputInfo.getDeath(),
-                0 );
+            debug,
+            inputInfo.getPersonId(),
+            inputInfo.getRegistrationId(),
+            inputregistrationYearMonthDday.getYear(),
+            inputInfo.getRegistrationMainType(),
+            inputInfo.getTypeDate(),
+            inputInfo.getPersonRole(),
+            inputInfo.getDeath(),
+            0 );
 
         returnSet.setMinYear( mmj.getMinYear() );
         returnSet.setMaxYear( mmj.getMaxYear() );
@@ -4085,14 +4060,14 @@ public class LinksCleanedThread extends Thread
      */
     private MinMaxMainAgeSet minMaxMainAge
     (
-            boolean debug,
-            int     id_person,
-            int     id_registration,
-            int     main_type,
-            String  date_type,
-            int     role,
-            String  age_reported,
-            String  age_main_role
+        boolean debug,
+        int     id_person,
+        int     id_registration,
+        int     main_type,
+        String  date_type,
+        int     role,
+        String  age_reported,
+        String  age_main_role
     )
     throws Exception
     {
@@ -4269,9 +4244,8 @@ public class LinksCleanedThread extends Thread
      */
     public void standardRegistrationDate( boolean debug, String source )
     {
-        int counter = 0;
-        int step = 1000;
-        int stepstate = step;
+        int count = 0;
+        int stepstate = count_step;
 
         try
         {
@@ -4281,10 +4255,10 @@ public class LinksCleanedThread extends Thread
 
             while( rs.next() )
             {
-                counter++;
-                if( counter == stepstate ) {
-                    showMessage( counter + "", true, true );
-                    stepstate += step;
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
+                    stepstate += count_step;
                 }
 
                 // Get Opmerking
@@ -4356,7 +4330,7 @@ public class LinksCleanedThread extends Thread
             rs = null;
         }
         catch( Exception ex ) {
-            showMessage( counter + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationDate
@@ -4370,8 +4344,7 @@ public class LinksCleanedThread extends Thread
         int count = 0;
         int count_empty = 0;
         int count_invalid = 0;
-        int step = 10000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         try
         {
@@ -4386,7 +4359,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_person = rs.getInt( "id_person" );
@@ -4439,7 +4412,7 @@ public class LinksCleanedThread extends Thread
             showMessage( "Number of " + type + " records: " + count + ", empty dates: " + count_empty + ", invalid dates: " + count_invalid, false, true );
             rs = null;
         } catch( Exception ex ) {
-            showMessage( count + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDate
@@ -4826,8 +4799,7 @@ public class LinksCleanedThread extends Thread
     throws Exception
     {
         int count = 0;
-        int step = 1000;
-        int stepstate = step;
+        int stepstate = count_step;
 
         String selectQueryA = ""
             + " SELECT "
@@ -4853,7 +4825,7 @@ public class LinksCleanedThread extends Thread
                 count++;
                 if (count == stepstate) {
                     showMessage(count + "", true, true);
-                    stepstate += step;
+                    stepstate += count_step;
                 }
 
                 int id_personA = rsA.getInt("id_person");
@@ -5141,24 +5113,31 @@ public class LinksCleanedThread extends Thread
         try
         {
             if( debug ) { showMessage( query1, false, true ); }
+            else { showMessage( "birth_date_min", false, true ); }
             dbconCleaned.runQuery( query1 );
 
             if( debug ) { showMessage( query2, false, true ); }
+            else { showMessage( "birth_date_max", false, true ); }
             dbconCleaned.runQuery( query2 );
 
             if( debug ) { showMessage( query3, false, true ); }
+            else { showMessage( "mar_date_min", false, true ); }
             dbconCleaned.runQuery( query3 );
 
             if( debug ) { showMessage( query4, false, true ); }
+            else { showMessage( "mar_date_max", false, true ); }
             dbconCleaned.runQuery( query4 );
 
             if( debug ) { showMessage( query5, false, true ); }
+            else { showMessage( "death_date_min", false, true ); }
             dbconCleaned.runQuery( query5 );
 
             if( debug ) { showMessage( query6, false, true ); }
+            else { showMessage( "death_date_max", false, true ); }
             dbconCleaned.runQuery( query6 );
 
             if( debug ) { showMessage( queryReg, false, true ); }
+            else { showMessage( "registration_days", false, true ); }
             dbconCleaned.runQuery( queryReg );
         }
         catch( Exception ex ) {
