@@ -2389,8 +2389,10 @@ public class LinksCleanedThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                //String sex = rs.getString( "sex" );
+
                 String sex = rs.getString( "sex" ) != null ? rs.getString( "sex" ).toLowerCase() : "";
+                if( sex.startsWith( "other:" ) ) { sex = sex.substring( 6 ); }
+
                 if( debug ) { showMessage( "sex: " + sex , false, true ); }
 
                 if( sex != null && !sex.isEmpty() )                 // check presence of the gender
@@ -2489,8 +2491,13 @@ public class LinksCleanedThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
+
                 String sex = rs.getString( "sex" ) != null ? rs.getString( "sex" ).toLowerCase() : "";
+                if( sex.startsWith( "other:" ) ) { sex = sex.substring( 6 ); }
+
                 String civil_status = rs.getString( "civil_status" ) != null ? rs.getString( "civil_status" ).toLowerCase() : "";
+                if( civil_status.startsWith( "other:" ) ) { civil_status = civil_status.substring( 6 ); }
+
                 //showMessage( "id: " + id_person + ", sex: " + sex + ", civil: " + civil_status, false, true );
 
                 if( civil_status != null && !civil_status.isEmpty() )       // check presence of civil status
@@ -3239,28 +3246,28 @@ public class LinksCleanedThread extends Thread
         // Because this query acts on person_c and registration_c (instead of person_o and registration_o),
         // the cleaning options Age and Role must be run together with (i.e. before) Dates.
         String startQuery = ""
-                + " SELECT "
-                + " registration_c.id_registration ,"
-                + " registration_c.id_source ,"
-                + " registration_c.registration_date ,"
-                + " registration_c.registration_maintype ,"
-                + " person_c.id_person ,"
-                + " person_c.role ,"
-                + " person_c.age_year ,"
-                + " person_c.age_month ,"
-                + " person_c.age_week ,"
-                + " person_c.age_day ,"
-                + " person_c.birth_date ,"
-                + " person_c.mar_date ,"
-                + " person_c.death_date ,"
-                + " person_c.birth_year ,"
-                + " person_c.birth_date_valid ,"
-                + " person_c.mar_date_valid ,"
-                + " person_c.death_date_valid ,"
-                + " person_c.death"
-                + " FROM person_c , registration_c"
-                + " WHERE person_c.id_registration = registration_c.id_registration"
-                + " AND links_cleaned.person_c.id_source = " + source;
+            + " SELECT "
+            + " registration_c.id_registration ,"
+            + " registration_c.id_source ,"
+            + " registration_c.registration_date ,"
+            + " registration_c.registration_maintype ,"
+            + " person_c.id_person ,"
+            + " person_c.role ,"
+            + " person_c.age_year ,"
+            + " person_c.age_month ,"
+            + " person_c.age_week ,"
+            + " person_c.age_day ,"
+            + " person_c.birth_date ,"
+            + " person_c.mar_date ,"
+            + " person_c.death_date ,"
+            + " person_c.birth_year ,"
+            + " person_c.birth_date_valid ,"
+            + " person_c.mar_date_valid ,"
+            + " person_c.death_date_valid ,"
+            + " person_c.death"
+            + " FROM person_c , registration_c"
+            + " WHERE person_c.id_registration = registration_c.id_registration"
+            + " AND links_cleaned.person_c.id_source = " + source;
 
         if( debug ) {
             showMessage( "minMaxDateMain()", false, true );
@@ -3309,30 +3316,29 @@ public class LinksCleanedThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
+                if( id_person == 102266679 ) { debug = true; }
+                else  { debug = false; }
+
                 if( debug ) {
-                    // 668084 from id_source = 231; others from 225
-                    if( id_registration == 668084 || (id_registration >= 6 && id_registration <= 10) ) {
-                        showMessage_nl();
-                        showMessage( "id_registration: "      + id_registration,      false, true );
-                        showMessage( "id_person: "            + id_person,            false, true );
-                        showMessage( "id_source: "            + id_source,            false, true );
-                        showMessage( "registrationDate: "     + registrationDate,     false, true );
-                        showMessage( "registrationMaintype: " + registrationMaintype, false, true );
-                        showMessage( "role: "                 + role,                 false, true );
-                        showMessage( "age_year: "             + age_year,             false, true );
-                        showMessage( "age_month: "            + age_month,            false, true );
-                        showMessage( "age_week: "             + age_week,             false, true );
-                        showMessage( "age_day: "              + age_day,              false, true );
-                        showMessage( "birth_date: "           + birth_date,           false, true );
-                        showMessage( "mar_date: "             + mar_date,             false, true );
-                        showMessage( "death_date: "           + death_date,           false, true );
-                        showMessage( "birth_year: "           + birth_year,           false, true );
-                        showMessage( "birth_date_valid: "     + birth_date_valid,     false, true );
-                        showMessage( "mar_date_valid: "       + mar_date_valid,       false, true );
-                        showMessage( "death_date_valid: "     + death_date_valid,     false, true );
-                        showMessage( "death: "                + death,                false, true );
-                    }
-                    //else { continue; }
+                    showMessage_nl();
+                    showMessage( "id_registration: "      + id_registration,      false, true );
+                    showMessage( "id_person: "            + id_person,            false, true );
+                    showMessage( "id_source: "            + id_source,            false, true );
+                    showMessage( "registrationDate: "     + registrationDate,     false, true );
+                    showMessage( "registrationMaintype: " + registrationMaintype, false, true );
+                    showMessage( "role: "                 + role,                 false, true );
+                    showMessage( "age_year: "             + age_year,             false, true );
+                    showMessage( "age_month: "            + age_month,            false, true );
+                    showMessage( "age_week: "             + age_week,             false, true );
+                    showMessage( "age_day: "              + age_day,              false, true );
+                    showMessage( "birth_date: "           + birth_date,           false, true );
+                    showMessage( "mar_date: "             + mar_date,             false, true );
+                    showMessage( "death_date: "           + death_date,           false, true );
+                    showMessage( "birth_year: "           + birth_year,           false, true );
+                    showMessage( "birth_date_valid: "     + birth_date_valid,     false, true );
+                    showMessage( "mar_date_valid: "       + mar_date_valid,       false, true );
+                    showMessage( "death_date_valid: "     + death_date_valid,     false, true );
+                    showMessage( "death: "                + death,                false, true );
                 }
 
                 // Fill object
@@ -3390,14 +3396,14 @@ public class LinksCleanedThread extends Thread
 
                     // Min Max to table
                     String queryBirth = "UPDATE person_c"
-                            + " SET "
-                            + type_date + "_year_min"  + " = " + ddmdBirth.getMinYear() + " ,"
-                            + type_date + "_month_min" + " = " + ddmdBirth.getMinMonth() + " ,"
-                            + type_date + "_day_min"   + " = " + ddmdBirth.getMinDay() + " ,"
-                            + type_date + "_year_max"  + " = " + ddmdBirth.getMaxYear() + " ,"
-                            + type_date + "_month_max" + " = " + ddmdBirth.getMaxMonth() + " ,"
-                            + type_date + "_day_max"   + " = " + ddmdBirth.getMaxDay()
-                            + " WHERE person_c.id_person = "   + id_person;
+                        + " SET "
+                        + type_date + "_year_min"  + " = " + ddmdBirth.getMinYear() + " ,"
+                        + type_date + "_month_min" + " = " + ddmdBirth.getMinMonth() + " ,"
+                        + type_date + "_day_min"   + " = " + ddmdBirth.getMinDay() + " ,"
+                        + type_date + "_year_max"  + " = " + ddmdBirth.getMaxYear() + " ,"
+                        + type_date + "_month_max" + " = " + ddmdBirth.getMaxMonth() + " ,"
+                        + type_date + "_day_max"   + " = " + ddmdBirth.getMaxDay()
+                        + " WHERE person_c.id_person = "   + id_person;
 
                     dbconCleaned.runQuery( queryBirth );
                 }
@@ -3409,7 +3415,7 @@ public class LinksCleanedThread extends Thread
 
                     mmds.setTypeDate( "marriage_date" );
                     type_date = "mar";
-                    mmds.setDate(mar_date);
+                    mmds.setDate( mar_date );
 
                     DivideMinMaxDatumSet ddmdMarriage = minMaxDate( debug, mmds );
                     ddmdMarriage.nonnegative();        // is this necessary?
@@ -3418,14 +3424,14 @@ public class LinksCleanedThread extends Thread
 
                     // Min Max to table
                     String queryMar = "UPDATE person_c"
-                            + " SET "
-                            + type_date + "_year_min"  + " = " + ddmdMarriage.getMinYear() + " ,"
-                            + type_date + "_month_min" + " = " + ddmdMarriage.getMinMonth() + " ,"
-                            + type_date + "_day_min"   + " = " + ddmdMarriage.getMinDay() + " ,"
-                            + type_date + "_year_max"  + " = " + ddmdMarriage.getMaxYear() + " ,"
-                            + type_date + "_month_max" + " = " + ddmdMarriage.getMaxMonth() + " ,"
-                            + type_date + "_day_max"   + " = " + ddmdMarriage.getMaxDay()
-                            + " WHERE person_c.id_person = "   + id_person;
+                        + " SET "
+                        + type_date + "_year_min"  + " = " + ddmdMarriage.getMinYear() + " ,"
+                        + type_date + "_month_min" + " = " + ddmdMarriage.getMinMonth() + " ,"
+                        + type_date + "_day_min"   + " = " + ddmdMarriage.getMinDay() + " ,"
+                        + type_date + "_year_max"  + " = " + ddmdMarriage.getMaxYear() + " ,"
+                        + type_date + "_month_max" + " = " + ddmdMarriage.getMaxMonth() + " ,"
+                        + type_date + "_day_max"   + " = " + ddmdMarriage.getMaxDay()
+                        + " WHERE person_c.id_person = "   + id_person;
 
                     dbconCleaned.runQuery( queryMar );
                 }
@@ -3446,14 +3452,14 @@ public class LinksCleanedThread extends Thread
 
                     // Min Max to table
                     String queryDeath = "UPDATE person_c"
-                            + " SET "
-                            + type_date + "_year_min"  + " = " + ddmdDeath.getMinYear()  + " ,"
-                            + type_date + "_month_min" + " = " + ddmdDeath.getMinMonth() + " ,"
-                            + type_date + "_day_min"   + " = " + ddmdDeath.getMinDay()   + " ,"
-                            + type_date + "_year_max"  + " = " + ddmdDeath.getMaxYear()  + " ,"
-                            + type_date + "_month_max" + " = " + ddmdDeath.getMaxMonth() + " ,"
-                            + type_date + "_day_max"   + " = " + ddmdDeath.getMaxDay()
-                            + " WHERE person_c.id_person = "   + id_person;
+                        + " SET "
+                        + type_date + "_year_min"  + " = " + ddmdDeath.getMinYear()  + " ,"
+                        + type_date + "_month_min" + " = " + ddmdDeath.getMinMonth() + " ,"
+                        + type_date + "_day_min"   + " = " + ddmdDeath.getMinDay()   + " ,"
+                        + type_date + "_year_max"  + " = " + ddmdDeath.getMaxYear()  + " ,"
+                        + type_date + "_month_max" + " = " + ddmdDeath.getMaxMonth() + " ,"
+                        + type_date + "_day_max"   + " = " + ddmdDeath.getMaxDay()
+                        + " WHERE person_c.id_person = "   + id_person;
 
                     dbconCleaned.runQuery( queryDeath );
                 }
@@ -3972,7 +3978,11 @@ public class LinksCleanedThread extends Thread
 
         if( !rs.next() )
         {
-            if( debug ) { showMessage( "Not found", false, true ); }
+            if( debug ) {
+                showMessage( "Not found", false, true );
+                showMessage( query, false, true );
+            }
+
             addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
 
             MinMaxYearSet mmj = new MinMaxYearSet();
@@ -4187,7 +4197,8 @@ public class LinksCleanedThread extends Thread
 
             loop++;
             if( loop >= 3 ) {   // no ref_date_minmax entry that satisfies the conditions
-                if( debug ) { showMessage( "MinMaxMainAgeSet: id_person = " + id_person + ", looping too much, quit", false, true ); }
+                showMessage( "minMaxMainAge(): id_person = " + id_person + ", looping too much, quit (warning 106)", false, true );
+                showMessage( queryRef, false, true );
                 addToReportPerson( id_person, "0", 106, "" );
                 done = true;
             }
