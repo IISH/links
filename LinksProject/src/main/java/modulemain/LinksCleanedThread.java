@@ -4133,13 +4133,19 @@ public class LinksCleanedThread extends Thread
                     readPc = true;
                     mm_main_role = min_person_role;
                 }
-                else { mmmas.setMinAge0( "y" ); }
+                else {
+                    done = true;
+                    mmmas.setMinAge0( "y" );
+                }
 
                 if( max_person_role > 0 ) {
                     readPc = true;
                     mm_main_role = max_person_role;
                 }
-                else { mmmas.setMaxAge0( "y" ); }
+                else {
+                    done = true;
+                    mmmas.setMaxAge0( "y" );
+                }
 
                 if( debug ) { showMessage( "querying person_c: " + readPc, false, true ); }
                 if( readPc ) {
@@ -4195,13 +4201,14 @@ public class LinksCleanedThread extends Thread
 
             }
 
-            loop++;
-            if( loop >= 3 ) {   // no ref_date_minmax entry that satisfies the conditions
+            if( done == false && loop > 2 ) {
+                // no ref_date_minmax entry that satisfies the conditions
                 showMessage( "minMaxMainAge(): id_person = " + id_person + ", looping too much, quit (warning 106)", false, true );
                 showMessage( queryRef, false, true );
                 addToReportPerson( id_person, "0", 106, "" );
                 done = true;
             }
+            loop++;
         } // while
 
         return mmmas;
