@@ -65,6 +65,7 @@ public class LinksCleanedThread extends Thread
     private TabletoArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
     private TabletoArrayListMultimap almmSex;           // Civilstatus & Gender
     private TabletoArrayListMultimap almmMarriageYear;  // min/max marriage year
+    private TabletoArrayListMultimap almmLitAge;        // age_literal
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -2835,12 +2836,12 @@ public class LinksCleanedThread extends Thread
 
                         String refOccupation = almmOccupation.standard( occupation );
 
-                        String query = PersonC.updateQuery("occupation", refOccupation, id_person);
+                        String query = PersonC.updateQuery( "occupation", refOccupation, id_person );
                         dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_Y ) )
                     {
-                        String refOccupation = almmOccupation.standard(occupation);
+                        String refOccupation = almmOccupation.standard( occupation );
 
                         if( debug ) { showMessage( "occupation: " + refOccupation, false, true ); }
 
@@ -2893,11 +2894,188 @@ public class LinksCleanedThread extends Thread
 
         showMessage( funcname + "...", false, true );
 
+        almmLitAge = new TabletoArrayListMultimap( dbconRefRead, null, "ref_age", "original", null );
+        int size = almmLitAge.numkeys();
+        showMessage( "Reference table: ref_age [" + size + " records]", false, true );
+
+        showMessage( "Processing standardAgeLiteral for source: " + source + "...", false, true );
+        standardAgeLiteral(debug, source);
+
+
         showMessage( "Processing standardAge for source: " + source + "...", false, true );
         standardAge( debug, source );
 
+        almmLitAge.free();
+
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doAge
+
+
+
+        /**
+     * @param source
+     */
+    public void standardAgeLiteral( boolean debug, String source )
+    {
+        int count = 0;
+        int stepstate = count_step;
+
+        try
+        {
+            String selectQuery = "SELECT id_person , age_literal, age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
+            if( debug ) { showMessage( selectQuery, false, true ); }
+
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+
+            while( rs.next() )
+            {
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
+                    stepstate += count_step;
+                }
+
+                int id_person = rs.getInt( "id_person" );
+                int age_year  = rs.getInt( "age_year" );
+                int age_month = rs.getInt( "age_month" );
+                int age_week  = rs.getInt( "age_week" );
+                int age_day   = rs.getInt( "age_day" );
+
+                String age_literal = rs.getString( "age_literal" );
+
+                boolean numeric = true;
+                int lit_year = 0;
+
+                if( age_literal == null ) {
+                    continue;
+                }
+                else
+                {
+                    try {
+                        lit_year = Integer.parseInt( age_literal );
+                        numeric = true;
+                    }
+                    catch( NumberFormatException nfe ) {
+                        numeric = false;        // not a single number
+                    }
+                    catch( Exception lex ) {
+                        showMessage( "count: " + count + " Exception during standardAgeLiteral: " + lex.getMessage(), false, true );
+                        lex.printStackTrace( new PrintStream( System.out ) );
+
+                        continue;
+                    }
+                }
+
+                if( numeric && lit_year > 0) {
+                    String standard_year_str = almmLitAge.value( "standard_year",  age_literal );
+                    int standard_year = Integer.parseInt( standard_year_str );
+
+                    if( lit_year != standard_year ) { addToReportPerson( id_person, source, 261, lit_year + " != " + standard_year ); }    // warning 261
+
+                    String queryLiteral = PersonC.updateQuery( "age_literal", age_literal, id_person );
+                    dbconCleaned.runQuery( queryLiteral );
+
+                    String queryYear = PersonC.updateQuery( "age_year", standard_year_str, id_person );
+                    dbconCleaned.runQuery( queryYear );
+
+                    continue;
+                }
+
+                boolean check4 = false;
+                boolean exists = false;
+                exists = almmLitAge.contains( age_literal );
+                if( exists )
+                {
+                    String refSCode = almmLitAge.code(age_literal);
+                    if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
+
+                    if( refSCode.equals( SC_X ) )
+                    {
+                        if( debug ) { showMessage( "Warning 251 (via SC_X): id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
+                        addToReportPerson( id_person, source, 251, age_literal );      // warning 251
+
+                        String query = PersonC.updateQuery( "age_literal", age_literal, id_person) ;
+                        dbconCleaned.runQuery( query );
+                    }
+                    else if( refSCode.equals( SC_N ) )
+                    {
+                        if( debug ) { showMessage( "Warning 253: id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
+                        addToReportPerson( id_person, source, 253, age_literal );      // warning 253
+                    }
+                    else if( refSCode.equals( SC_U ) )
+                    {
+                        check4 = true;      // below
+
+                        if (debug) { showMessage("Warning 255: id_person: " + id_person + ", age_literal: " + age_literal, false, true); }
+                        addToReportPerson(id_person, source, 255, age_literal);      // warning 255
+
+                        String standard_year_str = almmLitAge.value( "age_literal", age_literal );
+
+                        String query = PersonC.updateQuery("age_literal", standard_year_str, id_person);
+                        dbconCleaned.runQuery(query);
+                    }
+                    else if( refSCode.equals( SC_Y ) )
+                    {
+                        check4 = true;      // below
+                    }
+                    else      // Invalid standard code
+                    {
+                        if( debug ) { showMessage("Warning 259: id_person: " + id_person + ", age_literal: " + age_literal, false, true); }
+                        addToReportPerson( id_person, source, 259, age_literal );      // warning 259
+                    }
+
+                    if( check4 )
+                    {
+                        String standard_year_str  = almmLitAge.value( "standard_year",  age_literal );
+                        String standard_month_str = almmLitAge.value( "standard_month", age_literal );
+                        String standard_week_str  = almmLitAge.value( "standard_week",  age_literal );
+                        String standard_day_str   = almmLitAge.value( "standard_day",   age_literal );
+
+                        int standard_year  = Integer.parseInt( standard_year_str );
+                        int standard_month = Integer.parseInt( standard_month_str );
+                        int standard_week  = Integer.parseInt( standard_week_str );
+                        int standard_day   = Integer.parseInt( standard_day_str );
+
+                        if( debug ) {
+                            showMessage( "age_literal: " + age_literal + ", year: " + standard_year + ", month: "
+                                    + standard_month + ", week: " + standard_week + ", day: " + standard_day, false, true);
+                        }
+
+                        if( age_year != standard_year ) { addToReportPerson( id_person, source, 261, standard_year_str ); }     // warning 261
+                        String query = PersonC.updateQuery( "age_year", standard_year_str, id_person );
+                        dbconCleaned.runQuery( query );
+
+                        if( age_month != standard_month ) { addToReportPerson( id_person, source, 262, standard_month_str ); }  // warning 262
+                        query = PersonC.updateQuery( "age_month", standard_month_str, id_person );
+                        dbconCleaned.runQuery( query );
+
+                        if( age_week != standard_week ) { addToReportPerson( id_person, source, 263, standard_week_str ); }     // warning 263
+                        query = PersonC.updateQuery( "age_week", standard_week_str, id_person );
+                        dbconCleaned.runQuery( query );
+
+                        if( age_day != standard_day ) { addToReportPerson( id_person, source, 264, standard_day_str ); }        // warning 264
+                        query = PersonC.updateQuery( "age_day", standard_day_str, id_person );
+                        dbconCleaned.runQuery( query );
+                    }
+                }
+                else        // not present ion ref, collect as new
+                {
+                    if (debug) { showMessage( "Warning 251: id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
+                    addToReportPerson( id_person, source, 251, age_literal );      // warning 251
+
+                    almmLitAge.add( age_literal );
+
+                    String query = PersonC.updateQuery( "age_literal", age_literal, id_person );
+                    dbconCleaned.runQuery( query );
+                }
+            }
+        }
+        catch( Exception ex ) {
+            showMessage( "count: " + count + " Exception during standardAgeLiteral: " + ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardAgeLiteral
+
 
 
     /**
@@ -2908,8 +3086,8 @@ public class LinksCleanedThread extends Thread
         int count = 0;
         int stepstate = count_step;
 
-        try {
-
+        try
+        {
             String selectQuery = "SELECT id_person , age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
             if( debug ) { showMessage( selectQuery, false, true ); }
 
@@ -2978,7 +3156,7 @@ public class LinksCleanedThread extends Thread
             //showMessage( count + " person records", false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Age: " + ex.getMessage(), false, true );
+            showMessage( "count: " + count + " Exception during standardAge: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAge
@@ -3285,8 +3463,6 @@ public class LinksCleanedThread extends Thread
             showMessage( "person_c records: " + total, true, true );
             showMessage( "person_c records: " + total, false, true );
 
-            MinMaxDateSet mmds = new MinMaxDateSet();
-
             while( rsPersons.next() )
             {
                 count++;
@@ -3316,6 +3492,8 @@ public class LinksCleanedThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
+                if( role == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
+
                 if( id_person == 102266679 ) { debug = true; }
                 else  { debug = false; }
 
@@ -3341,7 +3519,8 @@ public class LinksCleanedThread extends Thread
                     showMessage( "death: "                + death,                false, true );
                 }
 
-                // Fill object
+                MinMaxDateSet mmds = new MinMaxDateSet();
+
                 mmds.setRegistrationId( id_registration );
                 mmds.setSourceId( id_source );
                 mmds.setRegistrationDate( registrationDate );
@@ -3483,6 +3662,8 @@ public class LinksCleanedThread extends Thread
     private DivideMinMaxDatumSet minMaxDate( boolean debug, MinMaxDateSet inputInfo )
     throws Exception
     {
+        if( inputInfo.getPersonRole() == 0 ) { showMessage( "minMaxDate() role = 0", false, true ); }
+
         if( debug ) { showMessage( "minMaxDate()", false, true ); }
 
         // registration date
@@ -3576,8 +3757,8 @@ public class LinksCleanedThread extends Thread
                 inputInfo.getDeath(),
                 AgeInYears );
 
-            returnSet.setMinYear(mmj.getMinYear());
-            returnSet.setMaxYear(mmj.getMaxYear());
+            returnSet.setMinYear( mmj.getMinYear() );
+            returnSet.setMaxYear( mmj.getMaxYear() );
 
             return returnSet;
         } // birth year given
@@ -3911,6 +4092,8 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
+        if( role == 0 ) { showMessage( "minMaxCalculation() role = 0", false, true ); }
+
         if( debug ) { showMessage( "minMaxCalculation()", false, true ); }
 
         String min_age_0 = "n";
@@ -4060,11 +4243,14 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param id_person
      * @param id_registration
      * @param main_type
      * @param date_type
      * @param role
+     * @param age_reported
+     * @param age_main_role
      * @return
      * @throws Exception
      */
@@ -4081,6 +4267,8 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
+        if( role == 0 ) { showMessage( "minMaxMainAge() role = 0", false, true ); }
+
         boolean done = false;
 
         MinMaxMainAgeSet mmmas = new MinMaxMainAgeSet();
