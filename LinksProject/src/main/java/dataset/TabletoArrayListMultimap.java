@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-30-Sep-2014 Latest change
+ * FL-30-Oct-2014 Latest change
  */
 public class TabletoArrayListMultimap
 {
@@ -212,11 +212,11 @@ public class TabletoArrayListMultimap
 
                 String strValue = "";
 
-                if( ct == 4 ) {
+                if( ct == -6 || ct == 4 || ct == 5 ) {
                     int intValue = rs.getInt( c );
                     strValue = Integer.toString( intValue );
                 }
-                else if( ct == 1 || ct ==12 ) {
+                else if( ct == 1 || ct == 12 ) {
                     strValue = rs.getString( c );
                     if( strValue != null ) { strValue.toLowerCase(); }
                 }
@@ -330,7 +330,7 @@ public class TabletoArrayListMultimap
 
                 String strValue = "";
 
-                if( ct == -6 || ct == 4 ) {
+                if( ct == -6 || ct == 4 || ct == 5 ) {
                     int intValue = rs.getInt( c );
                     strValue = Integer.toString( intValue );
                 }
@@ -347,7 +347,8 @@ public class TabletoArrayListMultimap
                 {
                     original = strValue;
                     // toLowerCase() is needed for Location keys; the others are already lowercase
-                    key = original.toLowerCase();
+                    if( original == null ) { key = original; }
+                    else { key = original.toLowerCase(); }
                 }
                 else { values.add( strValue ); }
             }

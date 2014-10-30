@@ -2894,16 +2894,21 @@ public class LinksCleanedThread extends Thread
 
         showMessage( funcname + "...", false, true );
 
-        almmLitAge = new TabletoArrayListMultimap( dbconRefRead, null, "ref_age", "original", null );
+        almmLitAge = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
         int size = almmLitAge.numkeys();
         showMessage( "Reference table: ref_age [" + size + " records]", false, true );
 
-        showMessage( "Processing standardAgeLiteral for source: " + source + "...", false, true );
-        standardAgeLiteral(debug, source);
+        long timeSAL = System.currentTimeMillis();
+        String msg = "Processing standardAgeLiteral for source: " + source ;
+        showMessage( msg + "...", false, true );
+        standardAgeLiteral( debug, source );
+        elapsedShowMessage( msg, timeSAL, System.currentTimeMillis() );
 
-
-        showMessage( "Processing standardAge for source: " + source + "...", false, true );
+        long timeSA = System.currentTimeMillis();
+        msg = "Processing standardAge for source: " + source ;
+        showMessage( msg + "...", false, true );
         standardAge( debug, source );
+        elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
 
         almmLitAge.free();
 
@@ -2967,7 +2972,8 @@ public class LinksCleanedThread extends Thread
                 }
 
                 if( numeric && lit_year > 0) {
-                    String standard_year_str = almmLitAge.value( "standard_year",  age_literal );
+                    String standard_year_str = almmLitAge.standard( age_literal );
+                    if( standard_year_str.isEmpty() ) { standard_year_str = "0"; }
                     int standard_year = Integer.parseInt( standard_year_str );
 
                     if( lit_year != standard_year ) { addToReportPerson( id_person, source, 261, lit_year + " != " + standard_year ); }    // warning 261
@@ -3009,7 +3015,7 @@ public class LinksCleanedThread extends Thread
                         if (debug) { showMessage("Warning 255: id_person: " + id_person + ", age_literal: " + age_literal, false, true); }
                         addToReportPerson(id_person, source, 255, age_literal);      // warning 255
 
-                        String standard_year_str = almmLitAge.value( "age_literal", age_literal );
+                        String standard_year_str = almmLitAge.standard( age_literal );
 
                         String query = PersonC.updateQuery("age_literal", standard_year_str, id_person);
                         dbconCleaned.runQuery(query);
@@ -3026,7 +3032,7 @@ public class LinksCleanedThread extends Thread
 
                     if( check4 )
                     {
-                        String standard_year_str  = almmLitAge.value( "standard_year",  age_literal );
+                        String standard_year_str  = almmLitAge.standard( age_literal );
                         String standard_month_str = almmLitAge.value( "standard_month", age_literal );
                         String standard_week_str  = almmLitAge.value( "standard_week",  age_literal );
                         String standard_day_str   = almmLitAge.value( "standard_day",   age_literal );
@@ -3058,7 +3064,7 @@ public class LinksCleanedThread extends Thread
                         dbconCleaned.runQuery( query );
                     }
                 }
-                else        // not present ion ref, collect as new
+                else        // not present in ref, collect as new
                 {
                     if (debug) { showMessage( "Warning 251: id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
                     addToReportPerson( id_person, source, 251, age_literal );      // warning 251
@@ -3378,6 +3384,9 @@ public class LinksCleanedThread extends Thread
         showMessage( funcname + "...", false, true );
 
         doAge(  debug, go, source );        // required for dates
+        showMessage( funcname + ": skipping remains of doDates()", false, true );
+        if( true ) { return; }
+
         doRole( debug, go, source );        // required for dates
 
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
@@ -4985,7 +4994,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        almmMarriageYear = new TabletoArrayListMultimap( dbconRefRead, null, "ref_minmax_marriageyear", "role_A", "role_B" );
+        almmMarriageYear = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
         //almmMarriageYear.contentsOld();
 
         minMaxMarriageYear( debug, source );
