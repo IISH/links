@@ -65,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-24-Oct-2014 Latest change
+ * FL-31-Oct-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2452,7 +2452,7 @@ public class ManagerGui extends javax.swing.JFrame
         java.awt.EventQueue.invokeLater( new Runnable() {
 
             public void run() {
-            String timestamp1 = "30-Oct-2014 11:42";
+            String timestamp1 = "31-Oct-2014 14:46";
 
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
