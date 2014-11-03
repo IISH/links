@@ -45,7 +45,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-31-Oct-2014 Latest change
+ * FL-03-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -2637,7 +2637,7 @@ public class LinksCleanedThread extends Thread
                 int registration_maintype = rs.getInt( "registration_maintype" );
                 String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
-                String refQuery = "SELECT * FROM ref_registration WHERE main_type = " + registration_maintype + " AND original = '" + registration_type + "'";
+                String refQuery = "SELECT * FROM ref_registration WHERE main_type = '" + registration_maintype + "' AND original = '" + registration_type + "'";
                 ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
 
                 if( ref.next() )        // compare with reference
@@ -2683,7 +2683,7 @@ public class LinksCleanedThread extends Thread
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51
 
                     // add to links_general
-                    dbconRefRead.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "'," + registration_maintype + ",'x')" );
+                    dbconRefRead.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
 
                     // update links_cleaned_.registration_c
                     String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
@@ -3566,6 +3566,8 @@ public class LinksCleanedThread extends Thread
 
                 String type_date = "";
 
+                if( mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
+
                 if( birth_date_valid != 1 )                 // invalid birth date
                 {
                     if( debug ) { showMessage( "invalid birth date", false, true ); }
@@ -4098,7 +4100,7 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
-        //if( role == 0 ) { showMessage( "minMaxCalculation() role = 0", false, true ); }
+        if( role == 0 ) { showMessage( "minMaxCalculation() role = 0", false, true ); }
 
         if( debug ) { showMessage( "minMaxCalculation()", false, true ); }
 
@@ -4273,7 +4275,7 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
-        //if( role == 0 ) { showMessage( "minMaxMainAge() role = 0", false, true ); }
+        if( role == 0 ) { showMessage( "minMaxMainAge() role = 0", false, true ); }
 
         boolean done = false;
 
@@ -5107,7 +5109,7 @@ public class LinksCleanedThread extends Thread
                 }
 
                 if( countB == 0 ) {
-                    showMessage( "No match for roleB: " + roleB, false, true );
+                    if( debug ) { showMessage( "No match for roleB: " + roleB, false, true ); }
                     continue;
                 }
                 else if( countB != 1 ) {
