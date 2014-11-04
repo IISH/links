@@ -699,7 +699,8 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRenewData( boolean debug, boolean go, String source ) throws Exception
+    private void doRenewData( boolean debug, boolean go, String source )
+    throws Exception
     {
         String funcname = "doRenewData";
         if( !go ) {
@@ -721,6 +722,27 @@ public class LinksCleanedThread extends Thread
         }
         dbconCleaned.runQuery( deletePerson );
         dbconCleaned.runQuery( deleteRegist );
+
+        /*
+        // if links_cleaned is now empty, we reset the AUTO_INCREMENT
+        // that eases comparison with links_a2a tables
+        String qPersonCCount = "SELECT COUNT(*) FROM person_c";
+        String qRegistCCount = "SELECT COUNT(*) FROM registration_c";
+        ResultSet rsP = dbconCleaned.runQueryWithResult( qPersonCCount );
+        ResultSet rsR = dbconCleaned.runQueryWithResult( qRegistCCount );
+        rsP.first();
+        int personCCount = rsP.getInt( "COUNT(*)" );
+        rsR.first();
+        int registCCount = rsR.getInt( "COUNT(*)" );
+
+        if( personCCount == 0 && registCCount == 0) {
+            showMessage( "Resetting AUTO_INCREMENTs for links_cleaned", false, true );
+            String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
+            String auincRegist = "ALTER TABLE registration_c AUTO_INCREMENT = 1";
+            dbconCleaned.runQuery( auincPerson );
+            dbconCleaned.runQuery( auincRegist );
+        }
+        */
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
@@ -770,15 +792,8 @@ public class LinksCleanedThread extends Thread
 
         MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
 
-        String mmss = "";
         String msg = "";
-        String ts = "";                               // timestamp
-
         long start = 0;
-        long stop = 0;
-
-        ts = LinksSpecific.getTimeStamp2("HH:mm:ss");
-        System.out.println(ts + " opts.isDoNames");
 
         // Loading Prepiece/Suffix/Alias reference tables
         start = System.currentTimeMillis();
@@ -1870,7 +1885,7 @@ public class LinksCleanedThread extends Thread
     {
         String csvname = "familyname_t_" + source + ".csv";
 
-        showMessage( "Removing " + csvname, false, true );
+        showMessage( "Removing file " + csvname, false, true );
 
         java.io.File f = new java.io.File( csvname );
         f.delete();
@@ -1965,7 +1980,7 @@ public class LinksCleanedThread extends Thread
     {
         String csvname = "firstname_t_" + source + ".csv";
 
-        showMessage( "Removing " + csvname, false, true );
+        showMessage( "Removing file " + csvname, false, true );
 
         File f = new File( csvname );
         f.delete();
