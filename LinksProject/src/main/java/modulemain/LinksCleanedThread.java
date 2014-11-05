@@ -261,7 +261,6 @@ public class LinksCleanedThread extends Thread
 
             for( int sourceId : sourceList )
             {
-                boolean debug = false;
                 String source = Integer.toString( sourceId );
 
                 //CleaningThread ct = new CleaningThread( source );
@@ -279,6 +278,8 @@ public class LinksCleanedThread extends Thread
 
                 doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
+                doAge(   opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Age
+                doRole(  opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Role
                 doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
                 doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
@@ -723,7 +724,7 @@ public class LinksCleanedThread extends Thread
         dbconCleaned.runQuery( deletePerson );
         dbconCleaned.runQuery( deleteRegist );
 
-        /*
+
         // if links_cleaned is now empty, we reset the AUTO_INCREMENT
         // that eases comparison with links_a2a tables
         String qPersonCCount = "SELECT COUNT(*) FROM person_c";
@@ -742,7 +743,7 @@ public class LinksCleanedThread extends Thread
             dbconCleaned.runQuery( auincPerson );
             dbconCleaned.runQuery( auincRegist );
         }
-        */
+
 
         // Copy selected columns links_original data to links_cleaned
         // Create queries
@@ -3396,11 +3397,10 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        doAge(  debug, go, source );        // required for dates
-        showMessage( funcname + ": skipping remains of doDates()", false, true );
+        //doAge(  debug, go, source );        // required for dates, again separate call
+        //doRole( debug, go, source );        // required for dates, again separate call
 
-        doRole( debug, go, source );        // required for dates
-
+        long ts = System.currentTimeMillis();
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
         standardRegistrationDate( debug, source );
 
@@ -3415,17 +3415,25 @@ public class LinksCleanedThread extends Thread
         type = "death";
         showMessage( "Processing standardDate for source: " + source + " for: " + type + "...", false, true );
         standardDate( debug, source, type );
+        elapsedShowMessage( "Processing standard dates", ts, System.currentTimeMillis() );
 
         // Fill empty dates with registration dates
+        ts = System.currentTimeMillis();
+        showMessage( "Flagging empty dates (-> Reg dates) for source: " + source + "...", false, true );
         flagBirthDate( debug );
         flagMarriageDate( debug );
         flagDeathDate( debug );
+        elapsedShowMessage( "Flagging empty dates", ts, System.currentTimeMillis() );
 
+        ts = System.currentTimeMillis();
         showMessage( "Processing minMaxValidDate for source: " + source + "...", false, true );
         minMaxValidDate( debug, source );
+        elapsedShowMessage( "Processing minMaxValidDate", ts, System.currentTimeMillis() );
 
+        ts = System.currentTimeMillis();
         showMessage( "Processing minMaxDateMain for source: " + source + "...", false, true );
         minMaxDateMain( debug, source );
+        elapsedShowMessage( "Processing Processing minMaxDateMain", ts, System.currentTimeMillis() );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
     } // doDates
@@ -5345,31 +5353,31 @@ public class LinksCleanedThread extends Thread
         try
         {
             if( debug ) { showMessage( query1, false, true ); }
-            else { showMessage( "birth_date_min", false, true ); }
+            else { showMessage( "1-of-7: birth_date_min", false, true ); }
             dbconCleaned.runQuery( query1 );
 
             if( debug ) { showMessage( query2, false, true ); }
-            else { showMessage( "birth_date_max", false, true ); }
+            else { showMessage( "2-of-7: birth_date_max", false, true ); }
             dbconCleaned.runQuery( query2 );
 
             if( debug ) { showMessage( query3, false, true ); }
-            else { showMessage( "mar_date_min", false, true ); }
+            else { showMessage( "3-of-7: mar_date_min", false, true ); }
             dbconCleaned.runQuery( query3 );
 
             if( debug ) { showMessage( query4, false, true ); }
-            else { showMessage( "mar_date_max", false, true ); }
+            else { showMessage( "4-of-7: mar_date_max", false, true ); }
             dbconCleaned.runQuery( query4 );
 
             if( debug ) { showMessage( query5, false, true ); }
-            else { showMessage( "death_date_min", false, true ); }
+            else { showMessage( "5-of-7: death_date_min", false, true ); }
             dbconCleaned.runQuery( query5 );
 
             if( debug ) { showMessage( query6, false, true ); }
-            else { showMessage( "death_date_max", false, true ); }
+            else { showMessage( "6-of-7: death_date_max", false, true ); }
             dbconCleaned.runQuery( query6 );
 
             if( debug ) { showMessage( queryReg, false, true ); }
-            else { showMessage( "registration_days", false, true ); }
+            else { showMessage( "7-of-7: registration_days", false, true ); }
             dbconCleaned.runQuery( queryReg );
         }
         catch( Exception ex ) {
