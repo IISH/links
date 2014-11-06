@@ -770,6 +770,7 @@ public class LinksCleanedThread extends Thread
         dbconCleaned.runQuery( keysRegistration );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doRenewData
 
 
@@ -920,6 +921,7 @@ public class LinksCleanedThread extends Thread
         showTimingMessage( msg, start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doNames
 
 
@@ -2098,6 +2100,7 @@ public class LinksCleanedThread extends Thread
         showTimingMessage( "Updating reference table: location ", start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doLocations
 
 
@@ -2110,7 +2113,7 @@ public class LinksCleanedThread extends Thread
      * @param tt
      */
     private void standardLocation( boolean debug, ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
-            throws Exception
+    throws Exception
     {
         int count = 0;
         int count_empty = 0;
@@ -2239,7 +2242,7 @@ public class LinksCleanedThread extends Thread
             if( count_new == 0 ) { strNew = "no new locations"; }
             else if( count_new == 1 ) { strNew = "1 new location"; }
             else { strNew = "" + count_new + " new locations"; }
-            showMessage( count + " location records, " + count_empty + " without location, " + strNew, false, true );
+            showMessage( count + " " + locationFieldO + " records, " + count_empty + " without location, " + strNew, false, true );
         }
         catch( Exception ex ) {
             throw new Exception( "count: " + count + " Exception while cleaning Location: " + ex.getMessage() );
@@ -2253,6 +2256,7 @@ public class LinksCleanedThread extends Thread
     public void standardRegistrationLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
+        if( debug ) { showMessage( "standardRegistrationLocation: " + selectQuery, false, true ); }
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -2272,6 +2276,7 @@ public class LinksCleanedThread extends Thread
     public void standardBirthLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
+        if( debug ) { showMessage( "standardBirthLocation: " + selectQuery, false, true ); }
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -2291,6 +2296,7 @@ public class LinksCleanedThread extends Thread
     public void standardMarLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
+        if( debug ) { showMessage( "standardMarLocation: " + selectQuery, false, true ); }
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -2309,6 +2315,7 @@ public class LinksCleanedThread extends Thread
     public void standardLivingLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
+        if( debug ) { showMessage( "standardLivingLocation: " + selectQuery, false, true ); }
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -2327,6 +2334,7 @@ public class LinksCleanedThread extends Thread
     public void standardDeathLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
+        if( debug ) { showMessage( "standardDeathLocation: " + selectQuery, false, true ); }
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -2379,6 +2387,7 @@ public class LinksCleanedThread extends Thread
         almmCivilstatus.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doStatusSex
 
 
@@ -2622,6 +2631,7 @@ public class LinksCleanedThread extends Thread
         standardRegistrationType( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doRegistrationType
 
 
@@ -2752,6 +2762,7 @@ public class LinksCleanedThread extends Thread
         almmOccupation.free();
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doOccupation
 
 
@@ -2929,6 +2940,7 @@ public class LinksCleanedThread extends Thread
         almmLitAge.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doAge
 
 
@@ -3216,6 +3228,7 @@ public class LinksCleanedThread extends Thread
         standardAlive( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doRole
 
 
@@ -3436,6 +3449,7 @@ public class LinksCleanedThread extends Thread
         elapsedShowMessage( "Processing Processing minMaxDateMain", ts, System.currentTimeMillis() );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doDates
 
 
@@ -4369,8 +4383,8 @@ public class LinksCleanedThread extends Thread
                 if( debug ) { showMessage( "querying person_c: " + readPc, false, true ); }
                 if( readPc ) {
                     String queryPc = "SELECT age_day, age_week, age_month, age_year, role FROM links_cleaned.person_c"
-                        + " WHERE id_registration = '" + id_registration + "'"
-                        + " AND role = '" + mm_main_role + "'";
+                        + " WHERE id_registration = " + id_registration
+                        + " AND role = " + mm_main_role;
 
                     if( debug ) { showMessage( queryPc, false, true ); }
                     ResultSet rs_pc = dbconCleaned.runQueryWithResult( queryPc );
@@ -5024,6 +5038,7 @@ public class LinksCleanedThread extends Thread
         almmMarriageYear.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doMinMaxMarriage
 
 
@@ -5280,6 +5295,7 @@ public class LinksCleanedThread extends Thread
         partsToDate( source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doPartsToFullDate
 
 
@@ -5326,6 +5342,7 @@ public class LinksCleanedThread extends Thread
         daysSinceBegin( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doDaysSinceBegin
 
 
@@ -5409,6 +5426,7 @@ public class LinksCleanedThread extends Thread
         postTasks( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doPostTasks
 
 
@@ -5502,6 +5520,7 @@ public class LinksCleanedThread extends Thread
         mg.firePrematch();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doPrematch
 
      /*---< end Cleaning options >-------------------------------------------*/
