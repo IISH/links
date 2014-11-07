@@ -529,8 +529,8 @@ new FormModel {
 					"title": "ORIGINAL"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq l {space :::p, par l {comp bnLOLCstartProcess::l:::x:1, comp jLabel51::l::484:x, seq t {par t {seq t {par l {comp jLabel4::l::174:x, comp jLabel42::l::174:x, comp jLabel44::l::174:x, comp jLabel43::l::174:x}, space :p:33:p, par l:::p {comp tbLOLCuser::t:::x:1, comp tbLOLCpass:::::x:1, seq {comp tbLOLCurl:::p:257:p:1, space :0:0:x}, comp tbLOLCSourceId:::::x:1}}, seq l {par l {par t:::p {comp label3:::::x, comp label1::l:::x, comp label2::l:::x}, comp label4::l:p:185:p}, space :p:22:p, par l {comp tbLOLCrefurl::::257:x, comp tbLOLCrefuser::::257:x, comp tbLOLCrefpass::::257:x, comp tbLOLCrefdb::::257:x}}}, space :20:20:p}, seq l {par t:::p {seq {comp cbCdoDaysSinceBegin:::p:200:p:1, space :::p, comp cbCdbgDaysSinceBegin:::::x}, seq l {par t:::p {comp cbCdoRefreshData::l::200:x:1, comp cbCdoNames::::200:x:1, comp cbCdoLocations::l::200:x:1, comp cbCdoStatusSex::l::200:x:1, comp cbCdoRegType::l::200:x:1, comp cbCdoDates::l::200:x:1, comp cbCdoMinMaxMarriage::l::200:x, comp cbCdoOccupation::l::200:x, comp cbCdoPartsToFullDate::l::200:x}, space :::p, par l:::p {comp cbCdbgDates:::::x, comp cbCdbgOccupation::t:::x, comp cbCdbgRefreshData::t:::x, comp cbCdbgNames::t:::x, comp cbCdbgLocations::t:::x, comp cbCdbgStatusSex::t:::x, comp cbCdbgRegType::t:::x, comp cbCdbgMinMaxMarriage:::::x, comp cbCdbgPartsToFullDate:::::x}}}, space ::45:x, par l:::p {comp cbCdoPostTasks:::::x:1, comp cbCdoPrematch:::p:160:p:1}, space :p:9:p}}, par l {seq {space :p:6:p, comp jLabel45:::p::p}, seq l {space :::p, par l {comp tbLOLClatestOutput:::p:602:p:1, comp jScrollPane6:::::x:1}}}, space :p:11:p}}"
-					"$verticalGroup": "par l {seq l {space :::p, par l {seq l {space :p:1:p, comp jLabel45:::p::p}, comp jLabel44::l:p::p, comp tbLOLCSourceId:::p:19:p}, par l {seq l {space :::p, comp tbLOLClatestOutput:::p::p, space :p:8:p, comp jScrollPane6:::p:568:p:1}, seq l {par l {seq {space :p:12:p, par b {comp jLabel4::b:p::p, comp tbLOLCurl::b:p::p}, space :::p, par b {comp jLabel42::b:p::p, comp tbLOLCuser::b:p::p}, space :::p, par l {comp jLabel43:::p:17:p, comp tbLOLCpass:::p::p}, space u:::p, par b {comp label1::b:p::p, comp tbLOLCrefurl::b:p::p}, space :::p, par b {comp tbLOLCrefuser::b:p::p, comp label2::b:p::p}, space :::p, par l {comp tbLOLCrefpass:::p::p, comp label3:::p::p}, space :::p, par l {comp tbLOLCrefdb:::p::p, comp label4::l:p::p}, space ::101:x, comp jLabel51:::p::p, space :p:15:p, par b {comp cbCdoRefreshData::b:p::p, comp cbCdbgRefreshData::b:p::p}, space u:::p, par b {comp cbCdoNames::b:p::p, comp cbCdbgNames::b:p::p}}, seq {space :::x, comp cbCdoPostTasks:::p::p, space :::p, comp cbCdoPrematch:::p::p}}, space u:::p, par b {comp cbCdoLocations::b:p::p, comp cbCdbgLocations::b:p::p}, space u:::p, par b {comp cbCdoStatusSex::b:p::p, comp cbCdbgStatusSex::b:p::p}, space u:::p, par b {comp cbCdoRegType::b:p::p, comp cbCdbgRegType::b:p::p}, space u:::p, par b {comp cbCdoOccupation::b:p::p, comp cbCdbgOccupation::b:p::p}, space u:::p, par b {comp cbCdoDates::b:p::p, comp cbCdbgDates::b:p::p}, space u:::p, par b {comp cbCdoMinMaxMarriage::b:p::p, comp cbCdbgMinMaxMarriage::b:p::p}, space u:::p, par b {comp cbCdoPartsToFullDate::b:p::p, comp cbCdbgPartsToFullDate::b:p::p}, space u:::p, par b {comp cbCdoDaysSinceBegin::b:p::p, comp cbCdbgDaysSinceBegin::b:p::p}, space :p:2:p, comp bnLOLCstartProcess:::p::p}}, space :::p}}"
+					"$horizontalGroup": "par l {seq l {space :::p, par l {comp bnLOLCstartProcess::l:::x:1, seq t {par t {seq t {par l {comp jLabel4::l:::x, comp jLabel42::l:::x, comp jLabel44::l:::x, comp jLabel43::l:::x}, space :p:33:p, par l:::p {comp tbLOLCuser::t:::x:1, comp tbLOLCpass:::::x:1, seq {comp tbLOLCurl:::p:257:p:1, space :0:0:x}, comp tbLOLCSourceId:::::x:1}}, seq l {par l {par t:::p {comp label3:::::x, comp label1::l:::x, comp label2::l:::x}, comp label4::l:p:185:p}, space :p:42:p, par l {comp tbLOLCrefpass::t:::x, comp tbLOLCrefuser::t:::x, comp tbLOLCrefurl:::::x, comp tbLOLCrefdb:::::x}}}, space :20:20:p}, seq l {par l {comp cbCdoDaysSinceBegin:::p:200:p:1, par l {par t:::p {comp cbCdoFamilynames::::200:x:1, comp cbCdoLocations::l::200:x:1, comp cbCdoStatusSex::l::200:x:1, comp cbCdoRegType::l::200:x:1, comp cbCdoDates::l::200:x:1, comp cbCdoMinMaxMarriage::l::200:x, comp cbCdoOccupation::l::200:x, comp cbCdoPartsToFullDate::l::200:x}, seq t {comp cbCdoFirstnames:::p:135:p, space :p:200:p}}}, space :::x, par l:::p {comp cbCdoPostTasks:::::x:1, comp cbCdoPrematch:::p:160:p:1}, space :p:9:p}, comp jLabel51::t:::x, comp cbCdoRefreshData:::p:200:p:1}, par l {seq {space :p:6:p, comp jLabel45:::p::p}, seq l {space :::p, par l {comp tbLOLClatestOutput:::p:602:p:1, comp jScrollPane6:::::x:1}}}, space :p:11:p}}"
+					"$verticalGroup": "par l {seq l {space :::p, par l {seq l {space :p:1:p, comp jLabel45:::p::p}, comp jLabel44::l:p::p, comp tbLOLCSourceId:::p:19:p}, par l:::p {seq l {space :::p, comp tbLOLClatestOutput:::p::p, space :p:8:p, comp jScrollPane6:::p:568:p:1}, seq l {space :p:12:p, par b {comp jLabel4::b:p::p, comp tbLOLCurl::b:p::p}, space :::p, par b {comp jLabel42::b:p::p, comp tbLOLCuser::b:p::p}, space :::p, par l {comp jLabel43:::p:17:p, comp tbLOLCpass:::p::p}, space u:::p, par b {comp label1::b:p::p, comp tbLOLCrefurl::b:p::p}, space :::p, par b {comp label2::b:p::p, comp tbLOLCrefuser::b:p::p}, space :::p, par l {comp label3:::p::p, comp tbLOLCrefpass:::p::p}, space :::p, par l {comp label4:::p::p, comp tbLOLCrefdb:::p::p}, space :::x, comp jLabel51:::p::p, space :p:4:p, comp cbCdoRefreshData:::p::p, space u:::p, par t {seq t {comp cbCdoPostTasks:::p::p, space :::p, comp cbCdoPrematch:::p::p}, seq t {comp cbCdoFirstnames:::p::p, space u:::p, comp cbCdoFamilynames:::p::p}}, space u:::p, comp cbCdoLocations:::p::p, space u:::p, comp cbCdoStatusSex:::p::p, space u:::p, comp cbCdoRegType:::p::p, space u:::p, comp cbCdoOccupation:::p::p, space u:::p, comp cbCdoDates:::p::p, space u:::p, comp cbCdoMinMaxMarriage:::p::p, space u:::p, comp cbCdoPartsToFullDate:::p::p, space u:::p, comp cbCdoDaysSinceBegin:::p::p, space :p:2:p, comp bnLOLCstartProcess:::p::p}}, space :::p}}"
 				} ) {
 					name: "pLOLC"
 					"name": "pLOLC"
@@ -602,9 +602,9 @@ new FormModel {
 						"name": "jLabel51"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdoNames"
+						name: "cbCdoFamilynames"
 						"selected": true
-						"text": "First- and Familynames"
+						"text": "Familynames"
 						"name": "cbCdoNames"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
@@ -699,44 +699,8 @@ new FormModel {
 						"text": "Occupation"
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgRefreshData"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgNames"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgLocations"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgStatusSex"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgRegType"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgOccupation"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgDates"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgMinMaxMarriage"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgPartsToFullDate"
-						"text": "debug"
-					} )
-					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbCdbgDaysSinceBegin"
-						"text": "debug"
+						name: "cbCdoFirstnames"
+						"text": "Firstnames"
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "CLEANED"

@@ -29,7 +29,7 @@ import general.PrintLogger;
  * FL-10-Oct-2014 Occupation added
  * FL-10-Oct-2014 Renamed DoSet -> Options
  * FL-14-Oct-2014 DB opts
- * FL-22-Oct-2014 dbg
+ * FL-07-Nov-2014 dbg
  */
 public class Options
 {
@@ -52,8 +52,11 @@ public class Options
     private boolean doRenewData;
     private boolean dbgRenewData;
 
-    private boolean doNames;
-    private boolean dbgNames;
+    private boolean doFirstnames;
+    private boolean dbgFirstnames;
+
+    private boolean doFamilynames;
+    private boolean dbgFamilynames;
 
     private boolean doLocations;
     private boolean dbgLocations;
@@ -66,6 +69,12 @@ public class Options
 
     private boolean doOccupation;
     private boolean dbgOccupation;
+
+    private boolean doAge;
+    private boolean dbgAge;
+
+    private boolean doRole;
+    private boolean dbgRole;
 
     private boolean doDates;
     private boolean dbgDates;
@@ -143,11 +152,18 @@ public class Options
     public void setDbgRenewData( boolean dbgRenewData ) { this.dbgRenewData = dbgRenewData; }
 
 
-    public boolean  isDoNames() { return  doNames; }
-    public boolean isDbgNames() { return dbgNames; }
+    public boolean  isDoFirstnames() { return  doFirstnames; }
+    public boolean isDbgFirstnames() { return dbgFirstnames; }
 
-    public void  setDoNames( boolean  doNames ) { this.doNames  = doNames; }
-    public void setDbgNames( boolean dbgNames ) { this.dbgNames = doNames; }
+    public void  setDoFirstnames( boolean  doFirstnames ) { this.doFirstnames  = doFirstnames; }
+    public void setDbgFirstnames( boolean dbgFirstnames ) { this.dbgFirstnames = doFirstnames; }
+
+
+    public boolean  isDoFamilynames() { return  doFamilynames; }
+    public boolean isDbgFamilynames() { return dbgFamilynames; }
+
+    public void  setDoFamilynames( boolean  doFamilynames ) { this.doFamilynames  = doFamilynames; }
+    public void setDbgFamilynames( boolean dbgFamilynames ) { this.dbgFamilynames = doFamilynames; }
 
 
     public boolean  isDoLocations() { return  doLocations; }
@@ -176,6 +192,20 @@ public class Options
 
     public void  setDoOccupation( boolean  doOccupation ) { this.doOccupation  =  doOccupation; }
     public void setDbgOccupation( boolean dbgOccupation ) { this.dbgOccupation = dbgOccupation; }
+
+
+    public boolean  isDoAge() { return  doAge; }
+    public boolean isDbgAge() { return dbgAge; }
+
+    public void  setDoAge( boolean  doAge ) { this.doAge  =  doAge; }
+    public void setDbgAge( boolean dbgAge ) { this.dbgAge = dbgAge; }
+
+
+    public boolean  isDoRole() { return  doRole; }
+    public boolean isDbgRole() { return dbgRole; }
+
+    public void  setDoRole( boolean  doRole ) { this.doRole  =  doRole; }
+    public void setDbgRole( boolean dbgRole ) { this.dbgRole = dbgRole; }
 
 
     public boolean  isDoDates() { return  doDates; }

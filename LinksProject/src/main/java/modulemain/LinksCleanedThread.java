@@ -21,7 +21,6 @@ import javax.swing.JTextField;
 import dataset.DateYearMonthDaySet;
 import dataset.DivideMinMaxDatumSet;
 import dataset.Options;
-import dataset.MarriageYearPersonsSet;
 import dataset.MinMaxDateSet;
 import dataset.MinMaxMainAgeSet;
 import dataset.MinMaxYearSet;
@@ -45,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-03-Nov-2014 Latest change
+ * FL-07-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -268,7 +267,9 @@ public class LinksCleanedThread extends Thread
 
                 doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
 
-                doNames( opts.isDbgNames(), opts.isDoNames(), source );                                 // GUI cb: Names
+                doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source );                  // GUI cb: Names
+
+                doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source );               // GUI cb: Names
 
                 doLocations( opts.isDbgLocations(), opts.isDoLocations(), source );                     // GUI cb: Locations
 
@@ -278,8 +279,8 @@ public class LinksCleanedThread extends Thread
 
                 doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
-                doAge(   opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Age
-                doRole(  opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Role
+                doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
+                doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
                 doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
                 doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
@@ -777,13 +778,13 @@ public class LinksCleanedThread extends Thread
     /*---< First- and familynames >-------------------------------------------*/
 
     /**
-     * Names
+     * Firstnames
      * @param go
      * @throws Exception
      */
-    private void doNames( boolean debug, boolean go, String source ) throws Exception
+    private void doFirstnames( boolean debug, boolean go, String source ) throws Exception
     {
-        String funcname = "doNames";
+        String funcname = "doFirstnames";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
@@ -802,14 +803,13 @@ public class LinksCleanedThread extends Thread
         msg = "Loading Prepiece/Suffix/Alias reference tables";
         showMessage( msg + "...", false, true );
 
+        // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
         almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
         almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
         almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
         showTimingMessage( msg, start );
 
-        showMessage( "links_temp", false, true );
-
-        // First name
+        // Firstnames
         String tmp_firstname = "firstname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp", tmp_firstname ) ) {
             showMessage( "Deleting table links_temp." + tmp_firstname, false, true );
@@ -846,7 +846,77 @@ public class LinksCleanedThread extends Thread
         removeFirstnameTable(     dbconTemp, source );
         showTimingMessage( "remains Firstname", start );
 
-        // Family name
+
+        // Firstnames to lowercase
+        start = System.currentTimeMillis();
+        msg = "Converting firstnames to lowercase";
+        showMessage( msg + "...", false, true ) ;
+        String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER( firstname );";
+        dbconCleaned.runQuery( qLower );
+
+
+        showMessage( "standardPrepiece", false, true );
+        standardPrepiece( source );
+        showMessage( "standardSuffix", false, true );
+        standardSuffix( source );
+
+        showTimingMessage( msg, start );
+
+        // Update reference
+        start = System.currentTimeMillis();
+        msg = "Updating reference tables: Prepiece/Suffix/Alias...";
+        showMessage( msg + "...", false, true );
+
+        almmPrepiece.updateTable();
+        almmSuffix.updateTable();
+        almmAlias.updateTable();
+
+        almmPrepiece.free();
+        almmSuffix.free();
+        almmAlias.free();
+
+        dbconTemp.close();
+
+        showTimingMessage( msg, start );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doFirstnames
+
+
+    /**
+     * Familynames
+     * @param go
+     * @throws Exception
+     */
+    private void doFamilynames( boolean debug, boolean go, String source ) throws Exception
+    {
+        String funcname = "doFamilynames";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
+
+        String msg = "";
+        long start = 0;
+
+        // Loading Prepiece/Suffix/Alias reference tables
+        start = System.currentTimeMillis();
+        msg = "Loading Prepiece/Suffix/Alias reference tables";
+        showMessage( msg + "...", false, true );
+
+        // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
+        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        showTimingMessage( msg, start );
+
+        // Familynames
         String tmp_familyname = "familyname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp",tmp_familyname  ) ) {
             showMessage( "Deleting table links_temp." + tmp_familyname, false, true );
@@ -861,8 +931,8 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         almmFamilyname = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
-        numrows = almmFamilyname.numrows();
-        numkeys = almmFamilyname.numkeys();
+        int numrows = almmFamilyname.numrows();
+        int numkeys = almmFamilyname.numkeys();
         showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + almmFamilyname.numkeys(), false, true ); }
@@ -887,18 +957,18 @@ public class LinksCleanedThread extends Thread
         removeFamilynameTable(     dbconTemp, source );
         showTimingMessage( msg, start );
 
-        // KM: Do not delete here.
-        //showMessage("Skipping deleting empty links_cleaned.person_c records.", false, true);
-        //deleteRows();               // Delete records with empty firstname and empty familyname
 
-        // Names to lowercase
+        // Familynames to lowercase
         start = System.currentTimeMillis();
-        msg = "Converting names to lowercase";
-        showMessage( msg + "...", false, true ) ;
-        String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname);";
+        msg = "Converting familynnames to lowercase";
+        showMessage( msg + "...", false, true );
+        String qLower = "UPDATE links_cleaned.person_c SET familyname = LOWER( familyname );";
         dbconCleaned.runQuery( qLower );
 
+
+        showMessage( "standardPrepiece", false, true );
         standardPrepiece( source );
+        showMessage( "standardSuffix", false, true );
         standardSuffix( source );
 
         showTimingMessage( msg, start );
@@ -922,7 +992,7 @@ public class LinksCleanedThread extends Thread
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doNames
+    } // doFamilynames
 
 
     /**
