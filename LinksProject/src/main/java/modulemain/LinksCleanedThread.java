@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-07-Nov-2014 Latest change
+ * FL-10-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -3826,6 +3826,7 @@ public class LinksCleanedThread extends Thread
 
             MinMaxYearSet mmj = minMaxCalculation(
                 debug,
+                inputInfo.getSourceId(),
                 inputInfo.getPersonId(),
                 inputInfo.getRegistrationId(),
                 inputregistrationYearMonthDday.getYear(),
@@ -3863,6 +3864,7 @@ public class LinksCleanedThread extends Thread
 
             MinMaxYearSet mmj = minMaxCalculation(
                 debug,
+                inputInfo.getSourceId(),
                 inputInfo.getPersonId(),
                 inputInfo.getRegistrationId(),
                 regis_year,
@@ -3900,6 +3902,7 @@ public class LinksCleanedThread extends Thread
 
             MinMaxYearSet mmj = minMaxCalculation(
                 debug,
+                inputInfo.getSourceId(),
                 inputInfo.getPersonId(),
                 inputInfo.getRegistrationId(),
                 inputregistrationYearMonthDday.getYear(),
@@ -4166,6 +4169,7 @@ public class LinksCleanedThread extends Thread
 
         MinMaxYearSet mmj = minMaxCalculation(
             debug,
+            inputInfo.getSourceId(),
             inputInfo.getPersonId(),
             inputInfo.getRegistrationId(),
             inputregistrationYearMonthDday.getYear(),
@@ -4196,6 +4200,7 @@ public class LinksCleanedThread extends Thread
     private MinMaxYearSet minMaxCalculation
     (
         boolean debug,
+        int     id_source,
         int     id_person,
         int     id_registration,
         int     reg_year,
@@ -4233,6 +4238,7 @@ public class LinksCleanedThread extends Thread
             MinMaxMainAgeSet mmmas = minMaxMainAge
             (
                 debug,
+                id_source,
                 id_person,
                 id_registration,
                 main_type,
@@ -4372,6 +4378,7 @@ public class LinksCleanedThread extends Thread
     private MinMaxMainAgeSet minMaxMainAge
     (
         boolean debug,
+        int     id_source,
         int     id_person,
         int     id_registration,
         int     main_type,
@@ -4479,7 +4486,14 @@ public class LinksCleanedThread extends Thread
                         mmmas.setMainRole( main_role );
                     }
 
-                    if( countPc != 1 ) {
+                    if( countPc == 0 ) {
+                        showMessage( "minMaxMainAge: zero person_c count", false, true );
+                             if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // EC 271
+                        else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // EC 272
+                        else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // EC 273
+                        else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 274, "" ); }   // EC 274
+                    }
+                    else if( countPc > 1 ) {
                         showMessage( queryPc, false, true );
                         throw new Exception( "minMaxMainAge: person_c count = " + countPc );
                     }

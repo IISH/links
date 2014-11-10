@@ -1,6 +1,8 @@
 package modulemain;
 
 import java.io.File;
+import java.io.PrintStream;
+
 import java.sql.ResultSet;
 
 import javax.swing.JTextArea;
@@ -9,7 +11,9 @@ import javax.swing.JTextField;
 import com.google.common.collect.Range;
 
 import connectors.MySqlConnector;
+import dataset.Options;
 import general.Functions;
+import general.PrintLogger;
 
 /**
  * @author Omar Azouguagh
@@ -17,11 +21,14 @@ import general.Functions;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-15-Aug-2014 Latest change
+ * FL-10-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
 {
+    private Options opts;
+    private PrintLogger plog;
+
     private String db_url;
     private String db_user;
     private String db_pass;
@@ -35,8 +42,8 @@ public class LinksPrematch extends Thread
     private boolean showmsg = true;
     private String endl = ". OK.";              // ".";
 
-    private JTextField ti;
-    private JTextArea ta;
+    private JTextField outputLine;              // used-to-be ti
+    private JTextArea  outputArea;              // used-to-be ta
 
     private MySqlConnector conCleaned;
     private MySqlConnector conPrematch;
@@ -48,13 +55,13 @@ public class LinksPrematch extends Thread
 
     /**
      * Constructor
-     * called from linksPrematch
      *
+     * @param opts
      * @param db_url
      * @param db_user
      * @param db_pass
-     * @param ti
-     * @param ta
+     * @param outputLine
+     * @param outputArea
      * @param bSplitNames
      * @param bUniqueTables
      * @param bLevenshtein
@@ -64,11 +71,14 @@ public class LinksPrematch extends Thread
      */
     public LinksPrematch
     (
+        Options opts,
+
         String db_url,
         String db_user,
         String db_pass,
-        JTextField ti,
-        JTextArea ta,
+
+        JTextField outputLine,
+        JTextArea outputArea,
 
         boolean bSplitNames,
         boolean bUniqueTables,
@@ -78,6 +88,8 @@ public class LinksPrematch extends Thread
     )
     throws Exception
     {
+        this.plog = opts.getLogger();
+
         this.db_url  = db_url;
         this.db_user = db_user;
         this.db_pass = db_pass;
@@ -88,8 +100,8 @@ public class LinksPrematch extends Thread
         this.bNamesToNo    = bNamesToNo;
         this.bBaseTable    = bBaseTable;
 
-        this.ti = ti;
-        this.ta = ta;
+        this.outputLine = outputLine;
+        this.outputArea  = outputArea;
 
         conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
         conPrematch  = new MySqlConnector( db_url, "links_prematch",  db_user, db_pass );
@@ -104,7 +116,7 @@ public class LinksPrematch extends Thread
      *
      * @throws Exception 
      */
-    public LinksPrematch( String db_url, String db_user, String db_pass, JTextArea t, JTextField ti )
+    public LinksPrematch( String db_url, String db_user, String db_pass, JTextArea t, JTextField outputLine )
     throws Exception
     {
         conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
@@ -113,8 +125,8 @@ public class LinksPrematch extends Thread
         conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
         conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
 
-        this.ti = ti;
-        this.ta = t;
+        this.outputLine = outputLine;
+        this.outputArea  = outputArea;
     }
 
     /**
@@ -140,6 +152,7 @@ public class LinksPrematch extends Thread
                 msg = "Splitting names OK " + mmss;
                 showMessage( msg, false, true );
             }
+            else { showMessage( "skipping Splitting names", false, true ); }
 
             if( bUniqueTables ) {
                 showMessage( "Creating unique name tables...", false, true );
@@ -150,6 +163,7 @@ public class LinksPrematch extends Thread
                 msg = "Creating Unique name table OK " + mmss;
                 showMessage( msg, false, true );
             }
+            else { showMessage( "skipping Creating unique name tables", false, true ); }
 
             if( bLevenshtein ) {
                 showMessage( "Computing Levenshtein...", false, true );
@@ -160,6 +174,7 @@ public class LinksPrematch extends Thread
                 msg = "Computing Levenshtein OK " + mmss;
                 showMessage( msg, false, true );
             }
+            else { showMessage( "skipping Computing Levenshtein", false, true ); }
 
             if( bNamesToNo ) {
                 showMessage( "Converting Names to Numbers...", false, true );
@@ -170,6 +185,7 @@ public class LinksPrematch extends Thread
                 msg = "Converting Names to Numbers OK " + mmss;
                 showMessage( msg, false, true );
             }
+            else { showMessage( "skipping Converting Names to Numbers", false, true ); }
 
             if( bBaseTable ) {
                 showMessage( "Creating Base Table...", false, true );
@@ -180,15 +196,16 @@ public class LinksPrematch extends Thread
                 msg = "Creating Base Table OK " + mmss;
                 showMessage( msg, false, true );
             }
+            else { showMessage( "skipping Creating Base Table", false, true ); }
 
             long stopTotal = System.currentTimeMillis();
             mmss = Functions.millisec2hms( startTotal, stopTotal );
-            msg = "Elapsed: " + mmss;
+            msg = "Prematch finished, Elapsed: " + mmss;
             showMessage( msg, false, true );
 
             this.stop();
 
-        } catch( Exception ex ) { ta.append( ex.getMessage() ); }
+        } catch( Exception ex ) { outputArea.append( ex.getMessage() ); }
 
     }
 
@@ -205,6 +222,7 @@ public class LinksPrematch extends Thread
      * @param isMinOnly
      * @param newLine
      */
+    /*
     private void showMessage( String logText, boolean isMinOnly, boolean newLine )
     {
         ti.setText( logText );
@@ -218,14 +236,52 @@ public class LinksPrematch extends Thread
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
                 System.out.printf( "%s ", ts );
-                ta.append( ts + " " );
+                outputArea.append( ts + " " );
             }
 
             System.out.printf( "%s%s", logText, newLineToken );
-            ta.append( logText + newLineToken );
+            outputArea.append( logText + newLineToken );
         }
     }
+    */
 
+    /**
+     * @param logText
+     * @param isMinOnly
+     * @param newLine
+     */
+    private void showMessage( String logText, boolean isMinOnly, boolean newLine )
+    {
+        outputLine.setText( logText );
+
+        if( !isMinOnly ) {
+            String newLineToken = "";
+            if( newLine ) {
+                newLineToken = "\r\n";
+            }
+
+            if( logText != endl ) {
+                String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+
+                outputArea.append( ts + " " );
+                // System.out.printf( "%s ", ts );
+                //logger.info( logText );
+                try { plog.show( logText ); }
+                catch( Exception ex ) {
+                    System.out.println( ex.getMessage() );
+                    ex.printStackTrace( new PrintStream( System.out ) );
+                }
+            }
+
+            outputArea.append( logText + newLineToken );
+            //System.out.printf( "%s%s", logText, newLineToken );
+            try { plog.show( logText ); }
+            catch( Exception ex ) {
+                System.out.println( ex.getMessage() );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // showMessage
 
 
     /**
@@ -410,7 +466,7 @@ public class LinksPrematch extends Thread
         String qPath = "";
 
         // run preparing queries
-        ta.append( "01" + "\r\n" );
+        outputArea.append( "01" + "\r\n" );
         qPath = "SetVariants/SetVariants_q01";
         showMessage( "Running query " + qPath, false, true );
         String s01 = LinksSpecific.getSqlQuery( qPath );
@@ -420,7 +476,7 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery(a01[i]);
         }
 
-        ta.append( "02" + "\r\n" );
+        outputArea.append( "02" + "\r\n" );
         qPath = "SetVariants/SetVariants_q02";
         showMessage( "Running query " + qPath, false, true );
         String s02 = LinksSpecific.getSqlQuery( qPath );
@@ -430,7 +486,7 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery(a02[i]);
         }
 
-        ta.append( "03" + "\r\n" );
+        outputArea.append( "03" + "\r\n" );
         qPath = "SetVariants/SetVariants_q03";
         showMessage( "Running query " + qPath, false, true );
         String s03 = LinksSpecific.getSqlQuery( qPath );
@@ -440,16 +496,16 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery(a03[i]);
         }
 
-        ta.append("First 3 SQL statements done, beginning with LV" + "\r\n");
+        outputArea.append("First 3 SQL statements done, beginning with LV" + "\r\n");
 
         // Run the variants
-        prematch.VariantLs vlFam = new prematch.VariantLs(ta, ti, "familyname");
-        prematch.VariantLs vlFir = new prematch.VariantLs(ta, ti, "firstname");
+        prematch.VariantLs vlFam = new prematch.VariantLs(outputArea, outputLine, "familyname");
+        prematch.VariantLs vlFir = new prematch.VariantLs(outputArea, outputLine, "firstname");
 
         vlFam.computeVariants();
         vlFir.computeVariants();
 
-        ta.append("LV DONE" + "\r\n");
+        outputArea.append("LV DONE" + "\r\n");
 
         qPath = "SetVariants/SetVariants_q04";
         showMessage( "Running query " + qPath, false, true );
@@ -460,7 +516,7 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery(a04[i]);
         }
 
-        ta.append( "04" + "\r\n" );
+        outputArea.append( "04" + "\r\n" );
     }
 
 
@@ -500,71 +556,71 @@ public class LinksPrematch extends Thread
         /*
         Process process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl familyname familyname"});
         exitValue = process.waitFor();
-        ta.append("Exitcode0 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode0 = " + exitValue + "\r\n");
 
         process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname1"});
         exitValue = process.waitFor();
-        ta.append("Exitcode1 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode1 = " + exitValue + "\r\n");
 
         process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname2"});
         exitValue = process.waitFor();
-        ta.append("Exitcode2 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode2 = " + exitValue + "\r\n");
 
         process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname3"});
         exitValue = process.waitFor();
-        ta.append("Exitcode3 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode3 = " + exitValue + "\r\n");
 
         process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname4"});
         exitValue = process.waitFor();
-        ta.append("Exitcode4 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode4 = " + exitValue + "\r\n");
 
         // run File
         Process process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=linksdev --password=db_pass < updates0.sql"});
         exitValue = process.waitFor();
-        ta.append("Exitcode_1 = " + exitValue + "\r\n");
+        outputArea.append("Exitcode_1 = " + exitValue + "\r\n");
         */
 
         /////
         //Process process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
         //exitValue = process.waitFor();
-        //ta.append("restart = " + exitValue + "\r\n");
+        //outputArea.append("restart = " + exitValue + "\r\n");
         
         //process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
         //exitValue = process.waitFor();
-        //ta.append("optimize = " + exitValue + "\r\n");
+        //outputArea.append("optimize = " + exitValue + "\r\n");
         
 //        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q02"));
 
 
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates1.sql"});
 //        exitValue = process.waitFor();
-//        ta.append("Exitcode_1 = " + exitValue + "\r\n");
+//        outputArea.append("Exitcode_1 = " + exitValue + "\r\n");
 
         
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
 //        exitValue = process.waitFor();
-//        ta.append("restart = " + exitValue + "\r\n");
+//        outputArea.append("restart = " + exitValue + "\r\n");
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
 //        exitValue = process.waitFor();
-//        ta.append("optimize = " + exitValue + "\r\n");
+//        outputArea.append("optimize = " + exitValue + "\r\n");
         
 //        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates2.sql"});
 //        exitValue = process.waitFor();
-//        ta.append("Exitcode_2 = " + exitValue + "\r\n");
+//        outputArea.append("Exitcode_2 = " + exitValue + "\r\n");
 
         
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
 //        exitValue = process.waitFor();
-//        ta.append("restart = " + exitValue + "\r\n");
+//        outputArea.append("restart = " + exitValue + "\r\n");
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
 //        exitValue = process.waitFor();
-//        ta.append("optimize = " + exitValue + "\r\n");
+//        outputArea.append("optimize = " + exitValue + "\r\n");
         
 //        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
 //        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
@@ -572,11 +628,11 @@ public class LinksPrematch extends Thread
         
         //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates3.sql"});
         //        exitValue = process.waitFor();
-        //        ta.append("Exitcode_3 = " + exitValue + "\r\n");
+        //        outputArea.append("Exitcode_3 = " + exitValue + "\r\n");
         //        
         //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates4.sql"});
         //        exitValue = process.waitFor();
-        //        ta.append("Exitcode_4 = " + exitValue + "\r\n");
+        //        outputArea.append("Exitcode_4 = " + exitValue + "\r\n");
 
     }
 
@@ -589,10 +645,10 @@ public class LinksPrematch extends Thread
     {
         // "firstname" and "familyname" are links_frequency tables
         System.out.println( conFrequency );
-        prematch.Lv lv1 = new prematch.Lv( conFrequency, "firstname",  true,  ti, ta );
-        prematch.Lv lv2 = new prematch.Lv( conFrequency, "firstname",  false, ti, ta );
-        prematch.Lv lv3 = new prematch.Lv( conFrequency, "familyname", true,  ti, ta );
-        prematch.Lv lv4 = new prematch.Lv( conFrequency, "familyname", false, ti, ta );
+        prematch.Lv lv1 = new prematch.Lv( conFrequency, "firstname",  true,  outputLine, outputArea );
+        prematch.Lv lv2 = new prematch.Lv( conFrequency, "firstname",  false, outputLine, outputArea );
+        prematch.Lv lv3 = new prematch.Lv( conFrequency, "familyname", true,  outputLine, outputArea );
+        prematch.Lv lv4 = new prematch.Lv( conFrequency, "familyname", false, outputLine, outputArea );
 
         lv1.start();
         lv2.start();
@@ -631,124 +687,124 @@ public class LinksPrematch extends Thread
         /*
         {
             // TODO remove this
-            ta.append("Running query 1...\r\n");
+            outputArea.append("Running query 1...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q01"));
 
-            ta.append("Running query 2...\r\n");
+            outputArea.append("Running query 2...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q02"));
 
-            ta.append("Running query 3...\r\n");
+            outputArea.append("Running query 3...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q03"));
 
-            ta.append("Running query 4...\r\n");
+            outputArea.append("Running query 4...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q04"));
 
-            ta.append("Running query 5...\r\n");
+            outputArea.append("Running query 5...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q05"));
 
-            ta.append("Running query 6...\r\n");
+            outputArea.append("Running query 6...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q06"));
 
-            ta.append("Running query 7...\r\n");
+            outputArea.append("Running query 7...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q07"));
 
-            ta.append("Running query 8...\r\n");
+            outputArea.append("Running query 8...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q08"));
 
-            ta.append("Running query 9...\r\n");
+            outputArea.append("Running query 9...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q09"));
 
-            ta.append("Running query 10...\r\n");
+            outputArea.append("Running query 10...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q10"));
 
-            ta.append("Running query 11...\r\n");
+            outputArea.append("Running query 11...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q11"));
 
-            ta.append("Running query 12...\r\n");
+            outputArea.append("Running query 12...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q12"));
 
-            ta.append("Running query 13...\r\n");
+            outputArea.append("Running query 13...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q13"));
 
-            ta.append("Running query 14...\r\n");
+            outputArea.append("Running query 14...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q14"));
 
-            ta.append("Running query 15...\r\n");
+            outputArea.append("Running query 15...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q15"));
 
-            ta.append("Running query 16...\r\n");
+            outputArea.append("Running query 16...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q16"));
 
-            ta.append("Running query 17...\r\n");
+            outputArea.append("Running query 17...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q17"));
 
-            ta.append("Running query 18...\r\n");
+            outputArea.append("Running query 18...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q18"));
 
-            ta.append("Running query 19...\r\n");
+            outputArea.append("Running query 19...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q19"));
 
-            ta.append("Running query 20...\r\n");
+            outputArea.append("Running query 20...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q20"));
 
-            ta.append("Running query 21...\r\n");
+            outputArea.append("Running query 21...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q21"));
 
-            ta.append("Running query 22...\r\n");
+            outputArea.append("Running query 22...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q22"));
 
-            ta.append("Running query 23...\r\n");
+            outputArea.append("Running query 23...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q23"));
 
-            ta.append("Running query 24...\r\n");
+            outputArea.append("Running query 24...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q24"));
 
-            ta.append("Running query 25...\r\n");
+            outputArea.append("Running query 25...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q25"));
 
-            ta.append("Running query 26...\r\n");
+            outputArea.append("Running query 26...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q26"));
 
-            ta.append("Running query 27...\r\n");
+            outputArea.append("Running query 27...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q27"));
 
-            ta.append("Running query 28...\r\n");
+            outputArea.append("Running query 28...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q28"));
 
-            ta.append("Running query 29...\r\n");
+            outputArea.append("Running query 29...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q29"));
 
-            ta.append("Running query 30...\r\n");
+            outputArea.append("Running query 30...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q30"));
 
-            ta.append("Running query 31...\r\n");
+            outputArea.append("Running query 31...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q31"));
 
-            ta.append("Running query 32...\r\n");
+            outputArea.append("Running query 32...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q32"));
 
-            ta.append("Running query 33...\r\n");
+            outputArea.append("Running query 33...\r\n");
             conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q33"));
             
-            //ta.append("Running query 41...\r\n");
+            //outputArea.append("Running query 41...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q41"));
 
-            //ta.append("Running query 42...\r\n");
+            //outputArea.append("Running query 42...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q42"));
 
-            //ta.append("Running query 43...\r\n");
+            //outputArea.append("Running query 43...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q43"));
 
-            //ta.append("Running query 44...\r\n");
+            //outputArea.append("Running query 44...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q44"));
 
-            //ta.append("Running query 45...\r\n");
+            //outputArea.append("Running query 45...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q45"));
 
-            //ta.append("Running query 46...\r\n");
+            //outputArea.append("Running query 46...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q46"));
 
-            //ta.append("Running query 47...\r\n");
+            //outputArea.append("Running query 47...\r\n");
             //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q47"));
         }
         */
