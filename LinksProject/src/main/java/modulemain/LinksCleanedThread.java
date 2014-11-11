@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-10-Nov-2014 Latest change
+ * FL-11-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -472,6 +472,7 @@ public class LinksCleanedThread extends Thread
                 newLineToken = "\r\n";
             }
 
+            /*
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
@@ -484,6 +485,7 @@ public class LinksCleanedThread extends Thread
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
+            */
 
             outputArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );
@@ -504,7 +506,7 @@ public class LinksCleanedThread extends Thread
 
         outputArea.append( newLineToken );
 
-        try { plog.show( newLineToken ); }
+        try { plog.show( "" ); }
         catch( Exception ex ) {
             System.out.println( ex.getMessage() );
             ex.printStackTrace( new PrintStream( System.out ) );
@@ -864,7 +866,7 @@ public class LinksCleanedThread extends Thread
 
         // Update reference
         start = System.currentTimeMillis();
-        msg = "Updating reference tables: Prepiece/Suffix/Alias...";
+        msg = "Updating reference tables: Prepiece/Suffix/Alias";
         showMessage( msg + "...", false, true );
 
         almmPrepiece.updateTable();
@@ -2167,7 +2169,7 @@ public class LinksCleanedThread extends Thread
         start = System.currentTimeMillis();
         showMessage( "Updating reference table: location...", false, true );
         almmLocation.updateTable();
-        showTimingMessage( "Updating reference table: location ", start );
+        showTimingMessage( "Updating reference table: location", start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -4487,7 +4489,8 @@ public class LinksCleanedThread extends Thread
                     }
 
                     if( countPc == 0 ) {
-                        showMessage( "minMaxMainAge: zero person_c count", false, true );
+                        //showMessage( "minMaxMainAge: zero person_c count, with query:", false, true );
+                        //showMessage( queryPc, false, true );
                              if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // EC 271
                         else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // EC 272
                         else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // EC 273

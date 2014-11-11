@@ -64,11 +64,16 @@ public class Lv extends Thread
             System.out.println( db_conn );
 
             ResultSet rs = null;
+            String query = "SELECT id, name FROM " + db_table;
             try {
-                rs = db_conn.runQueryWithResult( "SELECT id, name FROM " + db_table );
+                rs = db_conn.runQueryWithResult( query );
             }
             catch( Exception ex ) {
+                System.out.println( query );
+                taInfo.append( query + "\r\n" );
+
                 System.out.println( ex.getMessage() );
+                taInfo.append( ex.getMessage() + "\r\n" );
                 return;
             }
 
@@ -84,7 +89,7 @@ public class Lv extends Thread
             
             int size = name.size();
 
-            FileWriter writer = new FileWriter( strict + "_" + db_table + ".csv");
+            FileWriter writer = new FileWriter( strict + "_" + db_table + ".csv" );
 
             // Hulp variabelen
             long timeExpand = 0;

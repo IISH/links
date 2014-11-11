@@ -21,7 +21,7 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-10-Nov-2014 Latest change
+ * FL-11-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -40,7 +40,6 @@ public class LinksPrematch extends Thread
     private boolean bBaseTable;
 
     private boolean showmsg = true;
-    private String endl = ". OK.";              // ".";
 
     private JTextField outputLine;              // used-to-be ti
     private JTextArea  outputArea;              // used-to-be ta
@@ -73,9 +72,9 @@ public class LinksPrematch extends Thread
     (
         Options opts,
 
-        String db_url,
-        String db_user,
-        String db_pass,
+        //String db_url,
+        //String db_user,
+        //String db_pass,
 
         JTextField outputLine,
         JTextArea outputArea,
@@ -93,6 +92,9 @@ public class LinksPrematch extends Thread
         this.db_url  = db_url;
         this.db_user = db_user;
         this.db_pass = db_pass;
+        db_url  = opts.getDb_url();
+        db_user = opts.getDb_user();
+        db_pass = opts.getDb_pass();
 
         this.bSplitNames   = bSplitNames;
         this.bUniqueTables = bUniqueTables;
@@ -116,7 +118,7 @@ public class LinksPrematch extends Thread
      *
      * @throws Exception 
      */
-    public LinksPrematch( String db_url, String db_user, String db_pass, JTextArea t, JTextField outputLine )
+    public LinksPrematch( String db_url, String db_user, String db_pass, JTextArea outputArea, JTextField outputLine )
     throws Exception
     {
         conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
@@ -126,7 +128,7 @@ public class LinksPrematch extends Thread
         conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
 
         this.outputLine = outputLine;
-        this.outputArea  = outputArea;
+        this.outputArea = outputArea;
     }
 
     /**
@@ -143,6 +145,7 @@ public class LinksPrematch extends Thread
         long startTotal = System.currentTimeMillis();
 
         try {
+            System.out.println( "SplitNames" );
             if( bSplitNames ) {
                 showMessage( "Splitting names...", false, true );
                 long start = System.currentTimeMillis();
@@ -151,9 +154,12 @@ public class LinksPrematch extends Thread
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "Splitting names OK " + mmss;
                 showMessage( msg, false, true );
+                showMessage_nl();
+
             }
             else { showMessage( "skipping Splitting names", false, true ); }
 
+            System.out.println( "bUniqueTables" );
             if( bUniqueTables ) {
                 showMessage( "Creating unique name tables...", false, true );
                 long start = System.currentTimeMillis();
@@ -162,9 +168,11 @@ public class LinksPrematch extends Thread
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "Creating Unique name table OK " + mmss;
                 showMessage( msg, false, true );
+                showMessage_nl();
             }
             else { showMessage( "skipping Creating unique name tables", false, true ); }
 
+            System.out.println( "bLevenshtein" );
             if( bLevenshtein ) {
                 showMessage( "Computing Levenshtein...", false, true );
                 long start = System.currentTimeMillis();
@@ -173,9 +181,11 @@ public class LinksPrematch extends Thread
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "Computing Levenshtein OK " + mmss;
                 showMessage( msg, false, true );
+                showMessage_nl();
             }
             else { showMessage( "skipping Computing Levenshtein", false, true ); }
 
+            System.out.println( "NamesToNo" );
             if( bNamesToNo ) {
                 showMessage( "Converting Names to Numbers...", false, true );
                 long start = System.currentTimeMillis();
@@ -184,9 +194,11 @@ public class LinksPrematch extends Thread
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "Converting Names to Numbers OK " + mmss;
                 showMessage( msg, false, true );
+                showMessage_nl();
             }
             else { showMessage( "skipping Converting Names to Numbers", false, true ); }
 
+            System.out.println( "bBaseTable" );
             if( bBaseTable ) {
                 showMessage( "Creating Base Table...", false, true );
                 long start = System.currentTimeMillis();
@@ -195,6 +207,7 @@ public class LinksPrematch extends Thread
                 mmss = Functions.millisec2hms( start, stop );
                 msg = "Creating Base Table OK " + mmss;
                 showMessage( msg, false, true );
+                showMessage_nl();
             }
             else { showMessage( "skipping Creating Base Table", false, true ); }
 
@@ -205,8 +218,7 @@ public class LinksPrematch extends Thread
 
             this.stop();
 
-        } catch( Exception ex ) { outputArea.append( ex.getMessage() ); }
-
+        } catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
     }
 
 
@@ -216,34 +228,6 @@ public class LinksPrematch extends Thread
     //public boolean isNamesToNo()    { return bNamesToNo; }
     //public boolean isBaseTable()    { return bBaseTable; }
 
-
-    /**
-     * @param logText
-     * @param isMinOnly
-     * @param newLine
-     */
-    /*
-    private void showMessage( String logText, boolean isMinOnly, boolean newLine )
-    {
-        ti.setText( logText );
-
-        if( !isMinOnly ) {
-            String newLineToken = "";
-            if( newLine ) {
-                newLineToken = "\r\n";
-            }
-
-            if( logText != endl ) {
-                String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-                System.out.printf( "%s ", ts );
-                outputArea.append( ts + " " );
-            }
-
-            System.out.printf( "%s%s", logText, newLineToken );
-            outputArea.append( logText + newLineToken );
-        }
-    }
-    */
 
     /**
      * @param logText
@@ -260,6 +244,7 @@ public class LinksPrematch extends Thread
                 newLineToken = "\r\n";
             }
 
+            /*
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
@@ -272,6 +257,7 @@ public class LinksPrematch extends Thread
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
+            */
 
             outputArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );
@@ -282,6 +268,20 @@ public class LinksPrematch extends Thread
             }
         }
     } // showMessage
+
+
+    private void showMessage_nl()
+    {
+        String newLineToken = "\r\n";
+
+        outputArea.append( newLineToken );
+
+        try { plog.show( "" ); }
+        catch( Exception ex ) {
+            System.out.println( ex.getMessage() );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // showMessage_nl
 
 
     /**
@@ -644,7 +644,8 @@ public class LinksPrematch extends Thread
     public void doLevenshtein() throws Exception
     {
         // "firstname" and "familyname" are links_frequency tables
-        System.out.println( conFrequency );
+        //System.out.println( conFrequency );
+
         prematch.Lv lv1 = new prematch.Lv( conFrequency, "firstname",  true,  outputLine, outputArea );
         prematch.Lv lv2 = new prematch.Lv( conFrequency, "firstname",  false, outputLine, outputArea );
         prematch.Lv lv3 = new prematch.Lv( conFrequency, "familyname", true,  outputLine, outputArea );
@@ -922,12 +923,11 @@ public class LinksPrematch extends Thread
     private void loadFirstnameToTable()
     throws Exception
     {
-        if( showmsg ) { showMessage( "Loading CSV data into temp table...", false, false ); }
+        if( showmsg ) { showMessage( "Loading CSV data into temp table...", false, true ); }
         {
             String query = "LOAD DATA LOCAL INFILE 'firstname_t_split.csv' INTO TABLE firstname_t_split FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname1 , firstname2 , firstname3 , firstname4 );";
             conTemp.runQuery(query);
         }
-        if( showmsg ) { showMessage( endl, false, true ); }
     }
 
 
@@ -937,7 +937,7 @@ public class LinksPrematch extends Thread
     private void updateFirstnameToPersonC()
     throws Exception
     {
-        if( showmsg ) { showMessage( "Moving first names from temp table to person_c...", false, false ); }
+        if( showmsg ) { showMessage( "Moving first names from temp table to person_c...", false, true ); }
 
         String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t_split"
                 + " SET "
@@ -948,8 +948,6 @@ public class LinksPrematch extends Thread
                 + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t_split.person_id;";
 
         conTemp.runQuery(query);
-
-        if( showmsg ) { showMessage(endl, false, true); }
     }
 
 

@@ -20,20 +20,22 @@ package general;
 
 import java.io.FileWriter;
 
+import com.google.common.base.Strings;
+
 import modulemain.LinksSpecific;
 
 /**
  * This Class contains logging procedures
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-27-Aug-2014 Latest Change
+ * FL-11-Nov-2014 Latest Change
  */
 public class PrintLogger
 {
     private String fileName;
     private FileWriter fw;
     private boolean fileIsLocked;
-    private static String previousIntext;
+    private static String intextPrevious;
 
     /**
      * Construtor creates a log file
@@ -48,9 +50,10 @@ public class PrintLogger
         String ts = LinksSpecific.getTimeStamp2( format );
         fileName = "LMM-" + ts + ".log";
         fileIsLocked = false;
-        previousIntext = "";
+        intextPrevious = "";
         System.out.printf( "Log filename: %s\n", fileName );
     }
+
 
     /**
      * This method will log the text in a log file
@@ -59,10 +62,14 @@ public class PrintLogger
     public void show( String intext ) throws Exception
     {
         // why do i get all intext strings twice ??
-        if( intext == previousIntext ) { return; }
+        //if( intext == intextPrevious ) { return; }
 
-        String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-        String text = ts + " " + intext;
+        String text = intext;
+        // empty line without timestamp
+        if( ! Strings.isNullOrEmpty( intext ) && ! intext.trim().isEmpty() ) {
+            String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
+            text = ts + " " + text;
+        }
 
         try
         {
@@ -75,16 +82,14 @@ public class PrintLogger
             fileIsLocked = true;
             {
                 fw = new FileWriter( fileName, true );
-                fw.write( text  + "\n" );
+                fw.write( text  + "\r\n" );
                 fw.close();
             }
             fileIsLocked = false;
             
-        } catch( Exception ex )
-        { throw new Exception( "Could not write to file " + fileName, ex ); }
+        }
+        catch( Exception ex ) { throw new Exception( "Could not write to file " + fileName, ex ); }
 
-        //System.out.println( text );        // Print to screen
-
-        previousIntext = intext;
+        intextPrevious = intext;
     }
 }
