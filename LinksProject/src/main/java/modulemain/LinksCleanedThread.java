@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-11-Nov-2014 Latest change
+ * FL-12-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -189,6 +189,8 @@ public class LinksCleanedThread extends Thread
                 {
                     doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
 
+                    doPrepieceSuffix( debug, opts.isDoNames(), source );                // GUI cb: Prepiece, Suufix
+
                     doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
 
                     doLocations( debug, opts.isDoLocations(), source );                 // GUI cb: Locations
@@ -266,6 +268,8 @@ public class LinksCleanedThread extends Thread
                 //ct.start();
 
                 doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
+
+                doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source );      // GUI cb: Prepiece, Suufix
 
                 doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source );                  // GUI cb: Names
 
@@ -777,7 +781,48 @@ public class LinksCleanedThread extends Thread
     } // doRenewData
 
 
-    /*---< First- and familynames >-------------------------------------------*/
+    /*---< First- and Familynames >-------------------------------------------*/
+
+    /**
+     * Prepiece, Suffix
+     * @param go
+     * @throws Exception
+     */
+    private void doPrepieceSuffix( boolean debug, boolean go, String source ) throws Exception
+    {
+        String funcname = "doPrepieceSuffix";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        //almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+
+        showMessage( "standardPrepiece", false, true );
+        standardPrepiece( source );
+
+        showMessage( "standardSuffix", false, true );
+        standardSuffix( source );
+
+        // Update reference
+        showMessage( "Updating reference tables: Prepiece/Suffix", false, true );
+        almmPrepiece.updateTable();
+        almmSuffix.updateTable();
+        // almmAlias.updateTable();     // almmAlias.add() never called; nothing added to almmAlias
+
+        almmPrepiece.free();
+        almmSuffix.free();
+        //almmAlias.free();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doPrepieceSuffix
+
 
     /**
      * Firstnames
@@ -848,38 +893,19 @@ public class LinksCleanedThread extends Thread
         removeFirstnameTable(     dbconTemp, source );
         showTimingMessage( "remains Firstname", start );
 
-
         // Firstnames to lowercase
         start = System.currentTimeMillis();
         msg = "Converting firstnames to lowercase";
         showMessage( msg + "...", false, true ) ;
         String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER( firstname );";
         dbconCleaned.runQuery( qLower );
-
-
-        showMessage( "standardPrepiece", false, true );
-        standardPrepiece( source );
-        showMessage( "standardSuffix", false, true );
-        standardSuffix( source );
-
         showTimingMessage( msg, start );
-
-        // Update reference
-        start = System.currentTimeMillis();
-        msg = "Updating reference tables: Prepiece/Suffix/Alias";
-        showMessage( msg + "...", false, true );
-
-        almmPrepiece.updateTable();
-        almmSuffix.updateTable();
-        almmAlias.updateTable();
 
         almmPrepiece.free();
         almmSuffix.free();
         almmAlias.free();
 
         dbconTemp.close();
-
-        showTimingMessage( msg, start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -959,38 +985,19 @@ public class LinksCleanedThread extends Thread
         removeFamilynameTable(     dbconTemp, source );
         showTimingMessage( msg, start );
 
-
         // Familynames to lowercase
         start = System.currentTimeMillis();
         msg = "Converting familynnames to lowercase";
         showMessage( msg + "...", false, true );
         String qLower = "UPDATE links_cleaned.person_c SET familyname = LOWER( familyname );";
         dbconCleaned.runQuery( qLower );
-
-
-        showMessage( "standardPrepiece", false, true );
-        standardPrepiece( source );
-        showMessage( "standardSuffix", false, true );
-        standardSuffix( source );
-
         showTimingMessage( msg, start );
-
-        // Update reference
-        start = System.currentTimeMillis();
-        msg = "Updating reference tables: Prepiece/Suffix/Alias...";
-        showMessage( msg + "...", false, true );
-
-        almmPrepiece.updateTable();
-        almmSuffix.updateTable();
-        almmAlias.updateTable();
 
         almmPrepiece.free();
         almmSuffix.free();
         almmAlias.free();
 
         dbconTemp.close();
-
-        showTimingMessage( msg, start );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();

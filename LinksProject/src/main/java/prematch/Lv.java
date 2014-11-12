@@ -19,6 +19,7 @@ import connectors.MySqlConnector;
  */
 public class Lv extends Thread
 {
+    private boolean debug = false;
     private MySqlConnector db_conn = null;
     private String db_table;
     private boolean strict;
@@ -28,6 +29,7 @@ public class Lv extends Thread
     /**
      * Constructor
      *
+     * @param debug
      * @param db_conn
      * @param db_table
      * @param strict
@@ -36,6 +38,7 @@ public class Lv extends Thread
      */
     public Lv
     (
+        boolean debug,
         MySqlConnector db_conn,
         String db_table,
         boolean strict,
@@ -43,11 +46,12 @@ public class Lv extends Thread
         JTextArea taInfo
     )
     {
-        this.db_conn = db_conn;
+        this.debug    = debug;
+        this.db_conn  = db_conn;
         this.db_table = db_table;
-        this.strict = strict;
+        this.strict   = strict;
         this.tbOutput = tbOutput;
-        this.taInfo = taInfo;
+        this.taInfo   = taInfo;
     }
 
 
@@ -55,8 +59,8 @@ public class Lv extends Thread
      *
      */
     @Override
-    public void run(){
-
+    public void run()
+    {
         // Run query on Database
         try
         {

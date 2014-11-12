@@ -29,28 +29,31 @@ import general.PrintLogger;
  * FL-10-Oct-2014 Occupation added
  * FL-10-Oct-2014 Renamed DoSet -> Options
  * FL-14-Oct-2014 DB opts
- * FL-07-Nov-2014 dbg
+ * FL-12-Nov-2014 dbg
  */
 public class Options
 {
-     PrintLogger plog;
+    PrintLogger plog;
 
-     private int sourceId;
+    private int sourceId;
 
-     // db options
-     private String db_ref_url;
-     private String db_ref_user;
-     private String db_ref_pass;
-     private String db_ref_db;
-     private String db_url;
-     private String db_user;
-     private String db_pass;
+    // db options
+    private String db_ref_url;
+    private String db_ref_user;
+    private String db_ref_pass;
+    private String db_ref_db;
+    private String db_url;
+    private String db_user;
+    private String db_pass;
 
     // cleaning options
     private boolean doDebug;
 
     private boolean doRenewData;
     private boolean dbgRenewData;
+
+    private boolean doPrepieceSuffix;
+    private boolean dbgPrepieceSuffix;
 
     private boolean doFirstnames;
     private boolean dbgFirstnames;
@@ -89,8 +92,13 @@ public class Options
     private boolean dbgDaysSinceBegin;
 
     private boolean doPostTasks;
+    private boolean dbgPostTasks;
 
     private boolean doPrematch;
+    private boolean dbgPrematch;
+
+    private boolean doMatch;
+    private boolean dbgMatch;
 
 
     public void setLogger( PrintLogger plog ) { this.plog = plog; }
@@ -150,6 +158,13 @@ public class Options
 
     public void  setDoRenewData( boolean  doRenewData ) { this.doRenewData  =  doRenewData; }
     public void setDbgRenewData( boolean dbgRenewData ) { this.dbgRenewData = dbgRenewData; }
+
+
+    public boolean  isDoPrepieceSuffix() { return  doPrepieceSuffix; }
+    public boolean isDbgPrepieceSuffix() { return dbgPrepieceSuffix; }
+
+    public void  setDoPrepieceSuffix( boolean  doPrepieceSuffix ) { this.doPrepieceSuffix  =  doPrepieceSuffix; }
+    public void setDbgPrepieceSuffix( boolean dbgPrepieceSuffix ) { this.dbgPrepieceSuffix = dbgPrepieceSuffix; }
 
 
     public boolean  isDoFirstnames() { return  doFirstnames; }
@@ -235,14 +250,23 @@ public class Options
     public void  setDoDaysSinceBegin( boolean  doDaysSinceBegin ) { this.doDaysSinceBegin  =  doDaysSinceBegin; }
     public void setDbgDaysSinceBegin( boolean dbgDaysSinceBegin ) { this.dbgDaysSinceBegin = dbgDaysSinceBegin; }
 
-    public boolean isDoPostTasks() { return doPostTasks; }
+    public boolean  isDoPostTasks() { return doPostTasks; }
+    public boolean isDbgPostTasks() { return dbgPostTasks; }
 
-    public void setDoPostTasks( boolean doPostTasks ) { this.doPostTasks = doPostTasks; }
+    public void setDoPostTasks(  boolean doPostTasks ) { this.doPostTasks = doPostTasks; }
+    public void setDbgPostTasks( boolean dbgPostTasks ) { this.dbgPostTasks = dbgPostTasks; }
+
+    public boolean  isDoPrematch() { return doPrematch; }
+    public boolean isDbgPrematch() { return dbgPrematch; }
+
+    public void  setDoPrematch( boolean  doPrematch ) { this.doPrematch  = doPrematch; }
+    public void setDbgPrematch( boolean dbgPrematch ) { this.dbgPrematch = dbgPrematch; }
 
 
-    public boolean isDoPrematch() { return doPrematch; }
+    public boolean  isDoMatch() { return doMatch; }
+    public boolean isDbgMatch() { return dbgMatch; }
 
-    public void setDoPrematch( boolean doPrematch ) { this.doPrematch = doPrematch; }
-
+    public void  setDoMatch( boolean  doMatch ) { this.doMatch  = doMatch; }
+    public void setDbgMatch( boolean dbgMatch ) { this.dbgMatch = dbgMatch; }
 }
 
