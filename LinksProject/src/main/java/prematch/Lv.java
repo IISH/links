@@ -15,12 +15,13 @@ import connectors.MySqlConnector;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-30-Jul-2014 Latest change
+ * FL-13-Nov-2014 Latest change
  */
 public class Lv extends Thread
 {
     private boolean debug = false;
     private MySqlConnector db_conn = null;
+    private String db_name;
     private String db_table;
     private boolean strict;
     private JTextField tbOutput;
@@ -31,6 +32,7 @@ public class Lv extends Thread
      *
      * @param debug
      * @param db_conn
+     * @param db_name
      * @param db_table
      * @param strict
      * @param tbOutput
@@ -40,6 +42,7 @@ public class Lv extends Thread
     (
         boolean debug,
         MySqlConnector db_conn,
+        String db_name,
         String db_table,
         boolean strict,
         JTextField tbOutput,
@@ -48,6 +51,7 @@ public class Lv extends Thread
     {
         this.debug    = debug;
         this.db_conn  = db_conn;
+        this.db_name  = db_name;
         this.db_table = db_table;
         this.strict   = strict;
         this.tbOutput = tbOutput;
@@ -68,7 +72,10 @@ public class Lv extends Thread
             System.out.println( db_conn );
 
             ResultSet rs = null;
-            String query = "SELECT id, name FROM " + db_table;
+            //String query = "SELECT id, name FROM " + db_table;
+            String query = "SELECT id, name FROM " + "links_frequency." + db_table;
+            if( debug ) { taInfo.append( query + "\r\n" ); }
+
             try {
                 rs = db_conn.runQueryWithResult( query );
             }
@@ -89,32 +96,33 @@ public class Lv extends Thread
                 name.add( rs.getString( "name" ) );
             }
 
-            taInfo.append( db_table + "LOADED...\r\n" );
+            taInfo.append( "table " + db_table + " loaded\r\n" );
             
             int size = name.size();
 
-            FileWriter writer = new FileWriter( strict + "_" + db_table + ".csv" );
+            FileWriter csvwriter = new FileWriter( strict + "_" + db_table + ".csv" );
 
-            // Hulp variabelen
+            // timing
             long timeExpand = 0;
             long begintime = System.currentTimeMillis();
 
-            //tellerstappen
-            int stap = 1000;
-            int staphoogte = stap;
+            int step = 1000;
+            int stepheight = step;
 
-            // loopen door alle namen heen
-            for( int i = 0; i < size ; i++ ){
-
+            // process all names
+            for( int i = 0; i < size ; i++ )
+            {
                 int id1 = id.get(i);
-                String naam1 = name.get(i);
                 int id2 = 0;
+
+                String naam1 = name.get(i);
                 String naam2 = "";
 
                 int begin = i+1;
-                for( int j = begin; j < name.size() ; j++ ){
 
-                    id2 = id.get(j);
+                for( int j = begin; j < name.size() ; j++ )
+                {
+                    id2   = id.get( j );
                     naam2 = name.get(j);
 
                     int a = naam1.length();
@@ -127,120 +135,82 @@ public class Lv extends Thread
                     int basic;
                     int extra;
 
-                    if(a == smallest){
+                    if( a == smallest ) {
                         basic = a;
                         extra = b;
                     }
-                    else{
+                    else {
                         basic = b;
                         extra = a;
                     }
 
-                    int verschil = extra - basic;
+                    int diff = extra - basic;
 
-                    // lengte bepaling
-                    if( verschil > 4 ){
-                        continue;
+                    if( diff > 4 ) { continue; }            // check difference
+
+                    if( strict )
+                    {
+                        if( basic <  6 && diff > 1 ) { continue; }
+
+                        if( basic <  9 && diff > 2 ) { continue; }           // 3 4 5
+
+                        if( basic < 12 && diff > 3 ) { continue; }
+                    }
+                    else
+                    {
+                        if( basic < 3 && diff > 1 ) { continue; }
+
+                        if( basic < 6 && diff > 2 ) { continue; }           // 3 4 5
+
+                        if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    if(strict){
-                        if( basic < 6 && verschil > 1 ){
-                            continue;
-                        }
+                    ld = levenshtein( naam1, naam2 );           // levenshtein
 
-                        // 3 4 5
-                        if( basic < 9 && verschil > 2 ){
-                            continue;
-                        }
+                    if( ld > 4 ) { continue; }                  // check distance
 
-                        if( basic < 12 && verschil > 3 ){
-                            continue;
-                        }
+                    if( strict )
+                    {
+                        if( basic <  6 && ld > 1 ) { continue; }
+
+                        if( basic <  9 && ld > 2 ) { continue; }
+
+                        if( basic < 12 && ld > 3 ) { continue; }
                     }
-                    else{
-                        if( basic < 3 && verschil > 1 ){
-                            continue;
-                        }
+                    else    // levenshtein + length
+                    {
+                        if( basic <  3 && ld > 1 ) { continue; }
 
-                        // 3 4 5
-                        if( basic < 6 && verschil > 2 ){
-                            continue;
-                        }
+                        if( basic <  6 && ld > 2 ) { continue; }
 
-                        if( basic < 9 && verschil > 3 ){
-                            continue;
-                        }
+                        if( basic < 10 && ld > 3 ) { continue; }
                     }
 
-                    // levenshtein
-                    ld = levenshtein( naam1, naam2 );
+                    // Write to CSV
+                    String line = id1 + "," + id2 + "," + naam1 + "," + naam2 + "," + ld + "\r\n";
 
-                    // check afstand
-                    if( ld > 4 ){
-                        continue;
-                    }
-
-                    if(strict){
-                        if( basic < 6 && ld > 1 ){
-                            continue;
-                        }
-
-                        if( basic < 9 && ld > 2 ){
-                            continue;
-                        }
-
-                        if( basic < 12 && ld > 3 ){
-                            continue;
-                        }
-                    }
-                    else{
-                        // levenshtein icm met lengte
-                        if( basic < 3 && ld > 1 ){
-                            continue;
-                        }
-
-                        if( basic < 6 && ld > 2 ){
-                            continue;
-                        }
-
-                        if( basic < 10 && ld > 3 ){
-                            continue;
-                        }
-                    }
-
-                    // Write to table
-                    String regel = id1 + "," + id2 + "," + naam1 + "," + naam2 + "," + ld + "\r\n";
-
-                    try{
-                            
-                        writer.write(regel);
-
-                    }
-                    catch( Exception e ){
-                        taInfo.append("ERROR: " + e.getMessage() + "...\r\n");
-                    }
+                    try {  csvwriter.write( line ); }
+                    catch( Exception ex ) { taInfo.append( "Levenshtein Error: " + ex.getMessage() + "...\r\n" ); }
                 }
 
-                // gebruiker op de hoogte brengen
-                if( i == staphoogte ){
+                // show progress
+                if( i == stepheight ){
                     tbOutput.setText( i + " of " + size );
-                    staphoogte += stap;
+                    stepheight += step;
                 }
             }
-            writer.close();
 
-            // Tijd berekenen
+            csvwriter.close();
+
+            // elapsed
             timeExpand = System.currentTimeMillis() - begintime;
-            int iTimeEx = (int)(timeExpand / 1000);
+            int iTimeEx = (int)( timeExpand / 1000 );
 
-            taInfo.append("DONE; TIME: " + stopWatch(iTimeEx));
+            taInfo.append( "Levenshtein " + db_table + " done; elapsed: " + stopWatch( iTimeEx ) + "\r\n" );
 
         }
 
-        catch (Exception e) {
-            taInfo.append("ERROR: " + e.getMessage() + "...\r\n");
-        } 
-
+        catch( Exception ex ) { taInfo.append( "Levenshtein Error: " + ex.getMessage() + "...\r\n" ); }
     }
 
 
@@ -250,34 +220,34 @@ public class Lv extends Thread
      * @param t
      * @return
      */
-    public static int levenshtein(String s, String t) {
+    public static int levenshtein(  String s, String t  )
+    {
+        int n = s.length();     // length of s
+        int m = t.length();     // length of t
 
-        int n = s.length(); // length of s
-        int m = t.length(); // length of t
-
-        int p[] = new int[n+1]; //'previous' cost array, horizontally
-        int d[] = new int[n+1]; // cost array, horizontally
-        int _d[]; //placeholder to assist in swapping p and d
+        int p[] = new int[n+1];     //'previous' cost array, horizontally
+        int d[] = new int[n+1];     // cost array, horizontally
+        int _d[];       //placeholder to assist in swapping p and d
 
         // indexes into strings s and t
-        int i; // iterates through s
-        int j; // iterates through t
+        int i;      // iterates through s
+        int j;      // iterates through t
 
         char t_j; // jth character of t
 
         int cost; // cost
 
-        for (i = 0; i<=n; i++) {
+        for( i = 0; i<=n; i++ ) {
             p[i] = i;
         }
 
-        for (j = 1; j<=m; j++) {
+        for( j = 1; j<=m; j++ ) {
             t_j = t.charAt(j-1);
             d[0] = j;
 
-            for (i=1; i<=n; i++) {
+            for( i=1; i<=n; i++ ) {
                 cost = s.charAt(i-1)==t_j ? 0 : 1;
-                d[i] = Math.min(Math.min(d[i-1]+1, p[i]+1),  p[i-1]+cost);
+                d[i] = Math.min( Math.min( d[i-1]+1, p[i]+1 ),  p[i-1]+cost );
             }
 
             _d = p;
@@ -285,23 +255,24 @@ public class Lv extends Thread
             d = _d;
         }
 
-        return p[n];
+        return p[ n ];
     }
 
 
-    public static String stopWatch(int seconds){
+    public static String stopWatch( int seconds )
+    {
         int minutes = seconds / 60;
         int restsec = seconds % 60;
-        int uren = minutes / 60;
+        int uren    = minutes / 60;
         int restmin = minutes % 60;
 
-        String urenText = "";
-        String minutenText = "";
+        String urenText     = "";
+        String minutenText  = "";
         String secondenText = "";
 
-        if(uren < 10 ) urenText = "0";
-        if(restmin < 10 ) minutenText = "0";
-        if(restsec < 10 ) secondenText = "0";
+        if( uren < 10 )    urenText     = "0";
+        if( restmin < 10 ) minutenText  = "0";
+        if( restsec < 10 ) secondenText = "0";
 
         return urenText + uren + ":" + minutenText + restmin + ":" + secondenText + restsec;
     }

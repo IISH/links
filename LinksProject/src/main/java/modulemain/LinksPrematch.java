@@ -21,7 +21,7 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-11-Nov-2014 Latest change
+ * FL-13-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -43,8 +43,8 @@ public class LinksPrematch extends Thread
 
     private boolean showmsg = true;
 
-    private JTextField outputLine;              // used-to-be ti
-    private JTextArea  outputArea;              // used-to-be ta
+    private JTextField outputLine;
+    private JTextArea  outputArea;
 
     private MySqlConnector conCleaned;
     private MySqlConnector conPrematch;
@@ -131,6 +131,8 @@ public class LinksPrematch extends Thread
     @Override
     public void run()
     {
+        outputLine.setText( "" );
+        outputArea.setText( "" );
 
         showMessage( "LinksPrematch/run()", false, true );
         showMessage( "debug: " + debug, false, true );
@@ -139,94 +141,28 @@ public class LinksPrematch extends Thread
         showMessage( "db_user: " + db_user, false, true );
         showMessage( "db_pass: " + db_pass, false, true );
 
-        long startTotal = System.currentTimeMillis();
+        long timeStart = System.currentTimeMillis();
 
-        String mmss = "";
-        String msg  = "";
+        try
+        {
+            doSplitName( debug, bSplitNames );
 
-        try {
-            System.out.println( "SplitNames" );
-            if( bSplitNames ) {
-                showMessage( "Splitting names...", false, true );
-                long start = System.currentTimeMillis();
-                doSplitName( debug );
-                long stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
-                msg = "Splitting names OK " + mmss;
-                showMessage( msg, false, true );
-                showMessage_nl();
+            doUniqueNameTables( debug, bUniqueTables );
 
-            }
-            else { showMessage( "skipping Splitting names", false, true ); }
+            doLevenshtein( debug, bLevenshtein );
 
-            System.out.println( "bUniqueTables" );
-            if( bUniqueTables ) {
-                showMessage( "Creating unique name tables...", false, true );
-                long start = System.currentTimeMillis();
-                doUniqueNameTables( debug );
-                long stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
-                msg = "Creating Unique name table OK " + mmss;
-                showMessage( msg, false, true );
-                showMessage_nl();
-            }
-            else { showMessage( "skipping Creating unique name tables", false, true ); }
+            doToNumber( debug, bNamesToNo );
 
-            System.out.println( "bLevenshtein" );
-            if( bLevenshtein ) {
-                showMessage( "Computing Levenshtein...", false, true );
-                long start = System.currentTimeMillis();
-                doLevenshtein( debug );
-                long stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
-                msg = "Computing Levenshtein OK " + mmss;
-                showMessage( msg, false, true );
-                showMessage_nl();
-            }
-            else { showMessage( "skipping Computing Levenshtein", false, true ); }
+            doCreateBaseTable( debug, bBaseTable );
 
-            System.out.println( "NamesToNo" );
-            if( bNamesToNo ) {
-                showMessage( "Converting Names to Numbers...", false, true );
-                long start = System.currentTimeMillis();
-                doToNumber( debug );
-                long stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
-                msg = "Converting Names to Numbers OK " + mmss;
-                showMessage( msg, false, true );
-                showMessage_nl();
-            }
-            else { showMessage( "skipping Converting Names to Numbers", false, true ); }
-
-            System.out.println( "bBaseTable" );
-            if( bBaseTable ) {
-                showMessage( "Creating Base Table...", false, true );
-                long start = System.currentTimeMillis();
-                doCreateBaseTable( debug );
-                long stop = System.currentTimeMillis();
-                mmss = Functions.millisec2hms( start, stop );
-                msg = "Creating Base Table OK " + mmss;
-                showMessage( msg, false, true );
-                showMessage_nl();
-            }
-            else { showMessage( "skipping Creating Base Table", false, true ); }
-
-            long stopTotal = System.currentTimeMillis();
-            mmss = Functions.millisec2hms( startTotal, stopTotal );
-            msg = "Prematch finished, Elapsed: " + mmss;
-            showMessage( msg, false, true );
-
-            this.stop();
+            String msg = "Prematching is done";
+            elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
+            System.out.println( msg );
 
         } catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+
+        this.stop();
     }
-
-
-    //public boolean isSplitNames()   { return bSplitNames; }
-    //public boolean isUniqueTables() { return bUniqueTables; }
-    //public boolean isLevenshtein()  { return bLevenshtein; }
-    //public boolean isNamesToNo()    { return bNamesToNo; }
-    //public boolean isBaseTable()    { return bBaseTable; }
 
 
     /**
@@ -270,6 +206,18 @@ public class LinksPrematch extends Thread
     } // showMessage
 
 
+    /**
+     * @param msg
+     * @param start
+     * @param stop
+     */
+    private void elapsedShowMessage( String msg, long start, long stop )
+    {
+        String elapsed = Functions.millisec2hms( start, stop );
+        showMessage( msg + " " + elapsed, false, true );
+    } // elapsedShowMessage
+
+
     private void showMessage_nl()
     {
         String newLineToken = "\r\n";
@@ -288,9 +236,17 @@ public class LinksPrematch extends Thread
      * 
      * @throws Exception 
      */
-    public void doSplitName( boolean debug ) throws Exception
+    public void doSplitName( boolean debug, boolean go ) throws Exception
     {
-        showMessage( "doSplitName()", false, true);
+        String funcname = "doSplitName";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
 
         String query = "SELECT id_person , firstname FROM person_c WHERE firstname is not null AND firstname <> ''";
         if( debug ) { showMessage( query, false, true); }
@@ -345,15 +301,26 @@ public class LinksPrematch extends Thread
         updateFirstnameToPersonC( debug );
         removeFirstnameFile();
         removeFirstnameTable();
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
     }
 
 
     /**
      *
      */
-    public void doUniqueNameTables( boolean debug ) throws Exception
+    public void doUniqueNameTables( boolean debug, boolean go ) throws Exception
     {
-        showMessage( "Creating unique tables...", false, true );
+        String funcname = "oUniqueNameTables";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
 
         dropTableFrequency();
 
@@ -372,7 +339,7 @@ public class LinksPrematch extends Thread
             query = query.replaceAll( "\\s+", " " );      // remove double whitespacing
 
             if( debug ) { showMessage( query, false, true ); }
-            conBase.runQuery( query );
+            conFrequency.runQuery( query );
         }
 
         /*
@@ -406,6 +373,9 @@ public class LinksPrematch extends Thread
         conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q27" ) );
         conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q28" ) );
         */
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
     }
 
 
@@ -426,7 +396,7 @@ public class LinksPrematch extends Thread
             showMessage( "Running query " + qPath, false, true );
             //System.out.println( qPath );
             String query = LinksSpecific.getSqlQuery( qPath );
-            conBase.runQuery( query );
+            conFrequency.runQuery( query );
         }
 
         /*
@@ -537,8 +507,18 @@ public class LinksPrematch extends Thread
      * 
      * @throws Exception 
      */
-    public void doToNumber( boolean debug ) throws Exception
+    public void doToNumber( boolean debug, boolean go ) throws Exception
     {
+        String funcname = "doSplitName";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
         // Create Runtime Object
         Runtime runtime = Runtime.getRuntime();
         int exitValue = 0;
@@ -555,7 +535,7 @@ public class LinksPrematch extends Thread
             showMessage( "Running query " + qPath, false, true );
 
             String query = LinksSpecific.getSqlQuery( qPath );
-            conBase.runQuery( query );
+            conFrequency.runQuery( query );
         }
 
         /*
@@ -649,6 +629,8 @@ public class LinksPrematch extends Thread
         //        exitValue = process.waitFor();
         //        outputArea.append("Exitcode_4 = " + exitValue + "\r\n");
 
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
     }
 
 
@@ -656,15 +638,25 @@ public class LinksPrematch extends Thread
      * @param debug
      * @throws Exception 
      */
-    public void doLevenshtein( boolean debug ) throws Exception
+    public void doLevenshtein( boolean debug, boolean go ) throws Exception
     {
+        String funcname = "doLevenshtein";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        // prematch.Lv is a separate thread, so timing should be done there internally
+        showMessage( funcname + "...", false, true );
+
         // "firstname" and "familyname" are links_frequency tables
         //System.out.println( conFrequency );
 
-        prematch.Lv lv1 = new prematch.Lv( debug, conFrequency, "firstname",  true,  outputLine, outputArea );
-        prematch.Lv lv2 = new prematch.Lv( debug, conFrequency, "firstname",  false, outputLine, outputArea );
-        prematch.Lv lv3 = new prematch.Lv( debug, conFrequency, "familyname", true,  outputLine, outputArea );
-        prematch.Lv lv4 = new prematch.Lv( debug, conFrequency, "familyname", false, outputLine, outputArea );
+        prematch.Lv lv1 = new prematch.Lv( debug, conFrequency, "links_frequency", "firstname",  true,  outputLine, outputArea );
+        prematch.Lv lv2 = new prematch.Lv( debug, conFrequency, "links_frequency", "firstname",  false, outputLine, outputArea );
+        prematch.Lv lv3 = new prematch.Lv( debug, conFrequency, "links_frequency", "familyname", true,  outputLine, outputArea );
+        prematch.Lv lv4 = new prematch.Lv( debug, conFrequency, "links_frequency", "familyname", false, outputLine, outputArea );
 
         lv1.start();
         lv2.start();
@@ -677,9 +669,17 @@ public class LinksPrematch extends Thread
      * @param debug
      * @throws Exception 
      */
-    public void doCreateBaseTable( boolean debug ) throws Exception
+    public void doCreateBaseTable( boolean debug, boolean go ) throws Exception
     {
-        if( showmsg ) { showMessage( "Creating LINKS_BASE tables...", false, true ); }
+        String funcname = "doCreateBaseTable";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
 
         String qPrefix = "FillBaseTable/FillBaseTable_q";
         int nqFirst = 1;
@@ -693,10 +693,12 @@ public class LinksPrematch extends Thread
             showMessage( "Running query " + qPath, false, true );
             String query = LinksSpecific.getSqlQuery( qPath );
 
-            query = query.replaceAll( "\\r\\n", " " );
-            query = query.replaceAll( "  ", " " );
-
-            if( debug ) { showMessage( query, false, true ); }
+            if( debug ) {
+                System.out.println( query );
+                String q = query.replaceAll( "\n", " " );
+                q = q.replaceAll( "  ", " " );
+                showMessage( query, false, true );
+            }
             try { conBase.runQuery( query ); }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
         }
@@ -826,7 +828,8 @@ public class LinksPrematch extends Thread
         }
         */
 
-        //if( showmsg ) { showMessage( endl, false, false ); }
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
     }
 
 

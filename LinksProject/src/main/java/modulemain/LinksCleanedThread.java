@@ -224,7 +224,7 @@ public class LinksCleanedThread extends Thread
         */
 
         try {
-            long begintime = System.currentTimeMillis();
+            long timeStart = System.currentTimeMillis();
 
             //plog.show( "Links Match Manager 2.0" );
             plog.show( "LinksCleanedThread/run()" );
@@ -296,7 +296,7 @@ public class LinksCleanedThread extends Thread
                 doPostTasks( false, opts.isDoPostTasks(), source );                                     // GUI cb: Post Tasks
 
                 String msg = "Cleaning sourceId " + sourceId + " is done";
-                showTimingMessage( msg, begintime );
+                elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
                 System.out.println( msg );
             }
 

@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-30-Sep-2014 Latest change
+ * FL-13-Nov-2014 Latest change
  */
 public class LinksSpecific
 {
@@ -472,10 +472,14 @@ public class LinksSpecific
             InputStream in = LinksSpecific.class.getClassLoader().getResourceAsStream(path);
             BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
             String line = "";
-            while( (line = reader.readLine()) != null ) {
+            while( ( line = reader.readLine() ) != null ) {
                 //System.out.println( line );
-                query.append( line );
+                // skip comment line; prefix with a space
+                if( ! line.startsWith( "--" ) ) {  query.append( " " + line ); }
             }
+
+            System.out.println( path );
+            System.out.println( query.toString() + "\n" );
         } catch( Exception ex )  { System.out.println( ex.getMessage() ); }
 
         return query.toString();
