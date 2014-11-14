@@ -21,19 +21,21 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-13-Nov-2014 Latest change
+ * FL-14-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
 {
     private Options opts;
+
+    private boolean debug;
     private PrintLogger plog;
 
     private String db_url;
     private String db_user;
     private String db_pass;
 
-    private boolean debug;
+    private int sourceId;
 
     private boolean bSplitNames;
     private boolean bUniqueTables;
@@ -89,6 +91,8 @@ public class LinksPrematch extends Thread
         this.db_user = opts.getDb_user();
         this.db_pass = opts.getDb_pass();
 
+        this.sourceId = opts.getSourceId();
+
         this.bSplitNames   = bSplitNames;
         this.bUniqueTables = bUniqueTables;
         this.bLevenshtein  = bLevenshtein;
@@ -134,7 +138,9 @@ public class LinksPrematch extends Thread
         outputLine.setText( "" );
         outputArea.setText( "" );
 
-        showMessage( "LinksPrematch/run()", false, true );
+        String source = Integer.toString( sourceId );
+
+        showMessage( "LinksPrematch/run() for source " + source, false, true );
         showMessage( "debug: " + debug, false, true );
 
         showMessage( "db_url: "  + db_url,  false, true );
@@ -145,15 +151,15 @@ public class LinksPrematch extends Thread
 
         try
         {
-            doSplitName( debug, bSplitNames );
+            doSplitName( debug, bSplitNames, source  );
 
             doUniqueNameTables( debug, bUniqueTables );
 
-            doLevenshtein( debug, bLevenshtein );
+            doLevenshtein( debug, bLevenshtein );           // start 4 threads
 
             doToNumber( debug, bNamesToNo );
 
-            doCreateBaseTable( debug, bBaseTable );
+            doUpdateBaseTable(debug, bBaseTable);
 
             String msg = "Prematching is done";
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
@@ -236,7 +242,7 @@ public class LinksPrematch extends Thread
      * 
      * @throws Exception 
      */
-    public void doSplitName( boolean debug, boolean go ) throws Exception
+    public void doSplitName( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doSplitName";
 
@@ -248,10 +254,14 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        String query = "SELECT id_person , firstname FROM person_c WHERE firstname is not null AND firstname <> ''";
+        String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> '' AND id_source = " + source;
+        //String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> '' AND id_source = " + source + " ORDER BY id_person";
         if( debug ) { showMessage( query, false, true); }
 
         ResultSet rsFirstName = conCleaned.runQueryWithResult( query );
+
+        //removeFirstnameFile();
+        //removeFirstnameTable();
 
         createTempFirstname( debug );
         createTempFirstnameFile();
@@ -265,6 +275,7 @@ public class LinksPrematch extends Thread
             int id_person    = rsFirstName.getInt( "id_person" );
             String firstname = rsFirstName.getString( "firstname" );
 
+            // limit -- This controls the number of times the pattern is applied and therefore affects the length of the resulting array
             String[] fn = firstname.split( " ", 4 );
 
             String p0 = "";
@@ -289,19 +300,23 @@ public class LinksPrematch extends Thread
             }
 
             String q = id_person + "," + p0 + "," + p1 + "," + p2 + "," + p3;
+            //System.out.println( q );
 
             writerFirstname.write( q + "\n" );
         }
-        showMessage( count + " firstnames split", false, true );
+
+        writerFirstname.close();
 
         rsFirstName.close();
         rsFirstName = null;
 
         loadFirstnameToTable( debug );
         updateFirstnameToPersonC( debug );
+
         removeFirstnameFile();
         removeFirstnameTable();
 
+        showMessage( count + " firstnames split", false, true );
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
     }
@@ -312,7 +327,7 @@ public class LinksPrematch extends Thread
      */
     public void doUniqueNameTables( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "oUniqueNameTables";
+        String funcname = "doUniqueNameTables";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -331,14 +346,11 @@ public class LinksPrematch extends Thread
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
-            //System.out.println( qPath );
-
             showMessage( "Running query " + qPath, false, true );
 
             String query = LinksSpecific.getSqlQuery( qPath );
-            query = query.replaceAll( "\\s+", " " );      // remove double whitespacing
-
             if( debug ) { showMessage( query, false, true ); }
+
             conFrequency.runQuery( query );
         }
 
@@ -394,6 +406,7 @@ public class LinksPrematch extends Thread
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
             showMessage( "Running query " + qPath, false, true );
+
             //System.out.println( qPath );
             String query = LinksSpecific.getSqlQuery( qPath );
             conFrequency.runQuery( query );
@@ -509,7 +522,7 @@ public class LinksPrematch extends Thread
      */
     public void doToNumber( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doSplitName";
+        String funcname = "doToNumber";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -519,10 +532,6 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        // Create Runtime Object
-        Runtime runtime = Runtime.getRuntime();
-        int exitValue = 0;
-
         // Execute queries
         int nqFirst = 1;
         int nqLast  = 5;
@@ -530,11 +539,10 @@ public class LinksPrematch extends Thread
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
-            //System.out.println( qPath );
-
-            showMessage( "Running query " + qPath, false, true );
 
             String query = LinksSpecific.getSqlQuery( qPath );
+            if( debug ) { showMessage(query, false, true); }
+
             conFrequency.runQuery( query );
         }
 
@@ -545,6 +553,10 @@ public class LinksPrematch extends Thread
         conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
         conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
         conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
+
+        // Create Runtime Object
+        Runtime runtime = Runtime.getRuntime();
+        int exitValue = 0;
         */
 
         /* Creating name files */
@@ -669,9 +681,9 @@ public class LinksPrematch extends Thread
      * @param debug
      * @throws Exception 
      */
-    public void doCreateBaseTable( boolean debug, boolean go ) throws Exception
+    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doCreateBaseTable";
+        String funcname = "doUpdateBaseTable";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -688,17 +700,11 @@ public class LinksPrematch extends Thread
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
-            //System.out.println( qPath );
+            showMessage( "Running query: " + qPath, false, true );
 
-            showMessage( "Running query " + qPath, false, true );
             String query = LinksSpecific.getSqlQuery( qPath );
+            if( debug ) { showMessage( query, false, true ); }
 
-            if( debug ) {
-                System.out.println( query );
-                String q = query.replaceAll( "\n", " " );
-                q = q.replaceAll( "  ", " " );
-                showMessage( query, false, true );
-            }
             try { conBase.runQuery( query ); }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
         }

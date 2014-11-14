@@ -2498,7 +2498,6 @@ public class ManagerGui extends javax.swing.JFrame
         boolean doNamesToNo    = false;
         boolean doBaseTable    = false;
 
-
         if( cbPdoSplitName.isSelected() ) { doSplitNames = true; }
 
         if( cbPdoUniqueNameTables.isSelected() ) { doUniqueTables = true; }
@@ -2575,7 +2574,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "12-Nov-2014 09:54";
+                String timestamp1 = "14-Nov-2014 16:28";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

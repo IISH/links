@@ -466,22 +466,30 @@ public class LinksSpecific
     public static String getSqlQuery( String basename ) throws java.io.IOException
     {
         String path = "SqlQuery/" + basename + ".sql";
-        StringBuilder query = new StringBuilder();
+        StringBuilder queryB = new StringBuilder();
+        String query = "";
 
         try {
             InputStream in = LinksSpecific.class.getClassLoader().getResourceAsStream(path);
             BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
             String line = "";
+            int iline = 0;
+
             while( ( line = reader.readLine() ) != null ) {
                 //System.out.println( line );
-                // skip comment line; prefix with a space
-                if( ! line.startsWith( "--" ) ) {  query.append( " " + line ); }
+                if( line.startsWith( "--" ) ) { continue; }         // skip comment line
+                line = line.trim();                                 // remove leading and trailing whitespace
+                line = line.replaceAll( "\\s+", " " );              // remove double whitespacing
+                if( iline > 0 ) { line = " " + line; }              // prefix with a space
+                iline++;
+                queryB.append( line );
             }
+            query = queryB.toString();
 
-            System.out.println( path );
-            System.out.println( query.toString() + "\n" );
+            //System.out.println( path );
+            //System.out.println( query + "\n" );
         } catch( Exception ex )  { System.out.println( ex.getMessage() ); }
 
-        return query.toString();
+        return query;
     }
 }
