@@ -68,7 +68,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-10-Nov-2014 Latest change
+ * FL-17-Nov-2014 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2480,18 +2480,6 @@ public class ManagerGui extends javax.swing.JFrame
 
         opts = setOptions();
 
-
-        /*
-        opts.setLogger( plog );
-        String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
-        String db_user = tbLOLCuser.getText();     // from Tab Cleaned
-        String db_pass = tbLOLCpass.getText();     // from Tab Cleaned
-
-        opts.setDb_url(  db_url );
-        opts.setDb_user( db_user );
-        opts.setDb_pass( db_pass );
-        */
-
         boolean doSplitNames   = false;
         boolean doUniqueTables = false;
         boolean doLevenshtein  = false;
@@ -2574,7 +2562,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "14-Nov-2014 16:28";
+                String timestamp1 = "17-Nov-2014 16:28";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

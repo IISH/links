@@ -21,7 +21,8 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
- * FL-14-Nov-2014 Latest change
+ * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
+ * FL-17-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -34,8 +35,6 @@ public class LinksPrematch extends Thread
     private String db_url;
     private String db_user;
     private String db_pass;
-
-    private int sourceId;
 
     private boolean bSplitNames;
     private boolean bUniqueTables;
@@ -91,8 +90,6 @@ public class LinksPrematch extends Thread
         this.db_user = opts.getDb_user();
         this.db_pass = opts.getDb_pass();
 
-        this.sourceId = opts.getSourceId();
-
         this.bSplitNames   = bSplitNames;
         this.bUniqueTables = bUniqueTables;
         this.bLevenshtein  = bLevenshtein;
@@ -138,9 +135,7 @@ public class LinksPrematch extends Thread
         outputLine.setText( "" );
         outputArea.setText( "" );
 
-        String source = Integer.toString( sourceId );
-
-        showMessage( "LinksPrematch/run() for source " + source, false, true );
+        showMessage( "LinksPrematch/run()", false, true );
         showMessage( "debug: " + debug, false, true );
 
         showMessage( "db_url: "  + db_url,  false, true );
@@ -151,7 +146,7 @@ public class LinksPrematch extends Thread
 
         try
         {
-            doSplitName( debug, bSplitNames, source  );
+            doSplitName( debug, bSplitNames );
 
             doUniqueNameTables( debug, bUniqueTables );
 
@@ -242,7 +237,7 @@ public class LinksPrematch extends Thread
      * 
      * @throws Exception 
      */
-    public void doSplitName( boolean debug, boolean go, String source ) throws Exception
+    public void doSplitName( boolean debug, boolean go ) throws Exception
     {
         String funcname = "doSplitName";
 
@@ -254,8 +249,7 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> '' AND id_source = " + source;
-        //String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> '' AND id_source = " + source + " ORDER BY id_person";
+        String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> ''";
         if( debug ) { showMessage( query, false, true); }
 
         ResultSet rsFirstName = conCleaned.runQueryWithResult( query );
