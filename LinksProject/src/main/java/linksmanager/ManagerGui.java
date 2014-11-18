@@ -42,6 +42,9 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import com.jgoodies.forms.factories.*;
+import com.jgoodies.forms.layout.*;
+
 //import org.apache.logging.log4j.LogManager;
 //import org.apache.logging.log4j.Logger;
 //import org.apache.logging.log4j.status.StatusLogger;
@@ -112,12 +115,22 @@ public class ManagerGui extends javax.swing.JFrame
         createDomProject();
         initComponents();
 
-        tpMain.setSelectedIndex( 4 );       // select the Cleaned tab
+        // these 4 are not needed anymore
+        tpMain.remove( pMain );
+        tpMain.remove( pCsv );
+        tpMain.remove( pCsvToDatabase );
+        tpMain.remove( pBronInternToLinksOrigineel );
+
+        getContentPane().revalidate();
+        getContentPane().repaint();
+
+        //tpMain.setSelectedIndex( 4 );       // select the Cleaned tab
+
         // disable the first 4 tabs because they are no longer used (Genlias only)
-        tpMain.setEnabledAt( 0, false );
-        tpMain.setEnabledAt( 1, false );
-        tpMain.setEnabledAt( 2, false );
-        tpMain.setEnabledAt( 3, false );
+        //tpMain.setEnabledAt( 0, false );
+        //tpMain.setEnabledAt( 1, false );
+        //tpMain.setEnabledAt( 2, false );
+        //tpMain.setEnabledAt( 3, false );
 
         Properties properties = Functions.getProperties();          // Read properties file
         loadProperties( plog, properties );                         // fill GUI fields
@@ -279,16 +292,20 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoOccupation = new JCheckBox();
 		cbCdoFirstnames = new JCheckBox();
 		cbCdoPrepieceSuffix = new JCheckBox();
-		jPanel1 = new JPanel();
-		cbPdoUniqueNameTables = new JCheckBox();
+		pPrematch = new JPanel();
+		cbPdoFrequencyTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
 		cbPdoCreateBaseTable = new JCheckBox();
-		cbPdoSplitName = new JCheckBox();
+		cbPdoSplitFirstnames = new JCheckBox();
 		btnStartProcessPrematch = new JButton();
 		jScrollPane7 = new JScrollPane();
 		taPresult = new JTextArea();
-		cbPdoNameToNo = new JCheckBox();
+		cbPdoNamesToNos = new JCheckBox();
 		taPinfo = new JTextField();
+		cbPdoStandardization = new JCheckBox();
+		pMatch = new JPanel();
+		scrollPane1 = new JScrollPane();
+		textArea1 = new JTextArea();
 		btnStartProcessMatch = new JButton();
 
 		//======== this ========
@@ -1603,24 +1620,21 @@ public class ManagerGui extends javax.swing.JFrame
 			}
 			tpMain.addTab("CLEAN", pLOLC);
 
-			//======== jPanel1 ========
+			//======== pPrematch ========
 			{
-				jPanel1.setName("jPanel1");
+				pPrematch.setName("jPanel1");
 
-				//---- cbPdoUniqueNameTables ----
-				cbPdoUniqueNameTables.setText("Unique Tables");
-				cbPdoUniqueNameTables.setName("cbPdoUniqueNameTables");
-				cbPdoUniqueNameTables.setSelected(true);
+				//---- cbPdoFrequencyTables ----
+				cbPdoFrequencyTables.setText("Frequency Tables");
+				cbPdoFrequencyTables.setName("cbPdoUniqueNameTables");
 
 				//---- cbPdoLevenshtein ----
 				cbPdoLevenshtein.setText("Levenshtein");
 				cbPdoLevenshtein.setName("cbPdoLevenshtein");
-				cbPdoLevenshtein.setSelected(true);
 
 				//---- cbPdoCreateBaseTable ----
 				cbPdoCreateBaseTable.setText("Base Table");
 				cbPdoCreateBaseTable.setName("cbPdoCreateBaseTable");
-				cbPdoCreateBaseTable.setSelected(true);
 				cbPdoCreateBaseTable.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
@@ -1628,10 +1642,9 @@ public class ManagerGui extends javax.swing.JFrame
 					}
 				});
 
-				//---- cbPdoSplitName ----
-				cbPdoSplitName.setText("Split Names");
-				cbPdoSplitName.setName("cbPdoSplitName");
-				cbPdoSplitName.setSelected(true);
+				//---- cbPdoSplitFirstnames ----
+				cbPdoSplitFirstnames.setText("Split Firstnames");
+				cbPdoSplitFirstnames.setName("cbPdoSplitName");
 
 				//---- btnStartProcessPrematch ----
 				btnStartProcessPrematch.setText("Start PreMatching");
@@ -1654,13 +1667,79 @@ public class ManagerGui extends javax.swing.JFrame
 					jScrollPane7.setViewportView(taPresult);
 				}
 
-				//---- cbPdoNameToNo ----
-				cbPdoNameToNo.setText("Name to Number");
-				cbPdoNameToNo.setName("cbPdoNameToNo");
-				cbPdoNameToNo.setSelected(true);
+				//---- cbPdoNamesToNos ----
+				cbPdoNamesToNos.setText("Names to Numbers");
+				cbPdoNamesToNos.setName("cbPdoNameToNo");
 
 				//---- taPinfo ----
 				taPinfo.setName("taPinfo");
+
+				//---- cbPdoStandardization ----
+				cbPdoStandardization.setText("Automatic Standardization");
+				cbPdoStandardization.setName("cbPdoStandardization");
+
+				GroupLayout pPrematchLayout = new GroupLayout(pPrematch);
+				pPrematch.setLayout(pPrematchLayout);
+				pPrematchLayout.setHorizontalGroup(
+					pPrematchLayout.createParallelGroup()
+						.addGroup(pPrematchLayout.createSequentialGroup()
+							.addContainerGap()
+							.addGroup(pPrematchLayout.createParallelGroup()
+								.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
+								.addComponent(taPinfo, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
+								.addGroup(pPrematchLayout.createSequentialGroup()
+									.addGroup(pPrematchLayout.createParallelGroup()
+										.addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbPdoNamesToNos, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
+										.addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+											.addComponent(cbPdoSplitFirstnames, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
+											.addComponent(cbPdoFrequencyTables, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
+											.addComponent(cbPdoStandardization, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)))
+									.addGap(0, 0, Short.MAX_VALUE))
+								.addGroup(pPrematchLayout.createSequentialGroup()
+									.addComponent(cbPdoCreateBaseTable, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 641, Short.MAX_VALUE)
+									.addComponent(btnStartProcessPrematch, GroupLayout.PREFERRED_SIZE, 195, GroupLayout.PREFERRED_SIZE)))
+							.addContainerGap())
+				);
+				pPrematchLayout.setVerticalGroup(
+					pPrematchLayout.createParallelGroup()
+						.addGroup(pPrematchLayout.createSequentialGroup()
+							.addContainerGap()
+							.addComponent(cbPdoSplitFirstnames)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+							.addComponent(cbPdoFrequencyTables)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+							.addComponent(cbPdoStandardization)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+							.addComponent(cbPdoLevenshtein)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+							.addComponent(cbPdoNamesToNos)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+							.addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+								.addComponent(cbPdoCreateBaseTable)
+								.addComponent(btnStartProcessPrematch))
+							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
+							.addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+							.addComponent(jScrollPane7, GroupLayout.PREFERRED_SIZE, 437, GroupLayout.PREFERRED_SIZE)
+							.addContainerGap())
+				);
+			}
+			tpMain.addTab("PREMATCH", pPrematch);
+
+			//======== pMatch ========
+			{
+				pMatch.setName("pMatch");
+
+				//======== scrollPane1 ========
+				{
+					scrollPane1.setName("scrollPane1");
+
+					//---- textArea1 ----
+					textArea1.setName("textArea1");
+					scrollPane1.setViewportView(textArea1);
+				}
 
 				//---- btnStartProcessMatch ----
 				btnStartProcessMatch.setText("Start Matching");
@@ -1672,57 +1751,28 @@ public class ManagerGui extends javax.swing.JFrame
 					}
 				});
 
-				GroupLayout jPanel1Layout = new GroupLayout(jPanel1);
-				jPanel1.setLayout(jPanel1Layout);
-				jPanel1Layout.setHorizontalGroup(
-					jPanel1Layout.createParallelGroup()
-						.addGroup(jPanel1Layout.createSequentialGroup()
-							.addContainerGap()
-							.addGroup(jPanel1Layout.createParallelGroup()
-								.addComponent(taPinfo, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
-								.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
-								.addGroup(jPanel1Layout.createSequentialGroup()
-									.addGroup(jPanel1Layout.createParallelGroup()
-										.addComponent(cbPdoSplitName, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbPdoUniqueNameTables, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE))
-									.addGap(0, 0, Short.MAX_VALUE))
-								.addGroup(GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-									.addGroup(jPanel1Layout.createParallelGroup()
-										.addComponent(cbPdoNameToNo, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbPdoCreateBaseTable, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 641, Short.MAX_VALUE)
-									.addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-										.addComponent(btnStartProcessPrematch, GroupLayout.DEFAULT_SIZE, 195, Short.MAX_VALUE)
-										.addComponent(btnStartProcessMatch, GroupLayout.DEFAULT_SIZE, 195, Short.MAX_VALUE))))
-							.addContainerGap())
+				GroupLayout pMatchLayout = new GroupLayout(pMatch);
+				pMatch.setLayout(pMatchLayout);
+				pMatchLayout.setHorizontalGroup(
+					pMatchLayout.createParallelGroup()
+						.addGroup(pMatchLayout.createSequentialGroup()
+							.addGap(34, 34, 34)
+							.addGroup(pMatchLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+								.addComponent(scrollPane1, GroupLayout.DEFAULT_SIZE, 1057, Short.MAX_VALUE)
+								.addComponent(btnStartProcessMatch, GroupLayout.DEFAULT_SIZE, 1057, Short.MAX_VALUE))
+							.addContainerGap(30, Short.MAX_VALUE))
 				);
-				jPanel1Layout.setVerticalGroup(
-					jPanel1Layout.createParallelGroup()
-						.addGroup(jPanel1Layout.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(cbPdoSplitName)
-							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(cbPdoUniqueNameTables)
-							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(cbPdoLevenshtein)
-							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-								.addGroup(jPanel1Layout.createSequentialGroup()
-									.addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbPdoNameToNo)
-										.addComponent(btnStartProcessPrematch))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addComponent(cbPdoCreateBaseTable))
-								.addComponent(btnStartProcessMatch))
-							.addGap(17, 17, 17)
-							.addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-							.addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 461, Short.MAX_VALUE)
-							.addContainerGap())
+				pMatchLayout.setVerticalGroup(
+					pMatchLayout.createParallelGroup()
+						.addGroup(pMatchLayout.createSequentialGroup()
+							.addGap(26, 26, 26)
+							.addComponent(scrollPane1, GroupLayout.PREFERRED_SIZE, 545, GroupLayout.PREFERRED_SIZE)
+							.addGap(18, 18, 18)
+							.addComponent(btnStartProcessMatch)
+							.addContainerGap(30, Short.MAX_VALUE))
 				);
 			}
-			tpMain.addTab("MATCH", jPanel1);
+			tpMain.addTab("MATCH", pMatch);
 		}
 
 		GroupLayout contentPaneLayout = new GroupLayout(contentPane);
@@ -1954,6 +2004,43 @@ public class ManagerGui extends javax.swing.JFrame
         dbgPostTasks       = properties.getProperty( "dbgPostTasks" );
         dbgPrematch        = properties.getProperty( "dbgPrematch" );
         dbgMatch           = properties.getProperty( "dbgMatch" );
+
+
+        String doSplitFirstnames = properties.getProperty( "doSplitFirstnames" );
+        if( doSplitFirstnames != null ) {
+            if( doSplitFirstnames.equals( "true" ) ) { cbPdoSplitFirstnames.setSelected( true ); }
+            else { cbPdoSplitFirstnames.setSelected( false ); }
+        }
+
+        String doFrequencyTables = properties.getProperty( "doFrequencyTables" );
+        if( doFrequencyTables != null ) {
+            if( doFrequencyTables.equals( "true" ) ) { cbPdoFrequencyTables.setSelected( true ); }
+            else { cbPdoFrequencyTables.setSelected( false ); }
+        }
+
+        String doStandardization = properties.getProperty( "doStandardization" );
+        if( doStandardization != null ) {
+            if( doStandardization.equals( "true" ) ) { cbPdoStandardization.setSelected( true ); }
+            else { cbPdoStandardization.setSelected( false ); }
+        }
+
+        String doLevenshtein = properties.getProperty( "doLevenshtein" );
+        if( doLevenshtein != null ) {
+            if( doLevenshtein.equals( "true" ) ) { cbPdoLevenshtein.setSelected( true ); }
+            else { cbPdoLevenshtein.setSelected( false ); }
+        }
+
+        String doNamesToNos = properties.getProperty( "doNamesToNos" );
+       if( doNamesToNos != null ) {
+            if( doNamesToNos.equals( "true" ) ) { cbPdoNamesToNos.setSelected( true ); }
+            else { cbPdoNamesToNos.setSelected( false ); }
+        }
+
+        String doCreateBaseTable = properties.getProperty( "doCreateBaseTable" );
+        if( doCreateBaseTable != null ) {
+            if( doCreateBaseTable.equals( "true" ) ) { cbPdoCreateBaseTable.setSelected( true ); }
+            else { cbPdoCreateBaseTable.setSelected( false ); }
+        }
 
     } // loadProperties
 
@@ -2480,19 +2567,22 @@ public class ManagerGui extends javax.swing.JFrame
 
         opts = setOptions();
 
-        boolean doSplitNames   = false;
-        boolean doUniqueTables = false;
-        boolean doLevenshtein  = false;
-        boolean doNamesToNo    = false;
-        boolean doBaseTable    = false;
+        boolean doSplitFirstnames = false;
+        boolean doFrequencyTables = false;
+        boolean doStandardization = false;
+        boolean doLevenshtein     = false;
+        boolean doNamesToNos      = false;
+        boolean doBaseTable       = false;
 
-        if( cbPdoSplitName.isSelected() ) { doSplitNames = true; }
+        if( cbPdoSplitFirstnames.isSelected() ) { doSplitFirstnames = true; }
 
-        if( cbPdoUniqueNameTables.isSelected() ) { doUniqueTables = true; }
+        if( cbPdoFrequencyTables.isSelected() ) { doFrequencyTables = true; }
+
+        if( cbPdoStandardization.isSelected() ) { doStandardization = true; }
 
         if( cbPdoLevenshtein.isSelected() ) { doLevenshtein = true; }
 
-        if( cbPdoNameToNo.isSelected() ) { doNamesToNo = true; }
+        if( cbPdoNamesToNos.isSelected() ) { doNamesToNos = true; }
 
         if( cbPdoCreateBaseTable.isSelected() ) { doBaseTable = true; }
 
@@ -2505,10 +2595,11 @@ public class ManagerGui extends javax.swing.JFrame
                 taPinfo,
                 taPresult,
 
-                doSplitNames,
-                doUniqueTables,
+                doSplitFirstnames,
+                doFrequencyTables,
+                doStandardization,
                 doLevenshtein,
-                doNamesToNo,
+                doNamesToNos,
                 doBaseTable
             );
 
@@ -2562,7 +2653,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "17-Nov-2014 16:28";
+                String timestamp1 = "18-Nov-2014 15:17";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2731,16 +2822,20 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoOccupation;
 	private JCheckBox cbCdoFirstnames;
 	private JCheckBox cbCdoPrepieceSuffix;
-	private JPanel jPanel1;
-	private JCheckBox cbPdoUniqueNameTables;
+	private JPanel pPrematch;
+	private JCheckBox cbPdoFrequencyTables;
 	private JCheckBox cbPdoLevenshtein;
 	private JCheckBox cbPdoCreateBaseTable;
-	private JCheckBox cbPdoSplitName;
+	private JCheckBox cbPdoSplitFirstnames;
 	private JButton btnStartProcessPrematch;
 	private JScrollPane jScrollPane7;
 	private JTextArea taPresult;
-	private JCheckBox cbPdoNameToNo;
+	private JCheckBox cbPdoNamesToNos;
 	private JTextField taPinfo;
+	private JCheckBox cbPdoStandardization;
+	private JPanel pMatch;
+	private JScrollPane scrollPane1;
+	private JTextArea textArea1;
 	private JButton btnStartProcessMatch;
     // End of variables declaration//GEN-END:variables
 }

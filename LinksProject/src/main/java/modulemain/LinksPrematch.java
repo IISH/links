@@ -8,8 +8,6 @@ import java.sql.ResultSet;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import com.google.common.collect.Range;
-
 import connectors.MySqlConnector;
 import dataset.Options;
 import general.Functions;
@@ -22,7 +20,7 @@ import general.PrintLogger;
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
- * FL-17-Nov-2014 Latest change
+ * FL-18-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -36,10 +34,11 @@ public class LinksPrematch extends Thread
     private String db_user;
     private String db_pass;
 
-    private boolean bSplitNames;
-    private boolean bUniqueTables;
+    private boolean bSplitFirstames;
+    private boolean bFrequencyTables;
+    private boolean bStandardization;
     private boolean bLevenshtein;
-    private boolean bNamesToNo;
+    private boolean bNamesToNos;
     private boolean bBaseTable;
 
     private boolean showmsg = true;
@@ -61,10 +60,11 @@ public class LinksPrematch extends Thread
      * @param opts
      * @param outputLine
      * @param outputArea
-     * @param bSplitNames
-     * @param bUniqueTables
+     * @param bSplitFirstnames
+     * @param bFrequencyTables
+     * @param bStandardization
      * @param bLevenshtein
-     * @param bNamesToNo
+     * @param bNamesToNos
      * @param bBaseTable
      * @throws Exception
      */
@@ -75,10 +75,11 @@ public class LinksPrematch extends Thread
         JTextField outputLine,
         JTextArea  outputArea,
 
-        boolean bSplitNames,
-        boolean bUniqueTables,
+        boolean bSplitFirstnames,
+        boolean bFrequencyTables,
+        boolean bStandardization,
         boolean bLevenshtein,
-        boolean bNamesToNo,
+        boolean bNamesToNos,
         boolean bBaseTable
     )
     throws Exception
@@ -90,11 +91,12 @@ public class LinksPrematch extends Thread
         this.db_user = opts.getDb_user();
         this.db_pass = opts.getDb_pass();
 
-        this.bSplitNames   = bSplitNames;
-        this.bUniqueTables = bUniqueTables;
-        this.bLevenshtein  = bLevenshtein;
-        this.bNamesToNo    = bNamesToNo;
-        this.bBaseTable    = bBaseTable;
+        this.bSplitFirstames  = bSplitFirstnames;
+        this.bFrequencyTables = bFrequencyTables;
+        this.bStandardization = bStandardization;
+        this.bLevenshtein     = bLevenshtein;
+        this.bNamesToNos      = bNamesToNos;
+        this.bBaseTable       = bBaseTable;
 
         this.outputLine = outputLine;
         this.outputArea  = outputArea;
@@ -132,6 +134,7 @@ public class LinksPrematch extends Thread
     @Override
     public void run()
     {
+        System.out.println( "LinksPrematch/run()" );
         outputLine.setText( "" );
         outputArea.setText( "" );
 
@@ -146,15 +149,17 @@ public class LinksPrematch extends Thread
 
         try
         {
-            doSplitName( debug, bSplitNames );
+            doSplitFirstnames( debug, bSplitFirstames );
 
-            doUniqueNameTables( debug, bUniqueTables );
+            doFrequencyTables( debug, bFrequencyTables );
+
+            doStandardization( debug, bStandardization );
 
             doLevenshtein( debug, bLevenshtein );           // start 4 threads
 
-            doToNumber( debug, bNamesToNo );
+            doNamesToNumbers( debug, bNamesToNos );
 
-            doUpdateBaseTable(debug, bBaseTable);
+            doUpdateBaseTable( debug, bBaseTable );
 
             String msg = "Prematching is done";
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
@@ -163,7 +168,7 @@ public class LinksPrematch extends Thread
         } catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
 
         this.stop();
-    }
+    } // run
 
 
     /**
@@ -237,14 +242,16 @@ public class LinksPrematch extends Thread
      * 
      * @throws Exception 
      */
-    public void doSplitName( boolean debug, boolean go ) throws Exception
+    public void doSplitFirstnames( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doSplitName";
+        String funcname = "doSplitFirstnames";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
             return;
         }
+
+        if( debug ) { System.out.println( funcname ); }
 
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
@@ -313,25 +320,27 @@ public class LinksPrematch extends Thread
         showMessage( count + " firstnames split", false, true );
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    }
+    } // doSplitFirstNames
 
 
     /**
      *
      */
-    public void doUniqueNameTables( boolean debug, boolean go ) throws Exception
+    public void doFrequencyTables( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doUniqueNameTables";
+        String funcname = "doFrequencyTables";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
             return;
         }
 
+        if( debug ) { System.out.println( funcname ); }
+
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        dropTableFrequency();
+        //dropDbFrequency();
 
         // Execute queries
         int nqFirst = 1;
@@ -340,12 +349,14 @@ public class LinksPrematch extends Thread
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
-            showMessage( "Running query " + qPath, false, true );
-
             String query = LinksSpecific.getSqlQuery( qPath );
-            if( debug ) { showMessage( query, false, true ); }
 
-            conFrequency.runQuery( query );
+            if( query.isEmpty() ) { showMessage( "Empty query " + qPath, false, true ); }
+            else {
+                showMessage( "Running query " + qPath, false, true );
+                if( debug ) { showMessage( query, false, true ); }
+                conFrequency.runQuery( query );
+            }
         }
 
         /*
@@ -382,7 +393,48 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    }
+    } // doFrequencyTables
+
+    /**
+     *
+     */
+    public void doStandardization( boolean debug, boolean go ) throws Exception {
+        String funcname = "doStandardization";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        showMessage( "Doing nothing yet ", false, true );
+
+
+        //dropDbFrequency();
+
+        // Execute queries
+        /*
+        int nqFirst = 1;
+        int nqLast = 28;
+        String qPrefix = "FrequencyTables/FrequencyTables_q";
+
+        for (int n = nqFirst; n <= nqLast; n++) {
+            String qPath = String.format(qPrefix + "%02d", n);
+            showMessage("Running query " + qPath, false, true);
+
+            String query = LinksSpecific.getSqlQuery(qPath);
+            if (debug) {
+                showMessage(query, false, true);
+            }
+
+            conFrequency.runQuery(query);
+        }
+        */
+    } // doFrequencyTables
 
 
     /**
@@ -390,7 +442,9 @@ public class LinksPrematch extends Thread
      */
     public void doUniqueNameTablesTemp() throws Exception
     {
-        dropTableFrequency();
+        //if( debug ) { System.out.println( funcname ); }
+
+        //dropDbFrequency();
 
         // Execute queries
         int nqFirst = 1;
@@ -427,13 +481,13 @@ public class LinksPrematch extends Thread
         conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q17" ) );
         conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q18" ) );
         */
-    }
+    } // doUniqueNameTablesTemp
 
 
     /**
      *
      */
-    private void dropTableFrequency() throws Exception
+    private void dropDbFrequency() throws Exception
     {
         String qDropFrequency = "DROP SCHEMA links_frequency ;";
 
@@ -445,7 +499,7 @@ public class LinksPrematch extends Thread
 
         if( showmsg ) { showMessage( "Creating database links_frequency", false, true ); }
         conFrequency.runQuery( qCreateFrequency );
-    }
+    } // dropDbFrequency
 
 
     /**
@@ -453,6 +507,8 @@ public class LinksPrematch extends Thread
      */
     public void doBasicName( boolean debug ) throws Exception
     {
+        //if( debug ) { System.out.println( funcname ); }
+
         String qPath = "";
 
         // run preparing queries
@@ -507,21 +563,23 @@ public class LinksPrematch extends Thread
         }
 
         outputArea.append( "04" + "\r\n" );
-    }
+    } // doBasicName
 
 
     /**
      * 
      * @throws Exception 
      */
-    public void doToNumber( boolean debug, boolean go ) throws Exception
+    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doToNumber";
+        String funcname = "doNamesToNumbers";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
             return;
         }
+
+        if( debug ) { System.out.println( funcname ); }
 
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
@@ -529,7 +587,7 @@ public class LinksPrematch extends Thread
         // Execute queries
         int nqFirst = 1;
         int nqLast  = 5;
-        String qPrefix = "NameToNumber/NameToNumber_q";
+        String qPrefix = "NamesToNumbers/NameToNumber_q";
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
             String qPath = String.format( qPrefix + "%02d", n );
@@ -637,7 +695,7 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    }
+    } // doNamesToNumbers
 
 
     /**
@@ -652,6 +710,8 @@ public class LinksPrematch extends Thread
             showMessage( "Skipping " + funcname, false, true );
             return;
         }
+
+        if( debug ) { System.out.println( funcname ); }
 
         // prematch.Lv is a separate thread, so timing should be done there internally
         showMessage( funcname + "...", false, true );
@@ -668,7 +728,7 @@ public class LinksPrematch extends Thread
         lv2.start();
         lv3.start();
         lv4.start();
-    }
+    } // doLevenshtein
 
 
     /**
@@ -683,6 +743,8 @@ public class LinksPrematch extends Thread
             showMessage( "Skipping " + funcname, false, true );
             return;
         }
+
+        if( debug ) { System.out.println( funcname ); }
 
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
@@ -830,7 +892,7 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    }
+    } // doUpdateBaseTable
 
 
     /**
@@ -875,7 +937,7 @@ public class LinksPrematch extends Thread
         }
 
         return p[n];
-    }
+    } // levenshtein
 
 
     /**
@@ -883,29 +945,25 @@ public class LinksPrematch extends Thread
      * @param seconds
      * @return
      */
-    public static String stopWatch(int seconds)
+    public static String stopWatch( int seconds )
     {
         int minutes = seconds / 60;
         int restsec = seconds % 60;
-        int uren = minutes / 60;
+        int uren    = minutes / 60;
         int restmin = minutes % 60;
 
-        String urenText = "";
-        String minutenText = "";
+        String urenText     = "";
+        String minutenText  = "";
         String secondenText = "";
 
-        if (uren < 10) {
-            urenText = "0";
-        }
-        if (restmin < 10) {
-            minutenText = "0";
-        }
-        if (restsec < 10) {
-            secondenText = "0";
-        }
+        if( uren < 10 ) { urenText = "0"; }
+
+        if( restmin < 10 ) { minutenText = "0"; }
+
+        if( restsec < 10 ) { secondenText = "0"; }
 
         return urenText + uren + ":" + minutenText + restmin + ":" + secondenText + restsec;
-    }
+    } // stopWatch
 
 
     /**
@@ -924,7 +982,7 @@ public class LinksPrematch extends Thread
 
         if( debug ) { showMessage( query, false, true); }
         conTemp.runQuery( query );
-    }
+    } // createTempFirstname
 
 
     /**
@@ -935,7 +993,7 @@ public class LinksPrematch extends Thread
         String filename = "firstname_t_split.csv";
         showMessage( "Creating file " + filename, false, true);
         writerFirstname = new java.io.FileWriter( filename );
-    }
+    } // createTempFirstnameFile
 
 
     /**
@@ -953,7 +1011,7 @@ public class LinksPrematch extends Thread
 
         if( debug ) { showMessage( query, false, true); }
         conTemp.runQuery( query );
-    }
+    } // loadFirstnameToTable
 
 
     /**
@@ -974,7 +1032,7 @@ public class LinksPrematch extends Thread
 
         if( debug ) { showMessage( query, false, true); }
         conTemp.runQuery( query );
-    }
+    } // updateFirstnameToPersonC(
 
 
     /**
@@ -986,7 +1044,7 @@ public class LinksPrematch extends Thread
         showMessage( "Removing file " + filename, false, true);
         File file = new File( filename );
         file.delete();
-    }
+    } // removeFirstnameFile
 
 
     /**
@@ -998,6 +1056,7 @@ public class LinksPrematch extends Thread
         showMessage( "Removing table " + tablename, false, true);
         String query = "DROP TABLE " + tablename + ";";
         conTemp.runQuery( query );
-    }
+    } // removeFirstnameTable
+
 }
 

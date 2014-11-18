@@ -701,35 +701,31 @@ new FormModel {
 					"title": "CLEAN"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq {space :::p, par l {comp taPinfo::l::1097:x, comp jScrollPane7::l::1097:x, seq {par l {comp cbPdoSplitName::l:p:261:p:1, comp cbPdoUniqueNameTables::l:p:261:p:1, comp cbPdoLevenshtein::l:p:261:p:1}, space :0:0:x}, seq t {par l {comp cbPdoNameToNo::l:p:261:p:1, comp cbPdoCreateBaseTable::l:p:261:p:1}, space ::641:x, par l:::p {comp btnStartProcessPrematch::::195:x:1, comp btnStartProcessMatch::::195:x}}}, space :::p}}"
-					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitName:::p::p, space :::p, comp cbPdoUniqueNameTables:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, par t {seq {par b {comp cbPdoNameToNo::b:p::p, comp btnStartProcessPrematch::b:p::p}, space :::p, comp cbPdoCreateBaseTable:::p::p}, comp btnStartProcessMatch:::p::p}, space :p:17:p, comp taPinfo:::p::p, space :::p, comp jScrollPane7::::461:x, space :::p}}"
+					"$horizontalGroup": "par l {seq l {space :::p, par l {comp jScrollPane7::l::1097:x, comp taPinfo::t::1097:x, seq {par l {comp cbPdoLevenshtein:::p:261:p:1, comp cbPdoNamesToNos:::p:261:p:1, par l:::p {comp cbPdoSplitFirstnames::l::261:x:1, comp cbPdoFrequencyTables::l::261:x:1, comp cbPdoStandardization::t::261:x}}, space :0:0:x}, seq l {comp cbPdoCreateBaseTable:::p:261:p:1, space ::641:x, comp btnStartProcessPrematch:::p:195:p:1}}, space :::p}}"
+					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitFirstnames:::p::p, space :::p, comp cbPdoFrequencyTables:::p::p, space :::p, comp cbPdoStandardization:::p::p, space :::p, comp cbPdoLevenshtein:::p::p, space :::p, comp cbPdoNamesToNos:::p::p, space :::p, par b {comp cbPdoCreateBaseTable::b:p::p, comp btnStartProcessPrematch::b:p::p}, space ::14:x, comp taPinfo:::p::p, space u:::p, comp jScrollPane7:::p:437:p, space :::p}}"
 				} ) {
-					name: "jPanel1"
+					name: "pPrematch"
 					"name": "jPanel1"
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbPdoUniqueNameTables"
-						"text": "Unique Tables"
+						name: "cbPdoFrequencyTables"
+						"text": "Frequency Tables"
 						"name": "cbPdoUniqueNameTables"
-						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoLevenshtein"
 						"text": "Levenshtein"
 						"name": "cbPdoLevenshtein"
-						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoCreateBaseTable"
 						"text": "Base Table"
 						"name": "cbPdoCreateBaseTable"
-						"selected": true
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "cbPdoCreateBaseTableActionPerformed", true ) )
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbPdoSplitName"
-						"text": "Split Names"
+						name: "cbPdoSplitFirstnames"
+						"text": "Split Firstnames"
 						"name": "cbPdoSplitName"
-						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JButton" ) {
 						name: "btnStartProcessPrematch"
@@ -748,14 +744,31 @@ new FormModel {
 						} )
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
-						name: "cbPdoNameToNo"
-						"text": "Name to Number"
+						name: "cbPdoNamesToNos"
+						"text": "Names to Numbers"
 						"name": "cbPdoNameToNo"
-						"selected": true
 					} )
 					add( new FormComponent( "javax.swing.JTextField" ) {
 						name: "taPinfo"
 						"name": "taPinfo"
+					} )
+					add( new FormComponent( "javax.swing.JCheckBox" ) {
+						name: "cbPdoStandardization"
+						"text": "Automatic Standardization"
+					} )
+				}, new FormLayoutConstraints( null ) {
+					"title": "PREMATCH"
+				} )
+				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+					"$horizontalGroup": "par l {seq l {space :p:34:p, par l:::p {comp scrollPane1::::1057:x, comp btnStartProcessMatch::::1057:x}, space ::30:x}}"
+					"$verticalGroup": "par l {seq l {space :p:26:p, comp scrollPane1:::p:545:p, space s:::p, comp btnStartProcessMatch:::p::p, space ::30:x}}"
+				} ) {
+					name: "pMatch"
+					add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+						name: "scrollPane1"
+						add( new FormComponent( "javax.swing.JTextArea" ) {
+							name: "textArea1"
+						} )
 					} )
 					add( new FormComponent( "javax.swing.JButton" ) {
 						name: "btnStartProcessMatch"
