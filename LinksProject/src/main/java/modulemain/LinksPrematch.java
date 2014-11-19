@@ -20,7 +20,7 @@ import general.PrintLogger;
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
- * FL-18-Nov-2014 Latest change
+ * FL-19-Nov-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -186,21 +186,6 @@ public class LinksPrematch extends Thread
                 newLineToken = "\r\n";
             }
 
-            /*
-            if( logText != endl ) {
-                String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-
-                outputArea.append( ts + " " );
-                // System.out.printf( "%s ", ts );
-                //logger.info( logText );
-                try { plog.show( logText ); }
-                catch( Exception ex ) {
-                    System.out.println( ex.getMessage() );
-                    ex.printStackTrace( new PrintStream( System.out ) );
-                }
-            }
-            */
-
             outputArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );
             try { plog.show( logText ); }
@@ -340,11 +325,11 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        //dropDbFrequency();
+        dropCreateDbFrequency();
 
         // Execute queries
         int nqFirst = 1;
-        int nqLast = 28;
+        int nqLast = 15;
         String qPrefix = "FrequencyTables/FrequencyTables_q";
 
         for( int n = nqFirst; n <= nqLast; n++ ) {
@@ -358,38 +343,6 @@ public class LinksPrematch extends Thread
                 conFrequency.runQuery( query );
             }
         }
-
-        /*
-        // TODO: delete this
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q01" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q02" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q03" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q04" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q05" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q06" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q07" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q08" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q09" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q10" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q11" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q12" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q13" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q14" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q15" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q16" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q17" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q18" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q19" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q20" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q21" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q22" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q23" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q24" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q25" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q26" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q27" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTables/FrequencyTables_q28" ) );
-        */
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
@@ -411,10 +364,27 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        showMessage( "Doing nothing yet ", false, true );
+        // Copy freq_familyname_and freq_firstnames to freq_familyname_tmp_and freq_firstnames_tmp
+        String[] queries =
+        {
+            "DROP TABLE IF EXISTS freq_familyname_tmp;",
+            "CREATE TABLE freq_familyname_tmp LIKE freq_familyname;",
+            "ALTER TABLE  freq_familyname_tmp DISABLE KEYS;",
+            "INSERT INTO  freq_familyname_tmp SELECT * FROM freq_familyname;",
+            "ALTER TABLE  freq_familyname_tmp ENABLE KEYS;",
+            "DROP TABLE IF EXISTS freq_firstnames_tmp;",
+            "CREATE TABLE freq_firstnames_tmp LIKE freq_firstnames;",
+            "ALTER TABLE  freq_firstnames_tmp DISABLE KEYS;",
+            "INSERT INTO  freq_firstnames_tmp SELECT * FROM freq_firstnames;",
+            "ALTER TABLE  freq_firstnames_tmp ENABLE KEYS;"
+        };
 
+        // run queries
+        for( String q : queries ) {
+            if( debug ) { showMessage( q, false, true ); }
+            conFrequency.runQuery( q );
+        }
 
-        //dropDbFrequency();
 
         // Execute queries
         /*
@@ -434,7 +404,10 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery(query);
         }
         */
-    } // doFrequencyTables
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doStandardization(
 
 
     /**
@@ -444,7 +417,7 @@ public class LinksPrematch extends Thread
     {
         //if( debug ) { System.out.println( funcname ); }
 
-        //dropDbFrequency();
+        //dropCreateDbFrequency();
 
         // Execute queries
         int nqFirst = 1;
@@ -460,34 +433,13 @@ public class LinksPrematch extends Thread
             conFrequency.runQuery( query );
         }
 
-        /*
-        // TODO: delete this
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q01" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q02" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q03" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q04" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q05" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q06" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q07" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q08" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q09" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q10" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q11" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q12" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q13" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q14" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q15" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q16" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q17" ) );
-        conFrequency.runQuery( LinksSpecific.getSqlQuery( "FrequencyTablesTemp/FrequencyTablesTemp_q18" ) );
-        */
     } // doUniqueNameTablesTemp
 
 
     /**
      *
      */
-    private void dropDbFrequency() throws Exception
+    private void dropCreateDbFrequency() throws Exception
     {
         String qDropFrequency = "DROP SCHEMA links_frequency ;";
 
@@ -499,7 +451,7 @@ public class LinksPrematch extends Thread
 
         if( showmsg ) { showMessage( "Creating database links_frequency", false, true ); }
         conFrequency.runQuery( qCreateFrequency );
-    } // dropDbFrequency
+    } // dropCreateDbFrequency
 
 
     /**
@@ -599,13 +551,6 @@ public class LinksPrematch extends Thread
         }
 
         /*
-        // TODO: delete this
-        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q01"));
-        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q02"));
-        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
-        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
-        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
-
         // Create Runtime Object
         Runtime runtime = Runtime.getRuntime();
         int exitValue = 0;
@@ -716,13 +661,10 @@ public class LinksPrematch extends Thread
         // prematch.Lv is a separate thread, so timing should be done there internally
         showMessage( funcname + "...", false, true );
 
-        // "firstname" and "familyname" are links_frequency tables
-        //System.out.println( conFrequency );
-
-        prematch.Lv lv1 = new prematch.Lv( debug, conFrequency, "links_frequency", "firstname",  true,  outputLine, outputArea );
-        prematch.Lv lv2 = new prematch.Lv( debug, conFrequency, "links_frequency", "firstname",  false, outputLine, outputArea );
-        prematch.Lv lv3 = new prematch.Lv( debug, conFrequency, "links_frequency", "familyname", true,  outputLine, outputArea );
-        prematch.Lv lv4 = new prematch.Lv( debug, conFrequency, "links_frequency", "familyname", false, outputLine, outputArea );
+        prematch.Lv lv1 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_firstnames", true,  outputLine, outputArea );
+        prematch.Lv lv2 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_firstnames", false, outputLine, outputArea );
+        prematch.Lv lv3 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_familyname", true,  outputLine, outputArea );
+        prematch.Lv lv4 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_familyname", false, outputLine, outputArea );
 
         lv1.start();
         lv2.start();
@@ -732,176 +674,12 @@ public class LinksPrematch extends Thread
 
 
     /**
-     * @param debug
-     * @throws Exception 
-     */
-    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doUpdateBaseTable";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        String qPrefix = "FillBaseTable/FillBaseTable_q";
-        int nqFirst = 1;
-        int nqLast = 33;
-        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
-
-        for( int n = nqFirst; n <= nqLast; n++ ) {
-            String qPath = String.format( qPrefix + "%02d", n );
-            showMessage( "Running query: " + qPath, false, true );
-
-            String query = LinksSpecific.getSqlQuery( qPath );
-            if( debug ) { showMessage( query, false, true ); }
-
-            try { conBase.runQuery( query ); }
-            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
-        }
-
-        /*
-        {
-            // TODO remove this
-            outputArea.append("Running query 1...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q01"));
-
-            outputArea.append("Running query 2...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q02"));
-
-            outputArea.append("Running query 3...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q03"));
-
-            outputArea.append("Running query 4...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q04"));
-
-            outputArea.append("Running query 5...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q05"));
-
-            outputArea.append("Running query 6...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q06"));
-
-            outputArea.append("Running query 7...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q07"));
-
-            outputArea.append("Running query 8...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q08"));
-
-            outputArea.append("Running query 9...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q09"));
-
-            outputArea.append("Running query 10...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q10"));
-
-            outputArea.append("Running query 11...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q11"));
-
-            outputArea.append("Running query 12...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q12"));
-
-            outputArea.append("Running query 13...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q13"));
-
-            outputArea.append("Running query 14...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q14"));
-
-            outputArea.append("Running query 15...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q15"));
-
-            outputArea.append("Running query 16...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q16"));
-
-            outputArea.append("Running query 17...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q17"));
-
-            outputArea.append("Running query 18...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q18"));
-
-            outputArea.append("Running query 19...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q19"));
-
-            outputArea.append("Running query 20...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q20"));
-
-            outputArea.append("Running query 21...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q21"));
-
-            outputArea.append("Running query 22...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q22"));
-
-            outputArea.append("Running query 23...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q23"));
-
-            outputArea.append("Running query 24...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q24"));
-
-            outputArea.append("Running query 25...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q25"));
-
-            outputArea.append("Running query 26...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q26"));
-
-            outputArea.append("Running query 27...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q27"));
-
-            outputArea.append("Running query 28...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q28"));
-
-            outputArea.append("Running query 29...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q29"));
-
-            outputArea.append("Running query 30...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q30"));
-
-            outputArea.append("Running query 31...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q31"));
-
-            outputArea.append("Running query 32...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q32"));
-
-            outputArea.append("Running query 33...\r\n");
-            conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q33"));
-            
-            //outputArea.append("Running query 41...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q41"));
-
-            //outputArea.append("Running query 42...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q42"));
-
-            //outputArea.append("Running query 43...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q43"));
-
-            //outputArea.append("Running query 44...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q44"));
-
-            //outputArea.append("Running query 45...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q45"));
-
-            //outputArea.append("Running query 46...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q46"));
-
-            //outputArea.append("Running query 47...\r\n");
-            //conBase.runQuery(LinksSpecific.getSqlQuery("FillBaseTable/FillBaseTable_q47"));
-        }
-        */
-
-        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doUpdateBaseTable
-
-
-    /**
      *
      * @param s
      * @param t
      * @return
      */
-    public static int levenshtein(String s, String t)
+    public static int levenshtein( String s, String t )
     {
         int n = s.length(); // length of s
         int m = t.length(); // length of t
@@ -938,6 +716,45 @@ public class LinksPrematch extends Thread
 
         return p[n];
     } // levenshtein
+
+
+    /**
+     * @param debug
+     * @throws Exception 
+     */
+    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doUpdateBaseTable";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String qPrefix = "FillBaseTable/FillBaseTable_q";
+        int nqFirst = 1;
+        int nqLast = 33;
+        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
+
+        for( int n = nqFirst; n <= nqLast; n++ ) {
+            String qPath = String.format( qPrefix + "%02d", n );
+            showMessage( "Running query: " + qPath, false, true );
+
+            String query = LinksSpecific.getSqlQuery( qPath );
+            if( debug ) { showMessage( query, false, true ); }
+
+            try { conBase.runQuery( query ); }
+            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doUpdateBaseTable
 
 
     /**
