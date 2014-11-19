@@ -1,8 +1,5 @@
--- query 10
-CREATE  TABLE links_frequency.subnames ( 
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT , 
-    name VARCHAR(30) NULL , 
-    sex VARCHAR(2) NULL , 
-    PRIMARY KEY (id) , 
-    INDEX `default` (name ASC) 
-) ;
+-- query 10 
+INSERT INTO links_frequency.freq_firstnames_sex_tmp( name , sex ) 
+SELECT firstname2, sex 
+FROM links_cleaned.person_c 
+WHERE firstname2 IS NOT NULL AND firstname <> '' ;

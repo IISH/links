@@ -1,7 +1,8 @@
 -- query 07
-CREATE TABLE links_frequency.familyname( 
+CREATE TABLE IF NOT EXISTS links_frequency.freq_firstnames_sex_tmp ( 
     id INT UNSIGNED NOT NULL AUTO_INCREMENT , 
-    name VARCHAR(100) NULL , 
-    frequency INT UNSIGNED NULL , 
-    PRIMARY KEY (id) 
+    name VARCHAR(30) NULL , 
+    sex VARCHAR(2) NULL , 
+    PRIMARY KEY (id) , 
+    INDEX `default` (name ASC) 
 ) ;

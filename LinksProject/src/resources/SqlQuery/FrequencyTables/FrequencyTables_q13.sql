@@ -1,3 +1,5 @@
 -- query 13
-INSERT INTO links_frequency.subnames( name , sex ) 
-    SELECT firstname3, sex FROM links_cleaned.person_c ;
+INSERT INTO links_frequency.freq_firstnames ( name, frequency )
+SELECT name , COUNT(*) AS frequency 
+FROM links_frequency.freq_firstnames_sex_tmp 
+GROUP BY name ;

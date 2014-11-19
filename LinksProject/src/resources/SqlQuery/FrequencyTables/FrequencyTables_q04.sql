@@ -1,5 +1,8 @@
 -- query 04
-CREATE TABLE links_frequency.prefix_familyname 
-    SELECT prefix, familyname, COUNT(*) AS frequency 
-    FROM links_cleaned.person_c 
-    GROUP BY prefix, familyname ;
+CREATE TABLE IF NOT EXISTS links_frequency.freq_familyname ( 
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT , 
+    name VARCHAR(100) NULL , 
+    frequency INT UNSIGNED NULL , 
+    PRIMARY KEY (id) , 
+    INDEX `default` (name ASC) 
+) ;
