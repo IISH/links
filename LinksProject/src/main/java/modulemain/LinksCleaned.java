@@ -112,12 +112,9 @@ public class LinksCleaned extends Thread
         int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
         sourceList = createSourceList( sourceIdGui, sourceListAvail );
 
-
-
-        String s = "Available source Ids: ";
+        String s = "LinksCleaned: Available source Ids: ";
         for( int i : sourceListAvail ) { s = s + i + " "; }
         showMessage( s, false, true );
-
 
         LinksCleanedThread linksCleanedThread = new LinksCleanedThread(
              opts,
@@ -139,7 +136,9 @@ public class LinksCleaned extends Thread
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( query );
+            int count = 0;
             while( rs.next() ) {
+                count += 1;
                 String id = rs.getString( "id_source" );
                 if( id == null || id.isEmpty() ) { break; }
                 else {
@@ -147,6 +146,7 @@ public class LinksCleaned extends Thread
                     ids.add(id);
                 }
             }
+            if( count == 0 ) { showMessage( "Empty links_original ?", false , true); }
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {

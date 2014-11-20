@@ -2634,7 +2634,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "19-Nov-2014 15:38";
+                String timestamp1 = "20-Nov-2014 15:33";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

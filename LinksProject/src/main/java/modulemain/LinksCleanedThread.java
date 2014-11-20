@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-12-Nov-2014 Latest change
+ * FL-20-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -239,11 +239,12 @@ public class LinksCleanedThread extends Thread
             connectToDatabases();                                       // Create databases connectors
             createLogTable();                                           // Create log table with timestamp
 
+
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
             sourceList  = createSourceList( sourceIdGui, sourceListAvail );
 
             if( sourceIdGui == 0 ) {
-                String s = "Available source Ids: ";
+                String s = "LinksCleanedThread: Available source Ids: ";
                 for( int i : sourceListAvail ) { s = s + i + " "; }
                 showMessage( s, false, true );
             }
@@ -253,6 +254,7 @@ public class LinksCleanedThread extends Thread
             else { s = "Processing sources: "; }
             for( int i : sourceList ) { s = s + i + " "; }
             showMessage( s, false, true );
+
 
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
@@ -338,7 +340,9 @@ public class LinksCleanedThread extends Thread
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( query );
+            int count = 0;
             while( rs.next() ) {
+                count += 1;
                 String id = rs.getString( "id_source" );
                 if( id == null || id.isEmpty() ) { break; }
                 else {
@@ -346,6 +350,7 @@ public class LinksCleanedThread extends Thread
                     ids.add(id);
                 }
             }
+            if( count == 0 ) { showMessage( "Empty links_original ?", false , true); }
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
@@ -362,7 +367,6 @@ public class LinksCleanedThread extends Thread
             idsInt[ i ] = Integer.parseInt(id);
             i += 1;
         }
-
         return idsInt;
     } // getOrigSourceIds
 
@@ -4529,9 +4533,11 @@ public class LinksCleanedThread extends Thread
             }
 
             if( done == false && loop > 2 ) {
-                // no ref_date_minmax entry that satisfies the conditions
-                showMessage( "minMaxMainAge(): id_person = " + id_person + ", looping too much, quit (warning 106)", false, true );
-                showMessage( queryRef, false, true );
+                if( debug ) {
+                    // no ref_date_minmax entry that satisfies the conditions
+                    showMessage( "minMaxMainAge(): id_person = " + id_person + ", looping too much, quit (warning 106)", false, true );
+                    showMessage( queryRef, false, true );
+                }
                 addToReportPerson( id_person, "0", 106, "" );
                 done = true;
             }

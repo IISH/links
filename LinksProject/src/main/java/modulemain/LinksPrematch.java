@@ -367,16 +367,16 @@ public class LinksPrematch extends Thread
         // Copy freq_familyname_and freq_firstnames to freq_familyname_tmp_and freq_firstnames_tmp
         String[] queries =
         {
-            "DROP TABLE IF EXISTS freq_familyname_tmp;",
-            "CREATE TABLE freq_familyname_tmp LIKE freq_familyname;",
-            "ALTER TABLE  freq_familyname_tmp DISABLE KEYS;",
-            "INSERT INTO  freq_familyname_tmp SELECT * FROM freq_familyname;",
-            "ALTER TABLE  freq_familyname_tmp ENABLE KEYS;",
-            "DROP TABLE IF EXISTS freq_firstnames_tmp;",
-            "CREATE TABLE freq_firstnames_tmp LIKE freq_firstnames;",
-            "ALTER TABLE  freq_firstnames_tmp DISABLE KEYS;",
-            "INSERT INTO  freq_firstnames_tmp SELECT * FROM freq_firstnames;",
-            "ALTER TABLE  freq_firstnames_tmp ENABLE KEYS;"
+            "DROP TABLE IF EXISTS links_frequency.freq_familyname_tmp;",
+            "CREATE TABLE links_frequency.freq_familyname_tmp LIKE links_frequency.freq_familyname;",
+            "ALTER TABLE  links_frequency.freq_familyname_tmp DISABLE KEYS;",
+            "INSERT INTO  links_frequency.freq_familyname_tmp SELECT * FROM links_frequency.freq_familyname;",
+            "ALTER TABLE  links_frequency.freq_familyname_tmp ENABLE KEYS;",
+            "DROP TABLE IF EXISTS links_frequency.freq_firstnames_tmp;",
+            "CREATE TABLE links_frequency.freq_firstnames_tmp LIKE links_frequency.freq_firstnames;",
+            "ALTER TABLE  links_frequency.freq_firstnames_tmp DISABLE KEYS;",
+            "INSERT INTO  links_frequency.freq_firstnames_tmp SELECT * FROM links_frequency.freq_firstnames;",
+            "ALTER TABLE  links_frequency.freq_firstnames_tmp ENABLE KEYS;"
         };
 
         // run queries

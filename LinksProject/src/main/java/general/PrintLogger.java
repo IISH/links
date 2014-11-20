@@ -28,11 +28,12 @@ import modulemain.LinksSpecific;
  * This Class contains logging procedures
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-11-Nov-2014 Latest Change
+ * FL-20-Nov-2014 Latest Change
  */
 public class PrintLogger
 {
     private String fileName;
+    private String pathName;
     private FileWriter fw;
     private boolean fileIsLocked;
     private static String intextPrevious;
@@ -49,9 +50,10 @@ public class PrintLogger
         String format = "yyyy-MM-dd'T'HH:mm:ssz";
         String ts = LinksSpecific.getTimeStamp2( format );
         fileName = "LMM-" + ts + ".log";
+        pathName = "log/" + fileName;
         fileIsLocked = false;
         intextPrevious = "";
-        System.out.printf( "Log filename: %s\n", fileName );
+        System.out.printf( "Log filename: %s\n", pathName );
     }
 
 
@@ -81,14 +83,14 @@ public class PrintLogger
             
             fileIsLocked = true;
             {
-                fw = new FileWriter( fileName, true );
+                fw = new FileWriter( pathName, true );
                 fw.write( text  + "\r\n" );
                 fw.close();
             }
             fileIsLocked = false;
             
         }
-        catch( Exception ex ) { throw new Exception( "Could not write to file " + fileName, ex ); }
+        catch( Exception ex ) { throw new Exception( "Could not write to file " + pathName, ex ); }
 
         intextPrevious = intext;
     }
