@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-20-Nov-2014 Latest change
+ * FL-21-Nov-2014 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -480,7 +480,7 @@ public class LinksCleanedThread extends Thread
                 newLineToken = "\r\n";
             }
 
-            /*
+            // prefix string with timestamp
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
@@ -493,7 +493,6 @@ public class LinksCleanedThread extends Thread
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
-            */
 
             outputArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );

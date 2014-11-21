@@ -105,26 +105,7 @@ public class LinksPrematch extends Thread
         conPrematch  = new MySqlConnector( db_url, "links_prematch",  db_user, db_pass );
         conTemp      = new MySqlConnector( db_url, "links_temp",      db_user, db_pass );
         conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
-        conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
-    }
-
-    /**
-     * Constructor
-     * called from linksCleaned
-     *
-     * @throws Exception 
-     */
-    public LinksPrematch( String db_url, String db_user, String db_pass, JTextArea outputArea, JTextField outputLine )
-    throws Exception
-    {
-        conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
-        conPrematch  = new MySqlConnector( db_url, "links_prematch",  db_user, db_pass );
-        conTemp      = new MySqlConnector( db_url, "links_temp",      db_user, db_pass );
-        conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
-        conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
-
-        this.outputLine = outputLine;
-        this.outputArea = outputArea;
+        //conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
     }
 
 
@@ -325,7 +306,8 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        dropCreateDbFrequency();
+        //dropCreateDbFrequency();
+        truncateFreqTables();
 
         // Execute queries
         int nqFirst = 1;
@@ -340,7 +322,7 @@ public class LinksPrematch extends Thread
             else {
                 showMessage( "Running query " + qPath, false, true );
                 if( debug ) { showMessage( query, false, true ); }
-                conFrequency.runQuery( query );
+                conPrematch.runQuery( query );
             }
         }
 
@@ -365,24 +347,34 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         // Copy freq_familyname_and freq_firstnames to freq_familyname_tmp_and freq_firstnames_tmp
-        String[] queries =
+        String[] queriesFamilyname =
         {
-            "DROP TABLE IF EXISTS links_frequency.freq_familyname_tmp;",
-            "CREATE TABLE links_frequency.freq_familyname_tmp LIKE links_frequency.freq_familyname;",
-            "ALTER TABLE  links_frequency.freq_familyname_tmp DISABLE KEYS;",
-            "INSERT INTO  links_frequency.freq_familyname_tmp SELECT * FROM links_frequency.freq_familyname;",
-            "ALTER TABLE  links_frequency.freq_familyname_tmp ENABLE KEYS;",
-            "DROP TABLE IF EXISTS links_frequency.freq_firstnames_tmp;",
-            "CREATE TABLE links_frequency.freq_firstnames_tmp LIKE links_frequency.freq_firstnames;",
-            "ALTER TABLE  links_frequency.freq_firstnames_tmp DISABLE KEYS;",
-            "INSERT INTO  links_frequency.freq_firstnames_tmp SELECT * FROM links_frequency.freq_firstnames;",
-            "ALTER TABLE  links_frequency.freq_firstnames_tmp ENABLE KEYS;"
+            "DROP TABLE IF EXISTS links_prematch.freq_familyname_tmp;",
+            "CREATE TABLE links_prematch.freq_familyname_tmp LIKE links_prematch.freq_familyname;",
+            "ALTER TABLE  links_prematch.freq_familyname_tmp DISABLE KEYS;",
+            "INSERT INTO  links_prematch.freq_familyname_tmp SELECT * FROM links_prematch.freq_familyname;",
+            "ALTER TABLE  links_prematch.freq_familyname_tmp ENABLE KEYS;",
         };
 
         // run queries
-        for( String q : queries ) {
+        for( String q : queriesFamilyname ) {
             if( debug ) { showMessage( q, false, true ); }
-            conFrequency.runQuery( q );
+            conPrematch.runQuery( q );
+        }
+
+        String[] queriesFirstname =
+        {
+            "DROP TABLE IF EXISTS links_prematch.freq_firstnames_tmp;",
+            "CREATE TABLE links_prematch.freq_firstnames_tmp LIKE links_prematch.freq_firstnames;",
+            "ALTER TABLE  links_prematch.freq_firstnames_tmp DISABLE KEYS;",
+            "INSERT INTO  links_prematch.freq_firstnames_tmp SELECT * FROM links_prematch.freq_firstnames;",
+            "ALTER TABLE  links_prematch.freq_firstnames_tmp ENABLE KEYS;"
+        };
+
+        // run queries
+        for( String q : queriesFirstname ) {
+            if( debug ) { showMessage( q, false, true ); }
+            conPrematch.runQuery( q );
         }
 
 
@@ -401,7 +393,7 @@ public class LinksPrematch extends Thread
                 showMessage(query, false, true);
             }
 
-            conFrequency.runQuery(query);
+            conPrematch.runQuery(query);
         }
         */
 
@@ -430,7 +422,7 @@ public class LinksPrematch extends Thread
 
             //System.out.println( qPath );
             String query = LinksSpecific.getSqlQuery( qPath );
-            conFrequency.runQuery( query );
+            conPrematch.runQuery( query );
         }
 
     } // doUniqueNameTablesTemp
@@ -439,6 +431,7 @@ public class LinksPrematch extends Thread
     /**
      *
      */
+    /*
     private void dropCreateDbFrequency() throws Exception
     {
         String qDropFrequency = "DROP SCHEMA links_frequency ;";
@@ -447,11 +440,33 @@ public class LinksPrematch extends Thread
 
         // run queries
         if( showmsg ) { showMessage( "Dropping database links_frequency", false, true ); }
-        conFrequency.runQuery( qDropFrequency );
+        conPrematch.runQuery( qDropFrequency );
 
         if( showmsg ) { showMessage( "Creating database links_frequency", false, true ); }
-        conFrequency.runQuery( qCreateFrequency );
+        conPrematch.runQuery( qCreateFrequency );
     } // dropCreateDbFrequency
+    */
+
+
+    /**
+     *
+     */
+    private void truncateFreqTables() throws Exception
+    {
+        String[] queries =
+        {
+            "TRUNCATE TABLE links_prematch.freq_familyname;",
+            "TRUNCATE TABLE links_prematch.freq_familyname_tmp;",
+            "TRUNCATE TABLE links_prematch.freq_firstnames;",
+            "TRUNCATE TABLE links_prematch.freq_firstnames_sex;",
+            "TRUNCATE TABLE links_prematch.freq_firstnames_tmp;"
+        };
+
+        for( String q : queries ) {
+            if( debug ) { showMessage( q, false, true ); }
+            conPrematch.runQuery( q );
+        }
+    }
 
 
     /**
@@ -471,7 +486,7 @@ public class LinksPrematch extends Thread
         String[] a01 = s01.split(";");
 
         for (int i = 0; i < a01.length; i++) {
-            conFrequency.runQuery(a01[i]);
+            conPrematch.runQuery(a01[i]);
         }
 
         outputArea.append( "02" + "\r\n" );
@@ -481,7 +496,7 @@ public class LinksPrematch extends Thread
         String[] a02 = s02.split(";");
 
         for (int i = 0; i < a02.length; i++) {
-            conFrequency.runQuery(a02[i]);
+            conPrematch.runQuery(a02[i]);
         }
 
         outputArea.append( "03" + "\r\n" );
@@ -491,7 +506,7 @@ public class LinksPrematch extends Thread
         String[] a03 = s03.split(";");
 
         for (int i = 0; i < a03.length; i++) {
-            conFrequency.runQuery(a03[i]);
+            conPrematch.runQuery(a03[i]);
         }
 
         outputArea.append("First 3 SQL statements done, beginning with LV" + "\r\n");
@@ -511,7 +526,7 @@ public class LinksPrematch extends Thread
         String[] a04 = s04.split(";");
 
         for (int i = 0; i < a04.length; i++) {
-            conFrequency.runQuery(a04[i]);
+            conPrematch.runQuery(a04[i]);
         }
 
         outputArea.append( "04" + "\r\n" );
@@ -547,7 +562,7 @@ public class LinksPrematch extends Thread
             String query = LinksSpecific.getSqlQuery( qPath );
             if( debug ) { showMessage(query, false, true); }
 
-            conFrequency.runQuery( query );
+            conPrematch.runQuery( query );
         }
 
         /*
@@ -593,7 +608,7 @@ public class LinksPrematch extends Thread
         //exitValue = process.waitFor();
         //outputArea.append("optimize = " + exitValue + "\r\n");
         
-//        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q02"));
+//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q02"));
 
 
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates1.sql"});
@@ -610,7 +625,7 @@ public class LinksPrematch extends Thread
 //        exitValue = process.waitFor();
 //        outputArea.append("optimize = " + exitValue + "\r\n");
         
-//        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
+//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
         
 //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates2.sql"});
 //        exitValue = process.waitFor();
@@ -626,8 +641,8 @@ public class LinksPrematch extends Thread
 //        exitValue = process.waitFor();
 //        outputArea.append("optimize = " + exitValue + "\r\n");
         
-//        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
-//        conFrequency.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
+//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
+//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
 
         
         //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates3.sql"});
@@ -661,10 +676,10 @@ public class LinksPrematch extends Thread
         // prematch.Lv is a separate thread, so timing should be done there internally
         showMessage( funcname + "...", false, true );
 
-        prematch.Lv lv1 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_firstnames", true,  outputLine, outputArea );
-        prematch.Lv lv2 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_firstnames", false, outputLine, outputArea );
-        prematch.Lv lv3 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_familyname", true,  outputLine, outputArea );
-        prematch.Lv lv4 = new prematch.Lv( debug, conFrequency, "links_frequency", "freq_familyname", false, outputLine, outputArea );
+        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  outputLine, outputArea );
+        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, outputLine, outputArea );
+        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  outputLine, outputArea );
+        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, outputLine, outputArea );
 
         lv1.start();
         lv2.start();

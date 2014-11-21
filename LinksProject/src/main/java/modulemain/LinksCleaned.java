@@ -20,7 +20,7 @@ import linksmanager.ManagerGui;
  * KNAW IISH - International Institute of Social History
  * @author Fons Laan
  *
- * FL-16-Oct-2014 Created
+ * FL-21-Nov-2014 Created
  */
 public class LinksCleaned extends Thread
 {
@@ -43,7 +43,7 @@ public class LinksCleaned extends Thread
 
     private ManagerGui mg;
 
-    private MySqlConnector dbconOriginal;       // original data from A2A
+    private MySqlConnector dbconOriginal;   // links_original
 
 
     /**
@@ -201,8 +201,8 @@ public class LinksCleaned extends Thread
                 newLineToken = "\r\n";
             }
 
+            // prefix string with timestamp
             String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-
             outputArea.append( ts + " " );
             // System.out.printf( "%s ", ts );
             //logger.info( logText );

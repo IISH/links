@@ -1049,12 +1049,12 @@ public class ManagerGui extends javax.swing.JFrame
                                                 .addComponent(jLabel32))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
-                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
-                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)))
+                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)))
                                         .addComponent(rbBebiIndexGeen, GroupLayout.Alignment.LEADING)
                                         .addComponent(rbBebiIndexGenlias, GroupLayout.Alignment.LEADING))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1062,8 +1062,8 @@ public class ManagerGui extends javax.swing.JFrame
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGap(58, 58, 58)
                                             .addComponent(jLabel11))
-                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 655, Short.MAX_VALUE)
-                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 655, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
+                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
                                                 .addComponent(jLabel21)
@@ -1071,9 +1071,9 @@ public class ManagerGui extends javax.swing.JFrame
                                                 .addComponent(jLabel22))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
-                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
-                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE))))))
+                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
+                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
+                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE))))))
                             .addContainerGap())
                 );
                 pCsvToDatabaseLayout.setVerticalGroup(
@@ -1245,13 +1245,13 @@ public class ManagerGui extends javax.swing.JFrame
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
                                 .addGroup(pBronInternToLinksOrigineelLayout.createSequentialGroup()
                                     .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
-                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
-                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
                                         .addGroup(GroupLayout.Alignment.TRAILING, pBronInternToLinksOrigineelLayout.createSequentialGroup()
-                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 237, Short.MAX_VALUE)
+                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE)
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addComponent(bBronInternToLinksOrigineel)))
                                     .addGap(14, 14, 14))
@@ -1259,8 +1259,8 @@ public class ManagerGui extends javax.swing.JFrame
                                     .addComponent(cbOrunCleaned, GroupLayout.PREFERRED_SIZE, 137, GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
-                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
+                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 539, Short.MAX_VALUE)
+                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 539, Short.MAX_VALUE)
                                 .addComponent(jLabel31))
                             .addContainerGap())
                 );
@@ -1383,7 +1383,7 @@ public class ManagerGui extends javax.swing.JFrame
 
                 //---- cbCdoRefreshData ----
                 cbCdoRefreshData.setSelected(true);
-                cbCdoRefreshData.setText("Remove Previous Data");
+                cbCdoRefreshData.setText("Remove Cleaned Data");
                 cbCdoRefreshData.setName("cbCdoVernieuwen");
 
                 //---- cbCdoRegType ----
@@ -1494,10 +1494,8 @@ public class ManagerGui extends javax.swing.JFrame
                                     .addGap(20, 20, 20))
                                 .addComponent(jLabel51, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addGroup(pLOLCLayout.createSequentialGroup()
-                                    .addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addGroup(pLOLCLayout.createSequentialGroup()
                                     .addGroup(pLOLCLayout.createParallelGroup()
+                                        .addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(cbCdoDaysSinceBegin, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
                                         .addGroup(pLOLCLayout.createParallelGroup()
                                             .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
@@ -2634,7 +2632,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "20-Nov-2014 15:33";
+                String timestamp1 = "21-Nov-2014 15:48";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
