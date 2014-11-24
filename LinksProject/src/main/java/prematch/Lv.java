@@ -1,6 +1,8 @@
 package prematch;
 
 import java.io.FileWriter;
+import java.io.PrintStream;
+
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
@@ -8,6 +10,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import connectors.MySqlConnector;
+import general.PrintLogger;
 
 /**
  * @author Omar Azouguagh
@@ -15,17 +18,20 @@ import connectors.MySqlConnector;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-13-Nov-2014 Latest change
+ * FL-24-Nov-2014 Latest change
  */
 public class Lv extends Thread
 {
     private boolean debug = false;
+
     private MySqlConnector db_conn = null;
     private String db_name;
     private String db_table;
     private boolean strict;
-    private JTextField tbOutput;
-    private JTextArea taInfo;
+
+    private JTextField outputLine;
+    private JTextArea outputArea;
+    private PrintLogger plog;
 
     /**
      * Constructor
@@ -35,8 +41,9 @@ public class Lv extends Thread
      * @param db_name
      * @param db_table
      * @param strict
-     * @param tbOutput
-     * @param taInfo
+     * @param outputLine
+     * @param outputArea
+     * @param plog
      */
     public Lv
     (
@@ -45,17 +52,19 @@ public class Lv extends Thread
         String db_name,
         String db_table,
         boolean strict,
-        JTextField tbOutput,
-        JTextArea taInfo
+        JTextField outputLine,
+        JTextArea outputArea,
+        PrintLogger plog
     )
     {
-        this.debug    = debug;
-        this.db_conn  = db_conn;
-        this.db_name  = db_name;
-        this.db_table = db_table;
-        this.strict   = strict;
-        this.tbOutput = tbOutput;
-        this.taInfo   = taInfo;
+        this.debug      = debug;
+        this.db_conn    = db_conn;
+        this.db_name    = db_name;
+        this.db_table   = db_table;
+        this.strict     = strict;
+        this.outputLine = outputLine;
+        this.outputArea = outputArea;
+        this.plog       = plog;
     }
 
 
@@ -68,23 +77,23 @@ public class Lv extends Thread
         // Run query on Database
         try
         {
-            System.out.println( "prematch.Lv.run()" );
-            System.out.println( db_conn );
+
+            showMessage( "prematch.Lv/run() for table " + db_table + " with strict = " + strict, false, true );
 
             ResultSet rs = null;
             //String query = "SELECT id, name FROM " + db_table;
-            String query = "SELECT id, name FROM " + "links_frequency." + db_table;
-            if( debug ) { taInfo.append( query + "\r\n" ); }
+            String query = "SELECT id, name FROM " + db_name + "." + db_table;
+            if( debug ) { showMessage( query, false, true ); }
 
             try {
                 rs = db_conn.runQueryWithResult( query );
             }
             catch( Exception ex ) {
                 System.out.println( query );
-                taInfo.append( query + "\r\n" );
+                showMessage( query, false, true );
 
                 System.out.println( ex.getMessage() );
-                taInfo.append( ex.getMessage() + "\r\n" );
+                showMessage( ex.getMessage(), false, true );
                 return;
             }
 
@@ -96,11 +105,13 @@ public class Lv extends Thread
                 name.add( rs.getString( "name" ) );
             }
 
-            taInfo.append( "table " + db_table + " loaded\r\n" );
+            showMessage( "table " + db_table + " loaded", false, true );
             
             int size = name.size();
 
-            FileWriter csvwriter = new FileWriter( strict + "_" + db_table + ".csv" );
+            String filename = "LV-" + db_table + "-strict=" + strict + ".csv";
+            showMessage( "Output filename: " + filename, false, true );
+            FileWriter csvwriter = new FileWriter( filename );
 
             // timing
             long timeExpand = 0;
@@ -190,27 +201,28 @@ public class Lv extends Thread
                     String line = id1 + "," + id2 + "," + naam1 + "," + naam2 + "," + ld + "\r\n";
 
                     try {  csvwriter.write( line ); }
-                    catch( Exception ex ) { taInfo.append( "Levenshtein Error: " + ex.getMessage() + "...\r\n" ); }
+                    catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
                 }
 
                 // show progress
                 if( i == stepheight ){
-                    tbOutput.setText( i + " of " + size );
+                    showMessage( "LV name " + i + " of " + size, true, true );
                     stepheight += step;
                 }
             }
 
+            showMessage( "", true, true );
             csvwriter.close();
 
             // elapsed
             timeExpand = System.currentTimeMillis() - begintime;
             int iTimeEx = (int)( timeExpand / 1000 );
 
-            taInfo.append( "Levenshtein " + db_table + " done; elapsed: " + stopWatch( iTimeEx ) + "\r\n" );
+            showMessage( "Levenshtein " + db_table + " done, strict = " + strict + "; elapsed: " + stopWatch( iTimeEx ), false, true );
 
         }
 
-        catch( Exception ex ) { taInfo.append( "Levenshtein Error: " + ex.getMessage() + "...\r\n" ); }
+        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
     }
 
 
@@ -276,5 +288,31 @@ public class Lv extends Thread
 
         return urenText + uren + ":" + minutenText + restmin + ":" + secondenText + restsec;
     }
+
+
+    /**
+     * @param logText
+     * @param isMinOnly
+     * @param newLine
+     */
+    private void showMessage( String logText, boolean isMinOnly, boolean newLine )
+    {
+        outputLine.setText( logText );
+
+        if( !isMinOnly ) {
+            String newLineToken = "";
+            if( newLine ) {
+                newLineToken = "\r\n";
+            }
+
+            outputArea.append( logText + newLineToken );
+            //System.out.printf( "%s%s", logText, newLineToken );
+            try { plog.show( logText ); }
+            catch( Exception ex ) {
+                System.out.println( ex.getMessage() );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // showMessage
 
 }

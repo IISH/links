@@ -1,2 +1,2 @@
--- query 01
-DROP TABLE IF EXISTS links_frequency.freq_familyname
+-- query 01 
+DROP TABLE IF EXISTS links_prematch.freq_familyname

@@ -20,21 +20,21 @@ import linksmanager.ManagerGui;
  * KNAW IISH - International Institute of Social History
  * @author Fons Laan
  *
- * FL-21-Nov-2014 Created
+ * FL-24-Nov-2014 Created
  */
 public class LinksCleaned extends Thread
 {
     private Options opts;
     private PrintLogger plog;
     private int sourceIdGui;
-    private int[] sourceList;               // available sources in db
+    private int[] sourceList;                // available sources in db
 
-    private String ref_url = "";            // reference db access
+    private String ref_url  = "";            // reference db access
     private String ref_user = "";
     private String ref_pass = "";
     private String ref_db = "";
 
-    private String url = "";                // links db's access
+    private String url  = "";                // links db's access
     private String user = "";
     private String pass = "";
 

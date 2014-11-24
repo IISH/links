@@ -152,6 +152,8 @@ public class LinksPrematch extends Thread
     } // run
 
 
+    /*===< Helper functions >=================================================*/
+
     /**
      * @param logText
      * @param isMinOnly
@@ -203,6 +205,13 @@ public class LinksPrematch extends Thread
         }
     } // showMessage_nl
 
+
+    /*---< End Helper functions >---------------------------------------------*/
+
+
+    /*===< functions corresponding to GUI Cleaning options >==================*/
+
+    /*---< Split Firstnames >-------------------------------------------------*/
 
     /**
      * 
@@ -291,6 +300,101 @@ public class LinksPrematch extends Thread
 
     /**
      *
+     * @throws Exception
+     */
+    private void createTempFirstname( boolean debug ) throws Exception
+    {
+        String query = "CREATE  TABLE links_temp.firstname_t_split ("
+                + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " firstname1 VARCHAR(30) NULL ,"
+                + " firstname2 VARCHAR(30) NULL ,"
+                + " firstname3 VARCHAR(30) NULL ,"
+                + " firstname4 VARCHAR(30) NULL ,"
+                + " PRIMARY KEY (person_id) );";
+
+        if( debug ) { showMessage( query, false, true); }
+        conTemp.runQuery( query );
+    } // createTempFirstname
+
+
+    /**
+     *
+     * @throws Exception
+     */
+    private void createTempFirstnameFile() throws Exception {
+        String filename = "firstname_t_split.csv";
+        showMessage( "Creating file " + filename, false, true);
+        writerFirstname = new java.io.FileWriter( filename );
+    } // createTempFirstnameFile
+
+
+    /**
+     *
+     * @throws Exception
+     */
+    private void loadFirstnameToTable( boolean debug )
+            throws Exception
+    {
+        showMessage( "Loading CSV data into temp table...", false, true );
+
+        String query = "LOAD DATA LOCAL INFILE 'firstname_t_split.csv'"
+                + " INTO TABLE firstname_t_split FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
+                + " ( person_id , firstname1 , firstname2 , firstname3 , firstname4 );";
+
+        if( debug ) { showMessage( query, false, true); }
+        conTemp.runQuery( query );
+    } // loadFirstnameToTable
+
+
+    /**
+     *
+     */
+    private void updateFirstnameToPersonC( boolean debug )
+            throws Exception
+    {
+        showMessage( "Moving first names from temp table to person_c...", false, true );
+
+        String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t_split"
+                + " SET "
+                + " links_cleaned.person_c.firstname1 = links_temp.firstname_t_split.firstname1 ,"
+                + " links_cleaned.person_c.firstname2 = links_temp.firstname_t_split.firstname2 ,"
+                + " links_cleaned.person_c.firstname3 = links_temp.firstname_t_split.firstname3 ,"
+                + " links_cleaned.person_c.firstname4 = links_temp.firstname_t_split.firstname4"
+                + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t_split.person_id;";
+
+        if( debug ) { showMessage( query, false, true); }
+        conTemp.runQuery( query );
+    } // updateFirstnameToPersonC(
+
+
+    /**
+     *
+     * @throws Exception
+     */
+    public void removeFirstnameFile() throws Exception {
+        String filename = "firstname_t_split.csv";
+        showMessage( "Removing file " + filename, false, true);
+        File file = new File( filename );
+        file.delete();
+    } // removeFirstnameFile
+
+
+    /**
+     *
+     * @throws Exception
+     */
+    public void removeFirstnameTable() throws Exception {
+        String tablename = "firstname_t_split";
+        showMessage( "Removing table " + tablename, false, true);
+        String query = "DROP TABLE " + tablename + ";";
+        conTemp.runQuery( query );
+    } // removeFirstnameTable
+
+
+    /*---< Frequency Tables >-------------------------------------------------*/
+
+    /**
+     *
      */
     public void doFrequencyTables( boolean debug, boolean go ) throws Exception
     {
@@ -318,7 +422,7 @@ public class LinksPrematch extends Thread
             String qPath = String.format( qPrefix + "%02d", n );
             String query = LinksSpecific.getSqlQuery( qPath );
 
-            if( query.isEmpty() ) { showMessage( "Empty query " + qPath, false, true ); }
+            if( query == null || query.isEmpty() ) { showMessage( "Empty query " + qPath, false, true ); }
             else {
                 showMessage( "Running query " + qPath, false, true );
                 if( debug ) { showMessage( query, false, true ); }
@@ -329,6 +433,9 @@ public class LinksPrematch extends Thread
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
     } // doFrequencyTables
+
+
+    /*---< Automatic Standardization >----------------------------------------*/
 
     /**
      *
@@ -469,8 +576,167 @@ public class LinksPrematch extends Thread
     }
 
 
+    /*---< Levenshtein >------------------------------------------------------*/
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    public void doLevenshtein( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doLevenshtein";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        // prematch.Lv is a separate thread, so timing should be done there internally
+        showMessage( funcname + "...", false, true );
+
+        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  outputLine, outputArea, plog );
+        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, outputLine, outputArea, plog );
+        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  outputLine, outputArea, plog );
+        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, outputLine, outputArea, plog );
+
+        lv1.start();
+        lv2.start();
+        lv3.start();
+        lv4.start();
+    } // doLevenshtein
+
+
+    /**
+     *
+     * @param s
+     * @param t
+     * @return
+     */
+    public static int levenshtein( String s, String t )
+    {
+        int n = s.length(); // length of s
+        int m = t.length(); // length of t
+
+        int p[] = new int[n + 1]; //'previous' cost array, horizontally
+        int d[] = new int[n + 1]; // cost array, horizontally
+        int _d[]; //placeholder to assist in swapping p and d
+
+        // indexes into strings s and t
+        int i; // iterates through s
+        int j; // iterates through t
+
+        char t_j; // jth character of t
+
+        int cost; // cost
+
+        for (i = 0; i <= n; i++) {
+            p[i] = i;
+        }
+
+        for (j = 1; j <= m; j++) {
+            t_j = t.charAt(j - 1);
+            d[0] = j;
+
+            for (i = 1; i <= n; i++) {
+                cost = s.charAt(i - 1) == t_j ? 0 : 1;
+                d[i] = Math.min(Math.min(d[i - 1] + 1, p[i] + 1), p[i - 1] + cost);
+            }
+
+            _d = p;
+            p = d;
+            d = _d;
+        }
+
+        return p[n];
+    } // levenshtein
+
+
+    /*---< Names to Numbers >-------------------------------------------------*/
+
     /**
      * 
+     * @throws Exception 
+     */
+    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doNamesToNumbers";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        // Execute queries
+        int nqFirst = 1;
+        int nqLast  = 5;
+        String qPrefix = "NamesToNumbers/NameToNumber_q";
+
+        for( int n = nqFirst; n <= nqLast; n++ ) {
+            String qPath = String.format( qPrefix + "%02d", n );
+
+            String query = LinksSpecific.getSqlQuery( qPath );
+            if( debug ) { showMessage(query, false, true); }
+
+            conPrematch.runQuery( query );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doNamesToNumbers
+
+
+    /*---< Base Table >-------------------------------------------------------*/
+
+    /**
+     * @param debug
+     * @throws Exception 
+     */
+    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doUpdateBaseTable";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String qPrefix = "FillBaseTable/FillBaseTable_q";
+        int nqFirst = 1;
+        int nqLast = 33;
+        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
+
+        for( int n = nqFirst; n <= nqLast; n++ ) {
+            String qPath = String.format( qPrefix + "%02d", n );
+            showMessage( "Running query: " + qPath, false, true );
+
+            String query = LinksSpecific.getSqlQuery( qPath );
+            if( debug ) { showMessage( query, false, true ); }
+
+            try { conBase.runQuery( query ); }
+            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doUpdateBaseTable
+
+
+    /*---< Obsolete >---------------------------------------------------------*/
+
+    /**
+     *
      */
     public void doBasicName( boolean debug ) throws Exception
     {
@@ -531,364 +797,6 @@ public class LinksPrematch extends Thread
 
         outputArea.append( "04" + "\r\n" );
     } // doBasicName
-
-
-    /**
-     * 
-     * @throws Exception 
-     */
-    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doNamesToNumbers";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        // Execute queries
-        int nqFirst = 1;
-        int nqLast  = 5;
-        String qPrefix = "NamesToNumbers/NameToNumber_q";
-
-        for( int n = nqFirst; n <= nqLast; n++ ) {
-            String qPath = String.format( qPrefix + "%02d", n );
-
-            String query = LinksSpecific.getSqlQuery( qPath );
-            if( debug ) { showMessage(query, false, true); }
-
-            conPrematch.runQuery( query );
-        }
-
-        /*
-        // Create Runtime Object
-        Runtime runtime = Runtime.getRuntime();
-        int exitValue = 0;
-        */
-
-        /* Creating name files */
-        /*
-        Process process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl familyname familyname"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode0 = " + exitValue + "\r\n");
-
-        process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname1"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode1 = " + exitValue + "\r\n");
-
-        process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname2"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode2 = " + exitValue + "\r\n");
-
-        process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname3"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode3 = " + exitValue + "\r\n");
-
-        process = runtime.exec(new String[]{"/bin/bash", "-c", "./latest.pl firstname firstname4"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode4 = " + exitValue + "\r\n");
-
-        // run File
-        Process process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=linksdev --password=db_pass < updates0.sql"});
-        exitValue = process.waitFor();
-        outputArea.append("Exitcode_1 = " + exitValue + "\r\n");
-        */
-
-        /////
-        //Process process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
-        //exitValue = process.waitFor();
-        //outputArea.append("restart = " + exitValue + "\r\n");
-        
-        //process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
-        //exitValue = process.waitFor();
-        //outputArea.append("optimize = " + exitValue + "\r\n");
-        
-//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q02"));
-
-
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates1.sql"});
-//        exitValue = process.waitFor();
-//        outputArea.append("Exitcode_1 = " + exitValue + "\r\n");
-
-        
-        
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
-//        exitValue = process.waitFor();
-//        outputArea.append("restart = " + exitValue + "\r\n");
-        
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
-//        exitValue = process.waitFor();
-//        outputArea.append("optimize = " + exitValue + "\r\n");
-        
-//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q03"));
-        
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates2.sql"});
-//        exitValue = process.waitFor();
-//        outputArea.append("Exitcode_2 = " + exitValue + "\r\n");
-
-        
-        
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "/etc/init.d/mysqld restart"});
-//        exitValue = process.waitFor();
-//        outputArea.append("restart = " + exitValue + "\r\n");
-        
-//        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysqlcheck --user=db_user --password=db_pass --auto-repair -c -o links_cleaned"});
-//        exitValue = process.waitFor();
-//        outputArea.append("optimize = " + exitValue + "\r\n");
-        
-//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q04"));
-//        conPrematch.runQuery(LinksSpecific.getSqlQuery("NameToNumber/NameToNumber_q05"));
-
-        
-        //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates3.sql"});
-        //        exitValue = process.waitFor();
-        //        outputArea.append("Exitcode_3 = " + exitValue + "\r\n");
-        //        
-        //        process = runtime.exec(new String[]{"/bin/bash", "-c", "mysql links_cleaned --user=db_user --password=db_pass < updates4.sql"});
-        //        exitValue = process.waitFor();
-        //        outputArea.append("Exitcode_4 = " + exitValue + "\r\n");
-
-        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doNamesToNumbers
-
-
-    /**
-     * @param debug
-     * @throws Exception 
-     */
-    public void doLevenshtein( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doLevenshtein";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        // prematch.Lv is a separate thread, so timing should be done there internally
-        showMessage( funcname + "...", false, true );
-
-        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  outputLine, outputArea );
-        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, outputLine, outputArea );
-        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  outputLine, outputArea );
-        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, outputLine, outputArea );
-
-        lv1.start();
-        lv2.start();
-        lv3.start();
-        lv4.start();
-    } // doLevenshtein
-
-
-    /**
-     *
-     * @param s
-     * @param t
-     * @return
-     */
-    public static int levenshtein( String s, String t )
-    {
-        int n = s.length(); // length of s
-        int m = t.length(); // length of t
-
-        int p[] = new int[n + 1]; //'previous' cost array, horizontally
-        int d[] = new int[n + 1]; // cost array, horizontally
-        int _d[]; //placeholder to assist in swapping p and d
-
-        // indexes into strings s and t
-        int i; // iterates through s
-        int j; // iterates through t
-
-        char t_j; // jth character of t
-
-        int cost; // cost
-
-        for (i = 0; i <= n; i++) {
-            p[i] = i;
-        }
-
-        for (j = 1; j <= m; j++) {
-            t_j = t.charAt(j - 1);
-            d[0] = j;
-
-            for (i = 1; i <= n; i++) {
-                cost = s.charAt(i - 1) == t_j ? 0 : 1;
-                d[i] = Math.min(Math.min(d[i - 1] + 1, p[i] + 1), p[i - 1] + cost);
-            }
-
-            _d = p;
-            p = d;
-            d = _d;
-        }
-
-        return p[n];
-    } // levenshtein
-
-
-    /**
-     * @param debug
-     * @throws Exception 
-     */
-    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doUpdateBaseTable";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        String qPrefix = "FillBaseTable/FillBaseTable_q";
-        int nqFirst = 1;
-        int nqLast = 33;
-        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
-
-        for( int n = nqFirst; n <= nqLast; n++ ) {
-            String qPath = String.format( qPrefix + "%02d", n );
-            showMessage( "Running query: " + qPath, false, true );
-
-            String query = LinksSpecific.getSqlQuery( qPath );
-            if( debug ) { showMessage( query, false, true ); }
-
-            try { conBase.runQuery( query ); }
-            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
-        }
-
-        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doUpdateBaseTable
-
-
-    /**
-     *
-     * @param seconds
-     * @return
-     */
-    public static String stopWatch( int seconds )
-    {
-        int minutes = seconds / 60;
-        int restsec = seconds % 60;
-        int uren    = minutes / 60;
-        int restmin = minutes % 60;
-
-        String urenText     = "";
-        String minutenText  = "";
-        String secondenText = "";
-
-        if( uren < 10 ) { urenText = "0"; }
-
-        if( restmin < 10 ) { minutenText = "0"; }
-
-        if( restsec < 10 ) { secondenText = "0"; }
-
-        return urenText + uren + ":" + minutenText + restmin + ":" + secondenText + restsec;
-    } // stopWatch
-
-
-    /**
-     *
-     * @throws Exception
-     */
-    private void createTempFirstname( boolean debug ) throws Exception
-    {
-        String query = "CREATE  TABLE links_temp.firstname_t_split ("
-            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " firstname1 VARCHAR(30) NULL ,"
-            + " firstname2 VARCHAR(30) NULL ,"
-            + " firstname3 VARCHAR(30) NULL ,"
-            + " firstname4 VARCHAR(30) NULL ,"
-            + " PRIMARY KEY (person_id) );";
-
-        if( debug ) { showMessage( query, false, true); }
-        conTemp.runQuery( query );
-    } // createTempFirstname
-
-
-    /**
-     *
-     * @throws Exception
-     */
-    private void createTempFirstnameFile() throws Exception {
-        String filename = "firstname_t_split.csv";
-        showMessage( "Creating file " + filename, false, true);
-        writerFirstname = new java.io.FileWriter( filename );
-    } // createTempFirstnameFile
-
-
-    /**
-     *
-     * @throws Exception
-     */
-    private void loadFirstnameToTable( boolean debug )
-    throws Exception
-    {
-        showMessage( "Loading CSV data into temp table...", false, true );
-
-        String query = "LOAD DATA LOCAL INFILE 'firstname_t_split.csv'"
-            + " INTO TABLE firstname_t_split FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
-            + " ( person_id , firstname1 , firstname2 , firstname3 , firstname4 );";
-
-        if( debug ) { showMessage( query, false, true); }
-        conTemp.runQuery( query );
-    } // loadFirstnameToTable
-
-
-    /**
-     *
-     */
-    private void updateFirstnameToPersonC( boolean debug )
-    throws Exception
-    {
-        showMessage( "Moving first names from temp table to person_c...", false, true );
-
-        String query = "UPDATE links_cleaned.person_c, links_temp.firstname_t_split"
-            + " SET "
-            + " links_cleaned.person_c.firstname1 = links_temp.firstname_t_split.firstname1 ,"
-            + " links_cleaned.person_c.firstname2 = links_temp.firstname_t_split.firstname2 ,"
-            + " links_cleaned.person_c.firstname3 = links_temp.firstname_t_split.firstname3 ,"
-            + " links_cleaned.person_c.firstname4 = links_temp.firstname_t_split.firstname4"
-            + " WHERE links_cleaned.person_c.id_person = links_temp.firstname_t_split.person_id;";
-
-        if( debug ) { showMessage( query, false, true); }
-        conTemp.runQuery( query );
-    } // updateFirstnameToPersonC(
-
-
-    /**
-     *
-     * @throws Exception
-     */
-    public void removeFirstnameFile() throws Exception {
-        String filename = "firstname_t_split.csv";
-        showMessage( "Removing file " + filename, false, true);
-        File file = new File( filename );
-        file.delete();
-    } // removeFirstnameFile
-
-
-    /**
-     *
-     * @throws Exception
-     */
-    public void removeFirstnameTable() throws Exception {
-        String tablename = "firstname_t_split";
-        showMessage( "Removing table " + tablename, false, true);
-        String query = "DROP TABLE " + tablename + ";";
-        conTemp.runQuery( query );
-    } // removeFirstnameTable
 
 }
 

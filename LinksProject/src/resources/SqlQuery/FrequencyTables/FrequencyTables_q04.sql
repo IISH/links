@@ -1,5 +1,5 @@
--- query 04
-CREATE TABLE IF NOT EXISTS links_frequency.freq_familyname ( 
+-- query 04 
+CREATE TABLE IF NOT EXISTS links_prematch.freq_familyname ( 
     id INT UNSIGNED NOT NULL AUTO_INCREMENT , 
     name VARCHAR(100) NULL , 
     frequency INT UNSIGNED NULL , 
