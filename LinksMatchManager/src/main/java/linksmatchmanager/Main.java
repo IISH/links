@@ -32,8 +32,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-04-Aug-2014 Latest change
-}
+ * FL-25-Nov-2014 Latest change
  */
 
 public class Main

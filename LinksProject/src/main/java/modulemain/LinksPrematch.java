@@ -418,16 +418,21 @@ public class LinksPrematch extends Thread
         int nqLast = 15;
         String qPrefix = "FrequencyTables/FrequencyTables_q";
 
-        for( int n = nqFirst; n <= nqLast; n++ ) {
+        for( int n = nqFirst; n <= nqLast; n++ )
+        {
+            long start = System.currentTimeMillis();
             String qPath = String.format( qPrefix + "%02d", n );
             String query = LinksSpecific.getSqlQuery( qPath );
 
+            String msg = "";
             if( query == null || query.isEmpty() ) { showMessage( "Empty query " + qPath, false, true ); }
             else {
-                showMessage( "Running query " + qPath, false, true );
+                msg = "query " + n + "-of-" + nqLast;
+                showMessage( msg + "...", false, true );
                 if( debug ) { showMessage( query, false, true ); }
                 conPrematch.runQuery( query );
             }
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
@@ -678,13 +683,18 @@ public class LinksPrematch extends Thread
         int nqLast  = 5;
         String qPrefix = "NamesToNumbers/NameToNumber_q";
 
-        for( int n = nqFirst; n <= nqLast; n++ ) {
+        for( int n = nqFirst; n <= nqLast; n++ )
+        {
+            long start = System.currentTimeMillis();
             String qPath = String.format( qPrefix + "%02d", n );
 
             String query = LinksSpecific.getSqlQuery( qPath );
-            if( debug ) { showMessage(query, false, true); }
+            String msg = "query " + n + "-of-" + nqLast;
+            showMessage( msg + "...", false, true );
+            if( debug ) { showMessage( query, false, true ); }
 
             conPrematch.runQuery( query );
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
@@ -717,15 +727,19 @@ public class LinksPrematch extends Thread
         int nqLast = 33;
         // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
 
-        for( int n = nqFirst; n <= nqLast; n++ ) {
+        for( int n = nqFirst; n <= nqLast; n++ )
+        {
+            long start = System.currentTimeMillis();
             String qPath = String.format( qPrefix + "%02d", n );
-            showMessage( "Running query: " + qPath, false, true );
 
             String query = LinksSpecific.getSqlQuery( qPath );
+            String msg = "query " + n + "-of-" + nqLast;
+            showMessage( msg + "...", false, true );
             if( debug ) { showMessage( query, false, true ); }
 
             try { conBase.runQuery( query ); }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
