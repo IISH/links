@@ -10,6 +10,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import connectors.MySqlConnector;
+import general.Functions;
 import general.PrintLogger;
 
 /**
@@ -30,7 +31,7 @@ public class Lv extends Thread
     private boolean strict;
 
     private JTextField outputLine;
-    private JTextArea outputArea;
+    private JTextArea  outputArea;
     private PrintLogger plog;
 
     /**
@@ -74,12 +75,18 @@ public class Lv extends Thread
     @Override
     public void run()
     {
-        // Run query on Database
+        long start = System.currentTimeMillis();
+
+        String msg = "Levenshtein " + db_table + " done, strict = " + strict;
+        showMessage( msg + "..", false, true );
+
+        String csvname = "LS-" + db_table + "-strict=" + strict + ".csv";
+        showMessage( "Output filename: " + csvname, false, true );
+
+        int nline = 0;
+
         try
         {
-
-            showMessage( "prematch.Lv/run() for table " + db_table + " with strict = " + strict, false, true );
-
             ResultSet rs = null;
             //String query = "SELECT id, name FROM " + db_table;
             String query = "SELECT id, name FROM " + db_name + "." + db_table;
@@ -109,9 +116,7 @@ public class Lv extends Thread
             
             int size = name.size();
 
-            String filename = "LV-" + db_table + "-strict=" + strict + ".csv";
-            showMessage( "Output filename: " + filename, false, true );
-            FileWriter csvwriter = new FileWriter( filename );
+            FileWriter csvwriter = new FileWriter( csvname );
 
             // timing
             long timeExpand = 0;
@@ -126,18 +131,18 @@ public class Lv extends Thread
                 int id1 = id.get(i);
                 int id2 = 0;
 
-                String naam1 = name.get(i);
-                String naam2 = "";
+                String name_1 = name.get(i);
+                String name_2 = "";
 
                 int begin = i+1;
 
                 for( int j = begin; j < name.size() ; j++ )
                 {
                     id2   = id.get( j );
-                    naam2 = name.get(j);
+                    name_2 = name.get(j);
 
-                    int a = naam1.length();
-                    int b = naam2.length();
+                    int a = name_1.length();
+                    int b = name_2.length();
                     
                     int smallest = (a < b) ?  a : b;
 
@@ -176,7 +181,7 @@ public class Lv extends Thread
                         if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    ld = levenshtein( naam1, naam2 );           // levenshtein
+                    ld = levenshtein( name_1, name_2 );           // levenshtein
 
                     if( ld > 4 ) { continue; }                  // check distance
 
@@ -198,7 +203,11 @@ public class Lv extends Thread
                     }
 
                     // Write to CSV
-                    String line = id1 + "," + id2 + "," + naam1 + "," + naam2 + "," + ld + "\r\n";
+                    //String line = id1 + "," + id2 + "," + name_1 + "," + name_2 + "," + ld + "\r\n";    // old
+                    String line = name_1 + "," + name_2 + "," + smallest + "," + ld + "\r\n";
+                    //if( debug ) { System.out.println( line ); }
+
+                    nline ++;
 
                     try {  csvwriter.write( line ); }
                     catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
@@ -211,18 +220,35 @@ public class Lv extends Thread
                 }
             }
 
-            showMessage( "", true, true );
+            showMessage( "", true, true );      // clear
             csvwriter.close();
+            if(debug ) { showMessage( nline + " records written to CSV file", false, true ); }
 
             // elapsed
             timeExpand = System.currentTimeMillis() - begintime;
             int iTimeEx = (int)( timeExpand / 1000 );
+        }
+        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
 
-            showMessage( "Levenshtein " + db_table + " done, strict = " + strict + "; elapsed: " + stopWatch( iTimeEx ), false, true );
-
+        String ls_table = "";
+        if( db_table.equals( "freq_firstnames" ) ) {
+            if( strict ) { ls_table = "ls_firstname_strict"; }
+            else { ls_table = "ls_firstname"; }
+        }
+        else if( db_table.equals( "freq_familyname" ) ) {
+            if( strict ) { ls_table = "ls_familyname_strict"; }
+            else { ls_table = "ls_familyname"; }
+        }
+        else {
+            showMessage( "Levenshtein Error: table name: " + db_table + " ?", false, true );
+            return;
         }
 
+        try { loadCsvLsToTable( debug, db_conn, db_name, csvname, ls_table ); }
         catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
+
+        elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        showMessage_nl();
     }
 
 
@@ -232,7 +258,7 @@ public class Lv extends Thread
      * @param t
      * @return
      */
-    public static int levenshtein(  String s, String t  )
+    public static int levenshtein( String s, String t  )
     {
         int n = s.length();     // length of s
         int m = t.length();     // length of t
@@ -269,6 +295,33 @@ public class Lv extends Thread
 
         return p[ n ];
     }
+
+
+    /**
+     * @throws Exception
+     */
+    private void loadCsvLsToTable( boolean debug, MySqlConnector db_conn, String db_name, String csvname, String db_table )
+    throws Exception
+    {
+        long start = System.currentTimeMillis();
+        String msg = "Loading CSV LV data into LV table";
+        showMessage( msg + "...", false, true );
+
+        String query = "TRUNCATE TABLE `" + db_name + "`.`" + db_table + "`";
+        if(debug ) { showMessage( query, false, true ); }
+        db_conn.runQuery( query );
+
+        query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
+            + " INTO TABLE `" + db_name + "`.`" + db_table + "`"
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
+            + " ( `name_1` , `name_2`, `length`, `value` );";
+
+        if(debug ) { showMessage( query, false, true ); }
+        db_conn.runQuery( query );
+
+        elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+    } // loadCsvLsToTable
 
 
     public static String stopWatch( int seconds )
@@ -314,5 +367,33 @@ public class Lv extends Thread
             }
         }
     } // showMessage
+
+
+    /**
+     * @param msg
+     * @param start
+     * @param stop
+     */
+    private void elapsedShowMessage( String msg, long start, long stop )
+    {
+        String elapsed = Functions.millisec2hms( start, stop );
+        showMessage( msg + " " + elapsed, false, true );
+    } // elapsedShowMessage
+
+
+    /**
+     */
+    private void showMessage_nl()
+    {
+        String newLineToken = "\r\n";
+
+        outputArea.append( newLineToken );
+
+        try { plog.show( "" ); }
+        catch( Exception ex ) {
+            System.out.println( ex.getMessage() );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // showMessage_nl
 
 }

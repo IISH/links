@@ -1907,9 +1907,9 @@ public class LinksCleanedThread extends Thread
         showMessage( "Creating " + tablename + " table", false, true );
 
         String query = "CREATE  TABLE links_temp." + tablename + " ("
-                + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " familyname VARCHAR(80) NULL ,"
-                + " PRIMARY KEY (person_id) );";
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " familyname VARCHAR(80) NULL ,"
+            + " PRIMARY KEY (person_id) );";
 
         dbconTemp.runQuery( query );
 
@@ -1941,8 +1941,8 @@ public class LinksCleanedThread extends Thread
         String tablename = "familyname_t_" + source;
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
-                + " INTO TABLE " + tablename
-                + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
+            + " INTO TABLE " + tablename
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , familyname );";
 
         dbconTemp.runQuery( query );
 
@@ -1959,8 +1959,8 @@ public class LinksCleanedThread extends Thread
         String tablename = "familyname_t_" + source;
 
         String query = "UPDATE links_cleaned.person_c, links_temp."   + tablename
-                + " SET links_cleaned.person_c.familyname = links_temp."  + tablename + ".familyname"
-                + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
+            + " SET links_cleaned.person_c.familyname = links_temp."  + tablename + ".familyname"
+            + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
         dbconTemp.runQuery( query );
     } // updateFamilynameToPersonC
@@ -2000,10 +2000,10 @@ public class LinksCleanedThread extends Thread
 
         // Notice: the stillbirth column is not yet used
         String query = "CREATE  TABLE links_temp." + tablename + " ("
-                + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " firstname VARCHAR(80) NULL ,"
-                + " stillbirth VARCHAR(3) NULL ,"
-                + " PRIMARY KEY (person_id) );";
+            + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " firstname VARCHAR(80) NULL ,"
+            + " stillbirth VARCHAR(3) NULL ,"
+            + " PRIMARY KEY (person_id) );";
 
         dbconTemp.runQuery( query );
     } // createTempFirstnameTable
@@ -2034,8 +2034,8 @@ public class LinksCleanedThread extends Thread
         String tablename = "firstname_t_" + source;
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
-                + " INTO TABLE " + tablename
-                + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
+            + " INTO TABLE " + tablename
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
 
         dbconTemp.runQuery( query );
     } // loadFirstnameToTable
@@ -2051,8 +2051,8 @@ public class LinksCleanedThread extends Thread
         String tablename = "firstname_t_" + source;
 
         String query = "UPDATE links_cleaned.person_c, links_temp."   + tablename
-                + " SET links_cleaned.person_c.firstname = links_temp."   + tablename + ".firstname"
-                + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
+            + " SET links_cleaned.person_c.firstname = links_temp."   + tablename + ".firstname"
+            + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
         dbconTemp.runQuery(query);
     } // updateFirstnameToPersonC
