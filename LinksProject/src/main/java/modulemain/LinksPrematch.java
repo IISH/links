@@ -766,7 +766,7 @@ public class LinksPrematch extends Thread
         String[] a01 = s01.split(";");
 
         for (int i = 0; i < a01.length; i++) {
-            conPrematch.runQuery(a01[i]);
+            conPrematch.runQuery( a01[ i ] );
         }
 
         outputArea.append( "02" + "\r\n" );
@@ -776,7 +776,7 @@ public class LinksPrematch extends Thread
         String[] a02 = s02.split(";");
 
         for (int i = 0; i < a02.length; i++) {
-            conPrematch.runQuery(a02[i]);
+            conPrematch.runQuery( a02[ i ] );
         }
 
         outputArea.append( "03" + "\r\n" );
@@ -786,7 +786,7 @@ public class LinksPrematch extends Thread
         String[] a03 = s03.split(";");
 
         for (int i = 0; i < a03.length; i++) {
-            conPrematch.runQuery(a03[i]);
+            conPrematch.runQuery( a03[ i ] );
         }
 
         outputArea.append("First 3 SQL statements done, beginning with LV" + "\r\n");
@@ -806,7 +806,7 @@ public class LinksPrematch extends Thread
         String[] a04 = s04.split(";");
 
         for (int i = 0; i < a04.length; i++) {
-            conPrematch.runQuery(a04[i]);
+            conPrematch.runQuery( a04[ i ] );
         }
 
         outputArea.append( "04" + "\r\n" );

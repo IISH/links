@@ -19,7 +19,7 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-24-Nov-2014 Latest change
+ * FL-27-Nov-2014 Latest change
  */
 public class Lv extends Thread
 {
@@ -204,7 +204,8 @@ public class Lv extends Thread
 
                     // Write to CSV
                     //String line = id1 + "," + id2 + "," + name_1 + "," + name_2 + "," + ld + "\r\n";    // old
-                    String line = name_1 + "," + name_2 + "," + smallest + "," + ld + "\r\n";
+                    //String line = name_1 + "," + name_2 + "," + smallest + "," + ld + "\r\n";
+                    String line = name_1 + "," + name_2 + "," + a + ","+ b + "," + ld + "\r\n";
                     //if( debug ) { System.out.println( line ); }
 
                     nline ++;
@@ -246,6 +247,10 @@ public class Lv extends Thread
 
         try { loadCsvLsToTable( debug, db_conn, db_name, csvname, ls_table ); }
         catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
+
+        try { createLsFirstTable( debug, db_conn, db_name, ls_table ); }
+        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
+
 
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
         showMessage_nl();
@@ -314,7 +319,7 @@ public class Lv extends Thread
         query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE `" + db_name + "`.`" + db_table + "`"
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
-            + " ( `name_1` , `name_2`, `length`, `value` );";
+            + " ( `name_1` , `name_2`, `length_1`, `length_2`, `value` );";
 
         if(debug ) { showMessage( query, false, true ); }
         db_conn.runQuery( query );
@@ -322,6 +327,51 @@ public class Lv extends Thread
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
     } // loadCsvLsToTable
+
+
+        /**
+     * @throws Exception
+     */
+    private void createLsFirstTable( boolean debug, MySqlConnector db_conn, String db_name, String ls_table )
+    throws Exception
+    {
+        if( ls_table.equals( "ls_firstname" ) || ls_table.equals( "ls_familyname" ) )
+        {
+            long start = System.currentTimeMillis();
+            String msg = "Filling table " + ls_table;
+            showMessage( msg + "...", false, true );
+
+            // copy the table to '_first', and delete records that differ in 1st char of names
+            String ls_table_first = ls_table + "_first";
+            String[] queries =
+            {
+                "DROP TABLE IF EXISTS " + ls_table_first,
+                "CREATE TABLE " + ls_table_first + " LIKE " + ls_table + ";",
+                "ALTER TABLE "  + ls_table_first + " DISABLE KEYS;",
+                "INSERT INTO "  + ls_table_first + " SELECT * FROM " + ls_table + ";",
+                "ALTER TABLE "  + ls_table_first + " ENABLE KEYS;",
+                "DELETE FROM "  + ls_table_first + " WHERE SUBSTRING( `name_1`,1,1 ) <> SUBSTRING( `name_2`,1,1 );"
+            };
+
+            for( String query : queries ) {
+                if( debug ) { showMessage( query, false, true ); }
+                db_conn.runQuery( query );
+            }
+
+            String query = "SELECT COUNT(*) AS count FROM " + ls_table_first;
+            try {
+                ResultSet rs = db_conn.runQueryWithResult( query );
+                while( rs.next() ) {
+                    int count = rs.getInt( "count" );
+                    showMessage( count + " records in " + ls_table_first, false , true);
+                }
+            }
+            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+        }
+        else
+        { showMessage( "createLsFirstTable, skipping: " + ls_table, false, true ); }
+
+    } // createLsFirstTable
 
 
     public static String stopWatch( int seconds )

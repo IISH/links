@@ -17,61 +17,61 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package linksmatchmanager;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+
+import java.util.ArrayList;
+
 import linksmatchmanager.DataSet.NameType;
 
 /**
- * Use this class to convert Prematch 
- * tables to multidimensional arrays
- * @author oaz
+ * Use this class to convert Prematch tables to multidimensional arrays
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
  */
-public class VariantLoader {
-
+public class VariantLoader
+{
     private String url;
     private String user;
     private String pass;
 
     /**
-     * Use this constructor to set the url, user and pass
-     * @param url Location of the database
+     * Constructor
+     * @param url  URL of the database
      * @param user Username for the database
      * @param pass Password for the database
      */
-    public VariantLoader(String url, String user, String pass) {
+    public VariantLoader( String url, String user, String pass )
+    {
         this.url = url;
         this.user = user;
         this.pass = pass;
     }
 
     /**
-     * This method returns a multidimensional 
-     * Array. An array of arrays
-     * @param tableName table to load.
-     * This will workt as long as the
-     * table field name requirements are met
+     * This method returns a multidimensional Array.
+     * @param tableName table to load. This will work as long as the table field name requirements are met
      * @param value max accepted value
-     * @return multidimensional representation
-     * of the prematch table
+     * @return multidimensional representation of the prematch table
      * @throws Exception
      */
-    public int[][] loadNames(String tableName, int value) throws Exception {
+    public int[][] loadNames( String tableName, int value ) throws Exception
+    {
 
-        // Create Connection
-        Connection con = General.getConnection(url, "links_prematch", user, pass);
+        Connection con = General.getConnection( url, "links_prematch", user, pass );
+        con.setReadOnly( true );
 
-        // Connection optimization
-        con.setReadOnly(true);
+        String query =  "SELECT length_1 , length_2 FROM " + tableName
+            + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, 200000000;";
 
-        ResultSet rs = con.createStatement().executeQuery(
-                "SELECT n1 , n2 FROM " + tableName
-                + " WHERE value <= " + value + " ORDER BY n1,n2 ASC limit 0,200000000;");
+        ResultSet rs = con.createStatement().executeQuery( query );
 
         // Create an multi-dimensional array large enough for the biggest number
         rs.last();
         int max = rs.getRow();
         int[][] names = new int[max][];
-        rs.beforeFirst(); // Get cursos back
+        rs.beforeFirst(); // Put cursor back
 
         // int[][] names = new int[max + 1][];
 
@@ -82,60 +82,58 @@ public class VariantLoader {
         ArrayList<Integer> tempNames = new ArrayList<Integer>();
 
         // Loop through the records from the lv table
-        while (rs.next()) {
+        while( rs.next() )
+        {
+            int n1 = rs.getInt( "length_1" );
+            int n2 = rs.getInt( "length_2" );
 
-            int n1 = rs.getInt("n1");
-            int n2 = rs.getInt("n2");
-
-            // If the if statement is true,
-            // then the n1 name is changed
-            // We must now proces the founded names
-            if (n1 != currentName) {
-
+            // If the if statement is true, then the n1 name is changed
+            // We must now process the found names
+            if( n1 != currentName )
+            {
                 // count the names
                 int countNamesInTemp = tempNames.size();
 
                 // This check is because of the first time
-                if (countNamesInTemp > 0) {
-
+                if( countNamesInTemp > 0 )
+                {
                     // Create new array
-                    int[] namesArray = new int[countNamesInTemp];
+                    int[] namesArray = new int[ countNamesInTemp ];
 
                     // Load names from temporary Arraylist into array
-                    for (int j = 0; j < countNamesInTemp; j++) {
-                        namesArray[j] = tempNames.get(j);
+                    for( int j = 0; j < countNamesInTemp; j++ ) {
+                        namesArray[ j ] = tempNames.get( j );
                     }
 
                     // load complete array into multidimensional array
-                    names[currentName] = namesArray;
+                    names[ currentName ] = namesArray;
                 }
 
                 // Clear temporary array
                 tempNames.clear();
 
-                tempNames.add(n2);
+                tempNames.add( n2 );
 
                 // Change current number 
                 currentName = n1;
-            } else {
-
+            }
+            else {
                 // In this case the name must be loaded into temporary array
-                tempNames.add(n2);
+                tempNames.add( n2 );
             }
         }
 
         // Load last batch
-        if (!tempNames.isEmpty()) {
-
+        if( !tempNames.isEmpty() ) {
             // count the names
             int countNamesInTemp = tempNames.size();
 
             // Create new array
-            int[] namesArray = new int[countNamesInTemp];
+            int[] namesArray = new int[ countNamesInTemp ];
 
             // Load names from temporary Arraylist into array
-            for (int j = 0; j < countNamesInTemp; j++) {
-                namesArray[j] = tempNames.get(j);
+            for( int j = 0; j < countNamesInTemp; j++ ) {
+                namesArray[ j ] = tempNames.get( j );
             }
 
             // load complete array into multidimensional array
@@ -158,54 +156,51 @@ public class VariantLoader {
         return names;
     }
 
-    public int[][] loadRootNames(String tableName) throws Exception {
 
-        Connection con = General.getConnection(url, "links_prematch", user, pass);
-        con.setReadOnly(true);
-
+    public int[][] loadRootNames( String tableName ) throws Exception
+    {
+        Connection con = General.getConnection( url, "links_prematch", user, pass );
+        con.setReadOnly( true );
 
         // Get the root from table
-        ResultSet rs = con.createStatement().executeQuery(
-                "SELECT n1 , n2 FROM " + tableName + " ORDER BY n1;");
+        String query =  "SELECT length_1 , length_2 FROM " + tableName + " ORDER BY length_1;";
+        ResultSet rs = con.createStatement().executeQuery( query );
 
         // Create an array large enough for the biggest number
         rs.last();
-        int max = rs.getInt("n1");
-        int[][] names = new int[max + 1][];
-        rs.beforeFirst(); // Get cursos back
+        int max = rs.getInt( "length_1" );
+        int[][] names = new int[ max + 1 ][];
+        rs.beforeFirst();       // Put cursor back
 
         // Loop through the records from the lv table
-        while (rs.next()) {
-
-            int n1 = rs.getInt("n1");
+        while( rs.next() )
+        {
+            int n1 = rs.getInt( "length_1" );
             String n2 = "";
-            n2 = rs.getString("n2");
+            n2 = rs.getString( "length_2" );
 
-            if (n2 != null && !n2.isEmpty() && n2.contains(",")) {
+            if( n2 != null && !n2.isEmpty() && n2.contains( "," ) )
+            {
                 // remove commas
-                n2 = n2.substring(1, (n2.length() - 1));
+                n2 = n2.substring( 1, ( n2.length() - 1 ) );
 
-                String[] n2Split = n2.split(",");
+                String[] n2Split = n2.split( "," );
                 
-                int[] nl = new int[n2Split.length];
+                int[] nl = new int[ n2Split.length ];
 
-                for (int i = 0; i < n2Split.length; i++) {
-                    try {
-                        nl[i] = Integer.parseInt(n2Split[i]);
-                    } catch (Exception e) {
-                        nl[i] = 0;
-                    }
+                for( int i = 0; i < n2Split.length; i++ )
+                {
+                    try { nl[ i ] = Integer.parseInt( n2Split[ i ] ); }
+                    catch( Exception ex ) { nl[ i ] = 0; }
                 }
-                names[n1] = nl;
+                names[ n1 ] = nl;
 
             }
         }
 
         // prevent null errors
-        for (int i = 0; i < names.length; i++) {
-
-            if (names[i] == null) {
-                names[i] = new int[0];
+        for( int i = 0; i < names.length; i++ ) {
+            if( names[ i ] == null ) { names[ i ] = new int[ 0 ];
             }
         }
 
@@ -221,51 +216,54 @@ public class VariantLoader {
         return names;
 
     }
-//    public String[] loadRootNames(String tableName) throws Exception {
-//        
-//        Connection con = General.getConnection(url, "links_prematch", user, pass);
-//        con.setReadOnly(true);
-//
-//
-//        // Get the root from table
-//        ResultSet rs = con.createStatement().executeQuery(
-//                "SELECT n1 , n2 FROM " + tableName + " ORDER BY n1;");
-//
-//        // Create an array large enough for the biggest number
-//        rs.last();
-//        int max = rs.getInt("n1");
-//        String[] names = new String[max + 1];
-//        rs.beforeFirst(); // Get cursos back
-//
-//        // Loop through the records from the lv table
-//        while (rs.next()) {
-//
-//            int n1 = rs.getInt("n1");
-//            String n2 = "";
-//            n2 = rs.getString("n2");
-//            
-//            names[n1] = n2;
-//        }
-//        
-//        // prevent null errors
-//        for (int i = 0; i < names.length; i++) {
-//            
-//            if(names[i] == null){
-//                names[i] = "";
-//            }
-//            
-//        }
-//        
-//        
-//        rs.close();
-//        rs = null;
-//
-//        con.createStatement().close();
-//        con.close();
-//        con = null;
-//
-//        // Return multidimensional array
-//        return names;
-//        
-//    }
+
+    /*
+    public String[] loadRootNames(String tableName) throws Exception
+    {
+        Connection con = General.getConnection(url, "links_prematch", user, pass);
+        con.setReadOnly(true);
+
+
+        // Get the root from table
+        ResultSet rs = con.createStatement().executeQuery(
+                "SELECT n1 , n2 FROM " + tableName + " ORDER BY n1;");
+
+        // Create an array large enough for the biggest number
+        rs.last();
+        int max = rs.getInt("n1");
+        String[] names = new String[max + 1];
+        rs.beforeFirst(); // Get cursos back
+
+        // Loop through the records from the lv table
+        while (rs.next()) {
+
+            int n1 = rs.getInt("n1");
+            String n2 = "";
+            n2 = rs.getString("n2");
+
+            names[n1] = n2;
+        }
+
+        // prevent null errors
+        for (int i = 0; i < names.length; i++) {
+
+            if(names[i] == null){
+                names[i] = "";
+            }
+
+        }
+
+
+        rs.close();
+        rs = null;
+
+        con.createStatement().close();
+        con.close();
+        con = null;
+
+        // Return multidimensional array
+        return names;
+
+    }
+    */
 }

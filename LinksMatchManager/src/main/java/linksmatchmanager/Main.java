@@ -32,7 +32,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-25-Nov-2014 Latest change
+ * FL-27-Nov-2014 Latest change
  */
 
 public class Main
@@ -110,64 +110,57 @@ public class Main
 
 
             int misSize = mis.is.getSize();
-            System.out.printf( "size: %s\n", misSize  );
+            log.show( String.format( "Number of matching records from links_match.match_process: %d\n", misSize ) );
 
-            /**
-             * Loop through records in match_process
-             */
+            // Loop through records in match_process
             for( int i = 0; i < mis.is.getSize(); i++ )
             {
-                System.out.printf( "i: %d\n", i );
+                // Create a new prematch variants object for every record in match_process table
+                VariantLoader lv = new VariantLoader( url, user, pass );
 
-                /**
-                 * Create a new prematch variants object 
-                 * for every record in match_process table 
-                 */
-                VariantLoader lv = new VariantLoader(url, user, pass);
+                int method = mis.is.get( i ).get( 0 ).method;
+                log.show( String.format( "matching record: %d-of-%d, method = %d\n", i+1, misSize, method ) );
 
-                if (mis.is.get(i).get(0).method == 1) {
-
+                if( method == 1 )
+                {
                     // Load the name sets
-                    //rootFamilyName =
-                    //      lv.loadRootNames(mis.is.get(i).get(0).prematch_familyname);
+                    rootFamilyName = lv.loadRootNames( mis.is.get( i ).get( 0 ).prematch_familyname );
+                    //log.show( String.format( "rootFamilyName size = %d x %d\n", rootFamilyName[0].length, rootFamilyName[1].length ) );
 
-                    //rootFirstName = 
-                     //       lv.loadRootNames(mis.is.get(i).get(0).prematch_firstname);
-                    
-                    rootFamilyName =
-                            lv.loadRootNames(mis.is.get(i).get(0).prematch_familyname);
+                    rootFirstName =  lv.loadRootNames( mis.is.get( i ).get( 0 ).prematch_firstname );
+                    //log.show( String.format( "rootFirstName size = %d x %d\n", rootFirstName[0].length, rootFirstName[1].length ) );
 
-                    rootFirstName = 
-                            lv.loadRootNames(mis.is.get(i).get(0).prematch_firstname);
-
-                } else { // 0
-                    // Load the name sets
-                    variantFamilyName =
-                            lv.loadNames(mis.is.get(i).get(0).prematch_familyname,
-                            mis.is.get(i).get(0).prematch_familyname_value);
-
-                    variantFirstName =
-                            lv.loadNames(mis.is.get(i).get(0).prematch_firstname,
-                            mis.is.get(i).get(0).prematch_firstname_value);
                 }
+                else    // method = 0
+                {
+                    // Load the name sets
+                    variantFamilyName = lv.loadNames(
+                        mis.is.get( i ).get( 0 ).prematch_familyname,
+                        mis.is.get( i ).get( 0 ).prematch_familyname_value );
+                    //log.show( String.format( "variantFamilyName size = %d x %d\n", variantFamilyName[0].length, variantFamilyName[1].length ) );
+
+                    variantFirstName = lv.loadNames(
+                        mis.is.get( i ).get( 0 ).prematch_firstname,
+                        mis.is.get( i ).get( 0 ).prematch_firstname_value );
+                    //log.show( String.format( "variantFirstName size = %d x %d\n", variantFirstName[0].length, variantFirstName[1].length ) );
+                }
+
                 // Show user the active record and total
-                log.show("Record " + (i + 1) + " of " + mis.is.getSize());
+                log.show( "Record " + (i + 1) + " of " + mis.is.getSize() );
 
                 /**
-                 * Get a QueryGroupSet object which 
-                 * contains a arraylist of objects
-                 * every object contains information
-                 * about the subqueries
+                 * Get a QueryGroupSet object which contains a arraylist of objects
+                 * every object contains information about the subqueries
                  */
-                QueryGroupSet qgs = mis.is.get(i);
+                QueryGroupSet qgs = mis.is.get( i );
 
                 // Loop through ranges/subqueries
-                for (int j = 0; j < qgs.getSize(); j++) {
-
-                    // Wait until processmanager gives permission
-                    while (!pm.allowProcess()) {
-                        log.show("No permission for new thread: Waiting 60 seconds");
-                        Thread.sleep(60000);
+                for( int j = 0; j < qgs.getSize(); j++ )
+                {
+                    // Wait until process manager gives permission
+                    while( !pm.allowProcess() ) {
+                        log.show( "No permission for new thread: Waiting 60 seconds" );
+                        Thread.sleep( 60000 );
                     }
 
                     // Add process to process list
@@ -176,16 +169,14 @@ public class Main
                     MatchAsync ma;
 
                     // Here begins threading
-                    if (qgs.get(0).method == 1) {
-                        ma = new MatchAsync(pm, i, j, ql, log, qgs, mis, conBase, conMatch, rootFirstName, rootFamilyName, true);
+                    if( qgs.get( 0 ).method == 1 ) {
+                        ma = new MatchAsync( pm, i, j, ql, log, qgs, mis, conBase, conMatch, rootFirstName, rootFamilyName, true );
                     } else { // 0
-                        ma = new MatchAsync(pm, i, j, ql, log, qgs, mis, conBase, conMatch, variantFirstName, variantFamilyName);
+                        ma = new MatchAsync( pm, i, j, ql, log, qgs, mis, conBase, conMatch, variantFirstName, variantFamilyName );
                     }
 
-                    // inform user
-                    log.show("ADD TO THREAD LIST: Range " + (j + 1) + " of " + qgs.getSize());
+                    log.show( "ADD TO THREAD LIST: Range " + (j + 1) + " of " + qgs.getSize() );
 
-                    // start
                     ma.start();
 
                 }

@@ -28,7 +28,7 @@ import modulemain.LinksSpecific;
  * This Class contains logging procedures
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-20-Nov-2014 Latest Change
+ * FL-27-Nov-2014 Latest Change
  */
 public class PrintLogger
 {
@@ -49,7 +49,7 @@ public class PrintLogger
         //String format = "yyyy.mm.dd-mm:ss";
         String format = "yyyy-MM-dd'T'HH:mm:ssz";
         String ts = LinksSpecific.getTimeStamp2( format );
-        fileName = "LMM-" + ts + ".log";
+        fileName = "LDM-" + ts + ".log";
         pathName = "log/" + fileName;
         fileIsLocked = false;
         intextPrevious = "";
