@@ -17,8 +17,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package linksmatchmanager;
 
-import java.util.Calendar;
 import java.text.SimpleDateFormat;
+
+import java.util.Calendar;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -32,7 +34,7 @@ public class General {
      * 
      * @return 
      */
-    public static String getTimeStamp(){
+    public static String getTimeStamp() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
         return sdf.format(cal.getTime());
@@ -83,4 +85,16 @@ public class General {
         Class.forName(driver);
         return DriverManager.getConnection(longUrl, user, pass);
     }
+
+
+    /**
+     *
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
+        return sdf.format(cal.getTime());
+    }
+
 }

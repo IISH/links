@@ -19,6 +19,7 @@ package linksmatchmanager;
 
 import java.sql.*;
 import java.util.*;
+
 import linksmatchmanager.DataSet.QuerySet;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.InputSet;
@@ -27,37 +28,35 @@ import linksmatchmanager.DataSet.InputSet;
  * This Class generates queries that can be used to get sets to match
  * @author oaz
  */
-public class QueryGenerator {
+public class QueryGenerator
+{
+    public InputSet is;     // this variable can be used outside the class
 
-    // resultSet
+    private PrintLogger plog;
     private ResultSet rs;
-    // this variable can be used outside the class
-    public InputSet is;
 
     /**
      * Constructor, Sets connection
      * @param con
      * @throws Exception 
      */
-    public QueryGenerator(Connection con) throws Exception {
+    public QueryGenerator( PrintLogger plog, Connection con ) throws Exception
+    {
+        this.plog = plog;
+        rs = con.createStatement().executeQuery( "SELECT * FROM match_process" );   // Get the input
 
+        is = new InputSet();        // Put into list
 
-        // Get the input
-        rs = con.createStatement().executeQuery("SELECT * FROM match_process");
-
-        // Put into list
-        is = new InputSet();
-
-        // 
         setToArray();
     }
+
 
     /**
      * 
      * @return String with al the generated queries  
      */
-    public String printToString() {
-
+    public String printToString()
+    {
         String returnValue = "";
 
         // count is
@@ -83,87 +82,103 @@ public class QueryGenerator {
         return returnValue;
     }
 
+
     /**
      * Creates an array of queries
      * @throws Exception When a database operation fails
      */
-    private void setToArray() throws Exception {
+    private void setToArray() throws Exception
+    {
+        int nline = 0;
+        int nline_y = 0;
+        int nline_n = 0;
 
-        while (rs.next()) {
+        while( rs.next() )
+        {
+            nline++;
+            String match = rs.getString( "match" );
 
-            String match = rs.getString("match");
-
-            if (!match.equalsIgnoreCase("y")) {
+            if( !match.equalsIgnoreCase( "y" ) ) {
+                nline_n++;
                 continue;
             }
+            nline_y++;
 
             // Al the fields in table match_process
-            int id = rs.getInt("id");
-            int s1_maintype = rs.getInt("s1_maintype");
-            int s2_maintype = rs.getInt("s2_maintype");
-            String s1_type = rs.getString("s1_type") != null ? rs.getString("s1_type") : "";
-            String s2_type = rs.getString("s2_type") != null ? rs.getString("s2_type") : "";
-            String s1_role_ego = rs.getString("s1_role_ego") != null ? rs.getString("s1_role_ego") : "";
-            String s2_role_ego = rs.getString("s2_role_ego") != null ? rs.getString("s2_role_ego") : "";
+            int id = rs.getInt( "id" );
 
-            int s1_startyear = rs.getInt("s1_startyear");
-            int s1_range = rs.getInt("s1_range");
-            int s1_endyear = rs.getInt("s1_endyear");
-            int s2_startyear = rs.getInt("s2_startyear");
-            int s2_range = rs.getInt("s2_range");
-            String s1_source = rs.getString("s1_source") != null ? rs.getString("s1_source") : "";
-            String s2_source = rs.getString("s2_source") != null ? rs.getString("s2_source") : "";
-            int method = rs.getInt("method");
-            String ignore_sex = rs.getString("ignore_sex") != null ? rs.getString("ignore_sex") : "";
+            int s1_maintype = rs.getInt( "s1_maintype" );
+            int s2_maintype = rs.getInt( "s2_maintype" );
 
-            // String ignore_minmax = rs.getString("ignore_minmax") != null ? rs.getString("ignore_minmax") : "";
+            String s1_type = rs.getString( "s1_type" ) != null ? rs.getString( "s1_type" ) : "";
+            String s2_type = rs.getString( "s2_type" ) != null ? rs.getString( "s2_type" ) : "";
 
-            int firstname = rs.getInt("firstname");
-            String prematch_familyname = rs.getString("prematch_familyname") != null ? rs.getString("prematch_familyname") : "";
-            int prematch_familyname_value = rs.getInt("prematch_familyname_value");
-            String prematch_firstname = rs.getString("prematch_firstname") != null ? rs.getString("prematch_firstname") : "";
-            int prematch_firstname_value = rs.getInt("prematch_firstname_value");
+            String s1_role_ego = rs.getString( "s1_role_ego" ) != null ? rs.getString( "s1_role_ego" ) : "";
+            String s2_role_ego = rs.getString( "s2_role_ego" ) != null ? rs.getString( "s2_role_ego" ) : "";
+
+            int s1_startyear = rs.getInt( "s1_startyear" );
+            int s1_range     = rs.getInt( "s1_range" );
+            int s1_endyear   = rs.getInt( "s1_endyear" );
+            int s2_startyear = rs.getInt( "s2_startyear" );
+            int s2_range     = rs.getInt( "s2_range" );
+
+            String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
+            String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
+
+            int method = rs.getInt( "method" );
+            String ignore_sex = rs.getString( "ignore_sex" ) != null ? rs.getString( "ignore_sex" ) : "";
+
+            // set to "n" below
+            // String ignore_minmax = rs.getString( "ignore_minmax" ) != null ? rs.getString( "ignore_minmax" ) : "";
+
+            int firstname = rs.getInt( "firstname" );
+            String prematch_familyname    = rs.getString( "prematch_familyname" ) != null ? rs.getString( "prematch_familyname" ) : "";
+            int prematch_familyname_value = rs.getInt( "prematch_familyname_value" );
+            String prematch_firstname     = rs.getString( "prematch_firstname" ) != null ? rs.getString( "prematch_firstname" ) : "";
+            int prematch_firstname_value  = rs.getInt( "prematch_firstname_value" );
 
             //new fields
-            String use_familyname = rs.getString("use_familyname") != null ? rs.getString("use_familyname") : "";
-            String use_firstname = rs.getString("use_firstname") != null ? rs.getString("use_firstname") : "";
-            String use_minmax = rs.getString("use_minmax") != null ? rs.getString("use_minmax") : "";
+            String use_familyname = rs.getString( "use_familyname" ) != null ? rs.getString( "use_familyname" ) : "";
+            String use_firstname  = rs.getString( "use_firstname" )  != null ? rs.getString( "use_firstname" )  : "";
+            String use_minmax     = rs.getString( "use_minmax" )     != null ? rs.getString( "use_minmax" )     : "";
 
-            // devide to strings
-            int int_familyname_e = Integer.parseInt(use_familyname.substring(0, 1));
-            int int_familyname_m = Integer.parseInt(use_familyname.substring(1, 2));
-            int int_familyname_f = Integer.parseInt(use_familyname.substring(2, 3));
-            int int_familyname_p = Integer.parseInt(use_familyname.substring(3, 4));
+            // divide to strings
+            int int_familyname_e = Integer.parseInt( use_familyname.substring( 0, 1 ) );
+            int int_familyname_m = Integer.parseInt( use_familyname.substring( 1, 2 ) );
+            int int_familyname_f = Integer.parseInt( use_familyname.substring( 2, 3 ) );
+            int int_familyname_p = Integer.parseInt( use_familyname.substring( 3, 4 ) );
 
-            int int_firstname_e = Integer.parseInt(use_firstname.substring(0, 1));
-            int int_firstname_m = Integer.parseInt(use_firstname.substring(1, 2));
-            int int_firstname_f = Integer.parseInt(use_firstname.substring(2, 3));
-            int int_firstname_p = Integer.parseInt(use_firstname.substring(3, 4));
+            int int_firstname_e = Integer.parseInt(use_firstname.substring( 0, 1 ) );
+            int int_firstname_m = Integer.parseInt(use_firstname.substring( 1, 2 ) );
+            int int_firstname_f = Integer.parseInt(use_firstname.substring( 2, 3 ) );
+            int int_firstname_p = Integer.parseInt(use_firstname.substring( 3, 4 ) );
 
-            int int_minmax_e = Integer.parseInt(use_minmax.split("\\.")[0]);
-            int int_minmax_m = Integer.parseInt(use_minmax.split("\\.")[1]);
-            int int_minmax_f = Integer.parseInt(use_minmax.split("\\.")[2]);
-            int int_minmax_p = Integer.parseInt(use_minmax.split("\\.")[3]);
+            int int_minmax_e = Integer.parseInt( use_minmax.split( "\\." )[ 0 ] );
+            int int_minmax_m = Integer.parseInt( use_minmax.split( "\\." )[ 1 ] );
+            int int_minmax_f = Integer.parseInt( use_minmax.split( "\\." )[ 2 ] );
+            int int_minmax_p = Integer.parseInt( use_minmax.split( "\\." )[ 3 ] );
 
-            String use_mother = "n";
-            String use_father = "n";
+            String use_mother  = "n";
+            String use_father  = "n";
             String use_partner = "n";
 
             String ignore_minmax = "n";
 
             // use ego is always true
-            if (int_familyname_m > 0 || int_firstname_m > 0 || int_minmax_m > 0) {
+            if( int_familyname_m > 0 || int_firstname_m > 0 || int_minmax_m > 0 ) {
                 use_mother = "y";
             }
-            if (int_familyname_f > 0 || int_firstname_f > 0 || int_minmax_f > 0) {
+
+            if( int_familyname_f > 0 || int_firstname_f > 0 || int_minmax_f > 0 ) {
                 use_father = "y";
             }
-            if (int_familyname_p > 0 || int_firstname_p > 0 || int_minmax_p > 0) {
+
+            if( int_familyname_p > 0 || int_firstname_p > 0 || int_minmax_p > 0 ) {
                 use_partner = "y";
             }
 
             // use min max
-            if ((int_minmax_e + int_minmax_m + int_minmax_f + int_minmax_p) == 0) {
+            if( (int_minmax_e + int_minmax_m + int_minmax_f + int_minmax_p ) == 0 ) {
                 ignore_minmax = "y";
             }
 
@@ -173,18 +188,18 @@ public class QueryGenerator {
             boolean loop = true;
             int counter = 0;
 
-            boolean ounce = false;
+            boolean ounce = false;      // once?
 
             // Do extra checks for empty end and startyears
-            if (s1_range == 0) {
+            if( s1_range == 0 ) {
                 s1_range = s1_endyear - s1_startyear;
 
                 ounce = true;
             }
 
             // evt for/while loop
-            while (loop) {
-
+            while( loop )
+            {
                 // create first one
                 QuerySet qs = new QuerySet();
 
@@ -205,12 +220,11 @@ public class QueryGenerator {
                 qs.int_minmax_p = int_minmax_p;
 
                 // booleans
-                qs.use_mother = use_mother.equalsIgnoreCase("y") ? true : false;
-                qs.use_father = use_father.equalsIgnoreCase("y") ? true : false;
-                qs.use_partner = use_partner.equalsIgnoreCase("y") ? true : false;
-                qs.ignore_minmax = ignore_minmax.equalsIgnoreCase("y") ? true : false;
-
-                qs.ignore_sex = ignore_sex.equalsIgnoreCase("y") ? true : false;
+                qs.use_mother    = use_mother.equalsIgnoreCase(    "y" ) ? true : false;
+                qs.use_father    = use_father.equalsIgnoreCase(    "y" ) ? true : false;
+                qs.use_partner   = use_partner.equalsIgnoreCase(   "y" ) ? true : false;
+                qs.ignore_minmax = ignore_minmax.equalsIgnoreCase( "y" ) ? true : false;
+                qs.ignore_sex    = ignore_sex.equalsIgnoreCase(    "y" ) ? true : false;
 
                 qs.firstname = firstname;
 
@@ -218,21 +232,21 @@ public class QueryGenerator {
 
                 qs.method = method;
 
-                qs.prematch_familyname = prematch_familyname;
+                qs.prematch_familyname       = prematch_familyname;
                 qs.prematch_familyname_value = prematch_familyname_value;
-                qs.prematch_firstname = prematch_firstname;
-                qs.prematch_firstname_value = prematch_firstname_value;
+                qs.prematch_firstname        = prematch_firstname;
+                qs.prematch_firstname_value  = prematch_firstname_value;
 
                 //new
-                qs.use_mother = use_mother.equalsIgnoreCase("y") ? true : false;
-                qs.use_father = use_father.equalsIgnoreCase("y") ? true : false;
-                qs.use_partner = use_partner.equalsIgnoreCase("y") ? true : false;
+                qs.use_mother  = use_mother.equalsIgnoreCase(  "y" ) ? true : false;
+                qs.use_father  = use_father.equalsIgnoreCase(  "y" ) ? true : false;
+                qs.use_partner = use_partner.equalsIgnoreCase( "y" ) ? true : false;
 
                 // select statement
-                qs.query1 = getSelectQuery(qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname);
+                qs.query1 = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname );
                 qs.query2 = qs.query1;
 
-                if (!qs.ignore_sex) {
+                if( !qs.ignore_sex ) {
                     qs.query1 += ", ego_sex ";
                     qs.query2 += ", ego_sex ";
                 }
@@ -242,13 +256,15 @@ public class QueryGenerator {
                 qs.query2 += "FROM links_base ";
 
                 // where
-                if (!s1_role_ego.isEmpty()
-                        || !s2_role_ego.isEmpty()
-                        || s1_maintype != 0
-                        || s2_maintype != 0
-                        || !s1_source.isEmpty()
-                        || !s2_source.isEmpty()
-                        || s1_startyear != 0) {
+                if( !s1_role_ego.isEmpty()
+                    || !s2_role_ego.isEmpty()
+                    ||  s1_maintype != 0
+                    ||  s2_maintype != 0
+                    || !s1_source.isEmpty()
+                    || !s2_source.isEmpty()
+                    ||  s1_startyear != 0
+                )
+                {
                     qs.query1 += "WHERE ";
                     qs.query2 += "WHERE ";
                 }
@@ -438,8 +454,6 @@ public class QueryGenerator {
                 qs.query1 += "ORDER BY ego_familyname LIMIT 0,100000000";
                 qs.query2 += "ORDER BY ego_familyname LIMIT 0,100000000";
 
-
-
                 // Add set to group
                 qgs.add(qs);
                 counter++;
@@ -450,13 +464,17 @@ public class QueryGenerator {
             }
 
             // Add qgs to is
-            is.add(qgs);
-
+            is.add( qgs );
         }
+
+        String msg = String.format( "match_process lines: %s, using %d, ignoring %d", nline, nline_y, nline_n );
+        System.out.println( msg );
+        plog.show( msg );
     }
 
-    private String getSelectQuery(boolean use_mother, boolean use_father, boolean use_partner, boolean ignore_minmax, int numberofFirstnames) {
 
+    private String getSelectQuery( boolean use_mother, boolean use_father, boolean use_partner, boolean ignore_minmax, int numberofFirstnames )
+    {
         String query;
 
         query = "SELECT id_base , registration_days , ego_familyname ";
@@ -483,9 +501,8 @@ public class QueryGenerator {
                 break;
         }
 
-        // Use Mother
-        if (use_mother) {
-
+        if( use_mother )
+        {
             query += ", mother_familyname ";
 
             if (!ignore_minmax) {
@@ -512,9 +529,8 @@ public class QueryGenerator {
 
         }
 
-        // Use Father
-        if (use_father) {
-
+        if( use_father )
+        {
             query += ", father_familyname ";
 
             if (!ignore_minmax) {
@@ -540,9 +556,8 @@ public class QueryGenerator {
             }
         }
 
-        // Use Partner
-        if (use_partner) {
-
+        if( use_partner )
+        {
             query += ", partner_familyname ";
 
             if (!ignore_minmax) {
@@ -573,30 +588,28 @@ public class QueryGenerator {
         return query;
     }
 
+
     /**
-     * Calculates the amount of days since 
-     * We calculate the days since the first of january
-     * since the begins at this moment.
-     * However, The year zero, have never exists
+     * Calculate the number of days since january 1st of year 1 (There is no year zero)
+     *
      * @param year
      * @param month
      * @param day
      * @return 
      */
-    public int daysSinceBegin(int year, int month, int day) {
-
+    public int daysSinceBegin( int year, int month, int day )
+    {
         Calendar cal1 = new GregorianCalendar();
         Calendar cal2 = new GregorianCalendar();
 
-        // first of january in year one
-        cal1.set(1, 1, 1);
+        cal1.set( 1, 1, 1 );                // first of january in year one
 
-        // given date
-        cal2.set(year, month, day);
+        cal2.set(year, month, day);         // given date
 
         java.util.Date d1 = cal1.getTime();
         java.util.Date d2 = cal2.getTime();
 
-        return (int) ((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+        return (int) ( (d2.getTime() - d1.getTime() ) / (1000 * 60 * 60 * 24) );
     }
+
 }

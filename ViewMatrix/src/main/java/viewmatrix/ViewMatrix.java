@@ -1,64 +1,65 @@
 package viewmatrix;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 
 /**
  *
  * @author oaz
  */
-public class ViewMatrix {
-
+public class ViewMatrix
+{
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-
-        String bla = "";
-
-        try {
-
+    public static void main(String[] args)
+    {
+        try
+        {
             String driver = "org.gjt.mm.mysql.Driver";
             String longUrl = "jdbc:mysql://" + "127.0.0.1" + "/" + "links_match" + "?dontTrackOpenResources=true";
 
-            Class.forName(driver);
-            Connection con = DriverManager.getConnection(longUrl, "oaz", "abc123");
+            Class.forName( driver );
+            Connection con = DriverManager.getConnection( longUrl, "links", "mslinks" );
 
             // test
             String use_familyname_temp = "1001";
-            String use_firstname_temp = "1001";
+            String use_firstname_temp  = "1001";
             int firstname = 2;
 
 
             //------------------//
             char[] use_familyname = use_familyname_temp.toCharArray();
-            char[] use_firstname = use_firstname_temp.toCharArray();
+            char[] use_firstname  = use_firstname_temp.toCharArray();
 
+            String querySelect = ""
+                + "SELECT "
+                + "ego_familyname_value, "
+                + "ego_firstname1_value, "
+                + "ego_firstname2_value, "
+                + "ego_firstname3_value, "
+                + "ego_firstname4_value, "
+                + "mother_familyname_value, "
+                + "mother_firstname1_value, "
+                + "mother_firstname2_value, "
+                + "mother_firstname3_value, "
+                + "mother_firstname4_value, "
+                + "father_familyname_value, "
+                + "father_firstname1_value, "
+                + "father_firstname2_value, "
+                + "father_firstname3_value, "
+                + "father_firstname4_value, "
+                + "partner_familyname_value, "
+                + "partner_firstname1_value, "
+                + "partner_firstname2_value, "
+                + "partner_firstname3_value, "
+                + "partner_firstname4_value "
+                + "FROM "
+                + "view_x";
 
-
-            ResultSet rs = con.createStatement().executeQuery(""
-                    + "SELECT "
-                    + "ego_familyname_value, "
-                    + "ego_firstname1_value, "
-                    + "ego_firstname2_value, "
-                    + "ego_firstname3_value, "
-                    + "ego_firstname4_value, "
-                    + "mother_familyname_value, "
-                    + "mother_firstname1_value, "
-                    + "mother_firstname2_value, "
-                    + "mother_firstname3_value, "
-                    + "mother_firstname4_value, "
-                    + "father_familyname_value, "
-                    + "father_firstname1_value, "
-                    + "father_firstname2_value, "
-                    + "father_firstname3_value, "
-                    + "father_firstname4_value, "
-                    + "partner_familyname_value, "
-                    + "partner_firstname1_value, "
-                    + "partner_firstname2_value, "
-                    + "partner_firstname3_value, "
-                    + "partner_firstname4_value "
-                    + "FROM "
-                    + "view_x");
+            System.out.println( querySelect );
+            ResultSet rs = con.createStatement().executeQuery( querySelect );
 
 
             //vars
@@ -85,7 +86,8 @@ public class ViewMatrix {
             int[] lv_19 = new int[80];
             int[] lv_20 = new int[80];
 
-            for (int i = 0; i < 80; i++) {
+            for( int i = 0; i < 80; i++ )
+            {
                 lv[i] = 0;
                 lv_0[i] = 0;
                 lv_1[i] = 0;
@@ -110,8 +112,10 @@ public class ViewMatrix {
                 lv_20[i] = 0;
             }
 
-
-            while (rs.next()) {
+            int nhits = 0;
+            while( rs.next() )
+            {
+                nhits++;
 
                 // load into
                 String[] sa = new String[20];
@@ -270,43 +274,45 @@ public class ViewMatrix {
                 }
             }
 
+            System.out.println( "nhits = " + nhits );
             // Do something with results
 
 
             // delete everything from table
             con.createStatement().execute("DELETE FROM matrix");
 
-            for (int i = 0; i < 80; i++) {
-                String query = "INSERT INTO matrix(lv,n,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14,e15,e16,e17,e18,e19,e20)VALUES("
-                        + i + ","
-                        + lv[i] + ","
-                        + lv_0[i] + ","
-                        + lv_1[i] + ","
-                        + lv_2[i] + ","
-                        + lv_3[i] + ","
-                        + lv_4[i] + ","
-                        + lv_5[i] + ","
-                        + lv_6[i] + ","
-                        + lv_7[i] + ","
-                        + lv_8[i] + ","
-                        + lv_9[i] + ","
-                        + lv_10[i] + ","
-                        + lv_11[i] + ","
-                        + lv_12[i] + ","
-                        + lv_13[i] + ","
-                        + lv_14[i] + ","
-                        + lv_15[i] + ","
-                        + lv_16[i] + ","
-                        + lv_17[i] + ","
-                        + lv_18[i] + ","
-                        + lv_19[i] + ","
-                        + lv_20[i] + ");";
+            for( int i = 0; i < 80; i++ )
+            {
+                String queryInsert = "INSERT INTO matrix(lv,n,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14,e15,e16,e17,e18,e19,e20) VALUES("
+                    + i + ","
+                    + lv[i] + ","
+                    + lv_0[i] + ","
+                    + lv_1[i] + ","
+                    + lv_2[i] + ","
+                    + lv_3[i] + ","
+                    + lv_4[i] + ","
+                    + lv_5[i] + ","
+                    + lv_6[i] + ","
+                    + lv_7[i] + ","
+                    + lv_8[i] + ","
+                    + lv_9[i] + ","
+                    + lv_10[i] + ","
+                    + lv_11[i] + ","
+                    + lv_12[i] + ","
+                    + lv_13[i] + ","
+                    + lv_14[i] + ","
+                    + lv_15[i] + ","
+                    + lv_16[i] + ","
+                    + lv_17[i] + ","
+                    + lv_18[i] + ","
+                    + lv_19[i] + ","
+                    + lv_20[i] + " );";
 
-                con.createStatement().execute(query);
-
+                System.out.println( queryInsert );
+                con.createStatement().execute( queryInsert );
             }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
         }
+        catch( Exception ex ) { System.out.println( ex.getMessage()); }
     }
 }
+
