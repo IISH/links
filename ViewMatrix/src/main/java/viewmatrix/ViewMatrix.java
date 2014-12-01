@@ -6,22 +6,37 @@ import java.sql.ResultSet;
 
 /**
  *
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * FL-01-Dec-2014 Latest change
  */
 public class ViewMatrix
 {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args)
+    public static void main( String[] args )
     {
         try
         {
+            // Load arguments; check length
+            if( args.length != 3 ) {
+                System.out.println( "Invalid argument length, it should be 3" );
+                System.out.println( "Usage: java -jar ViewMatrix-2.0.jar <db_url> <db_username> <db_password>" );
+
+                return;
+            }
+
+            String db_url  = args[ 0 ];
+            String db_user = args[ 1 ];
+            String db_pass = args[ 2 ];
+
             String driver = "org.gjt.mm.mysql.Driver";
-            String longUrl = "jdbc:mysql://" + "127.0.0.1" + "/" + "links_match" + "?dontTrackOpenResources=true";
+            String longUrl = "jdbc:mysql://" + db_url + "/" + "links_match" + "?dontTrackOpenResources=true";
 
             Class.forName( driver );
-            Connection con = DriverManager.getConnection( longUrl, "links", "mslinks" );
+            Connection con = DriverManager.getConnection( longUrl, db_user, db_pass );
 
             // test
             String use_familyname_temp = "1001";

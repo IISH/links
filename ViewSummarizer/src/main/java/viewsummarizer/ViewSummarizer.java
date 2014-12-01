@@ -1,78 +1,72 @@
 package viewsummarizer;
 
+import java.io.File;
+import java.io.FileWriter;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
-import java.io.File;
-import java.io.FileWriter;
 
 /**
- * text text text
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * FL-01-Dec-2014 Latest change
  */
 public class ViewSummarizer {
 
-    private static Connection con;
-    private static PrintLogger log;
+    private static Connection db_conn;
+    private static PrintLogger plog;
     private static HashMap hm = new HashMap();
 
     /**
-     * @param args the command line arguments
+     * @param args command line arguments
      */
-    public static void main(String[] args) {
+    public static void main( String[] args )
+    {
+        plog = new PrintLogger();
 
-        // Load logging
-        log = new PrintLogger();
+        try
+        {
+            plog.show( "Links View Summarizer 2.0" );
 
-        /* Information about matching software */
-        try {
-            log.show("ViewSummarizer v 0.1");
-            log.show("For more information about this");
-            log.show("software please contact: oaz@iisg.nl");
-            log.show("All rights reserved: IISG -2013");
-            log.show("------------------------------------");
+            if( args.length != 7 ) {
+                plog.show( "Invalid argument length, it should be 7" );
+                plog.show( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output>" );
 
-            /* Load arguments */
-            // check length
-            if (args.length != 7) {
-
-                log.show("Invalid argument length, it should be 7");
-                log.show("please use the following patern to start this sofware");
-                log.show("java -jar ViewSummarizer.jar url name user pass tpl qry output");
-
-                // Stop program
                 return;
             }
-        } catch (Exception e) {
-            System.out.println("");
-            e.printStackTrace();
+        }
+        catch( Exception ex ) {
+            System.out.println( ex.getMessage() );
             return;
         }
 
         // Set 7 args
-        String url = args[0];
-        String name = args[1];
-        String user = args[2];
-        String pass = args[3];
-        String tpl = args[4];
-        String qry = args[5];
-        String output = args[6];
+        String db_url   = args[ 0 ];
+        String db_name  = args[ 1 ];
+        String db_user  = args[ 2 ];
+        String db_pass  = args[ 3 ];
+        String template = args[ 4 ];
+        String queries  = args[ 5 ];
+        String output   = args[ 6 ];
 
         // Create connection
         try {
-            con = General.getConnection(url, name, user, pass);
-        } catch (Exception e) {
-            System.out.println("Conneceiton Error - ErrorMessage: " + e.getMessage());
+            db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
+        } catch( Exception ex ) {
+            System.out.println( "Connection Error: " + ex.getMessage() );
             return;
         }
 
         // read template, it will be done with replace...
-        String templateFile = General.fileToString(tpl);
+        String templateFile = General.fileToString( template );
 
-        addFile(qry);
+        addFile( queries );
 
         // loop through hm to fire queries
         Set set = hm.entrySet();
@@ -80,105 +74,104 @@ public class ViewSummarizer {
         // Get an iterator
         Iterator i = set.iterator();
 
-        System.out.println("There are " + hm.size() + " Queries");
+        System.out.println( "There are " + hm.size() + " queries" );
         
         int counter = 0;
         // Display elements
-        while (i.hasNext()) {
-            
+        while( i.hasNext() )
+        {
             counter++;
             
-            System.out.println("Query " + counter + " of " + hm.size());
+            System.out.println( "Query " + counter + " of " + hm.size() );
 
             Map.Entry me = (Map.Entry) i.next();
 
             String key = me.getKey() + "";
             String value = me.getValue() + "";
 
-            // Check is key exists in template
-            if (templateFile.contains("{" + key + "}")) {
-
+            // Check if key exists in template
+            if( templateFile.contains( "{" + key + "}" ) )
+            {
                 String st = "";
 
                 try {
-
-                    // waar ben ik me bezig
-                    ResultSet rs = con.createStatement().executeQuery(value);
+                    ResultSet rs = db_conn.createStatement().executeQuery( value );
                     rs.first();
-                    st = rs.getString(1);
-                } catch (Exception e) {
-                    System.out.println("Query error - query: " + value + " - Error message: " + e.getMessage());
+                    st = rs.getString( 1 );
+                }
+                catch( Exception ex ) {
+                    System.out.println( "Query error - query: " + value + " - Error message: " + ex.getMessage() );
                     continue;
                 }
 
-                // get result, only is there is a query result
-                if (st != null) {
-                    templateFile = templateFile.replaceAll("\\{" + key + "\\}", st);
+                // get result, only if there is a query result
+                if( st != null ) {
+                    templateFile = templateFile.replaceAll( "\\{" + key + "\\}", st );
                 }
             }
         }
 
         // Write template to output
         try {
-            
-            System.out.println("Writing tamplate to output...");
+            System.out.println( "Writing template to output..." );
 
-            File newTextFile = new File(output);
-            FileWriter fileWriter = new FileWriter(newTextFile);
-            fileWriter.write(templateFile);
+            File newTextFile = new File( output );
+            FileWriter fileWriter = new FileWriter( newTextFile );
+            fileWriter.write( templateFile );
             fileWriter.close();
-        } catch (Exception e) {
-            System.out.println("Output error - Error message: " + e.getMessage());
+        }
+        catch( Exception ex ) {
+            System.out.println("Output error - Error message: " + ex.getMessage() );
         }
 
-// done
-        System.out.println("Done...");
+        System.out.println( "Done." );
         
     }
+
 
     /**
      * 
      * @param path 
      */
-    private static void addFile(String path) {
-
+    private static void addFile( String path )
+    {
         // Read queryfile
-        String queryFile = General.fileToString(path);
+        String queryFile = General.fileToString( path );
 
-        // Put everything into map
-        String[] queryFileArray = queryFile.split(";");
+        String[] queryFileArray = queryFile.split( ";" );
 
-        // loop through file
-        for (String s : queryFileArray) {
-            if (!s.isEmpty()) {
-                addLine(s);
+        for( String s : queryFileArray ) {
+            if( !s.isEmpty() ) {
+                addLine( s );
             }
         }
     }
+
 
     /**
      * 
      * @param line 
      */
-    private static void addLine(String line) {
-
+    private static void addLine( String line )
+    {
         // Split first
-        String[] splitted = line.split("::");
+        String[] splitted = line.split( "::" );
 
         // Contains file
-        if (splitted[0].replaceAll("\r", "").replaceAll("\n", "").equals("file")) {
-            addFile(splitted[1].replaceAll("\r", "").replaceAll("\n", ""));
+        if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "file" ) ) {
+            addFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
         }
-        if (splitted[0].replaceAll("\r", "").replaceAll("\n", "").equals("loop")) {
+
+        if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "loop" ) ) {
             // do something
-            addFile(splitted[1].replaceAll("\r", "").replaceAll("\n", ""));
+            addFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
             
             // add something to this text
             
             // use 
         }
-        else { //
-            hm.put(splitted[0].replaceAll("\r", "").replaceAll("\n", ""), splitted[1].replaceAll("\r", "").replaceAll("\n", ""));
+        else {
+            hm.put( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ), splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
         }
     }
 }

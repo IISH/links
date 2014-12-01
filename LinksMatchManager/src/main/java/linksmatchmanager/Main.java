@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-28-Nov-2014 Latest change
+ * FL-01-Dec-2014 Latest change
  */
 
 public class Main
@@ -68,17 +68,20 @@ public class Main
             // Load arguments; check length
             if( args.length != 4 ) {
                 plog.show( "Invalid argument length, it should be 4" );
-                plog.show( "Please starts the Match Manager as follows:" );
-                plog.show( "java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>" );
+                plog.show( "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>" );
 
-                return;     // Stop program
+                return;
             }
 
-            // Load instances
+            // cmd line args
             String url  = args[ 0 ];
             String user = args[ 1 ];
             String pass = args[ 2 ];
             String max  = args[ 3 ];
+
+            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s", url, user, pass, max );
+            System.out.println( msg );
+            plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
@@ -86,7 +89,7 @@ public class Main
             ProcessManager pm = new ProcessManager( Integer.parseInt( max ) );
 
             int ncores = Runtime.getRuntime().availableProcessors();
-            String msg = String.format( "Available cores: %d", ncores );
+            msg = String.format( "Available cores: %d", ncores );
             System.out.println( msg );
             plog.show( msg );
 
@@ -101,6 +104,11 @@ public class Main
 
             conBase.setReadOnly( true );                    // Set read only
 
+            String query = "TRUNCATE table matches";        // delete previous matches
+            System.out.println( query );
+            plog.show( query );
+            conMatch.createStatement().execute( query );
+
             /** 
              * Run Query Generator to generate queries.
              * As input we use the records from the match_process table in the links_match db
@@ -110,6 +118,8 @@ public class Main
             // TEST LINE: Print queries to check 
             // System.out.println(mis.printToString());
 
+            // KM-01-Dec-2014: frequencies not used for matching,
+            // but used for automatic matching based on Levenshtein
             /* Frequency In this stadium we do not use the frequencies */
             // log.show("Loading Frequency tables");
 
