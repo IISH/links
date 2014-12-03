@@ -15,7 +15,7 @@ import java.util.Map;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-01-Dec-2014 Latest change
+ * FL-03-Dec-2014 Latest change
  */
 public class ViewSummarizer {
 
@@ -28,15 +28,16 @@ public class ViewSummarizer {
      */
     public static void main( String[] args )
     {
-        plog = new PrintLogger();
-
         try
         {
-            plog.show( "Links View Summarizer 2.0" );
+            plog = new PrintLogger();
+
+            String msg = "Links View Summarizer 2.0";
+            plog.show( msg );
 
             if( args.length != 7 ) {
-                plog.show( "Invalid argument length, it should be 7" );
-                plog.show( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output>" );
+                System.out.println( "Invalid argument length, it should be 7" );
+                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output>" );
 
                 return;
             }
@@ -57,15 +58,20 @@ public class ViewSummarizer {
 
         // Create connection
         try {
+            plog.show( String.format( "cmd line parameters: %s %s %s %s %s %s %s", db_url, db_name, db_user, db_pass, template, queries, output ) );
             db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
-        } catch( Exception ex ) {
+        }
+        catch( Exception ex ) {
             System.out.println( "Connection Error: " + ex.getMessage() );
             return;
         }
 
-        // read template, it will be done with replace...
+        try { plog.show( String.format( "Reading template file: %s", template ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         String templateFile = General.fileToString( template );
 
+        try { plog.show( String.format( "Reading query file: %s", queries ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         addFile( queries );
 
         // loop through hm to fire queries
@@ -135,13 +141,21 @@ public class ViewSummarizer {
      */
     private static void addFile( String path )
     {
+        try { plog.show( String.format( "addFile(): %s", path ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+
         // Read queryfile
         String queryFile = General.fileToString( path );
 
         String[] queryFileArray = queryFile.split( ";" );
 
+        int ns = 0;
         for( String s : queryFileArray ) {
+            s = s.trim();
             if( !s.isEmpty() ) {
+                ns++;
+                try { plog.show( String.format( "query %d: |%s|", ns, s ) ); }
+                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
                 addLine( s );
             }
         }
@@ -154,8 +168,14 @@ public class ViewSummarizer {
      */
     private static void addLine( String line )
     {
+        try { plog.show( String.format( "line: %s", line ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+
         // Split first
         String[] splitted = line.split( "::" );
+
+        try { plog.show( String.format( "splitted length: %d", splitted.length ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         // Contains file
         if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "file" ) ) {

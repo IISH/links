@@ -15,64 +15,95 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package viewsummarizer;
 
 import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
+import com.google.common.base.Strings;
 
 /**
  *  This Class contains logging procedures 
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ * FL-03-Dec-2014 Latest Change
  */
-public class PrintLogger {
-
+public class PrintLogger
+{
     private String fileName;
+    private String pathName;
     private FileWriter fw;
     private boolean fileIsLocked;
-    
+    private static String intextPrevious;
 
     /**
      * Construtor creates a log file
      * with the following structure
      * [datetime].log
      */
-    public PrintLogger() {
-        // Get filename
-        fileName = General.getTimeStamp() + ".log";
+    public PrintLogger() throws Exception
+    {
+        // create log filename
+        //String format = "yyyy.mm.dd-mm:ss";
+        String format = "yyyy-MM-dd'T'HH:mm:ssz";
+        String ts = getTimeStamp2( format );
+        fileName = "LVS-" + ts + ".log";
+        pathName = "log/" + fileName;
         fileIsLocked = false;
+        intextPrevious = "";
+        System.out.printf( "Log filename: %s\n", pathName );
     }
 
+
     /**
-     * This method will log the text in
-     * a log file, with the following structure
-     * [datetime].log
-     * @param textToLog Text to log 
+     * This method will log the text in a log file
+     * @param intext Text to log
      */
-    public void show(String textToLog) throws Exception {
+    public void show( String intext ) throws Exception
+    {
+        // why do i get all intext strings twice ??
+        //if( intext == intextPrevious ) { return; }
 
-        // Write to logfile
+        String text = intext;
+        // empty line without timestamp
+        if( ! Strings.isNullOrEmpty( intext ) && ! intext.trim().isEmpty() ) {
+            String ts = getTimeStamp2( "HH:mm:ss" );
+            text = ts + " " + text;
+        }
 
-        try {
-            
-            // While file is locked sleep half second
-            while(fileIsLocked){
+        try
+        {
+            // While file is locked sleep a bit
+            while( fileIsLocked ) {
                 //Thread.sleep(2000 + new java.util.Random().nextInt(2000));
-                
-                Thread.sleep(1000);
+                Thread.sleep( 1000 );
             }
-            
+
             fileIsLocked = true;
             {
-                fw = new FileWriter(fileName, true);
-                fw.write(textToLog);
+                fw = new FileWriter( pathName, true );
+                fw.write( text  + "\r\n" );
                 fw.close();
             }
             fileIsLocked = false;
-            
-        } catch (Exception e) {
-            throw new Exception("Could not write to file " + fileName, e);
-        }
 
-        // Print to screen
-        System.out.println(textToLog);
+        }
+        catch( Exception ex ) { throw new Exception( "Could not write to file " + pathName, ex ); }
+
+        intextPrevious = intext;
     }
+
+    /**
+     *
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
+        return sdf.format(cal.getTime());
+    }
+
 }
+
