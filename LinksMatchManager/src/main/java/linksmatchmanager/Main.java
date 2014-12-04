@@ -20,14 +20,8 @@ package linksmatchmanager;
 
 import java.sql.Connection;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-//import general.Functions;
-//import linksutils.*;
 import linksmatchmanager.DataSet.QueryGroupSet;
-
+import linksmatchmanager.DataSet.QuerySet;
 
 /**
  * @author Omar Azouguagh
@@ -35,7 +29,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-01-Dec-2014 Latest change
+ * FL-04-Dec-2014 Latest change
  */
 
 public class Main
@@ -62,7 +56,7 @@ public class Main
     public static void main( String[] args )
     {
         try {
-            plog = new PrintLogger();
+            plog = new PrintLogger( "LMM-" );
             plog.show( "Links Match Manager 2.0" );
 
             // Load arguments; check length
@@ -104,10 +98,13 @@ public class Main
 
             conBase.setReadOnly( true );                    // Set read only
 
+            /*
+            // only delete matches for the match ids (from table match_process) that are being [re-]computed
             String query = "TRUNCATE table matches";        // delete previous matches
             System.out.println( query );
             plog.show( query );
             conMatch.createStatement().execute( query );
+            */
 
             /** 
              * Run Query Generator to generate queries.
@@ -140,9 +137,10 @@ public class Main
                 // Create a new prematch variants object for every record in match_process table
                 VariantLoader vl = new VariantLoader( url, user, pass );
 
-                int method = mis.is.get( i ).get( 0 ).method;
-                plog.show( String.format( "matching record: %d-of-%d, method = %d\n", i+1, misSize, method ) );
 
+                plog.show( String.format( "matching record: %d-of-%d\n", i+1, misSize ) );
+
+                int method = mis.is.get( i ).get( 0 ).method;
                 if( method == 1 )
                 {
                     // Load the name sets
@@ -181,6 +179,9 @@ public class Main
                 // Loop through ranges/subqueries
                 for( int j = 0; j < qgs.getSize(); j++ )
                 {
+                    QuerySet qs = qgs.get( 0 );
+                    showQuerySet( qs );
+
                     // Wait until process manager gives permission
                     while( !pm.allowProcess() ) {
                         plog.show( "No permission for new thread: Waiting 60 seconds" );
@@ -210,5 +211,53 @@ public class Main
         } catch( Exception ex ) {
             System.out.println( "LinksMatchManager Error: " + ex.getMessage() );
         }
+    }
+
+
+    private static void showQuerySet( QuerySet qs )
+    {
+        try
+        {
+            plog.show( "match_process values:" );
+            plog.show( String.format( "id = %d", qs.id ) );
+            plog.show( String.format( "query1 = %s", qs.query1 ) );
+            plog.show( String.format( "query2 = %s", qs.query2 ) );
+
+            plog.show( String.format( "use_mother .............. = %s", qs.use_mother ) );
+            plog.show( String.format( "use_father .............. = %s", qs.use_father ) );
+            plog.show( String.format( "use_partner ............. = %s", qs.use_partner ) );
+
+            plog.show( String.format( "method .................. = %d", qs.method ) );
+
+            plog.show( String.format( "ignore_sex .............. = %s", qs.ignore_sex ) );
+            plog.show( String.format( "ignore_minmax ........... = %s", qs.ignore_minmax ) );
+            plog.show( String.format( "firstname ............... = %d", qs.firstname ) );
+
+            plog.show( String.format( "prematch_familyname ..... = %s", qs.prematch_familyname ) );
+            plog.show( String.format( "prematch_familyname_value = %d", qs.prematch_familyname_value ) );
+            plog.show( String.format( "prematch_firstname ...... = %s", qs.prematch_firstname ) );
+            plog.show( String.format( "prematch_firstname_value  = %d", qs.prematch_firstname_value ) );
+
+            plog.show( String.format( "use_familyname .......... = %s", qs.use_familyname ) );
+            plog.show( String.format( "use_firstname ........... = %s", qs.use_firstname ) );
+            plog.show( String.format( "use_minmax .............  = %s", qs.use_minmax ) );
+
+            plog.show( String.format( "int_familyname_e ........ = %d", qs.int_familyname_e ) );
+            plog.show( String.format( "int_familyname_m .......  = %d", qs.int_familyname_m ) );
+            plog.show( String.format( "int_familyname_f ........ = %d", qs.int_familyname_f ) );
+            plog.show( String.format( "int_familyname_p ........ = %d", qs.int_familyname_p ) );
+
+            plog.show( String.format( "int_firstname_e ......... = %d", qs.int_firstname_e ) );
+            plog.show( String.format( "int_firstname_m ......... = %d", qs.int_firstname_m ) );
+            plog.show( String.format( "int_firstname_f ......... = %d", qs.int_firstname_f ) );
+            plog.show( String.format( "int_firstname_p ......... = %d", qs.int_firstname_p ) );
+
+            plog.show( String.format( "int_minmax_e ............ = %d", qs.int_minmax_e ) );
+            plog.show( String.format( "int_minmax_m ............ = %d", qs.int_minmax_m ) );
+            plog.show( String.format( "int_minmax_f ............ = %d", qs.int_minmax_f ) );
+            plog.show( String.format( "int_minmax_p ............ = %d", qs.int_minmax_p ) );
+        }
+        catch( Exception ex ) { ex.getMessage(); }
+
     }
 }
