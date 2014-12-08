@@ -28,7 +28,7 @@ import com.google.common.base.Strings;
  *  This Class contains logging procedures 
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-03-Dec-2014 Latest Change
+ * FL-05-Dec-2014 Latest Change
  */
 public class PrintLogger
 {
@@ -46,8 +46,8 @@ public class PrintLogger
     public PrintLogger() throws Exception
     {
         // create log filename
-        //String format = "yyyy.mm.dd-mm:ss";
-        String format = "yyyy-MM-dd'T'HH:mm:ssz";
+        //String format = "yyyy-MM-dd'T'HH:mm:ssz";
+        String format = "yyyy-MM-dd_HH:mm:ss";
         String ts = getTimeStamp2( format );
         fileName = "LVS-" + ts + ".log";
         pathName = "log/" + fileName;
