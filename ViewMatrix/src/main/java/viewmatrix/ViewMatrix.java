@@ -12,42 +12,42 @@ import java.sql.ResultSet;
  * input:  links_match.view_x
  * output: links_match.matrix
  *
- * FL-05-Dec-2014 Latest change
+ * FL-09-Dec-2014 Latest change
  */
 public class ViewMatrix
 {
+    private static Connection dbc_links_match;
+
+    private static int id_match;
+    private static int firstname;
+    private static char[] use_familyname;
+    private static char[] use_firstname;
+
+    //private static PrintLogger plog;
+
+
     /**
      * @param args the command line arguments
      */
     public static void main( String[] args )
     {
+        processArgs( args );
+
+        getParams();
+
+
         try
         {
-            // Load arguments; check length
-            if( args.length != 3 ) {
-                System.out.println( "Invalid argument length, it should be 3" );
-                System.out.println( "Usage: java -jar ViewMatrix-2.0.jar <db_url> <db_username> <db_password>" );
 
-                return;
-            }
 
-            String db_url  = args[ 0 ];
-            String db_user = args[ 1 ];
-            String db_pass = args[ 2 ];
-
-            String driver = "org.gjt.mm.mysql.Driver";
-            String longUrl = "jdbc:mysql://" + db_url + "/" + "links_match" + "?dontTrackOpenResources=true";
-
-            Class.forName( driver );
-            Connection con = DriverManager.getConnection( longUrl, db_user, db_pass );
-
-            // test
+            /*
             String use_familyname_temp = "1001";
             String use_firstname_temp  = "1001";
             int firstname = 2;
 
             char[] use_familyname = use_familyname_temp.toCharArray();
             char[] use_firstname  = use_firstname_temp.toCharArray();
+            */
 
 
             String querySelect = ""
@@ -76,7 +76,8 @@ public class ViewMatrix
                 + "view_x";
 
             System.out.println( querySelect );
-            ResultSet rs = con.createStatement().executeQuery( querySelect );
+
+            ResultSet rs = dbc_links_match.createStatement().executeQuery( querySelect );
 
             // allocate
             int[] lv    = new int[ 80 ];
@@ -309,37 +310,122 @@ public class ViewMatrix
 
             String queryDelete = "TRUNCATE TABLE matrix";      // delete everything from table
             System.out.println( queryDelete );
-            con.createStatement().execute( queryDelete  );
+            dbc_links_match.createStatement().execute( queryDelete  );
 
             for( int i = 0; i < 80; i++ )
             {
                 String queryInsert = "INSERT INTO matrix( lv,n,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14,e15,e16,e17,e18,e19,e20 ) VALUES( "
                     + i + ","
-                    + lv[i] + ","
-                    + lv_0[i] + ","
-                    + lv_1[i] + ","
-                    + lv_2[i] + ","
-                    + lv_3[i] + ","
-                    + lv_4[i] + ","
-                    + lv_5[i] + ","
-                    + lv_6[i] + ","
-                    + lv_7[i] + ","
-                    + lv_8[i] + ","
-                    + lv_9[i] + ","
-                    + lv_10[i] + ","
-                    + lv_11[i] + ","
-                    + lv_12[i] + ","
-                    + lv_13[i] + ","
-                    + lv_14[i] + ","
-                    + lv_15[i] + ","
-                    + lv_16[i] + ","
-                    + lv_17[i] + ","
-                    + lv_18[i] + ","
-                    + lv_19[i] + ","
-                    + lv_20[i] + " );";
+                    + lv[ i ] + ","
+                    + lv_0[ i ] + ","
+                    + lv_1[ i ] + ","
+                    + lv_2[ i ] + ","
+                    + lv_3[ i ] + ","
+                    + lv_4[ i ] + ","
+                    + lv_5[ i ] + ","
+                    + lv_6[ i ] + ","
+                    + lv_7[ i ] + ","
+                    + lv_8[ i ] + ","
+                    + lv_9[ i ] + ","
+                    + lv_10[ i ] + ","
+                    + lv_11[ i ] + ","
+                    + lv_12[ i ] + ","
+                    + lv_13[ i ] + ","
+                    + lv_14[ i ] + ","
+                    + lv_15[ i ] + ","
+                    + lv_16[ i ] + ","
+                    + lv_17[ i ] + ","
+                    + lv_18[ i ] + ","
+                    + lv_19[ i ] + ","
+                    + lv_20[ i ] + " );";
 
                 System.out.println( queryInsert );
-                con.createStatement().execute( queryInsert );
+                dbc_links_match.createStatement().execute( queryInsert );
+            }
+        }
+        catch( Exception ex ) { System.out.println( ex.getMessage()); }
+    }
+
+
+    private static void processArgs( String[] args )
+    {
+        // Load arguments; check length
+        if( args.length != 4 ) {
+            System.out.println( "Invalid argument length, it should be 4" );
+            System.out.println( "Usage: java -jar ViewMatrix-2.0.jar <db_url> <db_username> <db_password> <id_match>" );
+
+            System.exit( 0 );
+        }
+
+        String db_url   = args[ 0 ];
+        String db_user  = args[ 1 ];
+        String db_pass  = args[ 2 ];
+        String matchStr = args[ 3 ];
+
+        id_match = Integer.parseInt( matchStr );
+
+        System.out.println( String.format( "db_url:   %s", db_url ) );
+        System.out.println( String.format( "db_user:  %s", db_user ) );
+        System.out.println( String.format( "db_pass:  %s", db_pass ) );
+        System.out.println( String.format( "id_match: %d", id_match ) );
+
+        String db_name    = "links_match";
+        //String driver     = "org.gjt.mm.mysql.Driver";
+        String db_longUrl = "jdbc:mysql://" + db_url + "/" + db_name + "?dontTrackOpenResources=true";
+
+        try {
+            //Class.forName( driver );
+            dbc_links_match = DriverManager.getConnection( db_longUrl, db_user, db_pass );
+        }
+        catch( Exception ex ) { System.out.println( ex.getMessage()); }
+    }
+
+
+    private static void getParams()
+    {
+        /*
+        // hard-coded text values from Omar
+        String use_familyname_temp = "1001";
+        String use_firstname_temp  = "1001";
+        int firstname = 2;
+
+        char[] use_familyname = use_familyname_temp.toCharArray();
+        char[] use_firstname  = use_firstname_temp.toCharArray();
+        */
+
+        String querySelect = ""
+            + "SELECT "
+            + "id, "
+            + "firstname, "
+            + "use_familyname, "
+            + "use_firstname "
+            + "FROM "
+            + "match_process";
+
+        System.out.println( querySelect );
+
+        try {
+            ResultSet rs = dbc_links_match.createStatement().executeQuery( querySelect );
+
+            while( rs.next() )
+            {
+                int id = rs.getInt( "id" );
+
+                if( id == id_match ) {
+                    firstname = rs.getInt( "firstname" );
+
+                    String use_familynameStr = rs.getString( "use_familyname" );
+                    String use_firstnameStr  = rs.getString( "use_firstname" );
+
+                    use_familyname = use_familynameStr.toCharArray();
+                    use_firstname  = use_firstnameStr.toCharArray();
+
+                    System.out.println( String.format( "firstname: %d",firstname ) );
+                    System.out.println( String.format( "use_familyname: %s", use_familynameStr ) );
+                    System.out.println( String.format( "use_firstname:  %s", use_firstnameStr ) );
+
+                    break;
+                }
             }
         }
         catch( Exception ex ) { System.out.println( ex.getMessage()); }

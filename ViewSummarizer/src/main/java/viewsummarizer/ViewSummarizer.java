@@ -15,10 +15,10 @@ import java.util.Map;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-03-Dec-2014 Latest change
+ * FL-09-Dec-2014 Latest change
  */
-public class ViewSummarizer {
-
+public class ViewSummarizer
+{
     private static Connection db_conn;
     private static PrintLogger plog;
     private static HashMap hm = new HashMap();
@@ -72,13 +72,12 @@ public class ViewSummarizer {
 
         try { plog.show( String.format( "Reading query file: %s", queries ) ); }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-        addFile( queries );
+        readFile( queries );
 
         // loop through hm to fire queries
         Set set = hm.entrySet();
 
-        // Get an iterator
-        Iterator i = set.iterator();
+        Iterator i = set.iterator();        // Get an iterator
 
         System.out.println( "There are " + hm.size() + " queries" );
         
@@ -88,11 +87,11 @@ public class ViewSummarizer {
         {
             counter++;
             
-            System.out.println( "Query " + counter + " of " + hm.size() );
+            System.out.printf( "%d ", counter );
 
             Map.Entry me = (Map.Entry) i.next();
 
-            String key = me.getKey() + "";
+            String key   = me.getKey() + "";
             String value = me.getValue() + "";
 
             // Check if key exists in template
@@ -110,16 +109,15 @@ public class ViewSummarizer {
                     continue;
                 }
 
-                // get result, only if there is a query result
-                if( st != null ) {
-                    templateFile = templateFile.replaceAll( "\\{" + key + "\\}", st );
-                }
+                // replace template variable only if there is a query result
+                if( st != null ) { templateFile = templateFile.replaceAll( "\\{" + key + "\\}", st ); }
             }
         }
+        System.out.println( "" );
 
         // Write template to output
         try {
-            System.out.println( "Writing template to output..." );
+            System.out.printf( "Writing template %s to output %s...\n", template, output );
 
             File newTextFile = new File( output );
             FileWriter fileWriter = new FileWriter( newTextFile );
@@ -127,7 +125,7 @@ public class ViewSummarizer {
             fileWriter.close();
         }
         catch( Exception ex ) {
-            System.out.println("Output error - Error message: " + ex.getMessage() );
+            System.out.println( "Output error - Error message: " + ex.getMessage() );
         }
 
         System.out.println( "Done." );
@@ -139,9 +137,12 @@ public class ViewSummarizer {
      * 
      * @param path 
      */
-    private static void addFile( String path )
+    private static void readFile( String path )
     {
-        try { plog.show( String.format( "addFile(): %s", path ) ); }
+        try {
+            plog.show( " ");
+            plog.show( String.format( "readFile(): %s", path ) );
+        }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         // Read queryfile
@@ -149,13 +150,22 @@ public class ViewSummarizer {
 
         String[] queryFileArray = queryFile.split( ";" );
 
-        int ns = 0;
+        int nquery = 0;
+        int nfile  = 0;
         for( String s : queryFileArray ) {
             s = s.trim();
             if( !s.isEmpty() ) {
-                ns++;
-                try { plog.show( String.format( "query %d: |%s|", ns, s ) ); }
-                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+                if( s.startsWith( "query" ) ) {
+                    nquery++;
+                    try { plog.show( String.format( "query %d: |%s|", nquery, s ) ); }
+                    catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+                }
+                else if( s.startsWith( "file" ) ) {
+                    nfile++;
+                    try { plog.show( String.format( "file %d: |%s|", nfile, s ) ); }
+                    catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+                }
+
                 addLine( s );
             }
         }
@@ -168,30 +178,36 @@ public class ViewSummarizer {
      */
     private static void addLine( String line )
     {
-        try { plog.show( String.format( "line: %s", line ) ); }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        //try { plog.show( String.format( "line: %s", line ) ); }
+        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         // Split first
         String[] splitted = line.split( "::" );
 
-        try { plog.show( String.format( "splitted length: %d", splitted.length ) ); }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        if( splitted.length != 2 ) {
+            try { plog.show( String.format( "splitted length: %d", splitted.length ) ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
 
         // Contains file
         if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "file" ) ) {
-            addFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
+            readFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
         }
 
         if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "loop" ) ) {
             // do something
-            addFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
+            readFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
             
             // add something to this text
             
             // use 
         }
         else {
-            hm.put( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ), splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
+            //hm.put( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ), splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
+            String key   = splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" );
+            String value = splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" );
+
+            hm.put( key, value );
         }
     }
 }
