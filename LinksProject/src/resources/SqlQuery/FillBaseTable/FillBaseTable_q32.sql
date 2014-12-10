@@ -1,5 +1,5 @@
 -- death_partner_ego
-INSERT INTO links_base.links_base
+INSERT INTO links_prematch.links_base
 (
 id_registration ,
 id_source ,

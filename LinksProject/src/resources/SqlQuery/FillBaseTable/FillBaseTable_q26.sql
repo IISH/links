@@ -1,5 +1,5 @@
 -- death_deceased_father
-UPDATE links_base.links_base , links_cleaned.person_c
+UPDATE links_prematch.links_base , links_cleaned.person_c
 SET
 father_id           = links_cleaned.person_c.id_person , 
 father_familyname_fc= LEFT( links_cleaned.person_c.familyname, 1) ,
@@ -20,7 +20,7 @@ father_death_min    = links_cleaned.person_c.death_min_days ,
 father_death_max    = links_cleaned.person_c.death_max_days ,
 father_death_loc    = links_cleaned.person_c.death_location
 WHERE
-links_base.links_base.id_registration = links_cleaned.person_c.id_registration AND
-links_base.links_base.registration_maintype = 3 AND
-links_base.links_base.ego_role = 10 AND
+links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND
+links_prematch.links_base.registration_maintype = 3 AND
+links_prematch.links_base.ego_role = 10 AND
 links_cleaned.person_c.role = 3 ;

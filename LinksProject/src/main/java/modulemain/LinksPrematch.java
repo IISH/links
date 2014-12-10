@@ -20,7 +20,8 @@ import general.PrintLogger;
  * <p/>
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
- * FL-19-Nov-2014 Latest change
+ * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
+ * FL-10-Dec-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -41,16 +42,12 @@ public class LinksPrematch extends Thread
     private boolean bNamesToNos;
     private boolean bBaseTable;
 
-    private boolean showmsg = true;
-
     private JTextField outputLine;
     private JTextArea  outputArea;
 
     private MySqlConnector conCleaned;
     private MySqlConnector conPrematch;
     private MySqlConnector conTemp;
-    private MySqlConnector conBase;
-    private MySqlConnector conFrequency;
 
     private java.io.FileWriter writerFirstname;
 
@@ -104,7 +101,7 @@ public class LinksPrematch extends Thread
         conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
         conPrematch  = new MySqlConnector( db_url, "links_prematch",  db_user, db_pass );
         conTemp      = new MySqlConnector( db_url, "links_temp",      db_user, db_pass );
-        conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
+        //conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
         //conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
     }
 
@@ -737,7 +734,7 @@ public class LinksPrematch extends Thread
             showMessage( msg + "...", false, true );
             if( debug ) { showMessage( query, false, true ); }
 
-            try { conBase.runQuery( query ); }
+            try { conPrematch.runQuery( query ); }      // links_base table moved to links_prematch db
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
             elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
