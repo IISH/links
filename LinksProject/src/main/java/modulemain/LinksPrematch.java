@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
- * FL-10-Dec-2014 Latest change
+ * FL-11-Dec-2014 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -101,8 +101,6 @@ public class LinksPrematch extends Thread
         conCleaned   = new MySqlConnector( db_url, "links_cleaned",   db_user, db_pass );
         conPrematch  = new MySqlConnector( db_url, "links_prematch",  db_user, db_pass );
         conTemp      = new MySqlConnector( db_url, "links_temp",      db_user, db_pass );
-        //conBase      = new MySqlConnector( db_url, "links_base",      db_user, db_pass );
-        //conFrequency = new MySqlConnector( db_url, "links_frequency", db_user, db_pass );
     }
 
 
@@ -721,7 +719,8 @@ public class LinksPrematch extends Thread
 
         String qPrefix = "FillBaseTable/FillBaseTable_q";
         int nqFirst = 1;
-        int nqLast = 33;
+        int nqLast  = 4;
+        //int nqLast = 33;  // reduced Omars's 33 queries to 4
         // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
 
         for( int n = nqFirst; n <= nqLast; n++ )

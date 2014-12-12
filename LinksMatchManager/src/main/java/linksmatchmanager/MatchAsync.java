@@ -14,50 +14,66 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Fons Laan
  *
  * <p/>
- * FL-28-Nov-2014 Latest change
+ * FL-11-Dec-2014 Latest change
  */
 
 public class MatchAsync extends Thread
 {
     ProcessManager pm;
+
     int i;
     int j;
     QueryLoader ql;
     PrintLogger plog;
+
     QueryGroupSet qgs;
     QueryGenerator mis;
-    Connection conBase;
+
+    Connection conPrematch;
     Connection conMatch;
+
     int[][] variantFirstName;
     int[][] variantFamilyName;
     int[][] rootFirstName;
     int[][] rootFamilyName;
+
     boolean isUseRoot = false;
 
 
-    public MatchAsync(
+    public MatchAsync
+    (
         ProcessManager pm,
+
         int i,
         int j,
+
         QueryLoader ql,
         PrintLogger plog,
+
         QueryGroupSet qgs,
         QueryGenerator mis,
-        Connection conBase,
+
+        Connection conPrematch,
         Connection conMatch,
+
         int[][] variantFirstName,
         int[][] variantFamilyName
     )
     {
         this.pm = pm;
+
         this.i = i;
         this.j = j;
+
         this.ql = ql;
         this.plog = plog;
+
         this.qgs = qgs;
         this.mis = mis;
-        this.conBase = conBase;
+
+        this.conPrematch = conPrematch;
         this.conMatch = conMatch;
+
         this.variantFirstName = variantFirstName;
         this.variantFamilyName = variantFamilyName;
     }
@@ -71,7 +87,7 @@ public class MatchAsync extends Thread
         PrintLogger log,
         QueryGroupSet qgs,
         QueryGenerator mis,
-        Connection conBase,
+        Connection conPrematch,
         Connection conMatch,
         int[][] rootFirstName,
         int[][] rootFamilyName,
@@ -86,7 +102,7 @@ public class MatchAsync extends Thread
         this.plog = plog;
         this.qgs = qgs;
         this.mis = mis;
-        this.conBase = conBase;
+        this.conPrematch = conPrematch;
         this.conMatch = conMatch;
         this.rootFirstName = rootFirstName;
         this.rootFamilyName = rootFamilyName;
@@ -116,7 +132,7 @@ public class MatchAsync extends Thread
 
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // It input is a QuerySet and a database connection object.
-            ql = new QueryLoader( qs, conBase );
+            ql = new QueryLoader( qs, conPrematch );
 
             // Last familyname, initial is 0. Because the familynames are ordered the calculation of the potential
             // matches is done once, only the first time.
@@ -129,6 +145,8 @@ public class MatchAsync extends Thread
             msg = String.format( "Thread id %d; Set 1 size: %d", threadId, ql.s1_id_base.size() );
             System.out.println( msg );
             plog.show(msg);
+
+            int nmatch = 0;
 
             for( int k = 0; k < ql.s1_id_base.size(); k++ )
             {
@@ -317,6 +335,8 @@ public class MatchAsync extends Thread
                 for( int l = 0; l < tempVarList.size(); l++ )
                 {
                     if( tempVarList.get( l ) != 0 ) {
+                        nmatch++;
+
                         int id_s1 = ql.s1_id_base.get( k );
                         int id_s2 = ql.s2_id_base.get( tempVarList.get( l ) );
 
@@ -332,6 +352,10 @@ public class MatchAsync extends Thread
             }
 
             pm.removeProcess();
+
+            msg = String.format( "Number of matches: %d", nmatch );
+            System.out.println( msg );
+            plog.show( msg );
 
             msg = String.format( "Thread id %d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
             System.out.println( msg );

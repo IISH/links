@@ -29,7 +29,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-04-Dec-2014 Latest change
+ * FL-12-Dec-2014 Latest change
  */
 
 public class Main
@@ -37,7 +37,7 @@ public class Main
     // Global vars
     private static QueryLoader ql;
     private static PrintLogger plog;
-    private static Connection conBase;
+    private static Connection conPrematch;
     private static Connection conMatch;
 
     private static int[][] variantFamilyName;
@@ -68,19 +68,19 @@ public class Main
             }
 
             // cmd line args
-            String url  = args[ 0 ];
-            String user = args[ 1 ];
-            String pass = args[ 2 ];
-            String max  = args[ 3 ];
+            String url     = args[ 0 ];
+            String user    = args[ 1 ];
+            String pass    = args[ 2 ];
+            String threads = args[ 3 ];
 
-            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s", url, user, pass, max );
+            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s", url, user, pass, threads );
             System.out.println( msg );
             plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
             plog.show( "Matching process started." );
-            ProcessManager pm = new ProcessManager( Integer.parseInt( max ) );
+            ProcessManager pm = new ProcessManager( Integer.parseInt( threads ) );
 
             int ncores = Runtime.getRuntime().availableProcessors();
             msg = String.format( "Available cores: %d", ncores );
@@ -93,10 +93,10 @@ public class Main
             plog.show( msg );
 
             /* Create database connections*/
-            conMatch = General.getConnection( url, "links_match", user, pass );
-            conBase  = General.getConnection( url, "links_base",  user, pass );
+            conMatch    = General.getConnection( url, "links_match", user, pass );
+            conPrematch = General.getConnection( url, "links_prematch",  user, pass );
 
-            conBase.setReadOnly( true );                    // Set read only
+            conPrematch.setReadOnly( true );                // Set read only
 
             /*
             // only delete matches for the match ids (from table match_process) that are being [re-]computed
@@ -130,6 +130,10 @@ public class Main
 
             int misSize = mis.is.getSize();
             plog.show( String.format( "Number of matching records from links_match.match_process: %d\n", misSize ) );
+            if( misSize == 0 ) {
+                System.out.println( "Nothing to do; Stop." );
+                plog.show( "Nothing to do; Stop." );
+            }
 
             // Loop through records in match_process
             for( int i = 0; i < mis.is.getSize(); i++ )
@@ -180,6 +184,8 @@ public class Main
                 for( int j = 0; j < qgs.getSize(); j++ )
                 {
                     QuerySet qs = qgs.get( 0 );
+
+                    deleteMatches( qs.id ); // delete previous matches before creating new ones
                     showQuerySet( qs );
 
                     // Wait until process manager gives permission
@@ -194,9 +200,9 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conBase, conMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
                     } else { // 0
-                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conBase, conMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
@@ -205,15 +211,32 @@ public class Main
                     //ma.join();        // blocks parent thread?
                 }
             }
-            System.out.println( "Matching process ended." );
-            plog.show( "Matching process ended." );
-
-        } catch( Exception ex ) {
-            System.out.println( "LinksMatchManager Error: " + ex.getMessage() );
         }
-    }
+        catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exeption: " + ex.getMessage() ); }
+    } // main
 
 
+    /**
+     * Delete previous matches for the given id, before creating new matches
+     * @param id_match_process
+     */
+    private static void deleteMatches( int id_match_process )
+    {
+        try {
+            plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
+            String query = "DELETE FROM matches WHERE id = " + id_match_process;
+
+            conMatch.createStatement().execute( query );
+            conMatch.createStatement().close();
+        }
+        catch( Exception ex ) { System.out.println( "LinksMatchManager/deleteMatches() Exception: " + ex.getMessage() ); }
+    } // deleteMatches
+
+
+    /**
+     *
+     * @param qs
+     */
     private static void showQuerySet( QuerySet qs )
     {
         try
@@ -258,6 +281,6 @@ public class Main
             plog.show( String.format( "int_minmax_p ............ = %d", qs.int_minmax_p ) );
         }
         catch( Exception ex ) { ex.getMessage(); }
+    } // showQuerySet
 
-    }
 }

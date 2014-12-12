@@ -1,146 +1,159 @@
 package linksmatchmanager;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+
+import java.util.Vector;
+
 import linksmatchmanager.DataSet.QuerySet;
 
-public class QueryLoader {
-
+/**
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-11-Dec-2014 Latest change
+ */
+public class QueryLoader
+{
     private Connection con;
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
-    private int firstname;
     private boolean ignore_sex;
     private boolean ignore_minmax;
-    // Using set global, so it can be used 
+    private int firstname;
+
     private ResultSet set1;
     private ResultSet set2;
+
     // Set variables
-    public Vector<Integer> s1_id_base = new Vector<Integer>();
-    public Vector<Integer> s1_registration_days = new Vector<Integer>();
-    public Vector<Integer> s1_ego_familyname = new Vector<Integer>();
-    public Vector<Integer> s1_ego_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s1_ego_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s1_ego_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s1_ego_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s1_ego_birth_min = new Vector<Integer>();
-    public Vector<Integer> s1_ego_birth_max = new Vector<Integer>();
-    public Vector<Integer> s1_ego_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s1_ego_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s1_ego_death_min = new Vector<Integer>();
-    public Vector<Integer> s1_ego_death_max = new Vector<Integer>();
-    public Vector<Integer> s1_sex = new Vector<Integer>();
-    public Vector<Integer> s1_mother_familyname = new Vector<Integer>();
-    public Vector<Integer> s1_mother_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s1_mother_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s1_mother_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s1_mother_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s1_mother_birth_min = new Vector<Integer>();
-    public Vector<Integer> s1_mother_birth_max = new Vector<Integer>();
-    public Vector<Integer> s1_mother_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s1_mother_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s1_mother_death_min = new Vector<Integer>();
-    public Vector<Integer> s1_mother_death_max = new Vector<Integer>();
-    public Vector<Integer> s1_father_familyname = new Vector<Integer>();
-    public Vector<Integer> s1_father_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s1_father_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s1_father_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s1_father_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s1_father_birth_min = new Vector<Integer>();
-    public Vector<Integer> s1_father_birth_max = new Vector<Integer>();
-    public Vector<Integer> s1_father_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s1_father_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s1_father_death_min = new Vector<Integer>();
-    public Vector<Integer> s1_father_death_max = new Vector<Integer>();
-    public Vector<Integer> s1_partner_familyname = new Vector<Integer>();
-    public Vector<Integer> s1_partner_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s1_partner_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s1_partner_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s1_partner_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s1_partner_birth_min = new Vector<Integer>();
-    public Vector<Integer> s1_partner_birth_max = new Vector<Integer>();
+    public Vector<Integer> s1_id_base              = new Vector<Integer>();
+    public Vector<Integer> s1_registration_days    = new Vector<Integer>();
+    public Vector<Integer> s1_ego_familyname       = new Vector<Integer>();
+    public Vector<Integer> s1_ego_firstname1       = new Vector<Integer>();
+    public Vector<Integer> s1_ego_firstname2       = new Vector<Integer>();
+    public Vector<Integer> s1_ego_firstname3       = new Vector<Integer>();
+    public Vector<Integer> s1_ego_firstname4       = new Vector<Integer>();
+    public Vector<Integer> s1_ego_birth_min        = new Vector<Integer>();
+    public Vector<Integer> s1_ego_birth_max        = new Vector<Integer>();
+    public Vector<Integer> s1_ego_marriage_min     = new Vector<Integer>();
+    public Vector<Integer> s1_ego_marriage_max     = new Vector<Integer>();
+    public Vector<Integer> s1_ego_death_min        = new Vector<Integer>();
+    public Vector<Integer> s1_ego_death_max        = new Vector<Integer>();
+    public Vector<Integer> s1_sex                  = new Vector<Integer>();
+    public Vector<Integer> s1_mother_familyname    = new Vector<Integer>();
+    public Vector<Integer> s1_mother_firstname1    = new Vector<Integer>();
+    public Vector<Integer> s1_mother_firstname2    = new Vector<Integer>();
+    public Vector<Integer> s1_mother_firstname3    = new Vector<Integer>();
+    public Vector<Integer> s1_mother_firstname4    = new Vector<Integer>();
+    public Vector<Integer> s1_mother_birth_min     = new Vector<Integer>();
+    public Vector<Integer> s1_mother_birth_max     = new Vector<Integer>();
+    public Vector<Integer> s1_mother_marriage_min  = new Vector<Integer>();
+    public Vector<Integer> s1_mother_marriage_max  = new Vector<Integer>();
+    public Vector<Integer> s1_mother_death_min     = new Vector<Integer>();
+    public Vector<Integer> s1_mother_death_max     = new Vector<Integer>();
+    public Vector<Integer> s1_father_familyname    = new Vector<Integer>();
+    public Vector<Integer> s1_father_firstname1    = new Vector<Integer>();
+    public Vector<Integer> s1_father_firstname2    = new Vector<Integer>();
+    public Vector<Integer> s1_father_firstname3    = new Vector<Integer>();
+    public Vector<Integer> s1_father_firstname4    = new Vector<Integer>();
+    public Vector<Integer> s1_father_birth_min     = new Vector<Integer>();
+    public Vector<Integer> s1_father_birth_max     = new Vector<Integer>();
+    public Vector<Integer> s1_father_marriage_min  = new Vector<Integer>();
+    public Vector<Integer> s1_father_marriage_max  = new Vector<Integer>();
+    public Vector<Integer> s1_father_death_min     = new Vector<Integer>();
+    public Vector<Integer> s1_father_death_max     = new Vector<Integer>();
+    public Vector<Integer> s1_partner_familyname   = new Vector<Integer>();
+    public Vector<Integer> s1_partner_firstname1   = new Vector<Integer>();
+    public Vector<Integer> s1_partner_firstname2   = new Vector<Integer>();
+    public Vector<Integer> s1_partner_firstname3   = new Vector<Integer>();
+    public Vector<Integer> s1_partner_firstname4   = new Vector<Integer>();
+    public Vector<Integer> s1_partner_birth_min    = new Vector<Integer>();
+    public Vector<Integer> s1_partner_birth_max    = new Vector<Integer>();
     public Vector<Integer> s1_partner_marriage_min = new Vector<Integer>();
     public Vector<Integer> s1_partner_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s1_partner_death_min = new Vector<Integer>();
-    public Vector<Integer> s1_partner_death_max = new Vector<Integer>();
+    public Vector<Integer> s1_partner_death_min    = new Vector<Integer>();
+    public Vector<Integer> s1_partner_death_max    = new Vector<Integer>();
     //
     //
-    public Vector<Integer> s2_id_base = new Vector<Integer>();
-    public Vector<Integer> s2_registration_days = new Vector<Integer>();
-    public Vector<Integer> s2_ego_familyname = new Vector<Integer>();
-    public Vector<Integer> s2_ego_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s2_ego_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s2_ego_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s2_ego_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s2_ego_birth_min = new Vector<Integer>();
-    public Vector<Integer> s2_ego_birth_max = new Vector<Integer>();
-    public Vector<Integer> s2_ego_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s2_ego_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s2_ego_death_min = new Vector<Integer>();
-    public Vector<Integer> s2_ego_death_max = new Vector<Integer>();
-    public Vector<Integer> s2_sex = new Vector<Integer>();
-    public Vector<Integer> s2_mother_familyname = new Vector<Integer>();
-    public Vector<Integer> s2_mother_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s2_mother_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s2_mother_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s2_mother_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s2_mother_birth_min = new Vector<Integer>();
-    public Vector<Integer> s2_mother_birth_max = new Vector<Integer>();
-    public Vector<Integer> s2_mother_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s2_mother_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s2_mother_death_min = new Vector<Integer>();
-    public Vector<Integer> s2_mother_death_max = new Vector<Integer>();
-    public Vector<Integer> s2_father_familyname = new Vector<Integer>();
-    public Vector<Integer> s2_father_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s2_father_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s2_father_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s2_father_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s2_father_birth_min = new Vector<Integer>();
-    public Vector<Integer> s2_father_birth_max = new Vector<Integer>();
-    public Vector<Integer> s2_father_marriage_min = new Vector<Integer>();
-    public Vector<Integer> s2_father_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s2_father_death_min = new Vector<Integer>();
-    public Vector<Integer> s2_father_death_max = new Vector<Integer>();
-    public Vector<Integer> s2_partner_familyname = new Vector<Integer>();
-    public Vector<Integer> s2_partner_firstname1 = new Vector<Integer>();
-    public Vector<Integer> s2_partner_firstname2 = new Vector<Integer>();
-    public Vector<Integer> s2_partner_firstname3 = new Vector<Integer>();
-    public Vector<Integer> s2_partner_firstname4 = new Vector<Integer>();
-    public Vector<Integer> s2_partner_birth_min = new Vector<Integer>();
-    public Vector<Integer> s2_partner_birth_max = new Vector<Integer>();
+    public Vector<Integer> s2_id_base              = new Vector<Integer>();
+    public Vector<Integer> s2_registration_days    = new Vector<Integer>();
+    public Vector<Integer> s2_ego_familyname       = new Vector<Integer>();
+    public Vector<Integer> s2_ego_firstname1       = new Vector<Integer>();
+    public Vector<Integer> s2_ego_firstname2       = new Vector<Integer>();
+    public Vector<Integer> s2_ego_firstname3       = new Vector<Integer>();
+    public Vector<Integer> s2_ego_firstname4       = new Vector<Integer>();
+    public Vector<Integer> s2_ego_birth_min        = new Vector<Integer>();
+    public Vector<Integer> s2_ego_birth_max        = new Vector<Integer>();
+    public Vector<Integer> s2_ego_marriage_min     = new Vector<Integer>();
+    public Vector<Integer> s2_ego_marriage_max     = new Vector<Integer>();
+    public Vector<Integer> s2_ego_death_min        = new Vector<Integer>();
+    public Vector<Integer> s2_ego_death_max        = new Vector<Integer>();
+    public Vector<Integer> s2_sex                  = new Vector<Integer>();
+    public Vector<Integer> s2_mother_familyname    = new Vector<Integer>();
+    public Vector<Integer> s2_mother_firstname1    = new Vector<Integer>();
+    public Vector<Integer> s2_mother_firstname2    = new Vector<Integer>();
+    public Vector<Integer> s2_mother_firstname3    = new Vector<Integer>();
+    public Vector<Integer> s2_mother_firstname4    = new Vector<Integer>();
+    public Vector<Integer> s2_mother_birth_min     = new Vector<Integer>();
+    public Vector<Integer> s2_mother_birth_max     = new Vector<Integer>();
+    public Vector<Integer> s2_mother_marriage_min  = new Vector<Integer>();
+    public Vector<Integer> s2_mother_marriage_max  = new Vector<Integer>();
+    public Vector<Integer> s2_mother_death_min     = new Vector<Integer>();
+    public Vector<Integer> s2_mother_death_max     = new Vector<Integer>();
+    public Vector<Integer> s2_father_familyname    = new Vector<Integer>();
+    public Vector<Integer> s2_father_firstname1    = new Vector<Integer>();
+    public Vector<Integer> s2_father_firstname2    = new Vector<Integer>();
+    public Vector<Integer> s2_father_firstname3    = new Vector<Integer>();
+    public Vector<Integer> s2_father_firstname4    = new Vector<Integer>();
+    public Vector<Integer> s2_father_birth_min     = new Vector<Integer>();
+    public Vector<Integer> s2_father_birth_max     = new Vector<Integer>();
+    public Vector<Integer> s2_father_marriage_min  = new Vector<Integer>();
+    public Vector<Integer> s2_father_marriage_max  = new Vector<Integer>();
+    public Vector<Integer> s2_father_death_min     = new Vector<Integer>();
+    public Vector<Integer> s2_father_death_max     = new Vector<Integer>();
+    public Vector<Integer> s2_partner_familyname   = new Vector<Integer>();
+    public Vector<Integer> s2_partner_firstname1   = new Vector<Integer>();
+    public Vector<Integer> s2_partner_firstname2   = new Vector<Integer>();
+    public Vector<Integer> s2_partner_firstname3   = new Vector<Integer>();
+    public Vector<Integer> s2_partner_firstname4   = new Vector<Integer>();
+    public Vector<Integer> s2_partner_birth_min    = new Vector<Integer>();
+    public Vector<Integer> s2_partner_birth_max    = new Vector<Integer>();
     public Vector<Integer> s2_partner_marriage_min = new Vector<Integer>();
     public Vector<Integer> s2_partner_marriage_max = new Vector<Integer>();
-    public Vector<Integer> s2_partner_death_min = new Vector<Integer>();
-    public Vector<Integer> s2_partner_death_max = new Vector<Integer>();
+    public Vector<Integer> s2_partner_death_min    = new Vector<Integer>();
+    public Vector<Integer> s2_partner_death_max    = new Vector<Integer>();
+
 
     /**
      * 
-     * @param set1
-     * @param set2 
+     * @param qs
+     * @param con
      */
-    public QueryLoader(QuerySet qs, Connection con) throws Exception {
-
-        this.use_mother = qs.use_mother;
-        this.use_father = qs.use_father;
-        this.use_partner = qs.use_partner;
-        this.firstname = qs.firstname;
-        this.ignore_sex = qs.ignore_sex;
+    public QueryLoader( QuerySet qs, Connection con ) throws Exception
+    {
+        this.use_mother    = qs.use_mother;
+        this.use_father    = qs.use_father;
+        this.use_partner   = qs.use_partner;
+        this.firstname     = qs.firstname;
+        this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
-        set1 = con.createStatement().executeQuery(qs.query1);
-        set2 = con.createStatement().executeQuery(qs.query2);
+        set1 = con.createStatement().executeQuery( qs.query1 );
+        set2 = con.createStatement().executeQuery( qs.query2 );
 
         fillArrays();
 
         this.con = con;
-
     }
 
-    private void fillArrays() throws Exception {
 
-        while (set1.next()) {
-
+    private void fillArrays() throws Exception
+    {
+        while( set1.next() )
+        {
             // Vars to use, global
             int var_s1_id_base = 0;
             int var_s1_registration_days = 0;
@@ -422,12 +435,10 @@ public class QueryLoader {
             s1_partner_marriage_max.add(var_s1_partner_marriage_max);
             s1_partner_death_min.add(var_s1_partner_death_min);
             s1_partner_death_max.add(var_s1_partner_death_max);
-
         }
 
-        while (set2.next()) {
-
-
+        while( set2.next() )
+        {
             int var_s2_id_base = 0;
             int var_s2_registration_days = 0;
             int var_s2_ego_familyname = 0;
@@ -710,11 +721,10 @@ public class QueryLoader {
 
         // Freeing memory
         set1.close();
-
         set2.close();
+
         set1 = null;
         set2 = null;
     }
-    
-    
+
 }
