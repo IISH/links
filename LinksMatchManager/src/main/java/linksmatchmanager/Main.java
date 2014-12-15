@@ -29,7 +29,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-12-Dec-2014 Latest change
+ * FL-15-Dec-2014 Latest change
  */
 
 public class Main
@@ -224,7 +224,7 @@ public class Main
     {
         try {
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
-            String query = "DELETE FROM matches WHERE id = " + id_match_process;
+            String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
 
             conMatch.createStatement().execute( query );
             conMatch.createStatement().close();
