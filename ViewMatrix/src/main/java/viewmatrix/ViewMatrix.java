@@ -9,7 +9,7 @@ import java.sql.ResultSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * input:  links_match.view_x
+ * input:  links_match.match_view
  * output: links_match.matrix
  *
  * FL-09-Dec-2014 Latest change
@@ -73,7 +73,7 @@ public class ViewMatrix
                 + "partner_firstname3_value, "
                 + "partner_firstname4_value "
                 + "FROM "
-                + "view_x";
+                + "match_view";
 
             System.out.println( querySelect );
 
