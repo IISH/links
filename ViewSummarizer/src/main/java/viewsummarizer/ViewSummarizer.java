@@ -15,7 +15,7 @@ import java.util.Map;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-09-Dec-2014 Latest change
+ * FL-19-Dec-2014 Latest change
  */
 public class ViewSummarizer
 {
@@ -35,9 +35,9 @@ public class ViewSummarizer
             String msg = "Links View Summarizer 2.0";
             plog.show( msg );
 
-            if( args.length != 7 ) {
-                System.out.println( "Invalid argument length, it should be 7" );
-                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output>" );
+            if( args.length != 8 ) {
+                System.out.println( "Invalid argument length, it should be 8" );
+                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output> <id_match_process>" );
 
                 return;
             }
@@ -48,23 +48,28 @@ public class ViewSummarizer
         }
 
         // Set 7 args
-        String db_url   = args[ 0 ];
-        String db_name  = args[ 1 ];
-        String db_user  = args[ 2 ];
-        String db_pass  = args[ 3 ];
-        String template = args[ 4 ];
-        String queries  = args[ 5 ];
-        String output   = args[ 6 ];
+        String db_url     = args[ 0 ];
+        String db_name    = args[ 1 ];
+        String db_user    = args[ 2 ];
+        String db_pass    = args[ 3 ];
+        String template   = args[ 4 ];
+        String queries    = args[ 5 ];
+        String output     = args[ 6 ];
+        String id_process = args[ 7 ];
 
         // Create connection
         try {
-            plog.show( String.format( "cmd line parameters: %s %s %s %s %s %s %s", db_url, db_name, db_user, db_pass, template, queries, output ) );
+            plog.show( String.format( "cmd line parameters: %s %s %s %s %s %s %s %s", db_url, db_name, db_user, db_pass, template, queries, output, id_process ) );
             db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
         }
         catch( Exception ex ) {
             System.out.println( "Connection Error: " + ex.getMessage() );
             return;
         }
+
+        output = output.replaceAll( "%", id_process );
+        try { plog.show( String.format( "Output file will be: %s", output ) ); }
+        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         try { plog.show( String.format( "Reading template file: %s", template ) ); }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
@@ -94,6 +99,8 @@ public class ViewSummarizer
             String key   = me.getKey() + "";
             String value = me.getValue() + "";
 
+            System.out.printf( "%s\n", value );
+
             // Check if key exists in template
             if( templateFile.contains( "{" + key + "}" ) )
             {
@@ -108,6 +115,9 @@ public class ViewSummarizer
                     System.out.println( "Query error - query: " + value + " - Error message: " + ex.getMessage() );
                     continue;
                 }
+
+                // id_match_process noew from cmd line
+                if( counter == 13 ) { st = id_process; }
 
                 // replace template variable only if there is a query result
                 if( st != null ) { templateFile = templateFile.replaceAll( "\\{" + key + "\\}", st ); }
