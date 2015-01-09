@@ -7,31 +7,29 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Map;
+
 
 /**
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-07-Jan-2014 Latest change
+ * FL-09-Jan-2014 Latest change
  */
 public class ViewSummarizer
 {
     private static Connection db_conn;
     private static PrintLogger plog;
-    private static HashMap hm = new HashMap();
     private static String templateFile;
 
     private static String date;
     private static String id_match_process;
 
     private static String s1_maintype,  s2_maintype;
+    private static String s1_type,      s2_type;
     private static String s1_role_ego,  s2_role_ego;
     private static String s1_source,    s2_source;
-    private static String s1_startyear, s2_startyear;
     private static String s1_range,     s2_range;
+    private static String s1_startyear, s2_startyear;
     private static String s1_endyear;
 
     private static String method;
@@ -43,14 +41,18 @@ public class ViewSummarizer
     private static String prematch_familyname_value;
     private static String use_firstname;
     private static String use_familyname;
+    private static String use_minmax;
 
     private static String s1_potential, s2_potential;
     private static String s1_realized,  s2_realized;
     private static String s1_unique,    s2_unique;
     private static String s1_once,      s2_once;
+    private static String s1_twice,     s2_twice;
+    private static String s1_thrice,    s2_thrice;
+    private static String s1_frice,     s2_frice;
     private static String s1_more,      s2_more;
     private static String s1_without,   s2_without;
-
+    private static String s1_allcnts,   s2_allcnts;
 
     /**
      * @param args command line arguments
@@ -64,9 +66,9 @@ public class ViewSummarizer
             String msg = "Links View Summarizer 2.0";
             plog.show( msg );
 
-            if( args.length != 8 ) {
-                System.out.println( "Invalid argument length, it should be 10" );
-                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <template> <queries> <output> <id_match_process>" );
+            if( args.length != 5 ) {
+                System.out.println( "Invalid argument length, it should be 5" );
+                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <id_match_process>" );
 
                 return;
             }
@@ -76,20 +78,21 @@ public class ViewSummarizer
             return;
         }
 
-        // Set 7 args
+        // Set 5 args
         String db_url     = args[ 0 ];
         String db_name    = args[ 1 ];
         String db_user    = args[ 2 ];
         String db_pass    = args[ 3 ];
-        String template   = args[ 4 ];
-        String queries    = args[ 5 ];
-        String output     = args[ 6 ];
-        String id_process = args[ 7 ];
+        String id_process = args[ 4 ];
+
+        String template   = "LVS-template.html";
+        String output     = "output/LVS-%.html";
+
 
         // Create connection
         try {
-            plog.show( String.format( "cmd line parameters: %s %s %s %s %s %s %s %s",
-                db_url, db_name, db_user, db_pass, template, queries, output, id_process ) );
+            plog.show( String.format( "cmd line parameters: %s %s %s %s %s",
+                db_url, db_name, db_user, db_pass, id_process ) );
             db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
         }
         catch( Exception ex ) {
@@ -109,56 +112,6 @@ public class ViewSummarizer
 
         // get variables from match_process table for the given id_proces
         readMatchProcess( id_process );
-
-
-        // 'queries' contains a few SQL queries, and a few files (filenames) that contain more SQL queries
-        //try { plog.show( String.format( "Reading query file: %s", queries ) ); }
-        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-        //readFile( queries );                // fills HashMap hm with key/value pairs
-
-        /*
-        fillHMap( id_process );             // fills HashMap hm with key/value pairs
-
-        Set set = hm.entrySet();            // HashMap -> Set
-        System.out.println( "There are " + hm.size() + " queries" );
-        
-        int counter = 0;
-        Iterator i = set.iterator();        // Get an iterator
-        while( i.hasNext() )        // loop through hm to fire queries
-        {
-            counter++;
-            System.out.printf( "%d ", counter );
-
-            Map.Entry me = (Map.Entry) i.next();
-
-            String key   = me.getKey()   + "";
-            String value = me.getValue() + "";
-
-            // Check if key exists in template
-            if( templateFile.contains( "{" + key + "}" ) )
-            {
-                String st = "";
-
-                try {
-                    ResultSet rs = db_conn.createStatement().executeQuery( value );
-                    rs.first();
-                    st = rs.getString( 1 );
-                }
-                catch( Exception ex ) {
-                    System.out.println( "Query error - query: " + value + " - Error message: " + ex.getMessage() );
-                    continue;
-                }
-
-                System.out.printf( "resp: %s, key: %s, query: %s\n", st, key, value );
-
-                // replace template variable
-                if( st == null ) { templateFile = templateFile.replaceAll( "\\{" + key + "\\}", " " ); }
-                else { templateFile = templateFile.replaceAll( "\\{" + key + "\\}", st ); }
-
-            }
-        }
-        System.out.println( "" );
-        */
 
         // Write template to output
         try {
@@ -183,6 +136,7 @@ public class ViewSummarizer
     private static String executeQuery( String varname, String query )
     {
         String result = "";
+        String display = "";
 
         try {
             ResultSet rs = db_conn.createStatement().executeQuery( query );
@@ -195,9 +149,123 @@ public class ViewSummarizer
 
         System.out.printf( "varname: %s, result: %s, query: %s\n", varname, result, query );
 
-        replaceInTemplate( varname, result );
+        if( varname.equals( "s1_source" ) || varname.equals( "s2_source" ) )
+        {
+            display = result;
+
+                 if( result.equals( "211" ) ) { display += " = Groningen"; }
+            else if( result.equals( "212" ) ) { display += " = Fri_Tresoar"; }
+            else if( result.equals( "213" ) ) { display += " = Drenthe"; }
+            else if( result.equals( "214" ) ) { display += " = Overijssel"; }
+            else if( result.equals( "215" ) ) { display += " = Gelderland"; }
+            else if( result.equals( "216" ) ) { display += " = Utrecht"; }
+            else if( result.equals( "217" ) ) { display += " = N-H_Haarlem"; }
+            else if( result.equals( "218" ) ) { display += " = Z-H_Nat-Archief"; }
+            else if( result.equals( "220" ) ) { display += " = NBr_BHIC"; }
+            else if( result.equals( "221" ) ) { display += " = Limburg"; }
+            else if( result.equals( "222" ) ) { display += " = Flevoland"; }
+            else if( result.equals( "223" ) ) { display += " = Z-H_Rotterdam"; }
+            else if( result.equals( "224" ) ) { display += " = NBr_Breda"; }
+            else if( result.equals( "225" ) ) { display += " = Zeeland"; }
+            else if( result.equals( "226" ) ) { display += " = NBr_Eindhoven"; }
+            else if( result.equals( "227" ) ) { display += " = Utr_Eemland"; }
+            else if( result.equals( "228" ) ) { display += " = Leeuwarden"; }
+            else if( result.equals( "229" ) ) { display += " = N-H_Alkmaar"; }
+            else if( result.equals( "230" ) ) { display += " = Ned-Antillen"; }
+            else if( result.equals( "231" ) ) { display += " = Z-H_Oegstgeest"; }
+            else if( result.equals( "232" ) ) { display += " = Z-H_Dordrecht"; }
+            else if( result.equals( "233" ) ) { display += " = Z-H_Voorne"; }
+            else if( result.equals( "234" ) ) { display += " = Z-H_Goeree"; }
+            else if( result.equals( "235" ) ) { display += " = Z-H_Rijnstreek"; }
+            else if( result.equals( "236" ) ) { display += " = Z-H_Midden-Holland"; }
+            else if( result.equals( "237" ) ) { display += " = Z-H_Vlaardingen"; }
+            else if( result.equals( "238" ) ) { display += " = Z-H-Midden"; }
+            else if( result.equals( "239" ) ) { display += " = Z-H_Gorinchem"; }
+            else if( result.equals( "240" ) ) { display += " = Z-H_Westland"; }
+            else if( result.equals( "241" ) ) { display += " = Z-H_Leidschendam"; }
+            else if( result.equals( "242" ) ) { display += " = Z-H_Wassenaar"; }
+        }
+
+        else if( varname.equals( "s1_maintype" ) || varname.equals( "s2_maintype" ) )
+        {
+            display = result;
+                 if( result.equals( "1" ) ) { display += " = Birth"; }
+            else if( result.equals( "2" ) ) { display += " = Marriage"; }
+            else if( result.equals( "3" ) ) { display += " = Death"; }
+        }
+
+        else if( varname.equals( "s1_role_ego" ) || varname.equals( "s2_role_ego" ) )
+        {
+            // the result may be a comma separated list
+            //String[] results = result.split( "," );
+            String[] results = result.split( "\\s*,\\s*" );     // and 'strip'
+            System.out.printf( "result: %s, len results: %d\n", result, results.length );
+
+            display = result;
+            for( int i = 0; i < results.length; i++ )
+            {
+                String r = results[ i ];
+                //System.out.printf( "%d, %s\n", i, r );
+                //display += r;
+
+                if( i == 0 ) { display += " = "; }
+                else { display += ", "; }
+
+                     if( r.equals(  "1" ) ) { display += "Child"; }
+                else if( r.equals(  "2" ) ) { display += "Mother"; }
+                else if( r.equals(  "3" ) ) { display += "Father"; }
+                else if( r.equals(  "4" ) ) { display += "Bride"; }
+                else if( r.equals(  "5" ) ) { display += "Mother bride"; }
+                else if( r.equals(  "6" ) ) { display += "Father bride"; }
+                else if( r.equals(  "7" ) ) { display += "Bridegroom"; }
+                else if( r.equals(  "8" ) ) { display += "Mother bridegroom"; }
+                else if( r.equals(  "9" ) ) { display += "Father bridegroom"; }
+                else if( r.equals( "10" ) ) { display += "Deceased"; }
+                else if( r.equals( "11" ) ) { display += "Partner"; }
+            }
+            if( display.isEmpty() ) { display = result; }
+        }
+
+        else { display = result; }
+
+        replaceInTemplate( varname, display );
 
         return result;
+    }
+
+
+     /**
+     * @param
+     */
+    private static String collectQuery( String varname, String query )
+    {
+        String result = "";
+        String display = "";
+
+        try {
+            ResultSet rs = db_conn.createStatement().executeQuery( query );
+
+            int count = 0;
+            while( rs.next() ) {
+                count += 1;
+                int i = rs.getInt( 1 );
+                int c = rs.getInt( 2 );
+                //System.out.printf( "i: %d, c: %s", i, c );
+
+                if( ! display.isEmpty() ) { display += ", "; }
+                if( (count + 10) % 10 == 0 ) { display += "<br>"; }
+                display += String.format( "%dx: %d", i, c );
+            }
+
+        }
+        catch( Exception ex ) {
+            System.out.println( "Query error: " + query + " - Error message: " + ex.getMessage() );
+        }
+
+        System.out.println( display );
+        replaceInTemplate( varname, display );
+
+        return "";
     }
 
 
@@ -232,6 +300,11 @@ public class ViewSummarizer
         query = "SELECT s2_maintype FROM links_match.match_process WHERE id = " + id_process;
         s2_maintype = executeQuery( "s2_maintype", query );
 
+        query = "SELECT s1_type FROM links_match.match_process WHERE id = " + id_process;
+        s1_type =  executeQuery( "s1_type", query );
+        query = "SELECT s2_type FROM links_match.match_process WHERE id = " + id_process;
+        s2_type = executeQuery( "s2_type", query );
+
         query = "SELECT s1_role_ego FROM links_match.match_process WHERE id = " + id_process;
         s1_role_ego = executeQuery( "s1_role_ego", query );
         query = "SELECT s2_role_ego FROM links_match.match_process WHERE id = " + id_process;
@@ -242,15 +315,15 @@ public class ViewSummarizer
         query = "SELECT s2_source FROM links_match.match_process WHERE id = " + id_process;
         s2_source = executeQuery( "s2_source", query );
 
-        query = "SELECT s1_startyear FROM links_match.match_process WHERE id = " + id_process;
-        s1_startyear = executeQuery( "s1_startyear", query );
-        query = "SELECT s2_startyear FROM links_match.match_process WHERE id = " + id_process;
-        s2_startyear = executeQuery( "s2_startyear", query );
-
         query = "SELECT s1_range FROM links_match.match_process WHERE id = " + id_process;
         s1_range = executeQuery( "s1_range", query );
         query = "SELECT s2_range FROM links_match.match_process WHERE id = " + id_process;
         s2_range = executeQuery( "s2_range", query );
+
+        query = "SELECT s1_startyear FROM links_match.match_process WHERE id = " + id_process;
+        s1_startyear = executeQuery( "s1_startyear", query );
+        query = "SELECT s2_startyear FROM links_match.match_process WHERE id = " + id_process;
+        s2_startyear = executeQuery( "s2_startyear", query );
 
         query = "SELECT s1_endyear FROM links_match.match_process WHERE id = " + id_process;
         s1_endyear = executeQuery( "s1_endyear", query );
@@ -284,29 +357,34 @@ public class ViewSummarizer
         query = "SELECT use_familyname FROM links_match.match_process WHERE id = " + id_process;
         use_familyname = executeQuery( "use_familyname", query );
 
+        query = "SELECT use_minmax FROM links_match.match_process WHERE id = " + id_process;
+        use_minmax = executeQuery( "use_minmax", query );
 
+        /*
         System.out.printf( "date: %s\n", date );
         System.out.printf( "id_match_process: %s\n", id_match_process );
 
         // s1 & s2 table values
         System.out.printf( "s1_maintype:  %s, s2_maintype:  %s\n", s1_maintype,  s2_maintype );
+        System.out.printf( "s1_type:      %s, s2_type:      %s\n", s1_type,      s2_type );
         System.out.printf( "s1_role_ego:  %s, s2_role_ego:  %s\n", s1_role_ego,  s2_role_ego );
         System.out.printf( "s1_source:    %s, s2_source:    %s\n", s1_source,    s2_source );
-        System.out.printf( "s1_startyear: %s, s2_startyear: %s\n", s1_startyear, s2_startyear );
         System.out.printf( "s1_range:     %s, s2_range:     %s\n", s1_range,     s2_range );
+        System.out.printf( "s1_startyear: %s, s2_startyear: %s\n", s1_startyear, s2_startyear );
         System.out.printf( "s1_endyear:   %s\n", s1_endyear );
 
         // single table values
-        System.out.printf( "method:                    %s\n", method );
-        System.out.printf( "ignore_sex:                %s\n", ignore_sex );
-        System.out.printf( "firstname:                 %s\n", firstname );
-        System.out.printf( "prematch_firstname:        %s\n", prematch_firstname );
-        System.out.printf( "prematch_familyname:       %s\n", prematch_familyname );
+        System.out.printf( "method: .................. %s\n", method );
+        System.out.printf( "ignore_sex: .............. %s\n", ignore_sex );
+        System.out.printf( "firstname: ............... %s\n", firstname );
+        System.out.printf( "prematch_firstname: ...... %s\n", prematch_firstname );
+        System.out.printf( "prematch_familyname: ..... %s\n", prematch_familyname );
         System.out.printf( "prematch_firstname_value:  %s\n", prematch_firstname_value );
         System.out.printf( "prematch_familyname_value: %s\n", prematch_familyname_value );
         System.out.printf( "use_firstname:             %s\n", use_firstname );
-        System.out.printf( "use_familyname:            %s\n", use_familyname );
-
+        System.out.printf( "use_familyname: .......... %s\n", use_familyname );
+        System.out.printf( "use_minmax: .............. %s\n", use_minmax );
+        */
 
         query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s1_source + " AND registration_maintype = " + s1_maintype;
         s1_potential = executeQuery( "s1_potential", query );
@@ -329,13 +407,32 @@ public class ViewSummarizer
         s2_unique = executeQuery( "s2_unique", query );
 
 
-        //query = "SELECT count(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches GROUP BY id_linksbase_1 HAVING s1_cnt = 1 ) AS T";
-        query = "SELECT count(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 1 ) AS T";
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 1 ) AS t";
         s1_once = executeQuery( "s1_once", query );
 
-        //query = "SELECT count(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches GROUP BY id_linksbase_2 HAVING s2_cnt = 1 ) AS T";
-        query = "SELECT count(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 1 ) AS T";
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 1 ) AS t";
         s2_once = executeQuery( "s2_once", query );
+
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 2 ) AS t";
+        s1_twice = executeQuery( "s1_twice", query );
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 2 ) AS t";
+        s2_twice = executeQuery( "s2_twice", query );
+
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 3 ) AS t";
+        s1_thrice = executeQuery( "s1_thrice", query );
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 3 ) AS t";
+        s2_thrice = executeQuery( "s2_thrice", query );
+
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 4 ) AS t";
+        s1_frice = executeQuery( "s1_frice", query );
+
+        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 4 ) AS t";
+        s2_frice = executeQuery( "s2_frice", query );
 
 
         int s1_unique_int = 0;
@@ -369,275 +466,12 @@ public class ViewSummarizer
         replaceInTemplate( "s2_without", s2_without );
 
 
-        /*
-        key = "s1_more";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s1_id_linksbase ) AS s1_aantal FROM links_match.match_view GROUP BY s1_id_linksbase HAVING s1_aantal > 1 )";
-        hm.put( key, value );
+        // all individual counts for 1x, 2x, 3x, etc occurrences
+        query = "SELECT s1_cnt, COUNT(*) FROM ( SELECT id_linksbase_1, COUNT(*) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 ) AS t GROUP BY s1_cnt";
+        s1_allcnts = collectQuery("s1_allcnts", query);
 
-        key = "s2_more";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s2_id_linksbase ) AS s2_aantal FROM links_match.match_view GROUP BY s2_id_linksbase HAVING s2_aantal > 1 )";
-        hm.put( key, value );
-
-
-        key = "s1_without";
-        value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s1_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s1_id_linksbase) ) FROM links_match.match_view)";
-        hm.put( key, value );
-
-        key = "s2_without";
-        value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s2_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s2_id_linksbase) ) FROM links_match.match_view)";
-        hm.put( key, value );
-        */
-
+        query = "SELECT s2_cnt, COUNT(*) FROM ( SELECT id_linksbase_2, COUNT(*) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 ) AS t GROUP BY s2_cnt";
+        s2_allcnts = collectQuery("s2_allcnts", query);
     }
 
-
-    /**
-     * @param id_process
-     */
-    private static void fillHMap( String id_process )
-    {
-        String key   = "";
-        String value = "";
-
-        /*
-        key = "date";
-        value = "SELECT NOW()";
-        hm.put( key, value );
-
-        key = "id_match_process";
-        value = "SELECT id FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, value );
-
-
-        // s1 & s2 table
-        key = "s1_maintype";
-        String s1_maintype = "SELECT s1_maintype FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_maintype );
-
-        key = "s2_maintype";
-        String s2_maintype = "SELECT s2_maintype FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s2_maintype );
-
-
-        key = "s1_role_ego";
-        String s1_role_ego = "SELECT s1_role_ego FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_role_ego );
-
-        key = "s2_role_ego";
-        String s2_role_ego = "SELECT s2_role_ego FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s2_role_ego );
-
-
-        key = "s1_source";
-        String s1_source = "SELECT s1_source FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_source );
-
-        key = "s2_source";
-        String s2_source = "SELECT s2_source FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s2_source );
-
-
-        key = "s1_startyear";
-        String s1_startyear = "SELECT s1_startyear FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_startyear );
-
-        key = "s2_startyear";
-        String s2_startyear = "SELECT s2_startyear FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s2_startyear );
-
-
-        key = "s1_range";
-        String s1_range = "SELECT s1_range FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_range );
-
-        key = "s2_range";
-        String s2_range = "SELECT s2_range FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s2_range );
-
-
-        key = "s1_endyear";
-        String s1_endyear = "SELECT s1_endyear FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, s1_endyear );
-
-
-        // single values table
-        key = "method";
-        String method = "SELECT method FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, method );
-
-        key = "ignore_sex";
-        String ignore_sex = "SELECT ignore_sex FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, ignore_sex );
-
-        key = "firstname";
-        String firstname = "SELECT firstname FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, firstname );
-
-        key = "prematch_firstname";
-        String prematch_firstname = "SELECT prematch_firstname FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, prematch_firstname );
-
-        key = "prematch_familyname";
-        String prematch_familyname = "SELECT prematch_familyname FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, prematch_familyname );
-
-        key = "prematch_firstname_value";
-        String prematch_firstname_value = "SELECT prematch_firstname_value FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, prematch_firstname_value );
-
-        key = "prematch_familyname_value";
-        String prematch_familyname_value = "SELECT prematch_familyname_value FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, prematch_familyname_value );
-
-        key = "use_firstname";
-        String use_firstname = "SELECT use_firstname FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, use_firstname );
-
-        key = "use_familyname";
-        String use_familyname = "SELECT use_familyname FROM links_match.match_process WHERE id = " + id_process;
-        hm.put( key, use_familyname );
-        */
-
-
-        key = "s1_potential";
-        //value = "SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = 111 OR id_source = 113 ) AND ego_role = (SELECT s1_role_ego FROM links_match.match_view LIMIT 0,1)";
-        //value = "SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s1_role_ego FROM links_match.match_view LIMIT 0,1)";
-        value = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s1_source + " AND registration_maintype = " + s1_maintype;
-        hm.put( key, value );
-
-        key = "s2_potential";
-        //value = "SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = 111 OR id_source = 113 ) AND ego_role = (SELECT s2_role_ego FROM links_match.match_view LIMIT 0,1)";
-        //value = "SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s2_role_ego FROM links_match.match_view LIMIT 0,1)";
-        value = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s2_source + " AND registration_maintype = " + s2_maintype;
-        hm.put( key, value );
-
-
-        key = "s1_realized";
-        value = "SELECT COUNT(*) FROM links_match.matches WHERE id_match_process = " + id_process;
-        hm.put( key, value );
-
-        key = "s2_realized";
-        value = "SELECT COUNT(*) FROM links_match.matches WHERE id_match_process = " + id_process;
-        hm.put( key, value );
-
-
-        key = "s1_unique";
-        value = "SELECT COUNT( DISTINCT( s1_id_linksbase) ) FROM links_match.matches WHERE id_match_process = " + id_process;
-        hm.put( key, value );
-
-        key = "s2_unique";
-        value = "SELECT COUNT( DISTINCT( s2_id_linksbase) ) FROM links_match.matches WHERE id_match_process = " + id_process;
-        hm.put( key, value );
-
-
-        key = "s1_once";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s1_id_linksbase ) AS s1_aantal FROM links_match.matches GROUP BY s1_id_linksbase HAVING s1_aantal = 1 )";
-        hm.put( key, value );
-
-        key = "s2_once";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s2_id_linksbase ) AS s2_aantal FROM links_match.matches GROUP BY s2_id_linksbase HAVING s2_aantal = 1 )";
-        hm.put( key, value );
-
-
-        key = "s1_more";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s1_id_linksbase ) AS s1_aantal FROM links_match.match_view GROUP BY s1_id_linksbase HAVING s1_aantal > 1 )";
-        hm.put( key, value );
-
-        key = "s2_more";
-        value = "SELECT count(*) FROM ( SELECT COUNT( s2_id_linksbase ) AS s2_aantal FROM links_match.match_view GROUP BY s2_id_linksbase HAVING s2_aantal > 1 )";
-        hm.put( key, value );
-
-
-        key = "s1_without";
-        //value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = 111 OR id_source = 113 ) AND ego_role = (SELECT s1_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s1_id_linksbase) ) FROM links_match.match_view)";
-        value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s1_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s1_id_linksbase) ) FROM links_match.match_view)";
-        hm.put( key, value );
-
-        key = "s2_without";
-        //value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = 111 OR id_source = 113 ) AND ego_role = (SELECT s2_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s2_id_linksbase) ) FROM links_match.match_view)";
-        value = "SELECT (SELECT COUNT(*) FROM links_prematch.links_base WHERE registration_maintype = 2 AND (id_source = " + s1_source + " OR id_source = " + s2_source + ") AND ego_role = (SELECT s2_role_ego FROM links_match.match_view LIMIT 0,1)) - (SELECT COUNT( DISTINCT( s2_id_linksbase) ) FROM links_match.match_view)";
-        hm.put( key, value );
-
-
-
-    } // fillHMap
-
-
-    /**
-     * 
-     * @param path 
-     */
-    private static void readFile( String path )
-    {
-        try {
-            plog.show( " ");
-            plog.show( String.format( "readFile(): %s", path ) );
-        }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-
-        // Read queryfile
-        String queryFile = General.fileToString( path );
-
-        String[] queryFileArray = queryFile.split( ";" );
-
-        int nquery = 0;
-        int nfile  = 0;
-        for( String s : queryFileArray ) {
-            s = s.trim();
-            if( !s.isEmpty() ) {
-                if( s.startsWith( "query" ) ) {
-                    nquery++;
-                    try { plog.show( String.format( "query %d: |%s|", nquery, s ) ); }
-                    catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-                }
-                else if( s.startsWith( "file" ) ) {
-                    nfile++;
-                    try { plog.show( String.format( "file %d: |%s|", nfile, s ) ); }
-                    catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-                }
-
-                addLine( s );
-            }
-        }
-    }
-
-
-    /**
-     * 
-     * @param line 
-     */
-    private static void addLine( String line )
-    {
-        //try { plog.show( String.format( "line: %s", line ) ); }
-        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-
-        // Split first
-        String[] splitted = line.split( "::" );
-
-        if( splitted.length != 2 ) {
-            try { plog.show( String.format( "splitted length: %d", splitted.length ) ); }
-            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-        }
-
-        // Contains file
-        if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "file" ) ) {
-            readFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
-        }
-
-        if( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ).equals( "loop" ) ) {
-            // do something
-            readFile( splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
-            
-            // add something to this text
-            
-            // use 
-        }
-        else {
-            //hm.put( splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ), splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" ) );
-            String key   = splitted[ 0 ].replaceAll( "\r", "" ).replaceAll( "\n", "" );
-            String value = splitted[ 1 ].replaceAll( "\r", "" ).replaceAll( "\n", "" );
-
-            hm.put( key, value );
-        }
-    }
 }
