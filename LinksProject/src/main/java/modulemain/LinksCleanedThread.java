@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-21-Nov-2014 Latest change
+ * FL-12-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -722,52 +722,42 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
+        showMessage_nl();
+
         // Delete cleaned data for given source
-        String deletePerson = "DELETE FROM person_c WHERE id_source = " + source;
         String deleteRegist = "DELETE FROM registration_c WHERE id_source = " + source;
+        String deletePerson = "DELETE FROM person_c WHERE id_source = " + source;
 
         showMessage( "Deleting previous data for source: " + source, false, true );
         if( debug ) {
-            showMessage( deletePerson, false, true );
             showMessage( deleteRegist, false, true );
+            showMessage( deletePerson, false, true );
         }
-        dbconCleaned.runQuery( deletePerson );
         dbconCleaned.runQuery( deleteRegist );
+        dbconCleaned.runQuery( deletePerson );
 
 
         // if links_cleaned is now empty, we reset the AUTO_INCREMENT
         // that eases comparison with links_a2a tables
-        String qPersonCCount = "SELECT COUNT(*) FROM person_c";
         String qRegistCCount = "SELECT COUNT(*) FROM registration_c";
-        ResultSet rsP = dbconCleaned.runQueryWithResult( qPersonCCount );
+        String qPersonCCount = "SELECT COUNT(*) FROM person_c";
         ResultSet rsR = dbconCleaned.runQueryWithResult( qRegistCCount );
-        rsP.first();
-        int personCCount = rsP.getInt( "COUNT(*)" );
+        ResultSet rsP = dbconCleaned.runQueryWithResult( qPersonCCount );
         rsR.first();
         int registCCount = rsR.getInt( "COUNT(*)" );
+        rsP.first();
+        int personCCount = rsP.getInt( "COUNT(*)" );
 
-        if( personCCount == 0 && registCCount == 0) {
+        if( registCCount == 0 && personCCount == 0 ) {
             showMessage( "Resetting AUTO_INCREMENTs for links_cleaned", false, true );
-            String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
             String auincRegist = "ALTER TABLE registration_c AUTO_INCREMENT = 1";
-            dbconCleaned.runQuery( auincPerson );
+            String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
             dbconCleaned.runQuery( auincRegist );
+            dbconCleaned.runQuery( auincPerson );
         }
 
 
-        // Copy selected columns links_original data to links_cleaned
-        // Create queries
-        String keysPerson = ""
-            + "INSERT INTO links_cleaned.person_c"
-            +      " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
-            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
-            + " FROM links_original.person_o"
-            + " WHERE person_o.id_source = " + source;
-
-        showMessage( "Copying links_original person keys to links_cleaned", false, true );
-        if( debug ) { showMessage( keysPerson, false, true ); }
-        dbconCleaned.runQuery( keysPerson );
-
+        // Copy key column data from links_original to links_cleaned
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c"
             +      " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
@@ -779,8 +769,19 @@ public class LinksCleanedThread extends Thread
         if( debug ) { showMessage( keysRegistration, false, true ); }
         dbconCleaned.runQuery( keysRegistration );
 
+        String keysPerson = ""
+            + "INSERT INTO links_cleaned.person_c"
+            +      " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
+            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
+            + " FROM links_original.person_o"
+            + " WHERE person_o.id_source = " + source;
+
+        showMessage( "Copying links_original person keys to links_cleaned", false, true );
+        if( debug ) { showMessage( keysPerson, false, true ); }
+        dbconCleaned.runQuery( keysPerson );
+
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
+
     } // doRenewData
 
 
