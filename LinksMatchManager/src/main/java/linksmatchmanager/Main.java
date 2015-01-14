@@ -29,12 +29,14 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-15-Dec-2014 Latest change
+ * FL-14-Jan-2015 Latest change
  */
 
 public class Main
 {
     // Global vars
+    private static boolean debug = false;
+
     private static QueryLoader ql;
     private static PrintLogger plog;
     private static Connection conPrematch;
@@ -142,7 +144,7 @@ public class Main
                 VariantLoader vl = new VariantLoader( url, user, pass );
 
 
-                plog.show( String.format( "matching record: %d-of-%d\n", i+1, misSize ) );
+                plog.show( String.format( "\nmatching record: %d-of-%d\n", i+1, misSize ) );
 
                 int method = mis.is.get( i ).get( 0 ).method;
                 if( method == 1 )
@@ -200,9 +202,9 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
                     } else { // 0
-                        ma = new MatchAsync( pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );

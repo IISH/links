@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-12-Jan-2015 Latest change
+ * FL-13-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -224,7 +224,7 @@ public class LinksCleanedThread extends Thread
         */
 
         try {
-            long timeStart = System.currentTimeMillis();
+            long cleanStart = System.currentTimeMillis();
 
             //plog.show( "Links Match Manager 2.0" );
             plog.show( "LinksCleanedThread/run()" );
@@ -264,10 +264,15 @@ public class LinksCleanedThread extends Thread
 
             for( int sourceId : sourceList )
             {
+                long sourceStart = System.currentTimeMillis();
+
                 String source = Integer.toString( sourceId );
 
                 //CleaningThread ct = new CleaningThread( source );
                 //ct.start();
+
+                showMessage_nl();
+                showMessage( "Processing sourceId: " + source, false, true );
 
                 doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
 
@@ -298,7 +303,7 @@ public class LinksCleanedThread extends Thread
                 doPostTasks( false, opts.isDoPostTasks(), source );                                     // GUI cb: Post Tasks
 
                 String msg = "Cleaning sourceId " + sourceId + " is done";
-                elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
+                elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
                 System.out.println( msg );
             }
 
@@ -317,8 +322,9 @@ public class LinksCleanedThread extends Thread
                 doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
             }
 
-            //String msg = "Conversion from Original to Cleaned is done. ";
-            //showTimingMessage( msg, begintime );
+            String msg = "Cleaning is done";
+            elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
+            System.out.println( msg );
 
         }
         catch (Exception ex) {
@@ -721,8 +727,6 @@ public class LinksCleanedThread extends Thread
 
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
-
-        showMessage_nl();
 
         // Delete cleaned data for given source
         String deleteRegist = "DELETE FROM registration_c WHERE id_source = " + source;

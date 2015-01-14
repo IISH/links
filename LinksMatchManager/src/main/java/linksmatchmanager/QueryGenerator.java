@@ -26,7 +26,9 @@ import linksmatchmanager.DataSet.InputSet;
 
 /**
  * This Class generates queries that can be used to get sets to match
- * @author oaz
+ * @author Omar Azouguagh
+ * @author Fons Laan
+ *
  */
 public class QueryGenerator
 {
@@ -188,13 +190,12 @@ public class QueryGenerator
             boolean loop = true;
             int counter = 0;
 
-            boolean ounce = false;      // once?
 
-            // Do extra checks for empty end and startyears
+            // Do extra checks for empty end and start years
+            boolean once = false;
             if( s1_range == 0 ) {
                 s1_range = s1_endyear - s1_startyear;
-
-                ounce = true;
+                once = true;
             }
 
             // evt for/while loop
@@ -278,8 +279,8 @@ public class QueryGenerator
                 //}
 
                 // Ego s1 role
-                if (!s1_role_ego.isEmpty()) {
-
+                if( !s1_role_ego.isEmpty() )
+                {
                     // where string 
                     String s1_role_ego_where = "";
 
@@ -304,8 +305,8 @@ public class QueryGenerator
                 }
 
                 // Ego s2 role
-                if (!s2_role_ego.isEmpty()) {
-
+                if( !s2_role_ego.isEmpty() )
+                {
                     // where string 
                     String s2_role_ego_where = "";
 
@@ -330,25 +331,24 @@ public class QueryGenerator
                 }
 
                 // Main type
-                if (s1_maintype != 0) {
+                if( s1_maintype != 0) {
                     qs.query1 += "registration_maintype = " + s1_maintype + " AND ";
                 }
-                if (s2_maintype != 0) {
+                if( s2_maintype != 0 ) {
                     qs.query2 += "registration_maintype = " + s2_maintype + " AND ";
                 }
 
                 // Type
-                // Main type
-                if (!s1_type.isEmpty()) {
+                if( !s1_type.isEmpty() ) {
                     qs.query1 += "registration_type = '" + s1_type + "' AND ";
                 }
-                if (!s2_type.isEmpty()) {
+                if( !s2_type.isEmpty() ) {
                     qs.query2 += "registration_type = '" + s2_type + "' AND ";
                 }
 
                 // ID source
-                if ( !s1_source.isEmpty() && !s1_source.equals("0") ) {
-
+                if( !s1_source.isEmpty() && !s1_source.equals("0") )
+                {
                     // where string 
                     String s1_source_where = "";
 
@@ -370,8 +370,8 @@ public class QueryGenerator
                 }
 
                 // ID source
-                if ( !s2_source.isEmpty() && !s2_source.equals("0") ) {
-
+                if( !s2_source.isEmpty() && !s2_source.equals("0") )
+                {
                     // where string 
                     String s2_source_where = "";
 
@@ -395,7 +395,7 @@ public class QueryGenerator
                 }
 
                 // start years
-                if (s1_startyear != 0) {
+                if( s1_startyear != 0 ) {
                     qs.query1 += "registration_days >= " + daysSinceBegin(s1_startyear + (counter * s1_range), 1, 1) + " AND ";
                     qs.query2 += "registration_days >= " + daysSinceBegin(s2_startyear + (counter * s1_range), 1, 1) + " AND ";
                 }
@@ -404,31 +404,27 @@ public class QueryGenerator
                 int s1_days = 0;
                 int s2_days = 0;
 
-                if (s1_startyear != 0) {
-
-                    if (ounce) {
-                        s1_days = daysSinceBegin(s1_endyear, 12, 31);
+                if( s1_startyear != 0 )
+                {
+                    if( once ) {
+                        s1_days = daysSinceBegin( s1_endyear, 12, 31 );
                     } else {
-                        s1_days = daysSinceBegin(s1_startyear + ((counter + 1) * s1_range), 1, 1) - 1;
+                        s1_days = daysSinceBegin( s1_startyear + ( (counter + 1) * s1_range ), 1, 1 ) - 1;
                     }
 
-
-                    // Check
-                    if (s1_days >= daysSinceBegin(s1_endyear, 12, 31)) {
-
-                        s1_days = daysSinceBegin(s1_endyear, 12, 31);
+                    if( s1_days >= daysSinceBegin( s1_endyear, 12, 31 ) ) {
+                         s1_days = daysSinceBegin( s1_endyear, 12, 31 );
 
                         loop = false;
                     }
 
                     qs.query1 += "registration_days <= " + s1_days + " AND ";
 
-                    // S2
-                    if (s2_range > 0) {
-                        if (ounce) {
-                            s2_days = daysSinceBegin(s2_startyear + s2_range + s1_range, 1, 1);
+                    if( s2_range > 0 ) {
+                        if( once ) {
+                            s2_days = daysSinceBegin( s2_startyear + s2_range + s1_range, 1, 1 );
                         } else {
-                            s2_days = daysSinceBegin(s2_startyear + s2_range + (counter * s1_range), 1, 1);
+                            s2_days = daysSinceBegin( s2_startyear + s2_range + ( counter * s1_range ), 1, 1 );
                         }
 
                         qs.query2 += "registration_days <= " + s2_days + " AND ";
@@ -437,17 +433,12 @@ public class QueryGenerator
                 }
 
                 // clean
-                if (qs.query1.endsWith(" AND ")) {
-
+                if( qs.query1.endsWith( " AND " ) ) {
                     qs.query1 = qs.query1.substring(0, (qs.query1.length() - 4));
-
                 }
 
-                // clean
-                if (qs.query2.endsWith(" AND ")) {
-
+                if( qs.query2.endsWith( " AND " ) ) {
                     qs.query2 = qs.query2.substring(0, (qs.query2.length() - 4));
-
                 }
 
                 // Order
@@ -455,12 +446,10 @@ public class QueryGenerator
                 qs.query2 += "ORDER BY ego_familyname LIMIT 0,100000000";
 
                 // Add set to group
-                qgs.add(qs);
+                qgs.add( qs );
                 counter++;
                 
-                if(ounce){
-                    loop = false;
-                }
+                if( once ) { loop = false; }
             }
 
             // Add qgs to is

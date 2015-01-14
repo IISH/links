@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-09-Jan-2014 Latest change
+ * FL-14-Jan-2014 Latest change
  */
 public class ViewSummarizer
 {
@@ -192,6 +192,15 @@ public class ViewSummarizer
                  if( result.equals( "1" ) ) { display += " = Birth"; }
             else if( result.equals( "2" ) ) { display += " = Marriage"; }
             else if( result.equals( "3" ) ) { display += " = Death"; }
+        }
+
+        else if( varname.equals( "s1_type" ) || varname.equals( "s2_type" ) )
+        {
+            display = result;
+                 if( result.equals( "g" ) ) { display += " = geboorte"; }
+            else if( result.equals( "h" ) ) { display += " = huwelijk"; }
+            else if( result.equals( "s" ) ) { display += " = scheiding"; }
+            else if( result.equals( "o" ) ) { display += " = overlijden"; }
         }
 
         else if( varname.equals( "s1_role_ego" ) || varname.equals( "s2_role_ego" ) )

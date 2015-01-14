@@ -14,15 +14,18 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Fons Laan
  *
  * <p/>
- * FL-11-Dec-2014 Latest change
+ * FL-14-Dec-2014 Latest change
  */
 
 public class MatchAsync extends Thread
 {
+    boolean debug;
+
     ProcessManager pm;
 
     int i;
     int j;
+
     QueryLoader ql;
     PrintLogger plog;
 
@@ -42,6 +45,8 @@ public class MatchAsync extends Thread
 
     public MatchAsync
     (
+        boolean debug,
+
         ProcessManager pm,
 
         int i,
@@ -79,22 +84,31 @@ public class MatchAsync extends Thread
     }
 
 
-    public MatchAsync(
+    public MatchAsync
+    (
+        boolean debug,
+
         ProcessManager pm,
+
         int i,
         int j,
+
         QueryLoader ql,
-        PrintLogger log,
+        PrintLogger plog,
+
         QueryGroupSet qgs,
         QueryGenerator mis,
+
         Connection conPrematch,
         Connection conMatch,
+
         int[][] rootFirstName,
         int[][] rootFamilyName,
 
         boolean root
     )
     {
+        this.debug = debug;
         this.pm = pm;
         this.i = i;
         this.j = j;
@@ -144,12 +158,19 @@ public class MatchAsync extends Thread
             // Loop through set 1
             msg = String.format( "Thread id %d; Set 1 size: %d", threadId, ql.s1_id_base.size() );
             System.out.println( msg );
-            plog.show(msg);
+            plog.show( msg );
 
             int nmatch = 0;
 
+            int ibs = ql.s1_id_base.size();
             for( int k = 0; k < ql.s1_id_base.size(); k++ )
             {
+                if( debug ) {
+                    msg = String.format( "s1 %d-of-%d", k+1, ibs );
+                    System.out.println( msg );
+                    plog.show( msg );
+                }
+
                 ka = k;
                 ix = 0;
 
@@ -168,6 +189,10 @@ public class MatchAsync extends Thread
 
                     variantsToList( s1EgoFamName, potentialMatches );   // Load the potential variants
                 }
+
+                //msg = String.format( "Thread id %d; Potential matches: %d", threadId, potentialMatches.size() );
+                //System.out.println( msg );
+                //plog.show(msg);
 
                 // Copy the existing variantList to working copy
                 ArrayList<Integer> tempVarList = new ArrayList<Integer>();
@@ -211,6 +236,12 @@ public class MatchAsync extends Thread
                 // Visit only the id in variantList
                 for( int idIndex = 0; idIndex < tempVarList.size(); idIndex++ )
                 {
+                    if( debug ) {
+                        msg = String.format( "s2 %d/%d", idIndex+1, tempVarList.size() );
+                        System.out.println( msg );
+                        plog.show( msg );
+                    }
+
                     ix = idIndex;
 
                     if( k == 3 && ix == 0 ) { int g = 0; }
@@ -229,6 +260,7 @@ public class MatchAsync extends Thread
                     if( !qs.ignore_sex ) {
                         int s1s = ql.s1_sex.get( k );
                         int s2s = ql.s2_sex.get( index );
+
                         // Empty sex is denied
                         if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
                             tempVarList.set( idIndex, 0 );
@@ -332,6 +364,7 @@ public class MatchAsync extends Thread
                     }
                 }
 
+                int tvls = tempVarList.size();
                 for( int l = 0; l < tempVarList.size(); l++ )
                 {
                     if( tempVarList.get( l ) != 0 ) {
@@ -341,8 +374,11 @@ public class MatchAsync extends Thread
                         int id_s2 = ql.s2_id_base.get( tempVarList.get( l ) );
 
                         String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2 ) VALUES (" + mis.is.get(i).get(0).id + "," + id_s1 + "," + id_s2 + ")";
-                        //System.out.println( query );
-                        //plog.show(query);
+
+                        if( debug ) {
+                            System.out.println( query );
+                            plog.show( query );
+                        }
 
                         conMatch.createStatement().execute( query );
                         conMatch.createStatement().close();
