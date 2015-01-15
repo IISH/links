@@ -19,7 +19,8 @@ import general.PrintLogger;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-27-Nov-2014 Latest change
+ * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
+ * FL-15-Jan-2014 Latest change
  */
 public class Lv extends Thread
 {
@@ -134,7 +135,8 @@ public class Lv extends Thread
                 String name_1 = name.get(i);
                 String name_2 = "";
 
-                int begin = i+1;
+                //int begin = i+1;        // this prevents names being identical, i.e. Levenshtein value 0
+                int begin = i;          // we also want Levenshtein value 0
 
                 for( int j = begin; j < name.size() ; j++ )
                 {
@@ -181,9 +183,9 @@ public class Lv extends Thread
                         if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    ld = levenshtein( name_1, name_2 );           // levenshtein
+                    ld = levenshtein( name_1, name_2 );             // levenshtein value
 
-                    if( ld > 4 ) { continue; }                  // check distance
+                    if( ld > 4 ) { continue; }                      // too high, -> not in CSV
 
                     if( strict )
                     {

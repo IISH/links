@@ -596,6 +596,7 @@ public class LinksPrematch extends Thread
         // prematch.Lv is a separate thread, so timing should be done there internally
         showMessage( funcname + "...", false, true );
 
+        //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
         prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  outputLine, outputArea, plog );
         prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, outputLine, outputArea, plog );
         prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  outputLine, outputArea, plog );
