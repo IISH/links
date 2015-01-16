@@ -338,12 +338,12 @@ public class ViewSummarizer
             // do not add table row if both counts are zero
             if( ! ( s1_cnt.equals( "0" ) &&  s2_cnt.equals( "0" ) )  ) {
                 String trow = ""
-                    + "<tr>\n"
-                    + "    <td align=\"right\"><b>" + Integer.toString( nrow ) + "</b></td>\n"
-                    + "    <td>Registrations that matched " + times_str + " x</td>\n"
-                    + "    <td align=\"right\">" + s1_cnt + "</td>\n"
-                    + "    <td align=\"right\">" + s2_cnt + "</td>\n"
-                    + "/tr>\n";
+                    + "    <tr>\n"
+                    + "        <td align=\"right\"><b>" + Integer.toString( nrow ) + "</b></td>\n"
+                    + "        <td>Registrations that matched " + times_str + " x</td>\n"
+                    + "        <td align=\"right\">" + s1_cnt + "</td>\n"
+                    + "        <td align=\"right\">" + s2_cnt + "</td>\n"
+                    + "    </tr>\n";
 
                 trows += trow;
                 nrow++;
