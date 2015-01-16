@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-13-Jan-2015 Latest change
+ * FL-16-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -698,7 +698,10 @@ public class LinksCleanedThread extends Thread
             + " location , reg_type , date , sequence , reg_key , guid )"
             + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
             + " \"" + location + "\" ,"
-            + " '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + id_registration + "' , '" + guid + "' ) ; ";
+            + " '" + reg_type + "' , '" + date + "' ,"
+            + " \"" + sequence + "\" ,"
+            + " '" + id_registration + "' , '" + guid + "' ) ; ";
+
         if( debug ) { showMessage( insertQuery, false, true ); }
 
         dbconLog.runQuery( insertQuery );

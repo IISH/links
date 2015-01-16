@@ -274,7 +274,85 @@ public class ViewSummarizer
         System.out.println( display );
         replaceInTemplate( varname, display );
 
-        return "";
+        return display;
+    }
+
+
+     /**
+     * @param
+     */
+    private static void allcntsToTable( String s1_allcnts, String s2_allcnts )
+    {
+        System.out.println( "allcntsToTable()" );
+
+
+        String s1_counts[] = s1_allcnts.split( "," );
+        String s2_counts[] = s2_allcnts.split( "," );
+
+        System.out.printf( "%d counts: '%s'\n", s1_counts.length, s1_allcnts );
+        System.out.printf( "%d counts: '%s'\n", s2_counts.length, s2_allcnts );
+
+        int rows = 6;
+
+        String trows = "";
+        int ri = 6;
+
+        int nrow = 6;
+
+        for( int r = 0; r < rows; r++ )
+        {
+            String s1_cnt = "0";
+            String s2_cnt = "0";
+
+            int times = r + 1;
+            String times_str = Integer.toString( times );
+
+            for( int s = 0; s <  s1_counts.length; s++ )
+            {
+                String entry = s1_counts[ s ];
+                //System.out.println( "entry: " + entry );
+                String counts[] = entry.split( ":" );
+                String scnt = counts[ 0 ].replace( "x", "").trim();
+                //System.out.println( "scnt: " + scnt );
+                int i = Integer.parseInt( scnt );
+                if( i == times ) {
+                    s1_cnt = counts[ 1 ];
+                    break;
+                }
+            }
+
+            for( int s = 0; s <  s2_counts.length; s++ )
+            {
+                String entry = s2_counts[ s ];
+                //System.out.println( "entry: " + entry );
+                String counts[] = entry.split( ":" );
+                String scnt = counts[ 0 ].replace( "x", "").trim();
+                //System.out.println( "scnt: " + scnt );
+                int i = Integer.parseInt( scnt );
+                if( i == times ) {
+                    s2_cnt = counts[ 1 ];
+                    break;
+                }
+            }
+
+            // do not add table row if both counts are zero
+            if( ! ( s1_cnt.equals( "0" ) &&  s2_cnt.equals( "0" ) )  ) {
+                String trow = ""
+                    + "<tr>\n"
+                    + "    <td align=\"right\"><b>" + Integer.toString( nrow ) + "</b></td>\n"
+                    + "    <td>Registrations that matched " + times_str + " x</td>\n"
+                    + "    <td align=\"right\">" + s1_cnt + "</td>\n"
+                    + "    <td align=\"right\">" + s2_cnt + "</td>\n"
+                    + "/tr>\n";
+
+                trows += trow;
+                nrow++;
+            }
+
+            ri++;
+        }
+
+        replaceInTemplate( "trows", trows );
     }
 
 
@@ -481,6 +559,9 @@ public class ViewSummarizer
 
         query = "SELECT s2_cnt, COUNT(*) FROM ( SELECT id_linksbase_2, COUNT(*) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 ) AS t GROUP BY s2_cnt";
         s2_allcnts = collectQuery("s2_allcnts", query);
+
+
+        allcntsToTable( s1_allcnts, s2_allcnts );
     }
 
 }
