@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-14-Jan-2014 Latest change
+ * FL-19-Jan-2014 Latest change
  */
 public class ViewSummarizer
 {
@@ -292,12 +292,11 @@ public class ViewSummarizer
         System.out.printf( "%d counts: '%s'\n", s1_counts.length, s1_allcnts );
         System.out.printf( "%d counts: '%s'\n", s2_counts.length, s2_allcnts );
 
-        int rows = 6;
 
-        String trows = "";
-        int ri = 6;
 
-        int nrow = 6;
+        String trows = "";  // contents for template variable
+        int rows = 9;       // max num of rows for (variable) explicit matching occurrences
+        int nrow = 6;       // starting row for (variable) explicit matching occurrences
 
         for( int r = 0; r < rows; r++ )
         {
@@ -348,8 +347,6 @@ public class ViewSummarizer
                 trows += trow;
                 nrow++;
             }
-
-            ri++;
         }
 
         replaceInTemplate( "trows", trows );
