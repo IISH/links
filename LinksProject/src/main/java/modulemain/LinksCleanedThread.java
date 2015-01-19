@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-16-Jan-2015 Latest change
+ * FL-19-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -998,7 +998,7 @@ public class LinksCleanedThread extends Thread
 
         // Familynames to lowercase
         start = System.currentTimeMillis();
-        msg = "Converting familynnames to lowercase";
+        msg = "Converting familynames to lowercase";
         showMessage( msg + "...", false, true );
         String qLower = "UPDATE links_cleaned.person_c SET familyname = LOWER( familyname );";
         dbconCleaned.runQuery( qLower );
