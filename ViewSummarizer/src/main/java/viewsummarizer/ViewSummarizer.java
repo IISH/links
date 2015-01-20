@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-19-Jan-2014 Latest change
+ * FL-20-Jan-2014 Latest change
  */
 public class ViewSummarizer
 {
@@ -233,6 +233,16 @@ public class ViewSummarizer
                 else if( r.equals( "11" ) ) { display += "Partner"; }
             }
             if( display.isEmpty() ) { display = result; }
+        }
+
+        else if( varname.equals( "firstname" ) )
+        {
+            display = result;
+                 if( result.equals( "1" ) ) { display += " = firstnames 1 + 2 + 3 + 4"; }
+            else if( result.equals( "2" ) ) { display += " = firstname 1"; }
+            else if( result.equals( "3" ) ) { display += " = firstnames 1 + 2"; }
+            else if( result.equals( "4" ) ) { display += " = firstnames 1 + 2 + 3"; }
+            else if( result.equals( "5" ) ) { display += " = firstnames 1 + (2 or 3 or 4)"; }
         }
 
         else { display = result; }
