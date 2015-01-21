@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-19-Jan-2015 Latest change
+ * FL-21-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -243,7 +243,19 @@ public class LinksCleanedThread extends Thread
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
             sourceList  = createSourceList( sourceIdGui, sourceListAvail );
 
-            if( sourceIdGui == 0 ) {
+            // special syntax: if the sourceIdGui is a negative number, we take those ids from sourceListAvail
+            // that are equal or greater than its absolute value
+            if( sourceIdGui < 0 )
+            {
+                int startId = Math.abs( sourceIdGui );
+                String s = "LinksCleanedThread: Using source Ids: ";
+                for( int i : sourceListAvail ) {
+                    if( i >= startId ) { s = s + i + " "; }
+                }
+                showMessage( s, false, true );
+            }
+            else if( sourceIdGui == 0 ) // nothing -> take all available sourceIds
+            {
                 String s = "LinksCleanedThread: Available source Ids: ";
                 for( int i : sourceListAvail ) { s = s + i + " "; }
                 showMessage( s, false, true );
