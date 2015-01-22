@@ -238,11 +238,11 @@ public class ViewSummarizer
         else if( varname.equals( "firstname" ) )
         {
             display = result;
-                 if( result.equals( "1" ) ) { display += " = firstnames 1 + 2 + 3 + 4"; }
-            else if( result.equals( "2" ) ) { display += " = firstname 1"; }
-            else if( result.equals( "3" ) ) { display += " = firstnames 1 + 2"; }
-            else if( result.equals( "4" ) ) { display += " = firstnames 1 + 2 + 3"; }
-            else if( result.equals( "5" ) ) { display += " = firstnames 1 + (2 or 3 or 4)"; }
+                 if( result.equals( "1" ) ) { display += " = firstnames_1_2_3_4"; }
+            else if( result.equals( "2" ) ) { display += " = firstname_1"; }
+            else if( result.equals( "3" ) ) { display += " = firstnames_1_2"; }
+            else if( result.equals( "4" ) ) { display += " = firstnames_1_2_3"; }
+            else if( result.equals( "5" ) ) { display += " = firstnames_1_(2-or-3-or-4)"; }
         }
 
         else { display = result; }
