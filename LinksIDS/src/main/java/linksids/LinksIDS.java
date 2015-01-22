@@ -1,16 +1,22 @@
 package linksids;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Properties;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+
 
 /**
  * @author Cor Munnik
@@ -18,94 +24,162 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-21-Jan-2015 Latest change
- *
- * TODO check all occurrences of TODO
+ * FL-22-Jan-2015 Latest change
  */
 public class LinksIDS
 {
-
-    /**
-     * @param args
-     */
+    public static String url_links_general  = null;
+    public static String url_links_prematch = null;
+    public static String url_links_match    = null;
+    public static String url_links_ids      = null;
 
     private static Connection connection = null;
     private static Statement statement = null;
     private static PreparedStatement preparedStatement = null;
     private static ResultSet resultSet = null;
-    //private static LinkedBlockingQueue<String>                   qe = new LinkedBlockingQueue<String>(1024);
-    private static LinkedBlockingQueue<ArrayList<Person>>                   qe = new LinkedBlockingQueue<ArrayList<Person>>(1024);
-    private static LinkedBlockingQueue<ArrayList<String>>                   qe2 = new LinkedBlockingQueue<ArrayList<String>>(1024);
+    //private static LinkedBlockingQueue< String >             qe = new LinkedBlockingQueue<String>(1024);
+    private static LinkedBlockingQueue< ArrayList< Person > >  qe = new LinkedBlockingQueue<ArrayList<Person>>(1024);
+    private static LinkedBlockingQueue< ArrayList< String > >  qe2 = new LinkedBlockingQueue<ArrayList<String>>(1024);
     private static String insertStatement             = "";
     private static ArrayList<Thread> threads          = new ArrayList<Thread>();
     private static int numberOfThreads                = 12;
     private static Integer personsWritten             = 0;
+
     public static int phase                           = 0;
-    
     
     static class Pair {
         int x;
         int y;
     }
     
-    static HashMap<Pair, Integer>                      relations = null;
-    static HashMap<Integer, Integer>                   locations = null;
-    static HashMap<Integer, Integer>                   locNo2Id_C = new HashMap<Integer, Integer>();
+    static HashMap< Pair,    Integer > relations = null;
+    static HashMap< Integer, Integer > locations = null;
+    static HashMap< Integer, Integer > locNo2Id_C = new HashMap<Integer, Integer>();
     
-    private static String sp01                         = "%s";                
-    private static String sp02                         = sp01 + sp01;             
-    private static String sp03                         = sp02 + sp02;             
-    private static String sp04                         = sp03 + sp03;             
-    private static String sp05                         = sp04 + sp04;             
-    private static String sp06                         = sp05 + sp05;             
-    private static String sp07                         = sp06 + sp06;             
-    private static String sp08                         = sp07 + sp07;             
-    private static String sp09                         = sp08 + sp08;             
-    private static String sp10                         = sp09 + sp09;  
-    private static String sp11                         = sp10 + sp10;  
-    private static String sp12                         = sp11 + sp11; // 2048  
-    private static String sp13                         = sp12 + sp12; // 4096  
-    private static String sp14                         = sp13 + sp13; // 8192  
-    private static String sp15                         = sp14 + sp14; //16384
+    private static String sp01 = "%s";
+    private static String sp02 = sp01 + sp01;
+    private static String sp03 = sp02 + sp02;
+    private static String sp04 = sp03 + sp03;
+    private static String sp05 = sp04 + sp04;
+    private static String sp06 = sp05 + sp05;
+    private static String sp07 = sp06 + sp06;
+    private static String sp08 = sp07 + sp07;
+    private static String sp09 = sp08 + sp08;
+    private static String sp10 = sp09 + sp09;
+    private static String sp11 = sp10 + sp10;
+    private static String sp12 = sp11 + sp11; // 2048
+    private static String sp13 = sp12 + sp12; // 4096
+    private static String sp14 = sp13 + sp13; // 8192
+    private static String sp15 = sp14 + sp14; //16384
 
-    private static ArrayList<String>  iList = new ArrayList<String>(); 
-    private static ArrayList<String> iiList = new ArrayList<String>(); 
-    private static ArrayList<String>  cList = new ArrayList<String>(); 
-    private static ArrayList<String> ccList = new ArrayList<String>(); 
-    private static ArrayList<String> icList = new ArrayList<String>(); 
-
-
+    private static ArrayList< String >  iList = new ArrayList<String>();
+    private static ArrayList< String > iiList = new ArrayList<String>();
+    private static ArrayList< String >  cList = new ArrayList<String>();
+    private static ArrayList< String > ccList = new ArrayList<String>();
+    private static ArrayList< String > icList = new ArrayList<String>();
 
 
-    
-    public static void main(String[] args) {
+    public static Properties getProperties()
+    {
+        Properties properties = new Properties();
+        InputStream input = null;
+
+        String propertiesPath = System.getProperty( "properties.path" );
+        if( propertiesPath == null ) {
+            System.out.println( "No properties file." );
+            return properties;
+        }
+        else { System.out.println( "properties path: " + propertiesPath ); }
+
+        try
+        {
+            System.out.println( "gettings properties.path" );
+
+            input = new FileInputStream(propertiesPath);
+
+            if( input == null ) {
+                System.out.println( "Cannot read: " + propertiesPath + "." );
+                return properties;
+            }
+            System.out.println( "properties file: " + propertiesPath );
+
+            properties.load( input );
+
+        }
+        catch( IOException ex ) { ex.printStackTrace(); }
+        finally
+        {
+            if( input != null ) {
+                try { input.close(); }
+                catch( IOException ex ) { ex.printStackTrace(); }
+            }
+        }
+
+        return properties;
+    }
+
+
+    public static void loadProperties( Properties properties )
+    {
+        String ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
+        String ref_user = properties.getProperty( "mysql_hsnref_username" );
+        String ref_pass = properties.getProperty( "mysql_hsnref_password" );
+        String ref_db   = properties.getProperty( "mysql_hsnref_dbname" );
+
+        System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
+        System.out.println( "mysql_hsnref_username:\t" + ref_user );
+        System.out.println( "mysql_hsnref_password:\t" + ref_pass );
+        System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
+
+        url_links_general = "//" + ref_url + "/" + ref_db + "?user=" + ref_user + "&password=" + ref_pass;
+        System.out.println( url_links_general );
+
+        String url  = properties.getProperty( "mysql_links_hosturl" );
+        String user = properties.getProperty( "mysql_links_username" );
+        String pass = properties.getProperty( "mysql_links_password" );
+
+        System.out.println( "mysql_links_hosturl:\t"  + url );
+        System.out.println( "mysql_links_username:\t" + user );
+        System.out.println( "mysql_links_password:\t" + pass );
+
+        url_links_prematch = "//" + url + "/" + "links_prematch" + "?user=" + user + "&password=" + pass;
+        url_links_match    = "//" + url + "/" + "links_match" + "?user=" + user + "&password=" + pass;
+        url_links_ids      = "//" + url + "/" + "links_ids" + "?user=" + user + "&password=" + pass;
+
+        System.out.println( url_links_prematch );
+        System.out.println( url_links_match );
+        System.out.println( url_links_ids );
+    }
+
+
+    public static void main( String[] args )
+    {
+        boolean debug = false;
 
         int c = 0;
         int pageSize = 1000 * 1000;
-        
-        try{
-               
-            System.out.println("Started");
 
-            connection = Utils.connect(Constants.links_ids);
+        Properties properties = getProperties();    // read properties file
+        loadProperties( properties );               // get individual properties
+
+        try
+        {
+            System.out.println( "main() Started" );
+
+            connection = Utils.connect( url_links_ids );
             
             // enable backslash escape
-            
-            Utils.executeQ(connection, "SET SESSION sql_mode=''");
-            
-            
+            Utils.executeQ( connection, "SET SESSION sql_mode=''" );
+            Utils.createIDSTables( connection );
 
-            Utils.createIDSTables(connection);
-            populateContext();
+            populateContext( debug );
             
-            //System.exit(0);
+            Contxt2.initializeContext( connection );
             
-            Contxt2.initializeContext(connection);
-            
-            Statement s = (Statement) connection.createStatement ();
+            Statement s = ( Statement ) connection.createStatement();
 
 
-            PersonNumber.personNumber();        
+            PersonNumber.personNumber( debug, url_links_match, url_links_ids );
             //if(1==1) System.exit(8);
 
             int previousPersonNumber = -1;
@@ -117,12 +191,11 @@ public class LinksIDS
             //String q = "SELECT * FROM links_match.personNumbers as N, links_cleaned.person_c as P where N.id_person = P.id_person order by person_number";
 
             // SELECT * from links_match.personNumbers as N,  links_cleaned.person_c as P, links_cleaned.registration_c as R where N.id_person = P.id_person and P.id_registration =  R.id_registration and (person_number > 0 and   person_number <=  100000) order by person_number
-
             
             
-            System.out.println("Processing Perons");
-            outer: for(int a = 0; a < 100*1000*1000; a += pageSize){
-                
+            System.out.println( "Processing Persons" );
+            outer: for( int a = 0; a < 100*1000*1000; a += pageSize )
+            {
                 //if(1==1) break;
                 //if(1==1)continue;
 
@@ -167,18 +240,19 @@ public class LinksIDS
                         " R.registration_seq, " +
                         " R.registration_location_no" +
                         " FROM" +
-                        " links_ids.personNumbers       as N,  " +
-                        " links_cleaned.person_c_2014_05_07        as P, " +
-                        " links_cleaned.registration_c_2014_05_07  as R " +
+                        " links_ids.personNumbers as N,  " +
+                        " links_cleaned.person_c as P, " +
+                        " links_cleaned.registration_c as R " +
                         " WHERE " +
                         " N.id_person = P.id_person and" +
                         " P.id_registration =  R.id_registration and " +
-                        " R.id_source !=  10 and " +    // 10 = HSNRP0002, the 'anchor'
+                        " R.id_source !=  10 and " +                        // 10 = HSNRP0002, the 'anchor'
                         " N.person_number >   " + a + " and " +    
                         " N.person_number <=  " + (a + pageSize)  +  
                         " ORDER BY N.person_number, R.registration_maintype";
 
-                System.out.println("Scanning person_number range [" + a + ", " + (a + pageSize - 1) + "]");
+                if( debug ) { System.out.println( "Scanning person_number range [" + a + ", " + (a + pageSize - 1) + "]" ); }
+
                 s.executeQuery(q);
                 resultSet = s.getResultSet ();
                 
@@ -195,23 +269,22 @@ public class LinksIDS
                 }
                 
                 int Id_C = 0;
-                while (resultSet.next()){            
+                while( resultSet.next() )
+                {
                     //System.out.println("In loop");
                     c++;
                     //System.out.println("c = " + c);
-                    if(resultSet.getInt("person_number") != previousPersonNumber){
-                        
-                        if(persons.size()  != 0){
-                            
-                            if(c % 10000 == 0)
-                                System.out.println("---> processed " + c + " person appearances");
+                    if( resultSet.getInt( "person_number" ) != previousPersonNumber )
+                    {
+                        if( persons.size() != 0 )
+                        {
+                            if( debug && c % 10000 == 0 ) { System.out.println("---> processed " + c + " person appearances"); }
 
                             //if(c > 1000 * 1000){                                
                                 //System.exit(8);
                             //}
                                 
-                            writeIndividual(h, persons);    
-                            
+                            writeIndividual(h, persons);
                         }
 
                         persons.clear();                
@@ -230,14 +303,13 @@ public class LinksIDS
                     writeIndividual(h, persons);    
                     persons.clear();
                 }
-                System.out.println("---> processed " + c + " person appearances");
 
+                if( debug ) { System.out.println("---> processed " + c + " person appearances"); }
             }
 
             //if(1==1) System.exit(0);
             //s.close ();
-            //Utils.closeConnection(connection);    
-            
+            //Utils.closeConnection(connection);
         }
 
 
@@ -263,32 +335,35 @@ public class LinksIDS
         ArrayList<String>  stillborns    = new ArrayList<String>();
         
         c = 0;
-        System.out.println("Processing Registrations");
+        System.out.println( "Processing Registrations" );
 
-        for(int a = 0; a < 100*1000*1000; a += pageSize){
-            
-
-            try{
-                String q = "SELECT " +
+        for( int a = 0; a < 100*1000*1000; a += pageSize )
+        {
+            try
+            {
+                String q = "SELECT" +
                         " R.*," +
                         " N.person_number," +
-                        " P.role, " +
-                        " P.stillbirth, " +
-                        " P.living_location " +
-                        " FROM " +
-                        " links_ids.personNumbers        as N," +
-                        " links_cleaned.person_c_2014_05_07         as P, " +
-                        " links_cleaned.registration_c_2014_05_07   as R  " +
+                        " P.role," +
+                        " P.stillbirth," +
+                        " P.living_location" +
+                        " FROM" +
+                        " links_ids.personNumbers AS N," +
+                        " links_cleaned.person_c AS P," +
+                        " links_cleaned.registration_c AS R" +
                         " WHERE" +
-                        " R.id_source !=  10  and " +    // 10 = HSNRP0002, the 'anchor'
-                        " R.id_registration       = P.id_registration and " +
-                        " P.id_person             = N.id_person and " +
-                        "     (R.id_registration >  " +  a + " and " +    
-                        "      R.id_registration <= " + (a + pageSize)  + ")" + 
-                        " order by R.id_registration";
+                        " R.id_source != 10 AND" +                      // 10 = HSNRP0002, the 'anchor'
+                        " R.id_registration = P.id_registration AND" +
+                        " P.id_person = N.id_person AND" +
+                        " (R.id_registration > " +  a + " AND" +
+                        " R.id_registration <= " + (a + pageSize)  + ")" +
+                        " ORDER BY R.id_registration";
 
-                System.out.println(q);
-                System.out.println("Scanning id_registration range [" + a + ", " + (a + pageSize - 1) + "]");
+                if( debug ) {
+                    System.out.println( q );
+                    System.out.println( "Scanning id_registration range [" + a + ", " + (a + pageSize - 1) + "]" );
+                }
+
                 Statement s = (Statement) connection.createStatement ();
                 s.executeQuery(q);
                 resultSet = s.getResultSet ();
@@ -323,40 +398,36 @@ public class LinksIDS
 
                 String [] certType = {"", "B", "M", "D"};
                 String regType = null;
-                        
-                
-                
+
                 int previousRegistrationNumber = -1;
 
                 // Columns of registration_c
-
-                int id_registration             = 0;
-                int id_source                     = 0;
-                int id_persist_source             = 0;
-                int id_persist_registration     = 0;
-                int id_orig_registration         = 0;
-                int registration_maintype         = 0;
-                String registration_type         = null;
-                String extract                     = null;
-                int registration_location_no     = 0;
-                int registration_spec             = 0;
-                String registration_church         = null;
-                int registration_day             = 0;
-                int registration_month             = 0;
-                int registration_year             = 0;
-                String registration_seq         = null;
-                String remarks                     = null;
-                int person_number                 = 0;
-                int role                        = 0;
-                String stillborn                   = null;
+                int id_registration            = 0;
+                int id_source                  = 0;
+                int id_persist_source          = 0;
+                String id_persist_registration = null;
+                int id_orig_registration       = 0;
+                int registration_maintype      = 0;
+                String registration_type       = null;
+                String extract                 = null;
+                int registration_location_no   = 0;
+                int registration_spec          = 0;
+                String registration_church     = null;
+                int registration_day           = 0;
+                int registration_month         = 0;
+                int registration_year          = 0;
+                String registration_seq        = null;
+                String remarks                 = null;
+                int person_number              = 0;
+                int role                       = 0;
+                String stillborn               = null;
 
                 int Id_C = 0;
 
-                while (resultSet.next()){
-
-                    if(resultSet.getInt("id_registration") != previousRegistrationNumber){
-
-
+                while( resultSet.next() )
+                {
+                    if( resultSet.getInt( "id_registration" ) != previousRegistrationNumber )
+                    {
                         if(personNumbers.size() > 0)
                             writeIndivIndiv(personNumbers, roles, stillborns, registration_day, registration_month, registration_year, registration_maintype);
 
@@ -381,7 +452,7 @@ public class LinksIDS
 
                         id_source                     =  resultSet.getInt("id_source");
                         id_persist_source             =  resultSet.getInt("id_persist_source");
-                        id_persist_registration     =  resultSet.getInt("id_persist_registration");
+                        id_persist_registration     =  resultSet.getString("id_persist_registration");
                         id_orig_registration         =  resultSet.getInt("id_orig_registration");
                         registration_maintype         =  resultSet.getInt("registration_maintype");
                         //registration_type             =  resultSet.getString("registration_type");
@@ -397,14 +468,10 @@ public class LinksIDS
                         person_number                  =  resultSet.getInt("person_number");
                         role                         =  resultSet.getInt("role");
                         stillborn                       =  resultSet.getString("stillbirth");
-
-
                         
                         personNumbers.clear();
                         roles.clear();
                         stillborns.clear();
-
-
                     }
 
                     if (Id_C != 0){
@@ -417,9 +484,10 @@ public class LinksIDS
                         
                         addIndivContext(connection, resultSet.getInt("person_number" ), Id_C,  regType, rol, "Event", "Exact", registration_day, registration_month, registration_year);
                     }
+
                     c++;
-                    if(c % 10000 == 0)
-                        System.out.println("---> processed " + c + " person appearances (2)");
+
+                    if( debug && c % 10000 == 0 ) { System.out.println("---> processed " + c + " person appearances (2)"); }
 
                     personNumbers.add(resultSet.getInt("person_number"));
                     roles.add(resultSet.getInt("role"));
@@ -432,7 +500,7 @@ public class LinksIDS
                     roles.clear();
                 }
                  
-                System.out.println("---> processed " + c + " person appearances");
+                if( debug ) { System.out.println("---> processed " + c + " person appearances"); }
 
             }
             catch (Exception e) {
@@ -443,13 +511,16 @@ public class LinksIDS
             }        
         }
         
-        flushIndivContext(connection);
-        flushIndivIndiv(connection);
-        Contxt2.saveContext(connection, cList, ccList);
-    }
+        flushIndivContext( connection );
+        flushIndivIndiv( connection );
+        Contxt2.saveContext( connection, cList, ccList );
 
-    private static void writeIndividual(HashMap<String, Integer> h, ArrayList<String []> persons){
+        System.out.println( "LinksIDS/main() ended." );
+    } // main
 
+
+    private static void writeIndividual( HashMap<String, Integer> h, ArrayList<String []> persons )
+    {
         //System.out.println("In write Individual");
         
         int birth_day       = 0;
@@ -493,8 +564,8 @@ public class LinksIDS
 
         String stillborn = null;
 
-        for(int i = 0; i < persons.size(); i++){
-
+        for( int i = 0; i < persons.size(); i++ )
+        {
             String columnName = "person_number";
             if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null) person_number = new Integer (persons.get(i)[h.get(columnName)]);
 
@@ -513,8 +584,8 @@ public class LinksIDS
             columnName = "registration_seq";
             if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null) registration_seq = new String (persons.get(i)[h.get(columnName)]);
             
-            if(birthDay == false){
-
+            if( birthDay == false )
+            {
                 columnName = "birth_day";
                 if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null) birth_day = new Integer (persons.get(i)[h.get(columnName)]);
 
@@ -551,12 +622,9 @@ public class LinksIDS
                 if(birth_year != 0 || birth_year_min != 0 || birth_year_max != 0){
                     addIndiv(connection, person_number, "" + registration_maintype, birthdate, null,  0, "Declared", "Exact", birth_day, birth_month, birth_year,
                             birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max);
-                                                        
-                    
+
                     birthDay = true;
                 }
-
-                
             }
             
             if(bl == false){
@@ -572,7 +640,6 @@ public class LinksIDS
 
                         bl = true;
                     }
-
                 }
             }
 
@@ -597,7 +664,6 @@ public class LinksIDS
                 if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0) {
                     addIndiv(connection, person_number, "" + registration_maintype, "PREFIX_LAST_NAME",   persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact", registration_day, registration_month, registration_year,0,0,0,0,0,0);
                     pf = true;
-
                 }
             }
             
@@ -644,8 +710,6 @@ public class LinksIDS
 
                     deathDay = true;
                 }
-                                
-
             }
             
             if(dl == false){
@@ -660,7 +724,6 @@ public class LinksIDS
 
                         dl = true;
                     }
-
                 }
             }
 
@@ -682,21 +745,14 @@ public class LinksIDS
                 Integer livingLocation = new Integer(persons.get(i)[h.get(columnName)]); 
                 Integer Id_C_l = locNo2Id_C.get(livingLocation);                        
                 addIndivContext(connection, person_number, Id_C_l,  "" + registration_maintype, "LIVING_LOCATION", "Event", "Exact", registration_day, registration_month, registration_year);
-                
-                
+
             }
-
-            
-
-            
         }
-        
     }
      
      
-    private static void add(ResultSet r, HashMap<String, Integer> h, ArrayList<String []> persons){
-
-        
+    private static void add( ResultSet r, HashMap<String, Integer> h, ArrayList<String []> persons )
+    {
         String [] row = new String[h.size() + 1];
         for(int i = 1; i <= h.size(); i++)
             try {
@@ -714,14 +770,14 @@ public class LinksIDS
             }
         persons.add(row);
     }
-    
-    public static void addIndiv(Connection connection, int Id_I, String source, String type, String value, int Id_C,
-            String dateType, String estimation, int day, int month, int year, int min_day, int min_month, int min_year,int max_day, int max_month, int max_year){
-        
+
+
+    public static void addIndiv( Connection connection, int Id_I, String source, String type, String value, int Id_C,
+            String dateType, String estimation, int day, int month, int year, int min_day, int min_month, int min_year,int max_day, int max_month, int max_year )
+    {
         String t = String.format("(\"%d\",\"%s\",\"%s\",\"%s\",\"%s\", \"%d\", \"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", source, type, value, Id_C, dateType, estimation, day, month, year, min_day, min_month, min_year, max_day, max_month,  max_year);
-        
-        
+
         iList.add(t);
         
          if(iList.size() > 10000)
@@ -740,27 +796,24 @@ public class LinksIDS
         iiList.add(t);
          if(iiList.size() > 10000)
              flushIndivIndiv(connection);
-
-        
     }
-    
-    public static void addIndivContext(Connection connection, int Id_I, int Id_C, String source, String relation, 
-            String dateType, String estimation, int day, int month, int year){
-        
+
+
+    public static void addIndivContext( Connection connection, int Id_I, int Id_C, String source, String relation,
+            String dateType, String estimation, int day, int month, int year )
+    {
         String t = String.format("(\"%d\",\"%s\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", Id_C, source, relation, dateType, estimation, day, month, year);
-        
-        
+
         icList.add(t);
         
          if(icList.size() > 10000)
              flushIndivContext(connection);
-        
     }
-    
-    public static void addContext(Connection connection, int Id_C, String type, String value){
-        
-        
+
+
+    public static void addContext( Connection connection, int Id_C, String type, String value )
+    {
         String t = String.format("(\"%d\",\"%s\",\"%s\", \"%s\"),",  
                                     Id_C, "LINKS", type, value);
         
@@ -772,10 +825,10 @@ public class LinksIDS
 
         
     }
-    
-    public static void addContextContext(Connection connection, int Id_C_1, int Id_C_2, String relation){
-        
-        
+
+
+    public static void addContextContext( Connection connection, int Id_C_1, int Id_C_2, String relation )
+    {
         String t = String.format("(\"%d\",\"%d\",\"%s\",\"%s\"),",  
                                     Id_C_1, Id_C_2, "LINKS", relation);
         
@@ -784,15 +837,11 @@ public class LinksIDS
         
          if(ccList.size() > 10000)
              flushContextContext(connection);
-
-        
     }
+
     
-    
-    
-    public static void flushIndiv(Connection connection){
-        
-        
+    public static void flushIndiv( Connection connection )
+    {
         if(iList.size() == 0)
             return;
         
@@ -811,9 +860,10 @@ public class LinksIDS
            Utils.executeQ(connection, u);
 
     }
-        
-    public static void flushIndivIndiv(Connection connection){
-        
+
+
+    public static void flushIndivIndiv( Connection connection )
+    {
         if(iiList.size() == 0)
             return;
         
@@ -826,8 +876,8 @@ public class LinksIDS
     }
     
     
-    public static void flushIndivContext(Connection connection){
-        
+    public static void flushIndivContext( Connection connection )
+    {
         if(icList.size() == 0)
             return;
         
@@ -839,9 +889,10 @@ public class LinksIDS
         //System.out.println(u.substring(0, 120));
            Utils.executeQ(connection, u);
     }
-    
-    public static void flushContext(Connection connection){
-        
+
+
+    public static void flushContext( Connection connection )
+    {
         if(cList.size() == 0)
             return;
         
@@ -854,8 +905,10 @@ public class LinksIDS
         //System.out.println(u.substring(0, 120));
            Utils.executeQ(connection, u);
     }
-    
-    public static void flushContextContext(Connection connection){
+
+
+    public static void flushContextContext( Connection connection )
+    {
         
         if(ccList.size() == 0)
             return;
@@ -872,9 +925,9 @@ public class LinksIDS
     
 
         
-    static void writeIndivIndiv(ArrayList<Integer> personNumbers, ArrayList<Integer> roles, ArrayList<String> stillborns,  
-            int registration_day, int registration_month, int registration_year, int source){
-        
+    static void writeIndivIndiv( ArrayList<Integer> personNumbers, ArrayList<Integer> roles, ArrayList<String> stillborns,
+            int registration_day, int registration_month, int registration_year, int source )
+    {
         // 1 Child 
         // 2 Mother
         // 3 Father
@@ -1052,7 +1105,8 @@ public class LinksIDS
         
         
     }
-    
+
+
     static void addIi(int personNumber1, int personNumber2, String relation, int source){
         
         if(personNumber1 == 0 || personNumber2 == 0) return;
@@ -1067,36 +1121,38 @@ public class LinksIDS
         }
         
     }
-    
-    static void populateContext(){
-    
+
+
+    static void populateContext( boolean debug )
+    {
+        System.out.println( "LinksIDS/populateContext()" );
+
         Connection connection_ref = null;
-        try{
+        try
+        {
             Statement s = (Statement) connection.createStatement ();
-            s.executeQuery("select count(*) as c from links_ids.context");
-            resultSet = s.getResultSet ();    
-            
-            
-            
+            s.executeQuery( "select count(*) as c from links_ids.context" );
+            resultSet = s.getResultSet();
+
             //System.exit(8);
             //if(1==1) return;
             int c = 0;
-            while(resultSet.next() == true){            
-                c = resultSet.getInt("c");
+            while( resultSet.next() == true ) {
+                c = resultSet.getInt( "c" );
                 break;
             }
             
             //if(c > 0) return;  // There are already entries in context, so it is not the first time, so we don't populate
             
             //System.out.println("Here");
-            Utils.executeQ(connection, "truncate links_ids.context"); // clear context_context
-            Utils.executeQ(connection, "truncate links_ids.context_context"); // clear context_context
+            Utils.executeQ( connection, "truncate links_ids.context" );             // clear context
+            Utils.executeQ( connection, "truncate links_ids.context_context" );     // clear context_context
             
-            connection_ref = Utils.connect(Constants.links_general);  // this is on the reference server
+            connection_ref = Utils.connect( url_links_general );  // this is on the reference server
             Statement t = (Statement) connection_ref.createStatement ();
             
-            t.executeQuery("select * from links_general.ref_location group by location_no order by " +
-                    "country, region, province,  municipality, location");
+            t.executeQuery( "select * from links_general.ref_location group by location_no order by " +
+                    "country, region, province,  municipality, location" );
             resultSet = t.getResultSet ();        
             
             /*
@@ -1121,8 +1177,7 @@ public class LinksIDS
                         ));
             }
             */
-            
-            
+
             String country      = "";
             String region       = "";
             String province     = "";
@@ -1138,10 +1193,11 @@ public class LinksIDS
             int Id_C = 0;
             String x = null;
             
-            while (resultSet.next()){
-                
-                if(resultSet.getString("country") != null && !resultSet.getString("country").equals(country) &&
-                        !resultSet.getString("country").equals("Onbekend")){
+            while( resultSet.next() )
+            {
+                if( resultSet.getString("country") != null && !resultSet.getString("country").equals(country) &&
+                        !resultSet.getString("country").equals("Onbekend") )
+                {
                     country = resultSet.getString("country");
                     addContext(connection, ++Id_C, "NAME", country);
                     addContext(connection,   Id_C, "LEVEL", "Country");
@@ -1251,11 +1307,10 @@ public class LinksIDS
                         Id_C_CurrentLocality = -1;
                     }
                 
-                locNo2Id_C.put((resultSet.getInt("location_no")), Id_C); // To find it back later
-                System.out.println("Location " + resultSet.getInt("location_no") + " has Id_C " + Id_C);
-                
-            }                
-            
+                locNo2Id_C.put( (resultSet.getInt("location_no") ), Id_C ); // To find it back later
+
+                if( debug ) { System.out.println( "Location " + resultSet.getInt("location_no") + " has Id_C " + Id_C ); }
+            }
         }
         catch (Exception e) {
             System.out.println("In catch");
@@ -1267,7 +1322,7 @@ public class LinksIDS
         flushContext(connection);
         flushContextContext(connection);
         Utils.closeConnection(connection_ref);    
-    }
+    } // populateContext
 
 }
 

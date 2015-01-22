@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-19-Jan-2015 Latest change
+ * FL-22-Jan-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2434,10 +2434,7 @@ public class ManagerGui extends javax.swing.JFrame
         }
 
 
-        int sourceId = 0;
-        if( !tbLOLCSourceId.getText().isEmpty()) {
-            sourceId = Integer.parseInt( tbLOLCSourceId.getText() );
-        }
+        String sourceIds = tbLOLCSourceId.getText();
 
         String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
         String db_user = tbLOLCuser.getText();     // from Tab Cleaned
@@ -2449,7 +2446,7 @@ public class ManagerGui extends javax.swing.JFrame
         String db_ref_db   = tbLOLCrefdb.getText();       // from Tab Cleaned
 
         opts.setLogger( plog );
-        opts.setSourceId( sourceId );
+        opts.setSourceIds( sourceIds );
 
         opts.setDb_ref_url(  db_ref_url );
         opts.setDb_ref_user( db_ref_user );
@@ -2632,7 +2629,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "21-Jan-2015 16:20";
+                String timestamp1 = "22-Jan-2015 16:50";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

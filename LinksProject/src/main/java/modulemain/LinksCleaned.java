@@ -21,12 +21,13 @@ import linksmanager.ManagerGui;
  * @author Fons Laan
  *
  * FL-24-Nov-2014 Created
+ * FL-22-Jan-2015
  */
 public class LinksCleaned extends Thread
 {
     private Options opts;
     private PrintLogger plog;
-    private int sourceIdGui;
+    private String sourceIdsGui;
     private int[] sourceList;                // available sources in db
 
     private String ref_url  = "";            // reference db access
@@ -65,7 +66,7 @@ public class LinksCleaned extends Thread
         this.opts = opts;
 
         this.plog = opts.getLogger();
-        this.sourceIdGui = opts.getSourceId();
+        this.sourceIdsGui = opts.getSourceIds();
 
         this.ref_url  = opts.getDb_ref_url();
         this.ref_user = opts.getDb_ref_user();
@@ -102,7 +103,7 @@ public class LinksCleaned extends Thread
             plog.show( "LinksCleaned/run()" );
             int ncores = Runtime.getRuntime().availableProcessors();
             plog.show( "Available cores: " + ncores );
-            plog.show( "source_id from GUI: " + sourceIdGui );
+            plog.show( "sourceIds from GUI: " + sourceIdsGui );
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -110,7 +111,7 @@ public class LinksCleaned extends Thread
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
-        sourceList = createSourceList( sourceIdGui, sourceListAvail );
+        sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
         String s = "LinksCleaned: Available source Ids: ";
         for( int i : sourceListAvail ) { s = s + i + " "; }
@@ -169,17 +170,23 @@ public class LinksCleaned extends Thread
 
 
     /**
-     * Read distinct source ids from links_original.registration_o
+     * Get source ids from GUI or links_original.registration_o
      * @return
      */
-    private int[] createSourceList( int sourceIdGui, int[] sourceListAvail )
+    private int[] createSourceList( String sourceIdsGui, int[] sourceListAvail )
     {
         int[] idsInt;
 
-        if( sourceIdGui == 0 ) { idsInt = sourceListAvail; }
-        else {
-            idsInt = new int[ 1 ];
-            idsInt[ 0 ] = sourceIdGui;
+        String idsStr[] = sourceIdsGui.split( " " );
+
+        if( idsStr.length == 0  )           // nothing from GUI
+        { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
+        else                                // use GUI supplied Ids
+        {
+            idsInt = new int[ idsStr.length ];
+            for( int i = 0; i < idsStr.length; i++ ) {
+            idsInt[ i ] = Integer.parseInt( idsStr[ i ] );
+            }
         }
 
         return idsInt;

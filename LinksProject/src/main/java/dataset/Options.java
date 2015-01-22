@@ -30,12 +30,13 @@ import general.PrintLogger;
  * FL-10-Oct-2014 Renamed DoSet -> Options
  * FL-14-Oct-2014 DB opts
  * FL-12-Nov-2014 dbg
+ * FL-22-Jan-2015 int sourceId -> String sourceIds
  */
 public class Options
 {
     PrintLogger plog;
 
-    private int sourceId;
+    private String sourceIds;
 
     // db options
     private String db_ref_url;
@@ -106,9 +107,9 @@ public class Options
     public PrintLogger getLogger() { return plog; }
 
 
-    public void setSourceId( int sourceId ) { this.sourceId = sourceId; }
+    public void setSourceIds( String sourceIds ) { this.sourceIds = sourceIds; }
 
-    public int getSourceId() { return sourceId; }
+    public String getSourceIds() { return sourceIds; }
 
 
     // db options

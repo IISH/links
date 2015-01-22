@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-21-Jan-2015 Latest change
+ * FL-22-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -98,7 +98,7 @@ public class LinksCleanedThread extends Thread
     private String user = "";
     private String pass = "";
 
-    private int sourceIdGui;
+    private String sourceIdsGui;
 
     private int[] sourceList;                   // either sourceListAvail, or [sourceId] from GUI
 
@@ -128,7 +128,7 @@ public class LinksCleanedThread extends Thread
         this.opts = opts;
 
         this.plog = opts.getLogger();
-        this.sourceIdGui = opts.getSourceId();
+        this.sourceIdsGui = opts.getSourceIds();
 
         this.ref_url  = opts.getDb_ref_url();
         this.ref_user = opts.getDb_ref_user();
@@ -241,25 +241,7 @@ public class LinksCleanedThread extends Thread
 
 
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
-            sourceList  = createSourceList( sourceIdGui, sourceListAvail );
-
-            // special syntax: if the sourceIdGui is a negative number, we take those ids from sourceListAvail
-            // that are equal or greater than its absolute value
-            if( sourceIdGui < 0 )
-            {
-                int startId = Math.abs( sourceIdGui );
-                String s = "LinksCleanedThread: Using source Ids: ";
-                for( int i : sourceListAvail ) {
-                    if( i >= startId ) { s = s + i + " "; }
-                }
-                showMessage( s, false, true );
-            }
-            else if( sourceIdGui == 0 ) // nothing -> take all available sourceIds
-            {
-                String s = "LinksCleanedThread: Available source Ids: ";
-                for( int i : sourceListAvail ) { s = s + i + " "; }
-                showMessage( s, false, true );
-            }
+            sourceList  = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
             if( sourceList.length == 1 ) { s = "Processing source: "; }
@@ -390,17 +372,23 @@ public class LinksCleanedThread extends Thread
 
 
     /**
-     * Read distinct source ids from links_original.registration_o
+     * Get source ids from GUI or links_original.registration_o
      * @return
      */
-    private int[] createSourceList( int sourceIdGui, int[] sourceListAvail )
+    private int[] createSourceList( String sourceIdsGui, int[] sourceListAvail )
     {
         int[] idsInt;
 
-        if( sourceIdGui == 0 ) { idsInt = sourceListAvail; }
-        else {
-            idsInt = new int[ 1 ];
-            idsInt[ 0 ] = sourceIdGui;
+        String idsStr[] = sourceIdsGui.split( " " );
+
+        if( idsStr.length == 0  )           // nothing from GUI
+        { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
+        else                                // use GUI supplied Ids
+        {
+            idsInt = new int[ idsStr.length ];
+            for( int i = 0; i < idsStr.length; i++ ) {
+            idsInt[ i ] = Integer.parseInt( idsStr[ i ] );
+            }
         }
 
         return idsInt;

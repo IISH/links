@@ -20,7 +20,11 @@ import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
 // SELECT * FROM links_match.personNumbers as X , links_cleaned.person_c as Y where X.id_person = Y.id_person order by person_number
-public class PersonNumber implements Runnable {
+
+
+public class PersonNumber implements Runnable
+{
+    private static String url_links_ids = null;
 
     //static HashMap<Integer, HashSet<Integer>>   personNumberToP_IDs     = new HashMap<Integer, HashSet<Integer>>();  
     //static HashMap<Integer, Integer>            personNumbers = new HashMap<Integer, Integer>();
@@ -53,11 +57,20 @@ public class PersonNumber implements Runnable {
     private static String sp14                         = sp13 + sp13; // 8192 
     private static String sp15                         = sp14 + sp14; // 16384 
     private static String sp16                         = sp15 + sp15; // 32768 
-    private static String sp17                         = sp16 + sp16; // 65536 
-    
+    private static String sp17                         = sp16 + sp16; // 65536
+
+
+    /**
+     * Constructor
+     */
+    public PersonNumber( String url_links_ids ) {
+        this.url_links_ids = url_links_ids;
+    }
+
+
     public void run()
     {
-        Connection connection = Utils.connect(Constants.links_ids);
+        Connection connection = Utils.connect( url_links_ids );
         String name = Thread.currentThread().getName();
         
         while(true){
@@ -84,30 +97,37 @@ public class PersonNumber implements Runnable {
                 System.out.println("Written " + personNumbersWritten + " person numbers");
             }
         }
-    }    
+    } // run
 
-    public static void personNumber(){
+
+    public static void personNumber( boolean debug, String url_links_match, String url_links_ids )
+    {
+        System.out.println( "PersonNumber/personNumber()" );
+        System.out.println( "numberOfThreads: " + numberOfThreads );
+
+        Connection connection = Utils.connect( url_links_ids );
+        initDB( debug, connection );
         
-        System.out.println("Start");
-        
-        Connection connection = Utils.connect(Constants.links_ids);
-        initDB(connection);
-        
-        connection = Utils.connect(Constants.links_match);
+        connection = Utils.connect( url_links_match );
 
         System.out.println("Reading matches");
         
         int totalCount = 0;
         int effectiveCount = 0;
         int pageSize = 1 * 1000 * 1000;
-        for(int i = 0; i < 100 * 1000 * 1000; i += pageSize){
-            try {
+
+        for( int i = 0; i < 100 * 1000 * 1000; i += pageSize )
+        {
+            try
+            {
                 java.sql.Statement statement = connection.createStatement();
+
                 //String select = "select X.ego_id, X.mother_id, X.father_id, Y.ego_id, Y.mother_id, Y.father_id" +
                 //        " from links_match.matches, links_base.links_base as X,  links_base.links_base as Y " +
                 //        " where X.id_base = id_linksbase_1 and " +
-                //        "       Y.id_base = id_linksbase_2" + 
+                //        "       Y.id_base = id_linksbase_2" +
                 //        " limit " + i + ","  +  pageSize;
+
                 String select = "select X.ego_id, X.mother_id, X.father_id, Y.ego_id, Y.mother_id, Y.father_id" +
                         " from links_match.matches as M, links_prematch.links_base as X,  links_prematch.links_base as Y " +
                         " where X.id_base = id_linksbase_1 and " +
@@ -120,9 +140,8 @@ public class PersonNumber implements Runnable {
                 ResultSet r = statement.executeQuery(select);
                 int count = 0;
                 
-                
-                while (r.next()) {
-
+                while( r.next() )
+                {
                     int x = r.getInt("X.ego_id");
                     int y = r.getInt("Y.ego_id");
                     if(x != 0 && y != 0) 
@@ -145,7 +164,8 @@ public class PersonNumber implements Runnable {
                 }
 
                 totalCount += count;
-                System.out.println("Read " + totalCount + " matches");
+
+                if( debug ) { System.out.println("Read " + totalCount + " matches"); }
 
             } catch (SQLException e) {
 
@@ -155,8 +175,8 @@ public class PersonNumber implements Runnable {
             }
         }
         
-        System.out.println("Read " + totalCount + " matches");
-        System.out.println("" + effectiveCount + " person numbers changed");
+        System.out.println( "Read " + totalCount + " matches" );
+        System.out.println( "" + effectiveCount + " person numbers changed" );
         
         // write person numbers to table
         
@@ -164,12 +184,13 @@ public class PersonNumber implements Runnable {
         
         //Utils.executeQI(connection, "drop index nr on personNumbers");
         
-        ArrayList<Thread> a = new ArrayList<Thread>();
+        ArrayList< Thread > a = new ArrayList< Thread >();
         
-        for(int i = 0; i < numberOfThreads; i++){
-            Thread p = new Thread(new PersonNumber());
+        for( int i = 0; i < numberOfThreads; i++ )
+        {
+            Thread p = new Thread( new PersonNumber( url_links_ids ) );
             p.start();
-            a.add(p);
+            a.add( p );
         }
         
         int count = 0;
@@ -229,19 +250,18 @@ public class PersonNumber implements Runnable {
             System.exit(-1);
         }
 
-        System.out.println("Written " + count + " person numbers");
+        System.out.println( "Written " + count + " person numbers" );
 
-        Utils.executeQ(connection, "create index nr on links_ids.personNumbers(person_number)");
-        
+        Utils.executeQ( connection, "create index nr on links_ids.personNumbers(person_number)" );
+        Utils.closeConnection( connection );
+
+        System.out.println("PersonNumber/personNumber() Finished");
+    } // personNumber
 
 
-        Utils.closeConnection(connection);
-        System.out.println("\nFinished");
-    }
-    
-    private static void write(ArrayList<Integer> iL, Connection connection){
-        
-        //System.out.println("Write output table");    
+    private static void write( ArrayList<Integer> iL, Connection connection )
+    {
+        System.out.println( "PersonNumber/write()" );
         
         String insStmt = "insert into personNumbers values ";
         
@@ -266,14 +286,11 @@ public class PersonNumber implements Runnable {
         String insStmt2 = "insert into personNumbers values" + insStmt;
         //System.out.println(insStmt2);
         Utils.executeQ(connection, insStmt2);
-        
-        
-        
-    }
+    } // write
     
     
-    private static int add(int x, int y){
-        
+    private static int add( int x, int y )
+    {
         if(x >= max_id_person  || y >= max_id_person) return(0);
         if(x == 0      || y == 0 ) return(0);
 
@@ -317,18 +334,21 @@ public class PersonNumber implements Runnable {
         id_person[pny] = null;
 
         return(1); 
-    }
-    
-    private static void initDB(Connection connection){
-        
-        try {
+    } // add
 
+
+    private static void initDB( boolean debug, Connection connection )
+    {
+        System.out.println( "PersonNumber/initDB()" );
+
+        try
+        {
             // java.sql.Statement statement = connection.createStatement();
 
             // Next two statements only first time
             
-            createTable(connection);
-            initializePersonNumbers(connection);
+            createTable( connection );
+            initializePersonNumbers( connection );
             
             int highest_ID_Person = getHighestID_Person(connection);
             id_person = new HashSet[highest_ID_Person + 1]; 
@@ -341,18 +361,22 @@ public class PersonNumber implements Runnable {
             
             Utils.executeQI(connection, "create index nr on personNumbers(person_number)");
 
-            System.out.println("Reading person numbers");
+            System.out.println( "Reading person numbers" );
             
             int count = 0;
             int pageSize = 1 * 1000 * 1000;
-            for(int i = 0; i < max_id_person; i += pageSize){
-                String select = "select id_person, person_number from personNumbers where person_number > " + i + " and person_number <= " +  (i + pageSize) + " group by id_person order by person_number"; 
-                System.out.println(select);
+
+            for( int i = 0; i < max_id_person; i += pageSize )
+            {
+                String select = "select id_person, person_number from personNumbers where person_number > " + i + " and person_number <= " +  (i + pageSize) + " group by id_person order by person_number";
+
+                if( debug ) { System.out.println( select ); }
+
                 //ResultSet r = statement.executeQuery(select);
                 ResultSet r = connection.createStatement().executeQuery(select);
                 
-                while (r.next()) {
-                    
+                while( r.next() )
+                {
                     count++;
                     if(r.getInt("person_number") != prevPersonNumber){
                         if(h != null){
@@ -392,7 +416,7 @@ public class PersonNumber implements Runnable {
                 connection.createStatement().close();
             }
 
-            System.out.println("Read   " + count + " person numbers");
+            System.out.println("Read " + count + " person numbers");
             
             // Copy s to s_save and truncate s
 
@@ -409,9 +433,11 @@ public class PersonNumber implements Runnable {
             Utils.closeConnection(connection);
             System.exit(-1);
         }
-    }
+    } // initDB
 
-    private static void print(HashMap<Integer, HashSet<Integer>> hm){
+
+    private static void print( HashMap<Integer, HashSet<Integer>> hm )
+    {
         
         for (Entry<Integer, HashSet<Integer>> entry : hm.entrySet()) {
             Integer key = entry.getKey();
@@ -427,11 +453,13 @@ public class PersonNumber implements Runnable {
                 
             }
         }
-    }
-    
-    private static int getHighestID_Person(Connection connection){
-        
-        System.out.println("Identifying highest id_person");
+    } // print
+
+
+    private static int getHighestID_Person( Connection connection )
+    {
+        System.out.println( "PersonNumber/getHighestID_Person()" );
+
         ResultSet r = null;
         try {
             r = connection.createStatement().executeQuery("select max(id_person) as m FROM links_ids.personNumbers");
@@ -448,12 +476,13 @@ public class PersonNumber implements Runnable {
         }
         
         return -1;
-        
-    }
-    
-    private static void createTable(Connection connection){
-        try {
-            
+    } // getHighestID_Person
+
+
+    private static void createTable( Connection connection )
+    {
+        try
+        {
             java.sql.Statement statement = connection.createStatement();
 
             
@@ -468,18 +497,19 @@ public class PersonNumber implements Runnable {
 
             
             connection.commit();
-        }  catch (SQLException e) {
+        }
+        catch (SQLException e) {
                 e.printStackTrace();
                 Utils.closeConnection(connection);
                 System.exit(-1);
-            
         }
-        
-    }
-    
-    private static void initializePersonNumbers(Connection connection){
-        
-        Utils.executeQ(connection, "insert into links_ids.personNumbers (select id_person, id_person from links_cleaned.person_c_2014_05_07 where id_person <= " + max_id_person + ")");
+    } // createTable
 
-    }
+
+    private static void initializePersonNumbers( Connection connection )
+    {
+        Utils.executeQ(connection, "insert into links_ids.personNumbers (select id_person, id_person from links_cleaned.person_c where id_person <= " + max_id_person + ")");
+
+    } // initializePersonNumbers
+
 }

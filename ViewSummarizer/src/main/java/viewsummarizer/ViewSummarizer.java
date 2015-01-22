@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-20-Jan-2014 Latest change
+ * FL-22-Jan-2014 Latest change
  */
 public class ViewSummarizer
 {
@@ -110,8 +110,8 @@ public class ViewSummarizer
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         templateFile = General.fileToString( template );
 
-        // get variables from match_process table for the given id_proces
-        readMatchProcess( id_process );
+        // get variables from match_process table for the given id_process
+        if( ! readMatchProcess( id_process ) ) { return; }  // id not found in the process table
 
         // Write template to output
         try {
@@ -295,6 +295,10 @@ public class ViewSummarizer
     {
         System.out.println( "allcntsToTable()" );
 
+        if( s1_allcnts.isEmpty() && s2_allcnts.isEmpty() ) {
+            System.out.println( "No counts." );
+            return;
+        }
 
         String s1_counts[] = s1_allcnts.split( "," );
         String s2_counts[] = s2_allcnts.split( "," );
@@ -377,7 +381,7 @@ public class ViewSummarizer
     /**
      *
      */
-    private static void readMatchProcess( String id_process )
+    private static boolean readMatchProcess( String id_process )
     {
         String query = "";
 
@@ -386,7 +390,11 @@ public class ViewSummarizer
 
         query = "SELECT id FROM links_match.match_process WHERE id = " + id_process;
         id_match_process = executeQuery( "id_match_process", query );
-
+        if( id_match_process.isEmpty() ) {
+            System.out.println( "id_match_process not found in table links_match.match_process." );
+            System.out.printf( "No output html file was generated for id_match_process %s\n.", id_process );
+            return false;
+        }
 
         // s1 & s2 table values
         query = "SELECT s1_maintype FROM links_match.match_process WHERE id = " + id_process;
@@ -567,8 +575,9 @@ public class ViewSummarizer
         query = "SELECT s2_cnt, COUNT(*) FROM ( SELECT id_linksbase_2, COUNT(*) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 ) AS t GROUP BY s2_cnt";
         s2_allcnts = collectQuery("s2_allcnts", query);
 
-
         allcntsToTable( s1_allcnts, s2_allcnts );
+
+        return true;
     }
 
 }
