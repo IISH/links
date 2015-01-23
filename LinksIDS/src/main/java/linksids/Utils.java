@@ -14,7 +14,7 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-22-Jan-2015 Latest change
+ * FL-23-Jan-2015 Latest change
  */
 public class Utils 
 {
@@ -230,14 +230,12 @@ public class Utils
             s.execute(createStatement);
             createStatement = CreateIDSTables.CONTEXT_CONTEXT_TRUNCATE;
             s.execute(createStatement);
-            
-            
+
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             Utils.closeConnection(connection);
             e.printStackTrace();
         }
-
     }
 
 
@@ -343,7 +341,6 @@ public class Utils
             ;
         }
     }
-
 
     
     public static int getOld_id_C()

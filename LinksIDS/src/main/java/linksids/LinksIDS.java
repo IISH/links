@@ -24,7 +24,7 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-22-Jan-2015 Latest change
+ * FL-23-Jan-2015 Latest change
  */
 public class LinksIDS
 {
@@ -164,12 +164,12 @@ public class LinksIDS
 
         try
         {
-            System.out.println( "main() Started" );
+            System.out.println( "LinksIDS/main() Started" );
 
             connection = Utils.connect( url_links_ids );
-            
-            // enable backslash escape
-            Utils.executeQ( connection, "SET SESSION sql_mode=''" );
+
+            System.out.println( "LinksIDS/main: Creating or truncating IDS tables" );
+            Utils.executeQ( connection, "SET SESSION sql_mode=''" );            // enable backslash escape
             Utils.createIDSTables( connection );
 
             populateContext( debug );
@@ -193,7 +193,7 @@ public class LinksIDS
             // SELECT * from links_match.personNumbers as N,  links_cleaned.person_c as P, links_cleaned.registration_c as R where N.id_person = P.id_person and P.id_registration =  R.id_registration and (person_number > 0 and   person_number <=  100000) order by person_number
             
             
-            System.out.println( "Processing Persons" );
+            System.out.println( "LinksIDS/main: Processing Persons" );
             outer: for( int a = 0; a < 100*1000*1000; a += pageSize )
             {
                 //if(1==1) break;
@@ -311,8 +311,6 @@ public class LinksIDS
             //s.close ();
             //Utils.closeConnection(connection);
         }
-
-
         catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
@@ -335,7 +333,7 @@ public class LinksIDS
         ArrayList<String>  stillborns    = new ArrayList<String>();
         
         c = 0;
-        System.out.println( "Processing Registrations" );
+        System.out.println( "LinksIDS/main: Processing Registrations" );
 
         for( int a = 0; a < 100*1000*1000; a += pageSize )
         {
@@ -521,7 +519,7 @@ public class LinksIDS
 
     private static void writeIndividual( HashMap<String, Integer> h, ArrayList<String []> persons )
     {
-        //System.out.println("In write Individual");
+        //System.out.println( "writeIndividual()" );
         
         int birth_day       = 0;
         int birth_month     = 0;
@@ -748,11 +746,13 @@ public class LinksIDS
 
             }
         }
-    }
+    } // writeIndividual
      
      
     private static void add( ResultSet r, HashMap<String, Integer> h, ArrayList<String []> persons )
     {
+        //System.out.println( "add()" );
+
         String [] row = new String[h.size() + 1];
         for(int i = 1; i <= h.size(); i++)
             try {
@@ -769,12 +769,14 @@ public class LinksIDS
                 e.printStackTrace();
             }
         persons.add(row);
-    }
+    } // add
 
 
     public static void addIndiv( Connection connection, int Id_I, String source, String type, String value, int Id_C,
             String dateType, String estimation, int day, int month, int year, int min_day, int min_month, int min_year,int max_day, int max_month, int max_year )
     {
+        System.out.println( "addIndiv()" );
+
         String t = String.format("(\"%d\",\"%s\",\"%s\",\"%s\",\"%s\", \"%d\", \"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", source, type, value, Id_C, dateType, estimation, day, month, year, min_day, min_month, min_year, max_day, max_month,  max_year);
 
@@ -782,26 +784,28 @@ public class LinksIDS
         
          if(iList.size() > 10000)
              flushIndiv(connection);
+    } // addIndiv
 
-        
-    }
 
     public static void addIndivIndiv(Connection connection, int Id_I_1, int Id_I_2, int source, String relation, 
-            String dateType, String estimation, int day, int month, int year){
-        
+            String dateType, String estimation, int day, int month, int year)
+    {
+        System.out.println( "addIndivIndiv()" );
+
         String t = String.format("(\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I_1,  Id_I_2, "LINKS", "" + source, relation, dateType, estimation, day, month, year);
-        
-        
+
         iiList.add(t);
          if(iiList.size() > 10000)
              flushIndivIndiv(connection);
-    }
+    } // addIndivIndiv
 
 
     public static void addIndivContext( Connection connection, int Id_I, int Id_C, String source, String relation,
             String dateType, String estimation, int day, int month, int year )
     {
+        System.out.println( "addIndivContext()" );
+
         String t = String.format("(\"%d\",\"%s\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", Id_C, source, relation, dateType, estimation, day, month, year);
 
@@ -809,11 +813,13 @@ public class LinksIDS
         
          if(icList.size() > 10000)
              flushIndivContext(connection);
-    }
+    } // addIndivContext
 
 
     public static void addContext( Connection connection, int Id_C, String type, String value )
     {
+        //System.out.println( "addContext()" );
+
         String t = String.format("(\"%d\",\"%s\",\"%s\", \"%s\"),",  
                                     Id_C, "LINKS", type, value);
         
@@ -822,13 +828,13 @@ public class LinksIDS
         
          if(cList.size() > 10000)
              flushContext(connection);
-
-        
-    }
+    } // addContext
 
 
     public static void addContextContext( Connection connection, int Id_C_1, int Id_C_2, String relation )
     {
+        //System.out.println( "addContextContext()" );
+
         String t = String.format("(\"%d\",\"%d\",\"%s\",\"%s\"),",  
                                     Id_C_1, Id_C_2, "LINKS", relation);
         
@@ -837,47 +843,51 @@ public class LinksIDS
         
          if(ccList.size() > 10000)
              flushContextContext(connection);
-    }
+    } // addContextContext
 
     
     public static void flushIndiv( Connection connection )
     {
-        if(iList.size() == 0)
+        System.out.println( "flushIndiv() iList.size: " + iList.size() );
+
+        if( iList.size() == 0 )
             return;
         
-        
-        String s = String.format(sp15.substring(0, 2 * iList.size()), iList.toArray());
-        
+        String s = String.format( sp15.substring(0, 2 * iList.size()), iList.toArray() );
 
         iList.clear();
-        s = s.substring(0, s.length() -1);
+        s = s.substring( 0, s.length() -1 );
 
         String u = "insert into links_ids.individual (Id_I, Id_D, Source, Type, Value, Id_C, date_type, estimation, day, month, year, Start_day, Start_month, Start_year, End_day, End_month, End_year) values" + s;
         //System.out.println(u.substring(0, 120));
 
         //String u = "insert into links_ids.context (Id_C, Id_D, Source, Type, Value, date_type, estimation, day, month, year) values" + s;
             
-           Utils.executeQ(connection, u);
-
-    }
+           Utils.executeQ( connection, u );
+    } // flushIndiv
 
 
     public static void flushIndivIndiv( Connection connection )
     {
-        if(iiList.size() == 0)
+        System.out.println( "flushIndivIndiv() iiList.size: " + iiList.size() );
+
+        if( iiList.size() == 0 )
             return;
         
-        String s = String.format(sp15.substring(0, 2 * iiList.size()), iiList.toArray());
+        String s = String.format( sp15.substring(0, 2 * iiList.size()), iiList.toArray() );
         iiList.clear();
-        s = s.substring(0, s.length() -1);
+
+        s = s.substring( 0, s.length() -1 );
         String u = "insert into links_ids.indiv_indiv (Id_I_1, Id_I_2, Id_D, Source, relation, date_type, estimation, day, month, year) values" + s;
             
-           Utils.executeQ(connection, u);
-    }
+           Utils.executeQ( connection, u );
+    } // flushIndivIndiv
     
     
     public static void flushIndivContext( Connection connection )
     {
+        System.out.println( "flushIndivContext()" );
+
         if(icList.size() == 0)
             return;
         
@@ -888,11 +898,13 @@ public class LinksIDS
             
         //System.out.println(u.substring(0, 120));
            Utils.executeQ(connection, u);
-    }
+    } // flushIndivContext
 
 
     public static void flushContext( Connection connection )
     {
+        System.out.println( "flushContext()" );
+
         if(cList.size() == 0)
             return;
         
@@ -904,12 +916,13 @@ public class LinksIDS
             
         //System.out.println(u.substring(0, 120));
            Utils.executeQ(connection, u);
-    }
+    } // flushContext
 
 
     public static void flushContextContext( Connection connection )
     {
-        
+        System.out.println( "flushContextContext()" );
+
         if(ccList.size() == 0)
             return;
         
@@ -921,13 +934,14 @@ public class LinksIDS
             
         //System.out.println(u.substring(0, 120));
            Utils.executeQ(connection, u);
-    }
-    
+    } // flushContextContext
 
         
     static void writeIndivIndiv( ArrayList<Integer> personNumbers, ArrayList<Integer> roles, ArrayList<String> stillborns,
             int registration_day, int registration_month, int registration_year, int source )
     {
+        //System.out.println( "writeIndivIndiv()" );
+
         // 1 Child 
         // 2 Mother
         // 3 Father
@@ -1101,14 +1115,11 @@ public class LinksIDS
             //addIi(x[11], x[10], "Spouse and spouse", source);
             addIi(x[11], x[10], "Spouse", source);
         }
-
-        
-        
-    }
+    } // writeIndivIndiv
 
 
-    static void addIi(int personNumber1, int personNumber2, String relation, int source){
-        
+    static void addIi(int personNumber1, int personNumber2, String relation, int source)
+    {
         if(personNumber1 == 0 || personNumber2 == 0) return;
         
         Pair p = new Pair();
@@ -1120,7 +1131,7 @@ public class LinksIDS
             addIndivIndiv(connection, personNumber1, personNumber2, source, relation, "Event", "Exact", 0, 0, 0);
         }
         
-    }
+    } // addIi
 
 
     static void populateContext( boolean debug )
