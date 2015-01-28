@@ -24,10 +24,13 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-23-Jan-2015 Latest change
+ * FL-28-Jan-2015 Latest change
  */
 public class LinksIDS
 {
+    // with MAX_LIST_SIZE = 10000 the db INSERT became too big, but you can also adapt the 'max_allowed_packet' MySQL parameter.
+    public static int MAX_LIST_SIZE = 5000;
+
     public static String url_links_general  = null;
     public static String url_links_prematch = null;
     public static String url_links_match    = null;
@@ -37,8 +40,8 @@ public class LinksIDS
     private static Statement statement = null;
     private static PreparedStatement preparedStatement = null;
     private static ResultSet resultSet = null;
-    //private static LinkedBlockingQueue< String >             qe = new LinkedBlockingQueue<String>(1024);
-    private static LinkedBlockingQueue< ArrayList< Person > >  qe = new LinkedBlockingQueue<ArrayList<Person>>(1024);
+    //private static LinkedBlockingQueue< String >             qe  = new LinkedBlockingQueue<String>(1024);
+    private static LinkedBlockingQueue< ArrayList< Person > >  qe  = new LinkedBlockingQueue<ArrayList<Person>>(1024);
     private static LinkedBlockingQueue< ArrayList< String > >  qe2 = new LinkedBlockingQueue<ArrayList<String>>(1024);
     private static String insertStatement             = "";
     private static ArrayList<Thread> threads          = new ArrayList<Thread>();
@@ -67,10 +70,10 @@ public class LinksIDS
     private static String sp09 = sp08 + sp08;
     private static String sp10 = sp09 + sp09;
     private static String sp11 = sp10 + sp10;
-    private static String sp12 = sp11 + sp11; // 2048
-    private static String sp13 = sp12 + sp12; // 4096
-    private static String sp14 = sp13 + sp13; // 8192
-    private static String sp15 = sp14 + sp14; //16384
+    private static String sp12 = sp11 + sp11;   //  2048
+    private static String sp13 = sp12 + sp12;   //  4096
+    private static String sp14 = sp13 + sp13;   //  8192
+    private static String sp15 = sp14 + sp14;   // 16384
 
     private static ArrayList< String >  iList = new ArrayList<String>();
     private static ArrayList< String > iiList = new ArrayList<String>();
@@ -278,7 +281,7 @@ public class LinksIDS
                     {
                         if( persons.size() != 0 )
                         {
-                            if( debug && c % 10000 == 0 ) { System.out.println("---> processed " + c + " person appearances"); }
+                            if( debug && c % MAX_LIST_SIZE == 0 ) { System.out.println("---> processed " + c + " person appearances"); }
 
                             //if(c > 1000 * 1000){                                
                                 //System.exit(8);
@@ -311,10 +314,12 @@ public class LinksIDS
             //s.close ();
             //Utils.closeConnection(connection);
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-            Utils.closeConnection(connection);            
+        catch( Exception ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( 1 );
         }        
         
         flushIndiv(connection);
@@ -485,7 +490,7 @@ public class LinksIDS
 
                     c++;
 
-                    if( debug && c % 10000 == 0 ) { System.out.println("---> processed " + c + " person appearances (2)"); }
+                    if( debug && c % MAX_LIST_SIZE == 0 ) { System.out.println("---> processed " + c + " person appearances (2)"); }
 
                     personNumbers.add(resultSet.getInt("person_number"));
                     roles.add(resultSet.getInt("role"));
@@ -501,11 +506,12 @@ public class LinksIDS
                 if( debug ) { System.out.println("---> processed " + c + " person appearances"); }
 
             }
-            catch (Exception e) {
-                System.out.println("In catch");
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-                Utils.closeConnection(connection);                
+            catch( Exception ex )
+            {
+                System.out.println( "Exception:\n" + ex.getMessage() );
+                ex.printStackTrace();
+                Utils.closeConnection( connection );
+                System.exit( 1 );
             }        
         }
         
@@ -775,44 +781,44 @@ public class LinksIDS
     public static void addIndiv( Connection connection, int Id_I, String source, String type, String value, int Id_C,
             String dateType, String estimation, int day, int month, int year, int min_day, int min_month, int min_year,int max_day, int max_month, int max_year )
     {
-        System.out.println( "addIndiv()" );
+        //System.out.println( "addIndiv()" );
 
         String t = String.format("(\"%d\",\"%s\",\"%s\",\"%s\",\"%s\", \"%d\", \"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", source, type, value, Id_C, dateType, estimation, day, month, year, min_day, min_month, min_year, max_day, max_month,  max_year);
 
         iList.add(t);
         
-         if(iList.size() > 10000)
-             flushIndiv(connection);
+         if( iList.size() >= MAX_LIST_SIZE )
+             flushIndiv( connection );
     } // addIndiv
 
 
     public static void addIndivIndiv(Connection connection, int Id_I_1, int Id_I_2, int source, String relation, 
             String dateType, String estimation, int day, int month, int year)
     {
-        System.out.println( "addIndivIndiv()" );
+        //System.out.println( "addIndivIndiv()" );
 
         String t = String.format("(\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I_1,  Id_I_2, "LINKS", "" + source, relation, dateType, estimation, day, month, year);
 
         iiList.add(t);
-         if(iiList.size() > 10000)
-             flushIndivIndiv(connection);
+         if( iiList.size() > MAX_LIST_SIZE )
+             flushIndivIndiv( connection );
     } // addIndivIndiv
 
 
     public static void addIndivContext( Connection connection, int Id_I, int Id_C, String source, String relation,
             String dateType, String estimation, int day, int month, int year )
     {
-        System.out.println( "addIndivContext()" );
+        //System.out.println( "addIndivContext()" );
 
         String t = String.format("(\"%d\",\"%s\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"),",  
                                     Id_I, "LINKS", Id_C, source, relation, dateType, estimation, day, month, year);
 
         icList.add(t);
         
-         if(icList.size() > 10000)
-             flushIndivContext(connection);
+         if( icList.size() > MAX_LIST_SIZE )
+             flushIndivContext( connection );
     } // addIndivContext
 
 
@@ -826,8 +832,8 @@ public class LinksIDS
         //System.out.println(t);
         cList.add(t);
         
-         if(cList.size() > 10000)
-             flushContext(connection);
+         if( cList.size() > MAX_LIST_SIZE )
+             flushContext( connection );
     } // addContext
 
 
@@ -841,8 +847,8 @@ public class LinksIDS
         //System.out.println(t);
         ccList.add(t);
         
-         if(ccList.size() > 10000)
-             flushContextContext(connection);
+         if( ccList.size() > MAX_LIST_SIZE )
+             flushContextContext( connection );
     } // addContextContext
 
     
@@ -1323,16 +1329,17 @@ public class LinksIDS
                 if( debug ) { System.out.println( "Location " + resultSet.getInt("location_no") + " has Id_C " + Id_C ); }
             }
         }
-        catch (Exception e) {
-            System.out.println("In catch");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            Utils.closeConnection(connection);                
+        catch( Exception ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( 1 );
         }    
         
-        flushContext(connection);
-        flushContextContext(connection);
-        Utils.closeConnection(connection_ref);    
+        flushContext( connection );
+        flushContextContext( connection );
+        Utils.closeConnection( connection_ref );
     } // populateContext
 
 }

@@ -21,7 +21,7 @@ import linksmanager.ManagerGui;
  * @author Fons Laan
  *
  * FL-24-Nov-2014 Created
- * FL-22-Jan-2015
+ * FL-27-Jan-2015
  */
 public class LinksCleaned extends Thread
 {
@@ -177,15 +177,19 @@ public class LinksCleaned extends Thread
     {
         int[] idsInt;
 
-        String idsStr[] = sourceIdsGui.split( " " );
-
-        if( idsStr.length == 0  )           // nothing from GUI
-        { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
-        else                                // use GUI supplied Ids
+        if( sourceIdsGui.isEmpty() )
+        { idsInt = sourceListAvail; }           // use all Ids from links_original.registration_o
+        else
         {
-            idsInt = new int[ idsStr.length ];
-            for( int i = 0; i < idsStr.length; i++ ) {
-            idsInt[ i ] = Integer.parseInt( idsStr[ i ] );
+            String idsStr[] = sourceIdsGui.split( " " );
+
+            if( idsStr.length == 0 )            // nothing from GUI
+            { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
+            else                                // use GUI supplied Ids
+            {
+                idsInt = new int[ idsStr.length ];
+                for( int i = 0; i < idsStr.length; i++ )
+                { idsInt[ i ] = Integer.parseInt( idsStr[ i ] ); }
             }
         }
 

@@ -73,28 +73,32 @@ public class PersonNumber implements Runnable
         Connection connection = Utils.connect( url_links_ids );
         String name = Thread.currentThread().getName();
         
-        while(true){
-            
+        while( true )
+        {
             ArrayList<Integer> values = null;
             try {
                  values = queue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Utils.closeConnection(connection);
-                System.exit(-1);
             }
-            if(values == pLStop){
-                Utils.commitConnection(connection);
-                Utils.closeConnection(connection);
+            catch( InterruptedException ex )
+            {
+                System.out.println( "Exception:\n" + ex.getMessage() );
+                ex.printStackTrace();
+                Utils.closeConnection( connection );
+                System.exit( -1 );
+            }
+            if( values == pLStop )
+            {
+                Utils.commitConnection( connection );
+                Utils.closeConnection( connection );
                 return;
             }
 
-            write(values, connection);
+            write( values, connection );
             //Utils.commitConnection(connection);
             
-            synchronized (personNumbersWritten) {
+            synchronized( personNumbersWritten ) {
                 personNumbersWritten += 16384;
-                System.out.println("Written " + personNumbersWritten + " person numbers");
+                System.out.println( "Written " + personNumbersWritten + " person numbers" );
             }
         }
     } // run
@@ -167,11 +171,13 @@ public class PersonNumber implements Runnable
 
                 if( debug ) { System.out.println("Read " + totalCount + " matches"); }
 
-            } catch (SQLException e) {
-
-                System.out.println(e.getMessage());
-                Utils.closeConnection(connection);
-                System.exit(-1);
+            }
+            catch( SQLException ex )
+            {
+                System.out.println( "Exception:\n" + ex.getMessage() );
+                ex.printStackTrace();
+                Utils.closeConnection( connection );
+                System.exit( -1 );
             }
         }
         
@@ -197,57 +203,65 @@ public class PersonNumber implements Runnable
         
         ArrayList<Integer> i = new ArrayList<Integer>();
 
-//        for (Entry<Integer, Integer> entry : personNumbers.entrySet()) {
+        // for (Entry<Integer, Integer> entry : personNumbers.entrySet()) {
         
-        for (int j = 0; j < personNumber.length; j++) {
-            
-            
-            //System.out.println("Adding");
-            
-            if(personNumber[j] == 0) continue;
+        for( int j = 0; j < personNumber.length; j++ )
+        {
+            if( personNumber[ j ] == 0 ) { continue; }
             count++;
             
-            i.add(j);
-            i.add(personNumber[j]);
-            if(count % 16384  == 0){
-                try {
-                    queue.put(i);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    Utils.closeConnection(connection);
-                    System.exit(-1);
+            i.add( j );
+            i.add( personNumber[ j ] );
+
+            if( count % 16384  == 0 )
+            {
+                try { queue.put( i ); }
+                catch (InterruptedException ex )
+                {
+                    System.out.println( "Exception:\n" + ex.getMessage() );
+                    ex.printStackTrace();
+                    Utils.closeConnection( connection );
+                    System.exit( -1 );
                 }
                 i = new ArrayList<Integer>();
             }
         }
-        if(i.size() > 0){
-            try {
-                queue.put(i);
-            } catch (InterruptedException e) {
+
+        if( i.size() > 0 )
+        {
+            try { queue.put(i); }
+            catch( InterruptedException ex )
+            {
+                System.out.println( "Exception:\n" + ex.getMessage() );
+                ex.printStackTrace();
                 Utils.closeConnection(connection);
-                e.printStackTrace();
                 System.exit(-1);
             }
             //executeQ(connection, insStmt);
         }
 
         try {
-            for(int j = 0; j < numberOfThreads; j++)
-                queue.put(pLStop);
-            
-        } catch (InterruptedException e) {
+            for( int j = 0; j < numberOfThreads; j++ )
+            { queue.put( pLStop ); }
+        }
+        catch( InterruptedException ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
             Utils.closeConnection(connection);
-            e.printStackTrace();
-            System.exit(-1);
+            System.exit( -1 );
         }
         
         try {
-            for(int j = 0; j < numberOfThreads; j++)
-                a.get(j).join();
-        } catch (InterruptedException e1) {
+            for( int j = 0; j < numberOfThreads; j++ )
+            { a.get(j).join(); }
+        }
+        catch( InterruptedException ex1 )
+        {
+            System.out.println( "Exception:\n" + ex1.getMessage() );
+            ex1.printStackTrace();
             Utils.closeConnection(connection);
-            e1.printStackTrace();
-            System.exit(-1);
+            System.exit( -1 );
         }
 
         System.out.println( "Written " + count + " person numbers" );
@@ -428,10 +442,12 @@ public class PersonNumber implements Runnable
             //System.out.println(s);
             //connection.createStatement().execute(s);
         }
-        catch (SQLException e) {
-            e.printStackTrace();
-            Utils.closeConnection(connection);
-            System.exit(-1);
+        catch( SQLException ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( -1 );
         }
     } // initDB
 
@@ -469,10 +485,13 @@ public class PersonNumber implements Runnable
             }
             r.close();
             //connection.createStatement().close();
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            System.exit(0);
+        }
+        catch( SQLException ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( -1 );
         }
         
         return -1;
@@ -498,10 +517,12 @@ public class PersonNumber implements Runnable
             
             connection.commit();
         }
-        catch (SQLException e) {
-                e.printStackTrace();
-                Utils.closeConnection(connection);
-                System.exit(-1);
+        catch( SQLException ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( -1 );
         }
     } // createTable
 

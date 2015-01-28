@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-22-Jan-2015 Latest change
+ * FL-27-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -379,15 +379,19 @@ public class LinksCleanedThread extends Thread
     {
         int[] idsInt;
 
-        String idsStr[] = sourceIdsGui.split( " " );
-
-        if( idsStr.length == 0  )           // nothing from GUI
-        { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
-        else                                // use GUI supplied Ids
+        if( sourceIdsGui.isEmpty() )
+        { idsInt = sourceListAvail; }           // use all Ids from links_original.registration_o
+        else
         {
-            idsInt = new int[ idsStr.length ];
-            for( int i = 0; i < idsStr.length; i++ ) {
-            idsInt[ i ] = Integer.parseInt( idsStr[ i ] );
+            String idsStr[] = sourceIdsGui.split( " " );
+
+            if( idsStr.length == 0  )           // nothing from GUI
+            { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
+            else                                // use GUI supplied Ids
+            {
+                idsInt = new int[ idsStr.length ];
+                for( int i = 0; i < idsStr.length; i++ )
+                { idsInt[ i ] = Integer.parseInt( idsStr[ i ] ); }
             }
         }
 
