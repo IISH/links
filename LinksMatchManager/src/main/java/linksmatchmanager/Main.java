@@ -27,7 +27,6 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-14-Jan-2015 Latest change
  */
@@ -35,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
 public class Main
 {
     // Global vars
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     private static QueryLoader ql;
     private static PrintLogger plog;
@@ -137,7 +136,7 @@ public class Main
                 plog.show( "Nothing to do; Stop." );
             }
 
-            // Loop through records in match_process
+            // Loop through the records from the match_process table
             for( int i = 0; i < mis.is.getSize(); i++ )
             {
                 // Create a new prematch variants object for every record in match_process table

@@ -29,11 +29,14 @@ import linksmatchmanager.DataSet.InputSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
+ * FL-30-Jun-2014 Imported from OA backup
+ * FL-29-Jan-2015 Latest change
  */
 public class QueryGenerator
 {
     public InputSet is;     // this variable can be used outside the class
 
+    private boolean debug = false;
     private PrintLogger plog;
     private ResultSet rs;
 
@@ -91,6 +94,8 @@ public class QueryGenerator
      */
     private void setToArray() throws Exception
     {
+        if( debug ) { System.out.println( "QueryGenerator/setToArray()" ); }
+
         int nline = 0;
         int nline_y = 0;
         int nline_n = 0;
@@ -106,8 +111,10 @@ public class QueryGenerator
             }
             nline_y++;
 
-            // Al the fields in table match_process
+            // get all the fields from the table match_process
             int id = rs.getInt( "id" );
+
+            if( debug ) { System.out.println( "id: " + id ); }
 
             int s1_maintype = rs.getInt( "s1_maintype" );
             int s2_maintype = rs.getInt( "s2_maintype" );
@@ -123,6 +130,15 @@ public class QueryGenerator
             int s1_endyear   = rs.getInt( "s1_endyear" );
             int s2_startyear = rs.getInt( "s2_startyear" );
             int s2_range     = rs.getInt( "s2_range" );
+
+            if( debug ) {
+                System.out.println( "s1_startyear: " + s1_startyear );
+                System.out.println( "s2_startyear: " + s2_startyear );
+                System.out.println( "s1_endyear: " + s1_endyear );
+                System.out.println( "s1_range: " + s1_range );
+                System.out.println( "s2_range: " + s2_range );
+            }
+
 
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
@@ -396,15 +412,23 @@ public class QueryGenerator
 
                 // start years
                 if( s1_startyear != 0 ) {
-                    qs.query1 += "registration_days >= " + daysSinceBegin(s1_startyear + (counter * s1_range), 1, 1) + " AND ";
-                    qs.query2 += "registration_days >= " + daysSinceBegin(s2_startyear + (counter * s1_range), 1, 1) + " AND ";
+                    int s1_low = daysSinceBegin( s1_startyear + (counter * s1_range), 1, 1 );
+                    int s2_low = daysSinceBegin( s2_startyear + (counter * s2_range), 1, 1 );
+
+                    if( debug ) {
+                        System.out.println( "s1_low: " + s1_low );
+                        System.out.println( "s2_low: " + s2_low );
+                    }
+
+                    if( s1_low > 0 ) { qs.query1 += "registration_days >= " + s1_low + " AND "; }
+                    if( s2_low > 0 ) { qs.query2 += "registration_days >= " + s2_low + " AND "; }
                 }
 
                 // end years
                 int s1_days = 0;
                 int s2_days = 0;
 
-                if( s1_startyear != 0 )
+                if( s1_startyear > 0 )
                 {
                     if( once ) {
                         s1_days = daysSinceBegin( s1_endyear, 12, 31 );
@@ -418,7 +442,7 @@ public class QueryGenerator
                         loop = false;
                     }
 
-                    qs.query1 += "registration_days <= " + s1_days + " AND ";
+                    if( s1_days >= 0 ) { qs.query1 += "registration_days <= " + s1_days + " AND "; }
 
                     if( s2_range > 0 ) {
                         if( once ) {
@@ -427,9 +451,8 @@ public class QueryGenerator
                             s2_days = daysSinceBegin( s2_startyear + s2_range + ( counter * s1_range ), 1, 1 );
                         }
 
-                        qs.query2 += "registration_days <= " + s2_days + " AND ";
+                        if( s2_days > 0 ) { qs.query2 += "registration_days <= " + s2_days + " AND "; }
                     }
-
                 }
 
                 // clean
