@@ -24,7 +24,7 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-28-Jan-2015 Latest change
+ * FL-30-Jan-2015 Latest change
  */
 public class LinksIDS
 {
@@ -162,9 +162,25 @@ public class LinksIDS
         int c = 0;
         int pageSize = 1000 * 1000;
 
+        // Load arguments; check length
+        if( args.length != 1 ) {
+            System.out.println( "Invalid argument length, it should be 1" );
+            System.out.println( "Usage: java -jar LinksIDS-2.0.jar <method>" );
+
+            return;
+        }
+
+        // cmd line args
+        String method = args[ 0 ];
+
+        String msg = String.format( "method: %s", method );
+        System.out.println( msg );
+
+
         Properties properties = getProperties();    // read properties file
         loadProperties( properties );               // get individual properties
 
+        Statement statement = null;
         try
         {
             System.out.println( "LinksIDS/main() Started" );
@@ -179,12 +195,41 @@ public class LinksIDS
             
             Contxt2.initializeContext( connection );
             
-            Statement s = ( Statement ) connection.createStatement();
+            statement = ( Statement ) connection.createStatement();
+        }
+        catch( Exception ex )
+        {
+            System.out.println( "Exception:\n" + ex.getMessage() );
+            ex.printStackTrace();
+            Utils.closeConnection( connection );
+            System.exit( 1 );
+        }
 
 
-            PersonNumber.personNumber( debug, url_links_match, url_links_ids );
-            //if(1==1) System.exit(8);
+        if( method.equals( "numbers" ) || method.equals( "both" ) )
+        {
+            // phase-1: create the person numbers
+            try { PersonNumber.personNumber( debug, url_links_match, url_links_ids ); }
+            catch( Exception ex )
+            {
+                System.out.println( "Exception:\n" + ex.getMessage() );
+                ex.printStackTrace();
+                Utils.closeConnection( connection );
+                System.exit( 1 );
+            }
+        }
+        else { System.out.println( "skipping PersonNumber" ); }
 
+
+        if( ! ( method.equals( "tables" ) || method.equals( "both" ) ) ) {
+            System.out.println( "skipping other IDS tables" );
+            return;
+        }
+
+
+        // fill the other IDS tables
+        try
+        {
             int previousPersonNumber = -1;
 
             //ArrayList<Person> persons  = new ArrayList<Person>();
@@ -197,67 +242,65 @@ public class LinksIDS
             
             
             System.out.println( "LinksIDS/main: Processing Persons" );
+            // TODO: use highest id_person instead of 100*1000*1000
             outer: for( int a = 0; a < 100*1000*1000; a += pageSize )
             {
-                //if(1==1) break;
-                //if(1==1)continue;
-
                 //String q = "SELECT * from links_ids.personNumbers as N,  links_cleaned.person_c as P, links_cleaned.registration_c as R  " +
                 //        " where N.id_person = P.id_person and P.id_registration =  R.id_registration " +
                 //        " and (person_number > " + a + " and " +    "  person_number <=  " + (a + pageSize)  + ")" + 
                 //        " order by person_number";
 
-                String q = "SELECT" +
-                        " N.person_number," +
-                        " P.firstname, " +
-                        " P.familyname, " +
-                        " P.prefix, " +
-                        " P.sex, " +
-                        " P.birth_day, " +
-                        " P.birth_month, " +
-                        " P.birth_year, " +
-                        " P.birth_day_min, " +
-                        " P.birth_month_min, " +
-                        " P.birth_year_min, " +
-                        " P.birth_day_max, " +
-                        " P.birth_month_max, " +
-                        " P.birth_year_max, " +
-                        " P.birth_location, " + 
-                        " P.death_day, " +
-                        " P.death_month, " +
-                        " P.death_year, " +
-                        " P.death_location, " + 
-                        " P.role, " + 
-                        " P.stillbirth, " + 
-                        " P.occupation, " + 
-                        " P.religion, " + 
-                        " P.civil_status, " + 
-                        " P.living_location, " + 
-                        " R.id_orig_registration, " +
-                        " R.id_source, " +
-                        " R.registration_day, " +
-                        " R.registration_month, " +
-                        " R.registration_year, " +
-                        " R.registration_maintype, " +
-                        " R.registration_type, " +
-                        " R.registration_seq, " +
-                        " R.registration_location_no" +
-                        " FROM" +
-                        " links_ids.personNumbers as N,  " +
-                        " links_cleaned.person_c as P, " +
-                        " links_cleaned.registration_c as R " +
-                        " WHERE " +
-                        " N.id_person = P.id_person and" +
-                        " P.id_registration =  R.id_registration and " +
-                        " R.id_source !=  10 and " +                        // 10 = HSNRP0002, the 'anchor'
-                        " N.person_number >   " + a + " and " +    
-                        " N.person_number <=  " + (a + pageSize)  +  
-                        " ORDER BY N.person_number, R.registration_maintype";
+                String query = "SELECT" +
+                    " N.person_number," +
+                    " P.firstname, " +
+                    " P.familyname, " +
+                    " P.prefix, " +
+                    " P.sex, " +
+                    " P.birth_day, " +
+                    " P.birth_month, " +
+                    " P.birth_year, " +
+                    " P.birth_day_min, " +
+                    " P.birth_month_min, " +
+                    " P.birth_year_min, " +
+                    " P.birth_day_max, " +
+                    " P.birth_month_max, " +
+                    " P.birth_year_max, " +
+                    " P.birth_location, " +
+                    " P.death_day, " +
+                    " P.death_month, " +
+                    " P.death_year, " +
+                    " P.death_location, " +
+                    " P.role, " +
+                    " P.stillbirth, " +
+                    " P.occupation, " +
+                    " P.religion, " +
+                    " P.civil_status, " +
+                    " P.living_location, " +
+                    " R.id_orig_registration, " +
+                    " R.id_source, " +
+                    " R.registration_day, " +
+                    " R.registration_month, " +
+                    " R.registration_year, " +
+                    " R.registration_maintype, " +
+                    " R.registration_type, " +
+                    " R.registration_seq, " +
+                    " R.registration_location_no" +
+                    " FROM" +
+                    " links_ids.personNumbers as N,  " +
+                    " links_cleaned.person_c as P, " +
+                    " links_cleaned.registration_c as R " +
+                    " WHERE " +
+                    " N.id_person = P.id_person and" +
+                    " P.id_registration =  R.id_registration and " +
+                    " R.id_source !=  10 and " +                        // 10 = HSNRP0002, the 'anchor'
+                    " N.person_number >   " + a + " and " +
+                    " N.person_number <=  " + (a + pageSize)  +
+                    " ORDER BY N.person_number, R.registration_maintype";
 
                 if( debug ) { System.out.println( "Scanning person_number range [" + a + ", " + (a + pageSize - 1) + "]" ); }
 
-                s.executeQuery(q);
-                resultSet = s.getResultSet ();
+                statement.executeQuery( query );
+                resultSet = statement.getResultSet();
                 
                 if(h == null){
                     h = new HashMap<String, Integer>();
@@ -320,7 +363,7 @@ public class LinksIDS
             ex.printStackTrace();
             Utils.closeConnection( connection );
             System.exit( 1 );
-        }        
+        }
         
         flushIndiv(connection);
 

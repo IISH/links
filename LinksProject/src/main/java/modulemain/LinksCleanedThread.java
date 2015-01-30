@@ -44,7 +44,7 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-27-Jan-2015 Latest change
+ * FL-30-Jan-2015 Latest change
  *
  * TODO check all occurrences of TODO
  */
@@ -1920,7 +1920,7 @@ public class LinksCleanedThread extends Thread
 
         String query = "CREATE  TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " familyname VARCHAR(80) NULL ,"
+            + " familyname VARCHAR(110) NULL ,"
             + " PRIMARY KEY (person_id) );";
 
         dbconTemp.runQuery( query );
@@ -2013,7 +2013,7 @@ public class LinksCleanedThread extends Thread
         // Notice: the stillbirth column is not yet used
         String query = "CREATE  TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-            + " firstname VARCHAR(80) NULL ,"
+            + " firstname VARCHAR(100) NULL ,"
             + " stillbirth VARCHAR(3) NULL ,"
             + " PRIMARY KEY (person_id) );";
 
