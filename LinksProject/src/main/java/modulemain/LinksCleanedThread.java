@@ -3631,9 +3631,6 @@ public class LinksCleanedThread extends Thread
 
                 //if( role == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
 
-                if( id_person == 102266679 ) { debug = true; }
-                else  { debug = false; }
-
                 if( debug ) {
                     showMessage_nl();
                     showMessage( "id_registration: "      + id_registration,      false, true );
@@ -4236,9 +4233,8 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
-        if( role == 0 ) { showMessage( "minMaxCalculation() role = 0", false, true ); }
-
         if( debug ) { showMessage( "minMaxCalculation()", false, true ); }
+        if( role == 0 ) { showMessage( "minMaxCalculation() role = 0, id_person = " + id_person, false, true ); }
 
         String min_age_0 = "n";
         String max_age_0 = "n";
@@ -4413,7 +4409,7 @@ public class LinksCleanedThread extends Thread
     )
     throws Exception
     {
-        if( role == 0 ) { showMessage( "minMaxMainAge() role = 0", false, true ); }
+        if( role == 0 ) { showMessage( "minMaxMainAge() role = 0, id_person = " + id_person , false, true ); }
 
         boolean done = false;
 
@@ -5547,8 +5543,47 @@ public class LinksCleanedThread extends Thread
      */
     private void postTasks( boolean debug, String source ) throws Exception
     {
+        debug = true;
+
+        if( debug ) { showMessage( "postTasks()", false, true ); }
         // Notice:
         // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
+
+        String query = "SELECT id_registration, registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
+            + "FROM registration_c "
+            + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
+            + "HAVING cnt > 1 "
+            + "ORDER BY cnt DESC;";
+        if( debug ) { showMessage( query, false, true ); }
+
+        try {
+            ResultSet rs = dbconCleaned.runQueryWithResult( query );
+            int rows = 0;
+            while( rs.next() ) {
+                rows++;
+                /*
+                String id = rs.getString( "id_source" );
+                if( id == null || id.isEmpty() ) { break; }
+                else {
+                    //System.out.printf( "id: %s\n", id );
+                    ids.add(id);
+                }
+                */
+                int cnt = rs.getInt( "cnt" );
+                System.out.println( "cnt: " + cnt );
+            }
+            if( rows == 0 ) { showMessage( "No duplicates in links_cleaned", false , true); }
+            else { showMessage( "Rows with duplicates in links_cleaned: " + rows, false , true); }
+        }
+        catch( Exception ex ) {
+            if( ex.getMessage() != "After end of result set" ) {
+                System.out.printf("'%s'\n", ex.getMessage());
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+
+        if( 1 == 1 ) { return; }
+
 
         String[] queries =
         {
