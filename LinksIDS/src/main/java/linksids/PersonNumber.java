@@ -19,9 +19,20 @@ import org.w3c.dom.stylesheets.LinkStyle;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
-// SELECT * FROM links_match.personNumbers as X , links_cleaned.person_c as Y where X.id_person = Y.id_person order by person_number
 
-
+/**
+ * @author Cor Munnik
+ * @author Fons Laan
+ *
+ * <p/>
+ * FL-21-Jan-2014 Imported from CM
+ * FL-03-Feb-2015 Also use partner in personNumber (from KM + CM)
+ * FL-03-Feb-2015 Latest change
+ *
+ * TODO why both
+ * java.sql.Statement and
+ * com.mysql.jdbc.Statement ?
+ */
 public class PersonNumber implements Runnable
 {
     private static String url_links_ids = null;
@@ -126,42 +137,39 @@ public class PersonNumber implements Runnable
             {
                 java.sql.Statement statement = connection.createStatement();
 
-                //String select = "select X.ego_id, X.mother_id, X.father_id, Y.ego_id, Y.mother_id, Y.father_id" +
-                //        " from links_match.matches, links_base.links_base as X,  links_base.links_base as Y " +
-                //        " where X.id_base = id_linksbase_1 and " +
-                //        "       Y.id_base = id_linksbase_2" +
-                //        " limit " + i + ","  +  pageSize;
-
-                String select = "select X.ego_id, X.mother_id, X.father_id, Y.ego_id, Y.mother_id, Y.father_id" +
+                String select = "select X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
                         " from links_match.matches as M, links_prematch.links_base as X,  links_prematch.links_base as Y " +
                         " where X.id_base = id_linksbase_1 and " +
-                        "       Y.id_base = id_linksbase_2 and " + 
-                        "       M.id_matches >= " + i + " and " + 
+                        "       Y.id_base = id_linksbase_2 and " +
+                        "       M.id_matches >= " + i + " and " +
                         "       M.id_matches < " + (i + pageSize) ;
-                
-                //System.out.println(select);
 
-                ResultSet r = statement.executeQuery(select);
+                //System.out.println( select );
+
+                ResultSet r = statement.executeQuery( select );
                 int count = 0;
                 
                 while( r.next() )
                 {
-                    int x = r.getInt("X.ego_id");
-                    int y = r.getInt("Y.ego_id");
-                    if(x != 0 && y != 0) 
-                        effectiveCount += add(x, y);
+                    int x = r.getInt( "X.ego_id" );
+                    int y = r.getInt( "Y.ego_id" );
 
-                    x = r.getInt("X.mother_id");
-                    y = r.getInt("Y.mother_id"); 
+                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
 
-                    if(x != 0 && y != 0) 
-                        effectiveCount += add(x, y);
+                    x = r.getInt( "X.mother_id" );
+                    y = r.getInt( "Y.mother_id" );
 
-                    x = r.getInt("X.father_id");
-                    y = r.getInt("Y.father_id");
+                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
 
-                    if(x != 0 && y != 0) 
-                        effectiveCount += add(x, y);
+                    x = r.getInt( "X.father_id" );
+                    y = r.getInt( "Y.father_id" );
+
+                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
+
+                    x = r.getInt( "X.partner_id" );
+                    y = r.getInt( "Y.partner_id" );
+
+                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
 
                     count++;          
                     //System.out.println("Read " + count + " matches");
