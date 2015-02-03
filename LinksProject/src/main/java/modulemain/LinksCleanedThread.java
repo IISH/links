@@ -5549,31 +5549,52 @@ public class LinksCleanedThread extends Thread
         // Notice:
         // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
-        String query = "SELECT id_registration, registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
+        int min_cnt = 3;
+        String query_r = "SELECT id_registration, id_persist_registration, registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
             + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
-            + "HAVING cnt > 1 "
+            + "HAVING cnt >= " + min_cnt + " "
             + "ORDER BY cnt DESC;";
-        if( debug ) { showMessage( query, false, true ); }
+
+        System.out.println( query_r );
+        if( debug ) { showMessage( query_r, false, true ); }
 
         try {
-            ResultSet rs = dbconCleaned.runQueryWithResult( query );
-            int rows = 0;
-            while( rs.next() ) {
-                rows++;
-                /*
-                String id = rs.getString( "id_source" );
-                if( id == null || id.isEmpty() ) { break; }
-                else {
-                    //System.out.printf( "id: %s\n", id );
-                    ids.add(id);
+            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+            int row = 0;
+            while( rs_r.next() )
+            {
+                row++;
+                int id_registration       = rs_r.getInt( "id_registration" );
+                int registration_maintype = rs_r.getInt( "registration_maintype" );
+                int cnt                   = rs_r.getInt( "cnt" );
+                System.out.printf("row: %3d, id_registration: %6d, registration_maintype: %d, cnt: %d\n", row, id_registration, registration_maintype, cnt);
+
+                String query_p = "";
+                if( registration_maintype == 1 )
+                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1"; }
+                else if( registration_maintype == 2 )
+                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)"; }
+                else if( registration_maintype == 3 )
+                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10"; }
+
+                if( query_p.isEmpty() )
+                { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
+                else
+                {
+                    System.out.println( query_p );
+                    ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                    while( rs_p.next() )
+                    {
+                        String firstname  = rs_p.getString( "firstname" );
+                        String familyname = rs_p.getString( "familyname" );
+                        System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                    }
+                    System.out.println( "\n" );
                 }
-                */
-                int cnt = rs.getInt( "cnt" );
-                System.out.println( "cnt: " + cnt );
             }
-            if( rows == 0 ) { showMessage( "No duplicates in links_cleaned", false , true); }
-            else { showMessage( "Rows with duplicates in links_cleaned: " + rows, false , true); }
+            if( row == 0 ) { showMessage( "No duplicates in links_cleaned", false , true); }
+            else { showMessage( "Rows with duplicates in links_cleaned: " + row, false , true); }
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {

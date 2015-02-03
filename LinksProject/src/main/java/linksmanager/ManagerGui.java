@@ -2422,7 +2422,6 @@ public class ManagerGui extends javax.swing.JFrame
             else { opts.setDbgPostTasks(false); }
         }
 
-        System.out.println( "dbgPrematch: " + dbgPrematch );
         if( dbgPrematch != null ) {
             if( dbgPrematch.equals( "true" ) ) { opts.setDbgPrematch(true); }
             else { opts.setDbgPrematch(false); }
