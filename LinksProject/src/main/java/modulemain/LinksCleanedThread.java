@@ -44,9 +44,13 @@ import general.PrintLogger;
  * FL-28-Jul-2014 Timing functions
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
- * FL-30-Jan-2015 Latest change
+ * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
+ * FL-04-Feb-2015 Latest change
  *
- * TODO check all occurrences of TODO
+ * TODO:
+ * - check all occurrences of TODO
+ * - in order to use TabletoArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
+ *   that can store (and write) not only the the registration_maintype but also the registration_type.
  */
 
 public class LinksCleanedThread extends Thread
@@ -58,6 +62,7 @@ public class LinksCleanedThread extends Thread
     private TabletoArrayListMultimap almmFirstname;     // Names
     private TabletoArrayListMultimap almmFamilyname;    // Names
     private TabletoArrayListMultimap almmLocation;      // Location
+    //private TabletoArrayListMultimap almmRegisType;     // Registration Type
     private TabletoArrayListMultimap almmOccupation;    // Occupation
     private TabletoArrayListMultimap almmReport;        // Report warnings
     private TabletoArrayListMultimap almmRole;          // Role
@@ -70,8 +75,8 @@ public class LinksCleanedThread extends Thread
     private JTextArea  outputArea;
 
     private MySqlConnector dbconRefWrite;       // [remote] reference db for writing new occurrences
-    private MySqlConnector dbconRefRead;        // [local] reference db for reading
-    private MySqlConnector dbconLog;            // logging of errors/warnings
+    private MySqlConnector dbconRefRead;        // [local]  reference db for reading
+    private MySqlConnector dbconLog;            // logging  of errors/warnings
     private MySqlConnector dbconOriginal;       // original data from A2A
     private MySqlConnector dbconCleaned;        // cleaned, from original
 
@@ -2722,7 +2727,21 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
+        /*
+        long start = System.currentTimeMillis();
+        String msg = "Loading reference table: ref_registration";
+        showMessage( msg + "...", false, true );
+        almmRegisType = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
+        elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        */
+
         standardRegistrationType( debug, source );
+
+        /*
+        showMessage( "Updating reference table: ref_registration", false, true );
+        almmRegisType.updateTable();
+        almmRegisType.free();
+        */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -2802,15 +2821,18 @@ public class LinksCleanedThread extends Thread
 
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51
 
-                    // add to links_general
-                    dbconRefRead.runQuery( "INSERT INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
+                    //almmRegisType.add( occupation );      //need adapted almmRegisType
 
-                    // update links_cleaned_.registration_c
+                    // column 'original' now has a UNIQUE key: using IGNORE to skip duplicates, preventing failing queries
+                    dbconRefWrite.runQuery( "INSERT IGNORE INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
+
+                    // update links_cleaned.registration_c
                     String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
                     dbconCleaned.runQuery( query );
                 }
             }
-        } catch( Exception ex ) {
+        }
+        catch( Exception ex ) {
             showMessage( "count: " + count + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
@@ -5529,8 +5551,11 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        showMessage( "Processing postTasks for source: " + source + "...", false, true );
-        postTasks( debug, source );
+        showMessage( "SKIPPING postTasks for source: " + source + "...", false, true );
+        //showMessage( "Processing postTasks for source: " + source + "...", false, true );
+        //postTasks( debug, source );
+
+        removeDoubleRegistrations(debug, source);
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5538,19 +5563,19 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param source
      * @throws Exception
      */
-    private void postTasks( boolean debug, String source ) throws Exception
+    private void removeDoubleRegistrations( boolean debug, String source ) throws Exception
     {
         debug = true;
 
-        if( debug ) { showMessage( "postTasks()", false, true ); }
-        // Notice:
-        // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
+        if( debug ) { showMessage( "removeDoubleRegistrations()", false, true ); }
 
-        int min_cnt = 3;
-        String query_r = "SELECT id_registration, id_persist_registration, registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
+        // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
+        int min_cnt = 2;
+        String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
             + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
             + "HAVING cnt >= " + min_cnt + " "
@@ -5559,42 +5584,130 @@ public class LinksCleanedThread extends Thread
         System.out.println( query_r );
         if( debug ) { showMessage( query_r, false, true ); }
 
+        int nduplicates = 0;
+
         try {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
             int row = 0;
             while( rs_r.next() )
             {
+                System.out.println( "\n" );
                 row++;
-                int id_registration       = rs_r.getInt( "id_registration" );
-                int registration_maintype = rs_r.getInt( "registration_maintype" );
-                int cnt                   = rs_r.getInt( "cnt" );
-                System.out.printf("row: %3d, id_registration: %6d, registration_maintype: %d, cnt: %d\n", row, id_registration, registration_maintype, cnt);
+                String registrationIds_str      = rs_r.getString( "GROUP_CONCAT(id_registration)" );
+                int registration_maintype       = rs_r.getInt(    "registration_maintype" );
+                String registration_location_no = rs_r.getString( "registration_location_no" );
+                String registration_date        = rs_r.getString( "registration_date" );
+                String registration_seq         = rs_r.getString( "registration_seq" );
+                int cnt                         = rs_r.getInt(    "cnt" );
+                System.out.printf( "row: %3d, reg_maintype: %d, cnt: %d, reg_loc_no: %s, reg_date: %s, reg_seq: %4s, regIds: %s\n",
+                    row, registration_maintype, cnt, registration_location_no, registration_date, registration_seq, registrationIds_str );
 
-                String query_p = "";
-                if( registration_maintype == 1 )
-                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1"; }
-                else if( registration_maintype == 2 )
-                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)"; }
-                else if( registration_maintype == 3 )
-                { query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10"; }
-
-                if( query_p.isEmpty() )
-                { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
-                else
+                String registrationIds[] = registrationIds_str.split( "," );
+                for( int r = 0 ; r < registrationIds.length; r++ )
                 {
-                    System.out.println( query_p );
-                    ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                    while( rs_p.next() )
+                    String id_registration = registrationIds[ r ];
+                    System.out.printf( "reg_id: %s\n", id_registration );
+
+                    String query_p = "";
+                    if( registration_maintype == 1 )
                     {
-                        String firstname  = rs_p.getString( "firstname" );
-                        String familyname = rs_p.getString( "familyname" );
-                        System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                        query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
+
+                        if( query_p.isEmpty() )
+                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
+                        else
+                        {
+                            System.out.println( query_p );
+                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                            String firstname1  = "";
+                            String familyname1 = "";
+
+                            int p = 0;
+                            while( rs_p.next() )
+                            {
+                                String firstname  = rs_p.getString( "firstname" );
+                                String familyname = rs_p.getString( "familyname" );
+                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+
+                                if( p == 0 ) {
+                                    firstname1  = firstname;
+                                    familyname1 = familyname;
+                                }
+                                else {
+                                    if( firstname.equals( firstname1 ) && familyname.equals( familyname1 ) ) {
+                                        System.out.println( "MATCH" );
+                                        nduplicates++;
+                                    }
+                                }
+
+                                p++;
+                            }
+                            //System.out.println( "\n" );
+                        }
                     }
-                    System.out.println( "\n" );
+
+                    else if( registration_maintype == 2 )
+                    {
+                        query_p = "SELECT role, firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
+
+                        if( query_p.isEmpty() )
+                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
+                        else
+                        {
+                            System.out.println( query_p );
+                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+
+                            while( rs_p.next() )
+                            {
+                                String firstname  = rs_p.getString( "firstname" );
+                                String familyname = rs_p.getString( "familyname" );
+                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                            }
+                            //System.out.println( "\n" );
+                        }
+                    }
+
+                    else if( registration_maintype == 3 )
+                    {
+                        query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
+
+                        if( query_p.isEmpty() )
+                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
+                        else
+                        {
+                            System.out.println( query_p );
+                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                            String firstname1  = "";
+                            String familyname1 = "";
+
+                            int p = 0;
+                            while( rs_p.next() )
+                            {
+                                String firstname  = rs_p.getString( "firstname" );
+                                String familyname = rs_p.getString( "familyname" );
+                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+
+                                if( p == 0 ) {
+                                    firstname1  = firstname;
+                                    familyname1 = familyname;
+                                }
+                                else {
+                                    if( firstname.equals( firstname1 ) && familyname.equals( familyname1 ) ) {
+                                        System.out.println( "MATCH" );
+                                        nduplicates++;
+                                    }
+                                }
+
+                                p++;
+                            }
+                        }
+                    }
+
+
                 }
             }
-            if( row == 0 ) { showMessage( "No duplicates in links_cleaned", false , true); }
-            else { showMessage( "Rows with duplicates in links_cleaned: " + row, false , true); }
+
+            showMessage( "Duplicates in links_cleaned: " + nduplicates, false , true);
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
@@ -5603,8 +5716,20 @@ public class LinksCleanedThread extends Thread
             }
         }
 
-        if( 1 == 1 ) { return; }
 
+    } // removeDoubleRegistrations
+
+
+    /**
+     * @param debug
+     * @param source
+     * @throws Exception
+     */
+    private void postTasks( boolean debug, String source ) throws Exception
+    {
+        if( debug ) { showMessage( "postTasks()", false, true ); }
+        // Notice:
+        // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
         String[] queries =
         {

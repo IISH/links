@@ -28,7 +28,7 @@ import modulemain.LinksSpecific;
  * This Class contains logging procedures
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-04-Dec-2014 Latest Change
+ * FL-04-Feb-2015 Latest Change
  */
 public class PrintLogger
 {
@@ -64,7 +64,7 @@ public class PrintLogger
     public void show( String intext ) throws Exception
     {
         // why do i get all intext strings twice ??
-        //if( intext == intextPrevious ) { return; }
+        if( intext == intextPrevious ) { return; }
 
         String text = intext;
         // empty line without timestamp

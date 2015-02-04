@@ -17,6 +17,8 @@ import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 
+import com.google.common.base.Strings;
+
 
 /**
  * @author Cor Munnik
@@ -24,11 +26,11 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-02-Feb-2015 Latest change
+ * FL-04-Feb-2015 Latest change
  */
 public class LinksIDS
 {
-    // with MAX_LIST_SIZE = 10000 the db INSERT became too big, but you can also adapt the 'max_allowed_packet' MySQL parameter.
+    //public static intMAX_LIST_SIZE = 10000;   // the db INSERT became too big, but you can also adapt the 'max_allowed_packet' MySQL parameter.
     public static int MAX_LIST_SIZE = 5000;
 
     public static String url_links_general  = null;
@@ -40,25 +42,27 @@ public class LinksIDS
     private static Statement statement = null;
     private static PreparedStatement preparedStatement = null;
     private static ResultSet resultSet = null;
-    //private static LinkedBlockingQueue< String >             qe  = new LinkedBlockingQueue<String>(1024);
-    private static LinkedBlockingQueue< ArrayList< Person > >  qe  = new LinkedBlockingQueue<ArrayList<Person>>(1024);
-    private static LinkedBlockingQueue< ArrayList< String > >  qe2 = new LinkedBlockingQueue<ArrayList<String>>(1024);
-    private static String insertStatement             = "";
-    private static ArrayList<Thread> threads          = new ArrayList<Thread>();
-    private static int numberOfThreads                = 12;
-    private static Integer personsWritten             = 0;
 
-    public static int phase                           = 0;
+    //private static LinkedBlockingQueue< String >             qe  = new LinkedBlockingQueue<String>(1024);
+    private static LinkedBlockingQueue< ArrayList< Person > >  qe  = new LinkedBlockingQueue<ArrayList<Person>>( 1024 );
+    private static LinkedBlockingQueue< ArrayList< String > >  qe2 = new LinkedBlockingQueue<ArrayList<String>>( 1024 );
+
+    private static String insertStatement    = "";
+    private static ArrayList<Thread> threads = new ArrayList<Thread>();
+    private static int numberOfThreads       = 12;
+    private static Integer personsWritten    = 0;
+    public static int phase                  = 0;
     
     static class Pair {
         int x;
         int y;
     }
     
-    static HashMap< Pair,    Integer > relations = null;
-    static HashMap< Integer, Integer > locations = null;
+    static HashMap< Pair,    Integer > relations  = null;
+    static HashMap< Integer, Integer > locations  = null;
     static HashMap< Integer, Integer > locNo2Id_C = new HashMap<Integer, Integer>();
-    
+
+    /*
     private static String sp01 = "%s";
     private static String sp02 = sp01 + sp01;
     private static String sp03 = sp02 + sp02;
@@ -74,6 +78,10 @@ public class LinksIDS
     private static String sp13 = sp12 + sp12;   //  4096
     private static String sp14 = sp13 + sp13;   //  8192
     private static String sp15 = sp14 + sp14;   // 16384
+    */
+
+    private static String sp15 = Strings.repeat( "%s", 16384 );
+    //private static String sp15 = Strings.repeat( "%s", MAX_LIST_SIZE );     //
 
     private static ArrayList< String >  iList = new ArrayList<String>();
     private static ArrayList< String > iiList = new ArrayList<String>();

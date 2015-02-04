@@ -1,24 +1,23 @@
 package linksids;
 
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.w3c.dom.stylesheets.LinkStyle;
+//import java.sql.Connection;             // general, for MySQL, PostgreSQL, ...
+import java.sql.Statement;              // general, for MySQL, PostgreSQL, ...
 
-import com.mysql.jdbc.Connection;
-import com.mysql.jdbc.PreparedStatement;
-import com.mysql.jdbc.Statement;
+import com.mysql.jdbc.Connection;     // MySQL specific
+//import com.mysql.jdbc.Statement;      // MySQL specific
+
+import com.google.common.base.Strings;
+
 
 /**
  * @author Cor Munnik
@@ -27,14 +26,13 @@ import com.mysql.jdbc.Statement;
  * <p/>
  * FL-21-Jan-2014 Imported from CM
  * FL-03-Feb-2015 Also use partner in personNumber (from KM + CM)
- * FL-03-Feb-2015 Latest change
+ * FL-04-Feb-2015 Latest change
  *
- * TODO why both
- * java.sql.Statement and
- * com.mysql.jdbc.Statement ?
  */
 public class PersonNumber implements Runnable
 {
+    public static int MAX_LIST_SIZE = 16384;
+
     private static String url_links_ids = null;
 
     //static HashMap<Integer, HashSet<Integer>>   personNumberToP_IDs     = new HashMap<Integer, HashSet<Integer>>();  
@@ -48,10 +46,11 @@ public class PersonNumber implements Runnable
     
     static BlockingQueue<ArrayList<Integer>>    queue = new LinkedBlockingQueue<ArrayList<Integer>>(1024);
     static Integer                              personNumbersWritten = new Integer(0);
-    private static ArrayList<Integer>            pLStop         = new ArrayList<Integer>(); 
+    private static ArrayList<Integer>           pLStop         = new ArrayList<Integer>();
 
     static final int                            numberOfThreads =  5;
-    
+
+    /*
     private static String sp01                         = "%s";                
     private static String sp02                         = sp01 + sp01;             
     private static String sp03                         = sp02 + sp02;             
@@ -69,6 +68,10 @@ public class PersonNumber implements Runnable
     private static String sp15                         = sp14 + sp14; // 16384 
     private static String sp16                         = sp15 + sp15; // 32768 
     private static String sp17                         = sp16 + sp16; // 65536
+    */
+
+    //private static String sp15 = Strings.repeat( "%s", 16384 );
+    private static String sp15 = Strings.repeat( "%s", MAX_LIST_SIZE );
 
 
     /**
@@ -86,9 +89,11 @@ public class PersonNumber implements Runnable
         
         while( true )
         {
-            ArrayList<Integer> values = null;
+            ArrayList< Integer > values = null;
+
             try {
-                 values = queue.take();
+                values = queue.take();
+
             }
             catch( InterruptedException ex )
             {
@@ -97,6 +102,7 @@ public class PersonNumber implements Runnable
                 Utils.closeConnection( connection );
                 System.exit( -1 );
             }
+
             if( values == pLStop )
             {
                 Utils.commitConnection( connection );
@@ -108,7 +114,8 @@ public class PersonNumber implements Runnable
             //Utils.commitConnection(connection);
             
             synchronized( personNumbersWritten ) {
-                personNumbersWritten += 16384;
+                //personNumbersWritten += 16384;
+                personNumbersWritten += values.size();
                 System.out.println( "Written " + personNumbersWritten + " person numbers" );
             }
         }
@@ -135,7 +142,7 @@ public class PersonNumber implements Runnable
         {
             try
             {
-                java.sql.Statement statement = connection.createStatement();
+                Statement statement = connection.createStatement();
 
                 String select = "select X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
                         " from links_match.matches as M, links_prematch.links_base as X,  links_prematch.links_base as Y " +
@@ -221,7 +228,8 @@ public class PersonNumber implements Runnable
             i.add( j );
             i.add( personNumber[ j ] );
 
-            if( count % 16384  == 0 )
+            //if( count % 16384  == 0 )
+            if( count % MAX_LIST_SIZE  == 0 )
             {
                 try { queue.put( i ); }
                 catch (InterruptedException ex )
@@ -294,10 +302,13 @@ public class PersonNumber implements Runnable
 
         
         String s = "";
-        if(a.size() %  16384 == 0)
+        //if(a.size() %  16384 == 0)
+        if( a.size() %  MAX_LIST_SIZE == 0 )
+        {
             insStmt = String.format(sp15, a.toArray());
-        else{
-            
+        }
+        else
+        {
             String fmt = "";
             for(int i = 0; i < a.size(); i++)
                 fmt += "%s";

@@ -14,13 +14,15 @@ import com.mysql.jdbc.Statement;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-23-Jan-2015 Latest change
+ * FL-04-Feb-2015 Latest change
  */
 public class Utils 
 {
-    static ArrayList<INDIVIDUAL>           iL = new ArrayList<INDIVIDUAL>();
-    static ArrayList<CONTEXT>             iCL = new ArrayList<CONTEXT>();
-    static ArrayList<CONTEXT_CONTEXT>    iCCL = new ArrayList<CONTEXT_CONTEXT>();
+    public static int MAX_LIST_SIZE = 5000;
+
+    static ArrayList< INDIVIDUAL >        iL = new ArrayList<INDIVIDUAL>();
+    static ArrayList< CONTEXT >          iCL = new ArrayList<CONTEXT>();
+    static ArrayList< CONTEXT_CONTEXT > iCCL = new ArrayList<CONTEXT_CONTEXT>();
 
     static int Id_C;
     static int Old_id_C;
@@ -29,7 +31,9 @@ public class Utils
     public static void addContext(Connection connection, CONTEXT context)
     {
         iCL.add(context);
-        if(iCL.size() >= 1000){
+        //if(iCL.size() >= 1000)
+        if( iCL.size() >= MAX_LIST_SIZE )
+        {
             writeCList(connection);
             iCL.clear();
         }
@@ -40,7 +44,9 @@ public class Utils
     public static void addContextContext(Connection connection, CONTEXT_CONTEXT cc)
     {
         iCCL.add(cc);
-        if(iCCL.size() >= 1000){
+        //if(iCCL.size() >= 1000)
+        if( iCCL.size() >= MAX_LIST_SIZE )
+        {
             writeCCList(connection);
             iCCL.clear();
         }
