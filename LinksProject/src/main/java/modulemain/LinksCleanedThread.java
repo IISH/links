@@ -18,15 +18,8 @@ import java.util.Set;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import dataset.DateYearMonthDaySet;
-import dataset.DivideMinMaxDatumSet;
-import dataset.Options;
-import dataset.MinMaxDateSet;
-import dataset.MinMaxMainAgeSet;
-import dataset.MinMaxYearSet;
-import dataset.PersonC;
-import dataset.RegistrationC;
-import dataset.TabletoArrayListMultimap;
+import dataset.*;
+import dataset.TableToArrayListMultimap;
 
 import connectors.MySqlConnector;
 import enumdefinitions.TableType;
@@ -45,31 +38,34 @@ import general.PrintLogger;
  * FL-20-Aug-2014 Occupation added
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
- * FL-04-Feb-2015 Latest change
+ * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
+ * FL-05-Feb-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
- * - in order to use TabletoArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
+ * - TableToArrayListMultimap, function updateTable() writes new entries to links_general, by calling
+ *   function insertIntoTable() of connector MySqlConnector. We might have to add IGNORE to the query for duplicates.
+ * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
  *   that can store (and write) not only the the registration_maintype but also the registration_type.
  */
 
 public class LinksCleanedThread extends Thread
 {
     // Table -> ArrayListMultiMap
-    private TabletoArrayListMultimap almmPrepiece;      // Names
-    private TabletoArrayListMultimap almmSuffix;        // Names
-    private TabletoArrayListMultimap almmAlias;         // Names
-    private TabletoArrayListMultimap almmFirstname;     // Names
-    private TabletoArrayListMultimap almmFamilyname;    // Names
-    private TabletoArrayListMultimap almmLocation;      // Location
-    //private TabletoArrayListMultimap almmRegisType;     // Registration Type
-    private TabletoArrayListMultimap almmOccupation;    // Occupation
-    private TabletoArrayListMultimap almmReport;        // Report warnings
-    private TabletoArrayListMultimap almmRole;          // Role
-    private TabletoArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
-    private TabletoArrayListMultimap almmSex;           // Civilstatus & Gender
-    private TabletoArrayListMultimap almmMarriageYear;  // min/max marriage year
-    private TabletoArrayListMultimap almmLitAge;        // age_literal
+    private TableToArrayListMultimap almmPrepiece;      // Names
+    private TableToArrayListMultimap almmSuffix;        // Names
+    private TableToArrayListMultimap almmAlias;         // Names
+    private TableToArrayListMultimap almmFirstname;     // Names
+    private TableToArrayListMultimap almmFamilyname;    // Names
+    private TableToArrayListMultimap almmLocation;      // Location
+    //private TableToArrayListMultimap almmRegisType;     // Registration Type
+    private TableToArrayListMultimap almmOccupation;    // Occupation
+    private TableToArrayListMultimap almmReport;        // Report warnings
+    private TableToArrayListMultimap almmRole;          // Role
+    private TableToArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
+    private TableToArrayListMultimap almmSex;           // Civilstatus & Gender
+    private TableToArrayListMultimap almmMarriageYear;  // min/max marriage year
+    private TableToArrayListMultimap almmLitAge;        // age_literal
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -258,7 +254,7 @@ public class LinksCleanedThread extends Thread
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( "Loading report table...", false, true );
-            almmReport = new TabletoArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
+            almmReport = new TableToArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
             //almmReport.contentsOld();
 
             for( int sourceId : sourceList )
@@ -819,9 +815,9 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        //almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        //almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
 
         showMessage( "standardPrepiece", false, true );
         standardPrepiece( source );
@@ -871,9 +867,9 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
         showTimingMessage( msg, start );
 
         // Firstnames
@@ -889,7 +885,7 @@ public class LinksCleanedThread extends Thread
         msg = "Loading reference table: ref_firstname";
         showMessage( msg + "...", false, true );
 
-        almmFirstname = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
+        almmFirstname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
         showMessage( "Number of rows in reference table: " + numrows, false, true );
@@ -959,9 +955,9 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-        almmPrepiece = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        almmAlias    = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+        almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
         showTimingMessage( msg, start );
 
         // Familynames
@@ -978,7 +974,7 @@ public class LinksCleanedThread extends Thread
         msg = "Loading reference table: ref_familyname";
         showMessage( msg + "...", false, true );
 
-        almmFamilyname = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
+        almmFamilyname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
         int numrows = almmFamilyname.numrows();
         int numkeys = almmFamilyname.numkeys();
         showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
@@ -2165,7 +2161,7 @@ public class LinksCleanedThread extends Thread
         String msg = "Loading reference table: location";
         showMessage( msg + "...", false, true );
         long start = System.currentTimeMillis();
-        almmLocation = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
+        almmLocation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
         showTimingMessage( msg, start );
         int numrows = almmLocation.numrows();
         int numkeys = almmLocation.numkeys();
@@ -2465,10 +2461,10 @@ public class LinksCleanedThread extends Thread
         showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
-        almmSex = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
+        almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
 
         showMessage("Loading reference table: status_sex (civil status as key)...", false, true);
-        almmCivilstatus = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
+        almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
 
         int numrows = almmCivilstatus.numrows();
         int numkeys = almmCivilstatus.numkeys();
@@ -2731,7 +2727,7 @@ public class LinksCleanedThread extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_registration";
         showMessage( msg + "...", false, true );
-        almmRegisType = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
+        almmRegisType = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
         */
 
@@ -2803,7 +2799,8 @@ public class LinksCleanedThread extends Thread
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
                         dbconCleaned.runQuery( query );
-                    } else if( refSCode.equals( SC_Y ) ) {
+                    }
+                    else if( refSCode.equals( SC_Y ) ) {
                         if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
@@ -2861,7 +2858,7 @@ public class LinksCleanedThread extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_occupation";
         showMessage( msg + "...", false, true );
-        almmOccupation = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
+        almmOccupation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         int numrows = almmOccupation.numrows();
@@ -3037,7 +3034,7 @@ public class LinksCleanedThread extends Thread
 
         showMessage( funcname + "...", false, true );
 
-        almmLitAge = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
+        almmLitAge = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
         int size = almmLitAge.numkeys();
         showMessage( "Reference table: ref_age [" + size + " records]", false, true );
 
@@ -3330,7 +3327,7 @@ public class LinksCleanedThread extends Thread
         String msg = "Loading reference table: ref_role";
         showMessage( msg + "...", false, true );
 
-        almmRole = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
+        almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
         int size = almmRole.numkeys();
         showMessage( "Reference table: ref_role [" + size + " records]", false, true );
 
@@ -5159,7 +5156,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        almmMarriageYear = new TabletoArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
+        almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
         //almmMarriageYear.contentsOld();
 
         minMaxMarriageYear( debug, source );
@@ -5567,21 +5564,24 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void removeDoubleRegistrations( boolean debug, String source ) throws Exception
+    private void removeDoubleRegistrations( boolean debug, String source )
+    throws Exception
     {
-        debug = true;
+        // Do we want to add "WHERE id_source = ..." to the first query?
 
-        if( debug ) { showMessage( "removeDoubleRegistrations()", false, true ); }
+        showMessage( "removeDoubleRegistrations()", false, true );
+        showMessage( "Notice: we show the familyname prefix, but do not use the prefix for comparisons", false , true );
+
+        //int min_cnt = 2;
+        int min_cnt = 3;
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
-        int min_cnt = 2;
         String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
             + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
             + "HAVING cnt >= " + min_cnt + " "
             + "ORDER BY cnt DESC;";
 
-        System.out.println( query_r );
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nduplicates = 0;
@@ -5589,9 +5589,9 @@ public class LinksCleanedThread extends Thread
         try {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
             int row = 0;
-            while( rs_r.next() )
+
+            while( rs_r.next() )        // process all groups
             {
-                System.out.println( "\n" );
                 row++;
                 String registrationIds_str      = rs_r.getString( "GROUP_CONCAT(id_registration)" );
                 int registration_maintype       = rs_r.getInt(    "registration_maintype" );
@@ -5599,115 +5599,258 @@ public class LinksCleanedThread extends Thread
                 String registration_date        = rs_r.getString( "registration_date" );
                 String registration_seq         = rs_r.getString( "registration_seq" );
                 int cnt                         = rs_r.getInt(    "cnt" );
-                System.out.printf( "row: %3d, reg_maintype: %d, cnt: %d, reg_loc_no: %s, reg_date: %s, reg_seq: %4s, regIds: %s\n",
-                    row, registration_maintype, cnt, registration_location_no, registration_date, registration_seq, registrationIds_str );
+
+                // System.out.printf( "row: %3d, reg_maintype: %d, cnt: %d, reg_loc_no: %s, reg_date: %s, reg_seq: %4s, regIds: %s\n",
+                //     row, registration_maintype, cnt, registration_location_no, registration_date, registration_seq, registrationIds_str );
+
+                int id_registration1 = 0;
+                int id_registration2 = 0;
+
+
+
+                String bride_firstname1  = "";
+                String bride_prefix1     = "";
+                String bride_familyname1 = "";
+
+                String groom_firstname1  = "";
+                String groom_prefix1     = "";
+                String groom_familyname1 = "";
+
+                String bride_firstname2  = "";
+                String bride_prefix2     = "";
+                String bride_familyname2 = "";
+
+                String groom_firstname2  = "";
+                String groom_prefix2     = "";
+                String groom_familyname2 = "";
+
+                String deceased_firstname1  = "";
+                String deceased_prefix1     = "";
+                String deceased_familyname1 = "";
+
+                String deceased_firstname2  = "";
+                String deceased_prefix2     = "";
+                String deceased_familyname2 = "";
+
 
                 String registrationIds[] = registrationIds_str.split( "," );
-                for( int r = 0 ; r < registrationIds.length; r++ )
+                //showMessage_nl();
+                //showMessage( "Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
+
+                // loop over members of a GROUP_CONCAT
+                for( int rid1 = 0 ; rid1 < registrationIds.length; rid1++ )
                 {
-                    String id_registration = registrationIds[ r ];
-                    System.out.printf( "reg_id: %s\n", id_registration );
-
-                    String query_p = "";
-                    if( registration_maintype == 1 )
+                    for( int rid2 = rid1 + 1 ; rid2 < registrationIds.length; rid2++ )
                     {
-                        query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
+                        id_registration1 = Integer.parseInt( registrationIds[ rid1 ] );
+                        id_registration2 = Integer.parseInt( registrationIds[ rid2 ] );
 
-                        if( query_p.isEmpty() )
-                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
-                        else
-                        {
-                            System.out.println( query_p );
-                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                            String firstname1  = "";
-                            String familyname1 = "";
+                        boolean duplicate = compareRegistrations( debug, id_registration1, id_registration2, registration_maintype );
 
-                            int p = 0;
-                            while( rs_p.next() )
-                            {
-                                String firstname  = rs_p.getString( "firstname" );
-                                String familyname = rs_p.getString( "familyname" );
-                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                        if( duplicate ) {
+                            showMessage_nl();
+                            showMessage( "Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
 
-                                if( p == 0 ) {
-                                    firstname1  = firstname;
-                                    familyname1 = familyname;
-                                }
-                                else {
-                                    if( firstname.equals( firstname1 ) && familyname.equals( familyname1 ) ) {
-                                        System.out.println( "MATCH" );
-                                        nduplicates++;
-                                    }
-                                }
-
-                                p++;
-                            }
-                            //System.out.println( "\n" );
                         }
                     }
 
-                    else if( registration_maintype == 2 )
+                    /*
+                    int id_registration = Integer.parseInt( registrationIds[ rid ] );
+                    //System.out.printf( "reg_id: %d\n", id_registration );
+
+                    if( registration_maintype == 1 )
                     {
-                        query_p = "SELECT role, firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
+                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
 
-                        if( query_p.isEmpty() )
-                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
-                        else
+                        if( debug ) { System.out.println( query_p ); }
+
+                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                        int p = 0;
+
+                        while( rs_p.next() )
                         {
-                            System.out.println( query_p );
-                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                            int role = rs_p.getInt( "role" );
 
-                            while( rs_p.next() )
-                            {
-                                String firstname  = rs_p.getString( "firstname" );
-                                String familyname = rs_p.getString( "familyname" );
-                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                            String firstname  = rs_p.getString( "firstname" );
+                            String prefix     = rs_p.getString( "prefix" );
+                            String familyname = rs_p.getString( "familyname" );
+
+                            if( firstname  == null ) { firstname  = ""; }
+                            if( prefix     == null ) { prefix     = ""; }
+                            if( familyname == null ) { familyname = ""; }
+
+                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+
+                            if( rid == 0 ) {
+                                id_registration1 = id_registration;
+
+                                newborn_firstname1  = firstname;
+                                newborn_prefix1     = prefix;
+                                newborn_familyname1 = familyname;
                             }
-                            //System.out.println( "\n" );
+                            else {
+                                id_registration2 = id_registration;
+
+                                newborn_firstname2  = firstname;
+                                newborn_prefix2     = prefix;
+                                newborn_familyname2 = familyname;
+                            }
+
+                            p++;
+                        }
+
+                        if( newborn_firstname1.equals(  newborn_firstname2 )  &&
+                            newborn_familyname1.equals( newborn_familyname2 )
+                        ) {
+                            showMessage_nl();
+                            if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
+                            showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
+
+                            showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
+                            showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+
+                            nduplicates++;
+                        }
+                    }
+
+                    if( registration_maintype == 2 )    // marriage
+                    {
+                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
+
+                        if( debug ) { System.out.println( query_p ); }
+
+                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                        int p = 0;
+
+                        while( rs_p.next() )
+                        {
+                            int role = rs_p.getInt( "role" );
+
+                            String firstname  = rs_p.getString( "firstname" );
+                            String prefix     = rs_p.getString( "prefix" );
+                            String familyname = rs_p.getString( "familyname" );
+
+                            if( firstname  == null ) { firstname  = ""; }
+                            if( prefix     == null ) { prefix     = ""; }
+                            if( familyname == null ) { familyname = ""; }
+
+                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+
+                            if( rid == 0 ) {
+                                id_registration1 = id_registration;
+
+                                if( role == 4 ) {
+                                    bride_firstname1  = firstname;
+                                    bride_prefix1     = prefix;
+                                    bride_familyname1 = familyname;
+                                }
+                                else {
+                                    groom_firstname1  = firstname;
+                                    groom_prefix1     = prefix;
+                                    groom_familyname1 = familyname;
+                                }
+                            }
+                            else {
+                                id_registration2 = id_registration;
+
+                                if( role == 4 ) {
+                                    bride_firstname2  = firstname;
+                                    bride_prefix2     = prefix;
+                                    bride_familyname2 = familyname;
+                                }
+                                else {
+                                    groom_firstname2  = firstname;
+                                    groom_prefix2     = prefix;
+                                    groom_familyname2 = familyname;
+                                }
+                            }
+
+                            p++;
+                        }
+
+                        if( bride_firstname1.equals(  bride_firstname2 )  &&
+                            bride_familyname1.equals( bride_familyname2 ) &&
+
+                            groom_firstname1.equals(  groom_firstname2 )  &&
+                            groom_familyname1.equals( groom_familyname2 )
+                        ) {
+                            showMessage_nl();
+                            if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
+                            showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
+
+                            showMessage( "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1, false, true );
+                            showMessage( "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2, false, true );
+
+                            showMessage( "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1, false, true );
+                            showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
+
+                            nduplicates++;
                         }
                     }
 
                     else if( registration_maintype == 3 )
                     {
-                        query_p = "SELECT firstname, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
+                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
 
-                        if( query_p.isEmpty() )
-                        { System.out.println( "skipping registration_maintype = " + registration_maintype  ); }
-                        else
+                        if( debug ) { System.out.println( query_p ); }
+
+                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
+                        int p = 0;
+
+                        while( rs_p.next() )
                         {
-                            System.out.println( query_p );
-                            ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                            String firstname1  = "";
-                            String familyname1 = "";
+                            int role = rs_p.getInt( "role" );
 
-                            int p = 0;
-                            while( rs_p.next() )
-                            {
-                                String firstname  = rs_p.getString( "firstname" );
-                                String familyname = rs_p.getString( "familyname" );
-                                System.out.printf( "familyname: %s, firstname: %s\n", familyname, firstname );
+                            String firstname  = rs_p.getString( "firstname" );
+                            String prefix     = rs_p.getString( "prefix" );
+                            String familyname = rs_p.getString( "familyname" );
 
-                                if( p == 0 ) {
-                                    firstname1  = firstname;
-                                    familyname1 = familyname;
-                                }
-                                else {
-                                    if( firstname.equals( firstname1 ) && familyname.equals( familyname1 ) ) {
-                                        System.out.println( "MATCH" );
-                                        nduplicates++;
-                                    }
-                                }
+                            if( firstname  == null ) { firstname  = ""; }
+                            if( prefix     == null ) { prefix     = ""; }
+                            if( familyname == null ) { familyname = ""; }
 
-                                p++;
+                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+
+                            if( rid == 0 ) {
+                                id_registration1 = id_registration;
+
+                                deceased_firstname1  = firstname;
+                                deceased_prefix1     = prefix;
+                                deceased_familyname1 = familyname;
                             }
+                            else {
+                                id_registration2 = id_registration;
+
+                                deceased_firstname2  = firstname;
+                                deceased_prefix2     = prefix;
+                                deceased_familyname2 = familyname;
+                            }
+
+                            p++;
+                        }
+
+                        if( deceased_firstname1.equals(  deceased_firstname2 )  &&
+                            deceased_familyname1.equals( deceased_familyname2 )
+                        ) {
+                            showMessage_nl();
+                            if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
+                            showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
+
+                            showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
+                            showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
+
+                            nduplicates++;
                         }
                     }
+                    */
 
-
+                    // write error msg with EC=1
+                    // remove second member of duplicates from registration_c and person_c
                 }
             }
 
-            showMessage( "Duplicates in links_cleaned: " + nduplicates, false , true);
+            showMessage_nl();
+            showMessage( "Number of duplicates in links_cleaned: " + nduplicates, false , true );
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
@@ -5715,9 +5858,90 @@ public class LinksCleanedThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
-
-
     } // removeDoubleRegistrations
+
+
+    /**
+     * @param debug
+     * @param id_registration1
+     * @param id_registration2
+     * @throws Exception
+     */
+    private boolean compareRegistrations( boolean debug, int id_registration1, int id_registration2, int registration_maintype )
+    throws Exception
+    {
+        showMessage( "Comparing: " + id_registration1 + ", " + id_registration2, false, true );
+
+        boolean duplicate = false;
+
+        if( registration_maintype == 1 )
+        {
+            String query_p1 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
+            if( debug ) { System.out.println( query_p1 ); }
+            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
+
+            String newborn_firstname1  = "";
+            String newborn_prefix1     = "";
+            String newborn_familyname1 = "";
+
+            while( rs_p1.next() )
+            {
+                int role = rs_p1.getInt( "role" );
+
+                newborn_firstname1  = rs_p1.getString( "firstname" );
+                newborn_prefix1     = rs_p1.getString( "prefix" );
+                newborn_familyname1 = rs_p1.getString( "familyname" );
+
+                if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
+                if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
+                if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
+
+                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+            }
+
+
+            String query_p2 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
+            if( debug ) { System.out.println( query_p2 ); }
+            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
+
+            String newborn_firstname2  = "";
+            String newborn_prefix2     = "";
+            String newborn_familyname2 = "";
+
+            while( rs_p2.next() )
+            {
+                int role = rs_p2.getInt( "role" );
+
+                newborn_firstname2  = rs_p2.getString( "firstname" );
+                newborn_prefix2     = rs_p2.getString( "prefix" );
+                String familyname = rs_p2.getString( "familyname" );
+
+                if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
+                if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
+                if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
+
+                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+            }
+
+            if( newborn_firstname1.equals(  newborn_firstname2 )  &&
+                newborn_familyname1.equals( newborn_familyname2 )
+            ) {
+                showMessage_nl();
+                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
+                showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
+
+                showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
+                showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+
+                duplicate = true;
+            }
+        }
+
+
+
+
+        return duplicate;
+    }
 
 
     /**
@@ -5725,7 +5949,8 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void postTasks( boolean debug, String source ) throws Exception
+    private void postTasks( boolean debug, String source )
+    throws Exception
     {
         if( debug ) { showMessage( "postTasks()", false, true ); }
         // Notice:

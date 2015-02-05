@@ -21,9 +21,9 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-30-Oct-2014 Latest change
+ * FL-05-Feb-2015 Latest change
  */
-public class TabletoArrayListMultimap
+public class TableToArrayListMultimap
 {
     private boolean debug = false;
 
@@ -65,7 +65,7 @@ public class TabletoArrayListMultimap
      * @param tableName
      * @param keyColumn
      */
-    public TabletoArrayListMultimap
+    public TableToArrayListMultimap
     (
             MySqlConnector conn_read,
             MySqlConnector conn_write,
@@ -81,7 +81,7 @@ public class TabletoArrayListMultimap
         this.keyColumn      = keyColumn;
         this.standardColumn = standardColumn;
 
-        if( debug ) { System.out.println( "TabletoArrayListMultimap, table name: " +
+        if( debug ) { System.out.println( "TableToArrayListMultimap, table name: " +
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
 
         oldMap = ArrayListMultimap.create();
@@ -125,7 +125,7 @@ public class TabletoArrayListMultimap
         if( check_duplicates ) { query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC"; }
         else { query = "SELECT * FROM `" + tableName + "`"; }
 
-        //if( debug ) { System.out.println( "TabletoArrayListMultimap, query: " + query ); }
+        //if( debug ) { System.out.println( "TableToArrayListMultimap, query: " + query ); }
         ResultSet rs = conn_read.runQueryWithResult( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
@@ -191,7 +191,7 @@ public class TabletoArrayListMultimap
     public int store_check( ResultSet rs, ResultSetMetaData rs_md )
     throws Exception
     {
-        //System.out.println( "TabletoArrayListMultimap/store_check()" );
+        //System.out.println( "TableToArrayListMultimap/store_check()" );
 
         int ndups = 0;
         boolean isdup = false;
@@ -220,7 +220,7 @@ public class TabletoArrayListMultimap
                     strValue = rs.getString( c );
                     if( strValue != null ) { strValue.toLowerCase(); }
                 }
-                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
+                else { throw new Exception( "TableToArrayListMultimap: unhandled column type: " + ct ); }
 
                 String columnName = columnNames.get( i );
 
@@ -287,7 +287,7 @@ public class TabletoArrayListMultimap
     public void store( ResultSet rs, ResultSetMetaData rs_md )
     throws Exception
     {
-        //System.out.println( "TabletoArrayListMultimap/store()" );
+        //System.out.println( "TableToArrayListMultimap/store()" );
 
         /*
         -7  BIT
@@ -338,7 +338,7 @@ public class TabletoArrayListMultimap
                     strValue = rs.getString(c);
                     if( strValue != null ) { strValue.toLowerCase(); }
                 }
-                else { throw new Exception( "TabletoArrayListMultimap: unhandled column type: " + ct ); }
+                else { throw new Exception( "TableToArrayListMultimap: unhandled column type: " + ct ); }
 
                 String columnName = columnNames.get( i );
 
