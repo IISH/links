@@ -579,7 +579,8 @@ public class TableToArrayListMultimap
 
             String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
 
-            conn_write.insertIntoTable( tableName, fields, values );
+            //conn_write.insertIntoTable( tableName, fields, values );
+            conn_write.insertIntoTableIgnore( tableName, fields, values );  // ignore duplicates for UNIQUE keys
         }
     } // updateTable
 

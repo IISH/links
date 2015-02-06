@@ -718,6 +718,12 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
+        String qtruncate = "TRUNCATE TABLE links_base";     // We must delete the previous stuff
+        showMessage( qtruncate, false, true );
+        try { conPrematch.runQuery( qtruncate ); }          // links_base table moved to links_prematch db
+        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+
+
         String qPrefix = "FillBaseTable/FillBaseTable_q";
         int nqFirst = 1;
         int nqLast  = 4;
@@ -734,7 +740,7 @@ public class LinksPrematch extends Thread
             showMessage( msg + "...", false, true );
             if( debug ) { showMessage( query, false, true ); }
 
-            try { conPrematch.runQuery( query ); }      // links_base table moved to links_prematch db
+            try { conPrematch.runQuery( query ); }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
             elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }

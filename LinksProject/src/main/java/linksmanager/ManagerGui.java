@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-05-Feb-2015 Latest change
+ * FL-06-Feb-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -87,23 +87,24 @@ public class ManagerGui extends javax.swing.JFrame
     private Options opts;
 
     // strings read from property file
-    private String dbgRenewData       = "";
-    private String dbgPrepieceSuffix  = "";
-    private String dbgFirstnames      = "";
-    private String dbgFamilyames      = "";
-    private String dbgLocations       = "'";
-    private String dbgStatusSex       = "";
-    private String dbgRegType         = "";
-    private String dbgOccupation      = "";
-    private String dbgAge             = "";
-    private String dbgRole            = "'";
-    private String dbgDates           = "";
-    private String dbgMinMaxMarriage  = "";
-    private String dbgPartsToFullDate = "";
-    private String dbgDaysSinceBegin  = "";
-    private String dbgPostTasks       = "";
-    private String dbgPrematch        = "";
-    private String dbgMatch           = "";
+    private String dbgRenewData        = "";
+    private String dbgPrepieceSuffix   = "";
+    private String dbgFirstnames       = "";
+    private String dbgFamilyames       = "";
+    private String dbgLocations        = "";
+    private String dbgStatusSex        = "";
+    private String dbgRegType          = "";
+    private String dbgOccupation       = "";
+    private String dbgAge              = "";
+    private String dbgRole             = "";
+    private String dbgDates            = "";
+    private String dbgMinMaxMarriage   = "";
+    private String dbgPartsToFullDate  = "";
+    private String dbgDaysSinceBegin   = "";
+    private String dbgPostTasks        = "";
+    private String dbgRemoveDuplicates = "";
+    private String dbgPrematch         = "";
+    private String dbgMatch            = "";
 
 
     public ManagerGui()
@@ -291,6 +292,7 @@ public class ManagerGui extends javax.swing.JFrame
         cbCdoOccupation = new JCheckBox();
         cbCdoFirstnames = new JCheckBox();
         cbCdoPrepieceSuffix = new JCheckBox();
+        cbCdoRemoveDuplicates = new JCheckBox();
         pPrematch = new JPanel();
         cbPdoFrequencyTables = new JCheckBox();
         cbPdoLevenshtein = new JCheckBox();
@@ -822,17 +824,17 @@ public class ManagerGui extends javax.swing.JFrame
                                         .addComponent(jLabel12, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                     .addGroup(pCsvLayout.createParallelGroup()
-                                        .addComponent(tfCSVInfo, GroupLayout.DEFAULT_SIZE, 970, Short.MAX_VALUE)
-                                        .addComponent(tfCSVLineData, GroupLayout.DEFAULT_SIZE, 970, Short.MAX_VALUE)
+                                        .addComponent(tfCSVInfo, GroupLayout.DEFAULT_SIZE, 985, Short.MAX_VALUE)
+                                        .addComponent(tfCSVLineData, GroupLayout.DEFAULT_SIZE, 985, Short.MAX_VALUE)
                                         .addGroup(GroupLayout.Alignment.TRAILING, pCsvLayout.createSequentialGroup()
                                             .addGroup(pCsvLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                                .addComponent(tfCSVFilterText, GroupLayout.DEFAULT_SIZE, 848, Short.MAX_VALUE)
+                                                .addComponent(tfCSVFilterText, GroupLayout.DEFAULT_SIZE, 863, Short.MAX_VALUE)
                                                 .addGroup(GroupLayout.Alignment.LEADING, pCsvLayout.createSequentialGroup()
                                                     .addComponent(jLabel18)
                                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                    .addComponent(tfCSVFilterIndex, GroupLayout.DEFAULT_SIZE, 595, Short.MAX_VALUE))
-                                                .addComponent(tfCSVOutputFile, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 848, Short.MAX_VALUE)
-                                                .addComponent(tfCSVCsvFile, GroupLayout.DEFAULT_SIZE, 848, Short.MAX_VALUE))
+                                                    .addComponent(tfCSVFilterIndex, GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE))
+                                                .addComponent(tfCSVOutputFile, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 863, Short.MAX_VALUE)
+                                                .addComponent(tfCSVCsvFile, GroupLayout.DEFAULT_SIZE, 863, Short.MAX_VALUE))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                                             .addGroup(pCsvLayout.createParallelGroup()
                                                 .addComponent(bCSVPathOutpuFile, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE)
@@ -1033,7 +1035,7 @@ public class ManagerGui extends javax.swing.JFrame
                                 .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                     .addComponent(jLabel3)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(tfCTBCsvFiles, GroupLayout.DEFAULT_SIZE, 919, Short.MAX_VALUE)
+                                    .addComponent(tfCTBCsvFiles, GroupLayout.DEFAULT_SIZE, 940, Short.MAX_VALUE)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                     .addComponent(bSelectCsvToDbCsvFile, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE))
                                 .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
@@ -1049,12 +1051,12 @@ public class ManagerGui extends javax.swing.JFrame
                                                 .addComponent(jLabel32))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)))
+                                                .addComponent(tfCTDDbPass, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbUser, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbName, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                                                .addComponent(tfCTDDbLocation, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                                                .addComponent(tfCTDPreFix, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                                                .addComponent(tfCTDdelay, GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)))
                                         .addComponent(rbBebiIndexGeen, GroupLayout.Alignment.LEADING)
                                         .addComponent(rbBebiIndexGenlias, GroupLayout.Alignment.LEADING))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1062,8 +1064,8 @@ public class ManagerGui extends javax.swing.JFrame
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGap(58, 58, 58)
                                             .addComponent(jLabel11))
-                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
-                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane2, GroupLayout.DEFAULT_SIZE, 671, Short.MAX_VALUE)
+                                        .addComponent(tfCTDLatestOutput, GroupLayout.DEFAULT_SIZE, 671, Short.MAX_VALUE)
                                         .addGroup(pCsvToDatabaseLayout.createSequentialGroup()
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
                                                 .addComponent(jLabel21)
@@ -1071,9 +1073,9 @@ public class ManagerGui extends javax.swing.JFrame
                                                 .addComponent(jLabel22))
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addGroup(pCsvToDatabaseLayout.createParallelGroup()
-                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
-                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
-                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE))))))
+                                                .addComponent(pbDTCFile, GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
+                                                .addComponent(pbDTCTotal, GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE)
+                                                .addComponent(tfCTDLineNumber, GroupLayout.DEFAULT_SIZE, 581, Short.MAX_VALUE))))))
                             .addContainerGap())
                 );
                 pCsvToDatabaseLayout.setVerticalGroup(
@@ -1245,13 +1247,13 @@ public class ManagerGui extends javax.swing.JFrame
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
                                 .addGroup(pBronInternToLinksOrigineelLayout.createSequentialGroup()
                                     .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
-                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
-                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
-                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbPass, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbUser, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+                                        .addComponent(tfBILODbLocation, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+                                        .addComponent(tfBILOProjectName, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+                                        .addComponent(tfBILODeleteSource, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
                                         .addGroup(GroupLayout.Alignment.TRAILING, pBronInternToLinksOrigineelLayout.createSequentialGroup()
-                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE)
+                                            .addComponent(tfBILOdelay, GroupLayout.DEFAULT_SIZE, 280, Short.MAX_VALUE)
                                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                             .addComponent(bBronInternToLinksOrigineel)))
                                     .addGap(14, 14, 14))
@@ -1259,8 +1261,8 @@ public class ManagerGui extends javax.swing.JFrame
                                     .addComponent(cbOrunCleaned, GroupLayout.PREFERRED_SIZE, 137, GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                             .addGroup(pBronInternToLinksOrigineelLayout.createParallelGroup()
-                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 539, Short.MAX_VALUE)
-                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 539, Short.MAX_VALUE)
+                                .addComponent(jScrollPane3, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
+                                .addComponent(tfBILOLatestOutput, GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
                                 .addComponent(jLabel31))
                             .addContainerGap())
                 );
@@ -1450,6 +1452,10 @@ public class ManagerGui extends javax.swing.JFrame
                 cbCdoPrepieceSuffix.setText("Prepiece, Suffix");
                 cbCdoPrepieceSuffix.setName("cbCdoPrepieceSuffix");
 
+                //---- cbCdoRemoveDuplicates ----
+                cbCdoRemoveDuplicates.setText("Remove Duplicates");
+                cbCdoRemoveDuplicates.setName("cbCdoRemoveDuplicates");
+
                 GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
                 pLOLC.setLayout(pLOLCLayout);
                 pLOLCLayout.setHorizontalGroup(
@@ -1494,24 +1500,22 @@ public class ManagerGui extends javax.swing.JFrame
                                     .addGap(20, 20, 20))
                                 .addComponent(jLabel51, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addGroup(pLOLCLayout.createSequentialGroup()
-                                    .addGroup(pLOLCLayout.createParallelGroup()
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
                                         .addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(cbCdoDaysSinceBegin, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-                                        .addGroup(pLOLCLayout.createParallelGroup()
-                                            .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-                                                .addComponent(cbCdoFamilynames, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoLocations, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoStatusSex, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoRegType, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoDates, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoMinMaxMarriage, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoOccupation, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(cbCdoPartsToFullDate, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE))
-                                            .addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
-                                                .addComponent(cbCdoFirstnames, GroupLayout.PREFERRED_SIZE, 135, GroupLayout.PREFERRED_SIZE)
-                                                .addGap(65, 65, 65)))
+                                        .addComponent(cbCdoDaysSinceBegin, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+                                        .addComponent(cbCdoFamilynames, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoLocations, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoDates, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoMinMaxMarriage, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoOccupation, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(cbCdoPartsToFullDate, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
                                         .addComponent(cbCdoPrepieceSuffix)
-                                        .addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(cbCdoRefreshData, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+                                        .addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
+                                    .addGap(49, 49, 49)
+                                    .addComponent(cbCdoRemoveDuplicates, GroupLayout.PREFERRED_SIZE, 162, GroupLayout.PREFERRED_SIZE)
                                     .addGap(0, 0, Short.MAX_VALUE)))
                             .addGroup(pLOLCLayout.createParallelGroup()
                                 .addGroup(pLOLCLayout.createSequentialGroup()
@@ -1596,7 +1600,9 @@ public class ManagerGui extends javax.swing.JFrame
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                                     .addComponent(cbCdoMinMaxMarriage)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(cbCdoPartsToFullDate)
+                                    .addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(cbCdoPartsToFullDate)
+                                        .addComponent(cbCdoRemoveDuplicates))
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                                     .addComponent(cbCdoDaysSinceBegin)
                                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1967,25 +1973,33 @@ public class ManagerGui extends javax.swing.JFrame
             else { cbCdoPostTasks.setSelected( false ); }
         }
 
-        // debug flags
-        dbgRenewData       = properties.getProperty( "dbgRenewData" );
-        dbgPrepieceSuffix  = properties.getProperty( "dbgPrepieceSuffix" );
-        dbgFirstnames      = properties.getProperty( "dbgFirstnames" );
-        dbgFamilyames      = properties.getProperty( "dbgFamilyames" );
-        dbgLocations       = properties.getProperty( "dbgLocations" );
-        dbgStatusSex       = properties.getProperty( "dbgStatusSex" );
-        dbgRegType         = properties.getProperty( "dbgRegType" );
-        dbgOccupation      = properties.getProperty( "dbgOccupation" );
-        dbgAge             = properties.getProperty( "dbgAge" );
-        dbgRole            = properties.getProperty( "dbgRole" );
-        dbgDates           = properties.getProperty( "dbgDates" );
-        dbgMinMaxMarriage  = properties.getProperty( "dbgMinMaxMarriage" );
-        dbgPartsToFullDate = properties.getProperty( "dbgPartsToFullDate" );
-        dbgDaysSinceBegin  = properties.getProperty( "dbgDaysSinceBegin" );
-        dbgPostTasks       = properties.getProperty( "dbgPostTasks" );
+        // Remove Duplicates
+        String doRemoveDuplicates = properties.getProperty( "doRemoveDuplicates" );
+        if( doRemoveDuplicates != null ) {
+            if( doRemoveDuplicates.equals( "true" ) ) { cbCdoRemoveDuplicates.setSelected( true ); }
+            else { cbCdoRemoveDuplicates.setSelected( false ); }
+        }
 
-        dbgPrematch        = properties.getProperty( "dbgPrematch" );
-        dbgMatch           = properties.getProperty( "dbgMatch" );
+        // debug flags
+        dbgRenewData        = properties.getProperty( "dbgRenewData" );
+        dbgPrepieceSuffix   = properties.getProperty( "dbgPrepieceSuffix" );
+        dbgFirstnames       = properties.getProperty( "dbgFirstnames" );
+        dbgFamilyames       = properties.getProperty( "dbgFamilyames" );
+        dbgLocations        = properties.getProperty( "dbgLocations" );
+        dbgStatusSex        = properties.getProperty( "dbgStatusSex" );
+        dbgRegType          = properties.getProperty( "dbgRegType" );
+        dbgOccupation       = properties.getProperty( "dbgOccupation" );
+        dbgAge              = properties.getProperty( "dbgAge" );
+        dbgRole             = properties.getProperty( "dbgRole" );
+        dbgDates            = properties.getProperty( "dbgDates" );
+        dbgMinMaxMarriage   = properties.getProperty( "dbgMinMaxMarriage" );
+        dbgPartsToFullDate  = properties.getProperty( "dbgPartsToFullDate" );
+        dbgDaysSinceBegin   = properties.getProperty( "dbgDaysSinceBegin" );
+        dbgPostTasks        = properties.getProperty( "dbgPostTasks" );
+        dbgRemoveDuplicates = properties.getProperty( "dbgRemoveDuplicates" );
+
+        dbgPrematch         = properties.getProperty( "dbgPrematch" );
+        dbgMatch            = properties.getProperty( "dbgMatch" );
 
 
         String doSplitFirstnames = properties.getProperty( "doSplitFirstnames" );
@@ -2346,6 +2360,9 @@ public class ManagerGui extends javax.swing.JFrame
         if( cbCdoPostTasks.isSelected() ) { opts.setDoPostTasks( true ); }
         else { opts.setDoPostTasks( false ); }
 
+        if( cbCdoRemoveDuplicates.isSelected() ) { opts.setDoRemoveDuplicates( true ); }
+        else { opts.setDoRemoveDuplicates( false ); }
+
 
         if( dbgRenewData != null ) {
             if( dbgRenewData.equals( "true" ) ) { opts.setDbgRenewData( true ); }
@@ -2420,6 +2437,11 @@ public class ManagerGui extends javax.swing.JFrame
         if( dbgPostTasks != null ) {
             if( dbgPostTasks.equals( "true" ) ) { opts.setDbgPostTasks(true); }
             else { opts.setDbgPostTasks(false); }
+        }
+
+        if( dbgRemoveDuplicates != null ) {
+            if( dbgRemoveDuplicates.equals( "true" ) ) { opts.setDbgRemoveDuplicates(true); }
+            else { opts.setDbgRemoveDuplicates(false); }
         }
 
         if( dbgPrematch != null ) {
@@ -2628,7 +2650,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "05-Feb-2015 14:29";
+                String timestamp1 = "06-Feb-2015 17:18";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2796,6 +2818,7 @@ public class ManagerGui extends javax.swing.JFrame
     private JCheckBox cbCdoOccupation;
     private JCheckBox cbCdoFirstnames;
     private JCheckBox cbCdoPrepieceSuffix;
+    private JCheckBox cbCdoRemoveDuplicates;
     private JPanel pPrematch;
     private JCheckBox cbPdoFrequencyTables;
     private JCheckBox cbPdoLevenshtein;

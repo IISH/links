@@ -31,6 +31,7 @@ import general.PrintLogger;
  * FL-14-Oct-2014 DB opts
  * FL-12-Nov-2014 dbg
  * FL-22-Jan-2015 int sourceId -> String sourceIds
+ * FL-05-Feb-2015 RemoveDuplicates
  */
 public class Options
 {
@@ -94,6 +95,9 @@ public class Options
 
     private boolean doPostTasks;
     private boolean dbgPostTasks;
+
+    private boolean doRemoveDuplicates;
+    private boolean dbgRemoveDuplicates;
 
     private boolean doPrematch;
     private boolean dbgPrematch;
@@ -251,11 +255,20 @@ public class Options
     public void  setDoDaysSinceBegin( boolean  doDaysSinceBegin ) { this.doDaysSinceBegin  =  doDaysSinceBegin; }
     public void setDbgDaysSinceBegin( boolean dbgDaysSinceBegin ) { this.dbgDaysSinceBegin = dbgDaysSinceBegin; }
 
+
     public boolean  isDoPostTasks() { return doPostTasks; }
     public boolean isDbgPostTasks() { return dbgPostTasks; }
 
-    public void setDoPostTasks(  boolean doPostTasks ) { this.doPostTasks = doPostTasks; }
+    public void setDoPostTasks(  boolean  doPostTasks ) { this.doPostTasks  =  doPostTasks; }
     public void setDbgPostTasks( boolean dbgPostTasks ) { this.dbgPostTasks = dbgPostTasks; }
+
+
+    public boolean  isDoRemoveDuplicates() { return doRemoveDuplicates; }
+    public boolean isDbgRemoveDuplicates() { return dbgRemoveDuplicates; }
+
+    public void setDoRemoveDuplicates(  boolean  doRemoveDuplicates ) { this.doRemoveDuplicates  = doRemoveDuplicates; }
+    public void setDbgRemoveDuplicates( boolean dbgRemoveDuplicates ) { this.dbgRemoveDuplicates = dbgRemoveDuplicates; }
+
 
     public boolean  isDoPrematch() { return doPrematch; }
     public boolean isDbgPrematch() { return dbgPrematch; }
