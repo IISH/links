@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-06-Feb-2015 Latest change
+ * FL-09-Feb-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -90,7 +90,7 @@ public class ManagerGui extends javax.swing.JFrame
     private String dbgRenewData        = "";
     private String dbgPrepieceSuffix   = "";
     private String dbgFirstnames       = "";
-    private String dbgFamilyames       = "";
+    private String dbgFamilynames      = "";
     private String dbgLocations        = "";
     private String dbgStatusSex        = "";
     private String dbgRegType          = "";
@@ -1984,7 +1984,7 @@ public class ManagerGui extends javax.swing.JFrame
         dbgRenewData        = properties.getProperty( "dbgRenewData" );
         dbgPrepieceSuffix   = properties.getProperty( "dbgPrepieceSuffix" );
         dbgFirstnames       = properties.getProperty( "dbgFirstnames" );
-        dbgFamilyames       = properties.getProperty( "dbgFamilyames" );
+        dbgFamilynames      = properties.getProperty( "dbgFamilynames" );
         dbgLocations        = properties.getProperty( "dbgLocations" );
         dbgStatusSex        = properties.getProperty( "dbgStatusSex" );
         dbgRegType          = properties.getProperty( "dbgRegType" );
@@ -2379,8 +2379,8 @@ public class ManagerGui extends javax.swing.JFrame
             else { opts.setDbgFirstnames( false ); }
         }
 
-        if( dbgFamilyames != null ) {
-            if( dbgFamilyames.equals( "true" ) ) { opts.setDbgFamilynames( true ); }
+        if( dbgFamilynames != null ) {
+            if( dbgFamilynames.equals( "true" ) ) { opts.setDbgFamilynames( true ); }
             else { opts.setDbgFamilynames( false ); }
         }
 
@@ -2650,7 +2650,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "06-Feb-2015 17:18";
+                String timestamp1 = "09-Feb-2015 14:39";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

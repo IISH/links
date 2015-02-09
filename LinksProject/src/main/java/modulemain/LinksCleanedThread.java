@@ -1193,14 +1193,14 @@ public class LinksCleanedThread extends Thread
                                 String nameNoPieces = namePrepiece( debug, nameNoInvalidChars, id_person );
 
                                 if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
-                                    addToReportPerson(id_person, source, 1107, nameNoInvalidChars);  // EC 1107
+                                    addToReportPerson( id_person, source, 1107, nameNoInvalidChars );  // EC 1107
                                 }
 
                                 // last check on ref
                                 if( almmFirstname.contains( nameNoPieces ) )
                                 {
                                     // Check the standard code
-                                    String standard_code = almmFirstname.code(nameNoPieces);
+                                    String standard_code = almmFirstname.code( nameNoPieces );
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
@@ -1405,19 +1405,19 @@ public class LinksCleanedThread extends Thread
                     if( almmFamilyname.contains( familyname ) )
                     {
                         // get standard_code
-                        String standard_code = almmFamilyname.code(familyname);
+                        String standard_code = almmFamilyname.code( familyname );
                         if( debug ) { showMessage( "code: " + standard_code, false, true ); }
 
                         // Check the standard code
                         if( standard_code.equals( SC_Y ) )
                         {
-                            writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ).toLowerCase() + "\n" );
+                            writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
                         }
                         else if( standard_code.equals( SC_U ) )
                         {
                             addToReportPerson( id_person, source, 1000, familyname ); // EC 1000
 
-                            writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ).toLowerCase() + "\n" );
+                            writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
                         }
                         else if( standard_code.equals( SC_N ) )
                         {

@@ -77,9 +77,9 @@ public class MatchAsync extends Thread
         this.mis = mis;
 
         this.conPrematch = conPrematch;
-        this.conMatch = conMatch;
+        this.conMatch    = conMatch;
 
-        this.variantFirstName = variantFirstName;
+        this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
     }
 

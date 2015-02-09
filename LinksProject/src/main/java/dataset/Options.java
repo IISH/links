@@ -32,6 +32,7 @@ import general.PrintLogger;
  * FL-12-Nov-2014 dbg
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
+ * FL-09-Feb-2015 Latest change
  */
 public class Options
 {
@@ -176,14 +177,14 @@ public class Options
     public boolean isDbgFirstnames() { return dbgFirstnames; }
 
     public void  setDoFirstnames( boolean  doFirstnames ) { this.doFirstnames  = doFirstnames; }
-    public void setDbgFirstnames( boolean dbgFirstnames ) { this.dbgFirstnames = doFirstnames; }
+    public void setDbgFirstnames( boolean dbgFirstnames ) { this.dbgFirstnames = dbgFirstnames; }
 
 
     public boolean  isDoFamilynames() { return  doFamilynames; }
     public boolean isDbgFamilynames() { return dbgFamilynames; }
 
     public void  setDoFamilynames( boolean  doFamilynames ) { this.doFamilynames  = doFamilynames; }
-    public void setDbgFamilynames( boolean dbgFamilynames ) { this.dbgFamilynames = doFamilynames; }
+    public void setDbgFamilynames( boolean dbgFamilynames ) { this.dbgFamilynames = dbgFamilynames; }
 
 
     public boolean  isDoLocations() { return  doLocations; }

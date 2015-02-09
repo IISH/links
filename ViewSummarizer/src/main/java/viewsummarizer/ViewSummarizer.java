@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-22-Jan-2014 Latest change
+ * FL-09-Fen-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -325,7 +325,7 @@ public class ViewSummarizer
                 String entry = s1_counts[ s ];
                 //System.out.println( "entry: " + entry );
                 String counts[] = entry.split( ":" );
-                String scnt = counts[ 0 ].replace( "x", "").trim();
+                String scnt = counts[ 0 ].replace( "x", "").replace( "<br>", "").trim();
                 //System.out.println( "scnt: " + scnt );
                 int i = Integer.parseInt( scnt );
                 if( i == times ) {
@@ -339,7 +339,7 @@ public class ViewSummarizer
                 String entry = s2_counts[ s ];
                 //System.out.println( "entry: " + entry );
                 String counts[] = entry.split( ":" );
-                String scnt = counts[ 0 ].replace( "x", "").trim();
+                String scnt = counts[ 0 ].replace( "x", "").replace( "<br>", "").trim();
                 //System.out.println( "scnt: " + scnt );
                 int i = Integer.parseInt( scnt );
                 if( i == times ) {
