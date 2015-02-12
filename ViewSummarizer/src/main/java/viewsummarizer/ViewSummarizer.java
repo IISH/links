@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-09-Fen-2015 Latest change
+ * FL-11-Feb-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -86,7 +86,7 @@ public class ViewSummarizer
         String id_process = args[ 4 ];
 
         String template   = "LVS-template.html";
-        String output     = "output/LVS-%.html";
+        String output     = "links-vs.html/LVS-%.html";
 
 
         // Create connection

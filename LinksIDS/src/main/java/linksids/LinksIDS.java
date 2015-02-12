@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-04-Feb-2015 Latest change
+ * FL-11-Feb-2015 Latest change
  */
 public class LinksIDS
 {
@@ -165,25 +165,25 @@ public class LinksIDS
 
     public static void main( String[] args )
     {
-        boolean debug = false;
-
         int c = 0;
         int pageSize = 1000 * 1000;
 
         // Load arguments; check length
-        if( args.length != 1 ) {
-            System.out.println( "Invalid argument length, it should be 1" );
-            System.out.println( "Usage: java -jar LinksIDS-2.0.jar <method>" );
+        if( args.length != 2 ) {
+            System.out.println( "Invalid argument length, it should be 2" );
+            System.out.println( "Usage: java -jar LinksIDS-2.0.jar <method> <debug>" );
 
             return;
         }
 
         // cmd line args
         String method = args[ 0 ];
+        String debug_str = args[ 1 ];
+        boolean debug = false;
+        if( debug_str.equals( "true" ) ) { debug = true; }
 
-        String msg = String.format( "method: %s", method );
-        System.out.println( msg );
-
+        System.out.printf( "method: %s\n", method );
+        System.out.printf( "debug:  %s\n", debug );
 
         Properties properties = getProperties();    // read properties file
         loadProperties( properties );               // get individual properties

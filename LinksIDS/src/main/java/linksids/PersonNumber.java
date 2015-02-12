@@ -184,7 +184,7 @@ public class PersonNumber implements Runnable
 
                 totalCount += count;
 
-                if( debug ) { System.out.println("Read " + totalCount + " matches"); }
+                if( debug ) { System.out.println( "Read " + totalCount + " matches" ); }
 
             }
             catch( SQLException ex )

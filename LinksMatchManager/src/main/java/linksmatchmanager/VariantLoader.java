@@ -44,7 +44,7 @@ public class VariantLoader
      */
     public VariantLoader( String url, String user, String pass )
     {
-        this.url = url;
+        this.url  = url;
         this.user = user;
         this.pass = pass;
     }
@@ -56,14 +56,17 @@ public class VariantLoader
      * @return multidimensional representation of the prematch table
      * @throws Exception
      */
-    public int[][] loadNames( String tableName, int value ) throws Exception
+    public int[][] loadNames( String tableName, int value )
+    throws Exception
     {
+        System.out.println( "VariantLoader/loadNames() db: links_prematch, tableName: " + tableName + ", value: " + value );
 
         Connection con = General.getConnection( url, "links_prematch", user, pass );
         con.setReadOnly( true );
 
         String query =  "SELECT length_1 , length_2 FROM " + tableName
             + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, 200000000;";
+        System.out.println( query );
 
         ResultSet rs = con.createStatement().executeQuery( query );
 
@@ -152,9 +155,9 @@ public class VariantLoader
         con.close();
         con = null;
 
-        // Return multidimensional array
-        return names;
-    }
+        System.out.println( "VariantLoader/loadNames: names.length = " + names.length );
+        return names;        // Return multidimensional array
+    } // loadNames
 
 
     public int[][] loadRootNames( String tableName ) throws Exception
@@ -215,7 +218,7 @@ public class VariantLoader
         // Return multidimensional array
         return names;
 
-    }
+    } // loadRootNames
 
     /*
     public String[] loadRootNames(String tableName) throws Exception
@@ -264,6 +267,6 @@ public class VariantLoader
         // Return multidimensional array
         return names;
 
-    }
+    } // loadRootNames
     */
 }

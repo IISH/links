@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
- * FL-11-Dec-2014 Latest change
+ * FL-10-Feb-2015 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -38,9 +38,10 @@ public class LinksPrematch extends Thread
     private boolean bSplitFirstames;
     private boolean bFrequencyTables;
     private boolean bStandardization;
-    private boolean bLevenshtein;
     private boolean bNamesToNos;
     private boolean bBaseTable;
+    private boolean bLevenshtein;
+    private boolean bExactMatches;
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -60,9 +61,10 @@ public class LinksPrematch extends Thread
      * @param bSplitFirstnames
      * @param bFrequencyTables
      * @param bStandardization
-     * @param bLevenshtein
      * @param bNamesToNos
      * @param bBaseTable
+     * @param bLevenshtein
+     * @param bExactMatches
      * @throws Exception
      */
     public LinksPrematch
@@ -75,9 +77,10 @@ public class LinksPrematch extends Thread
         boolean bSplitFirstnames,
         boolean bFrequencyTables,
         boolean bStandardization,
-        boolean bLevenshtein,
         boolean bNamesToNos,
-        boolean bBaseTable
+        boolean bBaseTable,
+        boolean bLevenshtein,
+        boolean bExactMatches
     )
     throws Exception
     {
@@ -91,9 +94,10 @@ public class LinksPrematch extends Thread
         this.bSplitFirstames  = bSplitFirstnames;
         this.bFrequencyTables = bFrequencyTables;
         this.bStandardization = bStandardization;
-        this.bLevenshtein     = bLevenshtein;
         this.bNamesToNos      = bNamesToNos;
         this.bBaseTable       = bBaseTable;
+        this.bLevenshtein     = bLevenshtein;
+        this.bExactMatches    = bExactMatches;
 
         this.outputLine = outputLine;
         this.outputArea  = outputArea;
@@ -127,15 +131,15 @@ public class LinksPrematch extends Thread
         {
             doSplitFirstnames( debug, bSplitFirstames );
 
-            doFrequencyTables( debug, bFrequencyTables );
+            doFrequencyTables( debug, bFrequencyTables );               // creates the freq_* tables
 
             doStandardization( debug, bStandardization );
-
-            doLevenshtein( debug, bLevenshtein );           // start 4 threads
 
             doNamesToNumbers( debug, bNamesToNos );
 
             doUpdateBaseTable( debug, bBaseTable );
+
+            doLevenshtein( debug, bLevenshtein, bExactMatches );        // starts 4 threads
 
             String msg = "Prematching is done";
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
@@ -440,8 +444,13 @@ public class LinksPrematch extends Thread
     /**
      *
      */
-    public void doStandardization( boolean debug, boolean go ) throws Exception {
+    public void doStandardization( boolean debug, boolean go )
+    throws Exception
+    {
         String funcname = "doStandardization";
+
+        go = false;
+        showMessage( "Automatic standardization is currently not enabled", false, true );
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -485,6 +494,8 @@ public class LinksPrematch extends Thread
         }
 
 
+        // THESE QUERIES DO THE REAL WORK,
+        // enable them for automatic levenshtein standardization of infrequent names
         // Execute queries
         /*
         int nqFirst = 1;
@@ -576,13 +587,109 @@ public class LinksPrematch extends Thread
     }
 
 
+    /*---< Names to Numbers >-------------------------------------------------*/
+
+    /**
+     *
+     * @throws Exception
+     */
+    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doNamesToNumbers";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        // Execute queries
+        int nqFirst = 1;
+        int nqLast  = 5;
+        String qPrefix = "NamesToNumbers/NameToNumber_q";
+
+        for( int n = nqFirst; n <= nqLast; n++ )
+        {
+            long start = System.currentTimeMillis();
+            String qPath = String.format( qPrefix + "%02d", n );
+
+            String query = LinksSpecific.getSqlQuery( qPath );
+            String msg = "query " + n + "-of-" + nqLast;
+            showMessage( msg + "...", false, true );
+            if( debug ) { showMessage( query, false, true ); }
+
+            conPrematch.runQuery( query );
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doNamesToNumbers
+
+
+    /*---< Base Table >-------------------------------------------------------*/
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doUpdateBaseTable";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String qtruncate = "TRUNCATE TABLE links_base";     // We must delete the previous stuff
+        showMessage( qtruncate, false, true );
+        try { conPrematch.runQuery( qtruncate ); }          // links_base table moved to links_prematch db
+        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+
+
+        String qPrefix = "FillBaseTable/FillBaseTable_q";
+        int nqFirst = 1;
+        int nqLast  = 4;
+        //int nqLast = 33;  // reduced Omars's 33 queries to 4
+        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
+
+        for( int n = nqFirst; n <= nqLast; n++ )
+        {
+            long start = System.currentTimeMillis();
+            String qPath = String.format( qPrefix + "%02d", n );
+
+            String query = LinksSpecific.getSqlQuery( qPath );
+            String msg = "query " + n + "-of-" + nqLast;
+            showMessage( msg + "...", false, true );
+            if( debug ) { showMessage( query, false, true ); }
+
+            try { conPrematch.runQuery( query ); }
+            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doUpdateBaseTable
+
+
     /*---< Levenshtein >------------------------------------------------------*/
 
     /**
      * @param debug
      * @throws Exception
      */
-    public void doLevenshtein( boolean debug, boolean go ) throws Exception
+    public void doLevenshtein( boolean debug, boolean go, boolean bExactMatches ) throws Exception
     {
         String funcname = "doLevenshtein";
 
@@ -597,10 +704,10 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
-        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  outputLine, outputArea, plog );
-        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, outputLine, outputArea, plog );
-        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  outputLine, outputArea, plog );
-        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, outputLine, outputArea, plog );
+        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
 
         lv1.start();
         lv2.start();
@@ -652,102 +759,6 @@ public class LinksPrematch extends Thread
 
         return p[n];
     } // levenshtein
-
-
-    /*---< Names to Numbers >-------------------------------------------------*/
-
-    /**
-     * 
-     * @throws Exception 
-     */
-    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doNamesToNumbers";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        // Execute queries
-        int nqFirst = 1;
-        int nqLast  = 5;
-        String qPrefix = "NamesToNumbers/NameToNumber_q";
-
-        for( int n = nqFirst; n <= nqLast; n++ )
-        {
-            long start = System.currentTimeMillis();
-            String qPath = String.format( qPrefix + "%02d", n );
-
-            String query = LinksSpecific.getSqlQuery( qPath );
-            String msg = "query " + n + "-of-" + nqLast;
-            showMessage( msg + "...", false, true );
-            if( debug ) { showMessage( query, false, true ); }
-
-            conPrematch.runQuery( query );
-            elapsedShowMessage( msg, start, System.currentTimeMillis() );
-        }
-
-        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doNamesToNumbers
-
-
-    /*---< Base Table >-------------------------------------------------------*/
-
-    /**
-     * @param debug
-     * @throws Exception 
-     */
-    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doUpdateBaseTable";
-
-        if( !go ) {
-            showMessage( "Skipping " + funcname, false, true );
-            return;
-        }
-
-        if( debug ) { System.out.println( funcname ); }
-
-        long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
-
-        String qtruncate = "TRUNCATE TABLE links_base";     // We must delete the previous stuff
-        showMessage( qtruncate, false, true );
-        try { conPrematch.runQuery( qtruncate ); }          // links_base table moved to links_prematch db
-        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
-
-
-        String qPrefix = "FillBaseTable/FillBaseTable_q";
-        int nqFirst = 1;
-        int nqLast  = 4;
-        //int nqLast = 33;  // reduced Omars's 33 queries to 4
-        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
-
-        for( int n = nqFirst; n <= nqLast; n++ )
-        {
-            long start = System.currentTimeMillis();
-            String qPath = String.format( qPrefix + "%02d", n );
-
-            String query = LinksSpecific.getSqlQuery( qPath );
-            String msg = "query " + n + "-of-" + nqLast;
-            showMessage( msg + "...", false, true );
-            if( debug ) { showMessage( query, false, true ); }
-
-            try { conPrematch.runQuery( query ); }
-            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
-            elapsedShowMessage( msg, start, System.currentTimeMillis() );
-        }
-
-        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doUpdateBaseTable
 
 
     /*---< Obsolete >---------------------------------------------------------*/

@@ -20,7 +20,7 @@ import general.PrintLogger;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
- * FL-15-Jan-2014 Latest change
+ * FL-11-Feb-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -30,6 +30,7 @@ public class Lv extends Thread
     private String db_name;
     private String db_table;
     private boolean strict;
+    private boolean also_exact_matches;
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -43,6 +44,7 @@ public class Lv extends Thread
      * @param db_name
      * @param db_table
      * @param strict
+     * @param also_exact_matches
      * @param outputLine
      * @param outputArea
      * @param plog
@@ -54,19 +56,21 @@ public class Lv extends Thread
         String db_name,
         String db_table,
         boolean strict,
+        boolean also_exact_matches,
         JTextField outputLine,
         JTextArea outputArea,
         PrintLogger plog
     )
     {
-        this.debug      = debug;
-        this.db_conn    = db_conn;
-        this.db_name    = db_name;
-        this.db_table   = db_table;
-        this.strict     = strict;
-        this.outputLine = outputLine;
-        this.outputArea = outputArea;
-        this.plog       = plog;
+        this.debug                = debug;
+        this.db_conn              = db_conn;
+        this.db_name              = db_name;
+        this.db_table             = db_table;
+        this.strict               = strict;
+        this.also_exact_matches   = also_exact_matches;
+        this.outputLine           = outputLine;
+        this.outputArea           = outputArea;
+        this.plog                  = plog;
     }
 
 
@@ -80,6 +84,8 @@ public class Lv extends Thread
 
         String msg = "Levenshtein " + db_table + " done, strict = " + strict;
         showMessage( msg + "..", false, true );
+
+        showMessage( "Including exact matches: " + also_exact_matches, false, true );
 
         String csvname = "LS-" + db_table + "-strict=" + strict + ".csv";
         showMessage( "Output filename: " + csvname, false, true );
@@ -135,8 +141,9 @@ public class Lv extends Thread
                 String name_1 = name.get(i);
                 String name_2 = "";
 
-                //int begin = i+1;        // this prevents names being identical, i.e. Levenshtein value 0
-                int begin = i;          // we also want Levenshtein value 0
+                //int begin = i+1;                          // Omar
+                int begin = i;                              // starting at i: also gives Levenshtein 0 values
+                if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
 
                 for( int j = begin; j < name.size() ; j++ )
                 {
@@ -170,7 +177,7 @@ public class Lv extends Thread
                     {
                         if( basic <  6 && diff > 1 ) { continue; }
 
-                        if( basic <  9 && diff > 2 ) { continue; }           // 3 4 5
+                        if( basic <  9 && diff > 2 ) { continue; }          // 3 4 5
 
                         if( basic < 12 && diff > 3 ) { continue; }
                     }
@@ -183,7 +190,7 @@ public class Lv extends Thread
                         if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    ld = levenshtein( name_1, name_2 );             // levenshtein value
+                    ld = levenshtein( name_1, name_2 );             // levenshtein distance
 
                     if( ld > 4 ) { continue; }                      // too high, -> not in CSV
 

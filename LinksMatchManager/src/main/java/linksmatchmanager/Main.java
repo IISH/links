@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
 public class Main
 {
     // Global vars
-    private static boolean debug = true;
+    private static boolean debug;
 
     private static QueryLoader ql;
     private static PrintLogger plog;
@@ -61,20 +61,24 @@ public class Main
             plog.show( "Links Match Manager 2.0" );
 
             // Load arguments; check length
-            if( args.length != 4 ) {
-                plog.show( "Invalid argument length, it should be 4" );
-                plog.show( "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>" );
+            if( args.length != 5 ) {
+                plog.show( "Invalid argument length, it should be 5" );
+                plog.show( "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <debug>" );
 
                 return;
             }
 
             // cmd line args
-            String url     = args[ 0 ];
-            String user    = args[ 1 ];
-            String pass    = args[ 2 ];
-            String threads = args[ 3 ];
+            String url       = args[ 0 ];
+            String user      = args[ 1 ];
+            String pass      = args[ 2 ];
+            String threads   = args[ 3 ];
+            String debug_str = args[ 4 ];
 
-            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s", url, user, pass, threads );
+            if( debug_str.equals( "true" ) ) { debug = true; }
+            else { debug = false; }
+
+            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, debug: %s", url, user, pass, threads, debug );
             System.out.println( msg );
             plog.show( msg );
 
@@ -146,7 +150,7 @@ public class Main
                 plog.show( String.format( "\nmatching record: %d-of-%d\n", i+1, misSize ) );
 
                 int method = mis.is.get( i ).get( 0 ).method;
-                if( method == 1 )
+                if( method == 1 )       // use root names
                 {
                     // Load the name sets
                     rootFamilyName = vl.loadRootNames( mis.is.get( i ).get( 0 ).prematch_familyname );
@@ -156,7 +160,7 @@ public class Main
                     //log.show( String.format( "rootFirstName size = %d x %d\n", rootFirstName[0].length, rootFirstName[1].length ) );
 
                 }
-                else    // method = 0
+                else    // use variant names
                 {
                     // Load the name sets
                     variantFamilyName = vl.loadNames(
@@ -202,7 +206,8 @@ public class Main
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
                         ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
-                    } else { // 0
+                    }
+                    else { // 0
                         ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
                     }
 

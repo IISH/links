@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-09-Feb-2015 Latest change
+ * FL-11-Feb-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -304,6 +304,7 @@ public class ManagerGui extends javax.swing.JFrame
         cbPdoNamesToNos = new JCheckBox();
         taPinfo = new JTextField();
         cbPdoStandardization = new JCheckBox();
+        cbPdoExactmatches = new JCheckBox();
         pMatch = new JPanel();
         scrollPane1 = new JScrollPane();
         textArea1 = new JTextArea();
@@ -1672,6 +1673,10 @@ public class ManagerGui extends javax.swing.JFrame
                 cbPdoStandardization.setText("Automatic Standardization");
                 cbPdoStandardization.setName("cbPdoStandardization");
 
+                //---- cbPdoExactmatches ----
+                cbPdoExactmatches.setText("Including exact matches");
+                cbPdoExactmatches.setName("cbPdoExactmatches");
+
                 GroupLayout pPrematchLayout = new GroupLayout(pPrematch);
                 pPrematch.setLayout(pPrematchLayout);
                 pPrematchLayout.setHorizontalGroup(
@@ -1682,18 +1687,20 @@ public class ManagerGui extends javax.swing.JFrame
                                 .addComponent(jScrollPane7, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
                                 .addComponent(taPinfo, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 1097, Short.MAX_VALUE)
                                 .addGroup(pPrematchLayout.createSequentialGroup()
-                                    .addGroup(pPrematchLayout.createParallelGroup()
-                                        .addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(cbPdoNamesToNos, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-                                        .addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(cbPdoSplitFirstnames, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
-                                            .addComponent(cbPdoFrequencyTables, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
-                                            .addComponent(cbPdoStandardization, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)))
-                                    .addGap(0, 0, Short.MAX_VALUE))
+                                    .addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(cbPdoExactmatches)
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 462, Short.MAX_VALUE)
+                                    .addComponent(btnStartProcessPrematch, GroupLayout.PREFERRED_SIZE, 195, GroupLayout.PREFERRED_SIZE))
                                 .addGroup(pPrematchLayout.createSequentialGroup()
-                                    .addComponent(cbPdoCreateBaseTable, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 641, Short.MAX_VALUE)
-                                    .addComponent(btnStartProcessPrematch, GroupLayout.PREFERRED_SIZE, 195, GroupLayout.PREFERRED_SIZE)))
+                                    .addGroup(pPrematchLayout.createParallelGroup()
+                                        .addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                            .addComponent(cbPdoSplitFirstnames, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(cbPdoFrequencyTables, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(cbPdoStandardization, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(cbPdoNamesToNos, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(cbPdoCreateBaseTable, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE))
+                                    .addGap(0, 836, Short.MAX_VALUE)))
                             .addContainerGap())
                 );
                 pPrematchLayout.setVerticalGroup(
@@ -1706,14 +1713,16 @@ public class ManagerGui extends javax.swing.JFrame
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(cbPdoStandardization)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(cbPdoLevenshtein)
-                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(cbPdoNamesToNos)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                .addComponent(cbPdoCreateBaseTable)
-                                .addComponent(btnStartProcessPrematch))
-                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
+                            .addComponent(cbPdoCreateBaseTable)
+                            .addGap(2, 2, 2)
+                            .addGroup(pPrematchLayout.createParallelGroup()
+                                .addComponent(btnStartProcessPrematch)
+                                .addGroup(pPrematchLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                    .addComponent(cbPdoLevenshtein)
+                                    .addComponent(cbPdoExactmatches)))
+                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                             .addComponent(taPinfo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                             .addComponent(jScrollPane7, GroupLayout.PREFERRED_SIZE, 437, GroupLayout.PREFERRED_SIZE)
@@ -2020,12 +2029,6 @@ public class ManagerGui extends javax.swing.JFrame
             else { cbPdoStandardization.setSelected( false ); }
         }
 
-        String doLevenshtein = properties.getProperty( "doLevenshtein" );
-        if( doLevenshtein != null ) {
-            if( doLevenshtein.equals( "true" ) ) { cbPdoLevenshtein.setSelected( true ); }
-            else { cbPdoLevenshtein.setSelected( false ); }
-        }
-
         String doNamesToNos = properties.getProperty( "doNamesToNos" );
        if( doNamesToNos != null ) {
             if( doNamesToNos.equals( "true" ) ) { cbPdoNamesToNos.setSelected( true ); }
@@ -2036,6 +2039,18 @@ public class ManagerGui extends javax.swing.JFrame
         if( doCreateBaseTable != null ) {
             if( doCreateBaseTable.equals( "true" ) ) { cbPdoCreateBaseTable.setSelected( true ); }
             else { cbPdoCreateBaseTable.setSelected( false ); }
+        }
+
+        String doLevenshtein = properties.getProperty( "doLevenshtein" );
+        if( doLevenshtein != null ) {
+            if( doLevenshtein.equals( "true" ) ) { cbPdoLevenshtein.setSelected( true ); }
+            else { cbPdoLevenshtein.setSelected( false ); }
+        }
+
+        String doExactmatches = properties.getProperty( "doExactmatches" );
+        if( doExactmatches != null ) {
+            if( doExactmatches.equals( "true" ) ) { cbPdoExactmatches.setSelected( true ); }
+            else { cbPdoExactmatches.setSelected( false ); }
         }
 
     } // loadProperties
@@ -2567,9 +2582,10 @@ public class ManagerGui extends javax.swing.JFrame
         boolean doSplitFirstnames = false;
         boolean doFrequencyTables = false;
         boolean doStandardization = false;
-        boolean doLevenshtein     = false;
         boolean doNamesToNos      = false;
         boolean doBaseTable       = false;
+        boolean doLevenshtein     = false;
+        boolean doExactMatches    = false;
 
         if( cbPdoSplitFirstnames.isSelected() ) { doSplitFirstnames = true; }
 
@@ -2577,12 +2593,13 @@ public class ManagerGui extends javax.swing.JFrame
 
         if( cbPdoStandardization.isSelected() ) { doStandardization = true; }
 
-        if( cbPdoLevenshtein.isSelected() ) { doLevenshtein = true; }
-
-        if( cbPdoNamesToNos.isSelected() ) { doNamesToNos = true; }
+        if( cbPdoNamesToNos.isSelected() )      { doNamesToNos = true; }
 
         if( cbPdoCreateBaseTable.isSelected() ) { doBaseTable = true; }
 
+        if( cbPdoLevenshtein.isSelected() )     { doLevenshtein = true; }
+
+        if( cbPdoExactmatches.isSelected() )    { doExactMatches = true; }
 
         try {
             LinksPrematch lpm = new LinksPrematch
@@ -2595,9 +2612,10 @@ public class ManagerGui extends javax.swing.JFrame
                 doSplitFirstnames,
                 doFrequencyTables,
                 doStandardization,
-                doLevenshtein,
                 doNamesToNos,
-                doBaseTable
+                doBaseTable,
+                doLevenshtein,
+                doExactMatches
             );
 
             lpm.start();
@@ -2650,7 +2668,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "09-Feb-2015 14:39";
+                String timestamp1 = "11-Feb-2015 13:56";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
@@ -2830,6 +2848,7 @@ public class ManagerGui extends javax.swing.JFrame
     private JCheckBox cbPdoNamesToNos;
     private JTextField taPinfo;
     private JCheckBox cbPdoStandardization;
+    private JCheckBox cbPdoExactmatches;
     private JPanel pMatch;
     private JScrollPane scrollPane1;
     private JTextArea textArea1;

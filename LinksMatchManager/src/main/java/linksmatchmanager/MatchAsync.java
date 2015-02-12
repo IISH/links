@@ -13,8 +13,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * <p/>
- * FL-14-Dec-2014 Latest change
+ * FL-12-Feb-2015 Latest change
  */
 
 public class MatchAsync extends Thread
@@ -40,7 +39,7 @@ public class MatchAsync extends Thread
     int[][] rootFirstName;
     int[][] rootFamilyName;
 
-    boolean isUseRoot = false;
+    boolean isUseRoot = false;      // false for variant
 
 
     public MatchAsync
@@ -65,6 +64,8 @@ public class MatchAsync extends Thread
         int[][] variantFamilyName
     )
     {
+        this.debug = debug;
+
         this.pm = pm;
 
         this.i = i;
@@ -81,10 +82,12 @@ public class MatchAsync extends Thread
 
         this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
+
+        System.out.println( "MatchAsync: using variant names (instead of root names)" );
     }
 
 
-    public MatchAsync
+    public MatchAsync   // variant has no root parameter
     (
         boolean debug,
 
@@ -109,19 +112,27 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
+
         this.pm = pm;
+
         this.i = i;
         this.j = j;
+
         this.ql = ql;
         this.plog = plog;
+
         this.qgs = qgs;
         this.mis = mis;
+
         this.conPrematch = conPrematch;
         this.conMatch = conMatch;
-        this.rootFirstName = rootFirstName;
+
+        this.rootFirstName  = rootFirstName;
         this.rootFamilyName = rootFamilyName;
 
-        isUseRoot = true;
+        this.isUseRoot = true;      // true for root
+
+        System.out.println( "MatchAsync: using root names (instead of variant names)" );
     }
 
     @Override
@@ -141,19 +152,21 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
-            // Get a QuerySet object. This object contains all data about a certain query/subquery
+            System.out.println( "process id: " + qgs.get( 0 ).id );
+
+            // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
 
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
-            // It input is a QuerySet and a database connection object.
+            // Its input is a QuerySet and a database connection object.
             ql = new QueryLoader( qs, conPrematch );
 
-            // Last familyname, initial is 0. Because the familynames are ordered the calculation of the potential
+            // Last familyname, initial is 0. Because the familynames are ordered, the calculation of the potential
             // matches is done once, only the first time.
             int lastFamilyName = 0;
 
-            // Create list with potential matches for a familynames
-            ArrayList<Integer> potentialMatches = new ArrayList<Integer>();
+            // Create list with potential matches for a familyname
+            ArrayList< Integer > potentialMatches = new ArrayList< Integer >();
 
             // Loop through set 1
             msg = String.format( "Thread id %d; Set 1 size: %d", threadId, ql.s1_id_base.size() );
@@ -187,15 +200,17 @@ public class MatchAsync extends Thread
 
                     potentialMatches.clear();                           // Empty the list
 
-                    variantsToList( s1EgoFamName, potentialMatches );   // Load the potential variants
+                    // Load the potential matches; exact matches, plus variants
+                    variantsToList( s1EgoFamName, potentialMatches );
                 }
 
-                //msg = String.format( "Thread id %d; Potential matches: %d", threadId, potentialMatches.size() );
-                //System.out.println( msg );
-                //plog.show(msg);
+                if( potentialMatches.size() > 0 ) {
+                    msg = String.format( "Thread id %d; Potential matches: %d", threadId, potentialMatches.size() );
+                    plog.show( msg );
+                }
 
                 // Copy the existing variantList to working copy
-                ArrayList<Integer> tempVarList = new ArrayList<Integer>();
+                ArrayList< Integer > tempVarList = new ArrayList< Integer >();
 
                 tempVarList.addAll( potentialMatches );
 
@@ -401,82 +416,109 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
         }
-        catch( Exception ex1 ) {
+        catch( Exception ex1 )
+        {
             pm.removeProcess();
 
-            try { plog.show( "Thread Error: where= " + ka + "-----" + ix + " error=" + ex1.getMessage() ); }
+            String err = "MatchAsync/run(): thread error: ka = " + ka + ", ix = " + ix + ", error = " + ex1.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); }
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
-    }
+    } // run
 
 
     /**
-     * 
-     * @param fn
-     * @param potentialMatches 
+     * Loop through the whole set of ego familynames to get all ids with names
+     * that are a Levenshtein variant of this name.
+     * Notice: exact matches are also included in this list
+     *
+     * @param fn                    // an ego familyname from the set s1
+     * @param potentialMatches      // potential matches from s2
      */
-    private void variantsToList(int fn,
-            ArrayList<Integer> potentialMatches) {
+    private void variantsToList( int fn, ArrayList< Integer > potentialMatches )
+    {
+        try
+        {
+            if( debug ) { plog.show( "variantsToList(): ql.s2_ego_familyname.size = " + ql.s2_ego_familyname.size() ); }
 
-        /**
-         * Loop through whole set to getall id with 
-         * names which are a variant of this name
-         */
-        for (int l = 0; l < ql.s2_ego_familyname.size(); l++) {
-
-            // Use binary search to Check if this name is variant of
-            if (fn == ql.s2_ego_familyname.get(l)) {
-                // Add ID of name to list
-                potentialMatches.add(l);
-                continue;
-            }
-
-            // Do the search
-            if (isUseRoot) {
-
-                if (fn >= rootFamilyName.length) {
-                    return;
+            for( int l = 0; l < ql.s2_ego_familyname.size(); l++ )
+            {
+                // Use binary search to Check if this name is variant of
+                if( fn == ql.s2_ego_familyname.get( l ) ) {
+                    potentialMatches.add( l );          // Add ID of name to list
+                    continue;                           // exact match, so we are done
                 }
 
-                if (ql.s2_ego_familyname.get(l) >= rootFamilyName.length) {
-                    continue;
-                }
+                // Do the search in root names or variant names
+                if( isUseRoot )     // root names
+                {
+                    if( fn >= rootFamilyName.length ) { return; }
 
-                int[] root1 = rootFamilyName[fn];
-                int[] root2 = rootFamilyName[ql.s2_ego_familyname.get(l)];
-
-                for (int i = 0; i < root1.length; i++) {
-                    for (int j = 0; j < root2.length; j++) {
-                        if (root1[i] == root2[j]) {
-                            potentialMatches.add(l);
-                            break;
-                        }
+                    if( ql.s2_ego_familyname.get( l ) >= rootFamilyName.length ) {
+                        continue;
                     }
-                    break;
+
+                    int[] root1 = rootFamilyName[ fn ];
+                    int[] root2 = rootFamilyName[ ql.s2_ego_familyname.get( l ) ];
+
+                    for( int i = 0; i < root1.length; i++ ) {
+                        for( int j = 0; j < root2.length; j++ ) {
+                            if( root1[ i ] == root2[ j ] ) {
+                                potentialMatches.add( l );
+                                break;
+                            }
+                        }
+                        break;
+                    }
                 }
-            } else {
+                else        // variant names
+                {
+                    int large;
+                    int small;
 
-                int large;
-                int small;
+                    if( fn > ql.s2_ego_familyname.get( l ) ) {
+                        large = fn;
+                        small = ql.s2_ego_familyname.get( l );
+                    }
+                    else {
+                        large = ql.s2_ego_familyname.get( l );
+                        small = fn;
+                    }
 
-                if (fn > ql.s2_ego_familyname.get(l)) {
-                    large = fn;
-                    small = ql.s2_ego_familyname.get(l);
-                } else {
-                    large = ql.s2_ego_familyname.get(l);
-                    small = fn;
-                }
+                    //if( debug ) { plog.show( "small: " + small + ", large: " + fn ); }
+                    //if( debug ) { plog.show( "variantFamilyName.length: " + variantFamilyName.length ); }
 
-                if (variantFamilyName[small] != null
-                        && (Arrays.binarySearch(variantFamilyName[small], large) > -1)) {
-                    potentialMatches.add(l);
+                    if( variantFamilyName.length == 0 )
+                    { continue; }
+
+                    if( variantFamilyName.length > small   &&
+                        variantFamilyName[ small ] != null &&
+                        Arrays.binarySearch( variantFamilyName[ small ], large ) > -1
+                    )
+                    {
+                        if( debug ) { plog.show( "add: " + l ); }
+                        potentialMatches.add( l );
+                    }
                 }
             }
         }
-    }
+        catch( Exception ex ) {
+            System.out.println( "Exception in variantsToList: " + ex.getMessage() );
+            System.out.println( "Abort" );
+            System.exit( 1 );
+        }
+
+    } // variantsToList
 
 
-    private boolean CheckMinMax(QuerySet qs, int k, int index) {
+    private boolean CheckMinMax( QuerySet qs, int k, int index )
+    {
+        if( debug ) {
+            try { plog.show( "CheckMinMax()" ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
+
         if ((qs.int_minmax_e % 2) == 1) {
             if ((firstGreater(ql.s1_ego_birth_min.get(k),
                     ql.s2_ego_birth_max.get(index)))
@@ -592,10 +634,16 @@ public class MatchAsync extends Thread
             }
         }
         return true;
-    }
+    } // CheckMinMax
 
 
-    private static boolean firstGreater(int first, int second) {
+    // private static boolean firstGreater( int first, int second )
+    private boolean firstGreater( int first, int second )
+    {
+        if( debug ) {
+            try { plog.show( "firstGreater()" ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
 
         if (first == 0 || second == 0) {
             return false;
@@ -604,11 +652,18 @@ public class MatchAsync extends Thread
             return true;
         }
         return false;
-    }
+    } // firstGreater
 
 
-    private boolean isVariant(int basicName, int seconName, NameType tnt, int method) {
-        if (method == 0) {
+    private boolean isVariant( int basicName, int seconName, NameType tnt, int method )
+    {
+        if( debug ) {
+            try { plog.show( "isVariant()" ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
+
+        if (method == 0)
+        {
             if (tnt == NameType.FAMILYNAME) {
                 if (basicName == 0 || seconName == 0) {
                     return false;
@@ -631,8 +686,9 @@ public class MatchAsync extends Thread
             }
 
             return true;
-        } else if (method == 1) {
-
+        }
+        else if (method == 1)
+        {
             if (basicName == seconName) {
                 return true;
             }
@@ -671,48 +727,63 @@ public class MatchAsync extends Thread
         } else {
             return false;
         }
-    }
+    } // isVariant
 
 
-    private boolean checkFirstName(int fn,
-            int s1Name1, int s1Name2, int s1Name3, int s1Name4,
-            int s2Name1, int s2Name2, int s2Name3, int s2Name4,
-            int method) {
+    private boolean checkFirstName
+    (
+        int fn,
+        int s1Name1, int s1Name2, int s1Name3, int s1Name4,
+        int s2Name1, int s2Name2, int s2Name3, int s2Name4,
+        int method
+    )
+    {
+        if( debug ) {
+            try { plog.show( "checkFirstName() fn = " + fn ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
 
-        if (fn == 1) {
-            if (!isVariant(s1Name1, s2Name1, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name2, s2Name2, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name3, s2Name3, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name4, s2Name4, NameType.FIRSTNAME, method)) {
-                return false;
-            }
-        } else if (fn == 2) {
-            if (!isVariant(s1Name1, s2Name1, NameType.FIRSTNAME, method)) {
-                return false;
-            }
-        } else if (fn == 3) {
-            if (!isVariant(s1Name1, s2Name1, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name2, s2Name2, NameType.FIRSTNAME, method)) {
-                return false;
-            }
-        } else if (fn == 4) {
-            if (!isVariant(fn, s2Name1, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name2, s2Name2, NameType.FIRSTNAME, method)
-                    || !isVariant(s1Name3, s2Name3, NameType.FIRSTNAME, method)) {
-                return false;
-            }
-        } else if (fn == 5) {
-            if (isVariant(s1Name1, s2Name1, NameType.FIRSTNAME, method)
-                    || isVariant(s1Name1, s2Name2, NameType.FIRSTNAME, method)
-                    || isVariant(s1Name1, s2Name3, NameType.FIRSTNAME, method)
-                    || isVariant(s1Name1, s2Name4, NameType.FIRSTNAME, method)
-                    || isVariant(s2Name1, s1Name2, NameType.FIRSTNAME, method)
-                    || isVariant(s2Name1, s1Name3, NameType.FIRSTNAME, method)
-                    || isVariant(s2Name1, s1Name4, NameType.FIRSTNAME, method)) {
-            } else {
-                return false;
-            }
+        if( fn == 1 )
+        {
+            if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name3, s2Name3, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name4, s2Name4, NameType.FIRSTNAME, method ) )
+            { return false; }
+        }
+        else if( fn == 2 )
+        {
+            if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) )
+            { return false; }
+        }
+        else if( fn == 3 )
+        {
+            if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) )
+            { return false; }
+        }
+        else if( fn == 4 )
+        {
+            // FL-12-Feb-2015: fn -> s1Name1 ?
+            if( ! isVariant( fn,      s2Name1, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) ||
+                ! isVariant( s1Name3, s2Name3, NameType.FIRSTNAME, method ) )
+            { return false; }
+        }
+        else if( fn == 5 )
+        {
+            if( isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
+                isVariant( s1Name1, s2Name2, NameType.FIRSTNAME, method ) ||
+                isVariant( s1Name1, s2Name3, NameType.FIRSTNAME, method ) ||
+                isVariant( s1Name1, s2Name4, NameType.FIRSTNAME, method ) ||
+                isVariant( s2Name1, s1Name2, NameType.FIRSTNAME, method ) ||
+                isVariant( s2Name1, s1Name3, NameType.FIRSTNAME, method ) ||
+                isVariant( s2Name1, s1Name4, NameType.FIRSTNAME, method ) )
+            { ; }
+            else { return false; }
         }
         return true;
-    }
+    } // checkFirstName
+
 }
+

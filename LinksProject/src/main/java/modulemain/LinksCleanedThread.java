@@ -39,7 +39,7 @@ import general.PrintLogger;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-06-Feb-2015 Latest change
+ * FL-10-Feb-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5664,7 +5664,7 @@ public class LinksCleanedThread extends Thread
         // Do we want to add "WHERE id_source = ..." to the first query?
 
         showMessage( "testDoubleRegistration()", false, true );
-        showMessage( "Notice: we show the familyname prefix, but do not use the prefix for comparisons", false , true );
+        showMessage( "Notice: the familyname prefix is not used for comparisons", false , true );
 
         int min_cnt = 2;
         //int min_cnt = 3;

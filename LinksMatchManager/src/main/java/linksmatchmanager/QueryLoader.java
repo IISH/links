@@ -18,11 +18,13 @@ import linksmatchmanager.DataSet.QuerySet;
 public class QueryLoader
 {
     private Connection con;
+
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
     private boolean ignore_sex;
     private boolean ignore_minmax;
+
     private int firstname;
 
     private ResultSet set1;
@@ -31,6 +33,7 @@ public class QueryLoader
     // Set variables
     public Vector<Integer> s1_id_base              = new Vector<Integer>();
     public Vector<Integer> s1_registration_days    = new Vector<Integer>();
+
     public Vector<Integer> s1_ego_familyname       = new Vector<Integer>();
     public Vector<Integer> s1_ego_firstname1       = new Vector<Integer>();
     public Vector<Integer> s1_ego_firstname2       = new Vector<Integer>();
@@ -42,7 +45,9 @@ public class QueryLoader
     public Vector<Integer> s1_ego_marriage_max     = new Vector<Integer>();
     public Vector<Integer> s1_ego_death_min        = new Vector<Integer>();
     public Vector<Integer> s1_ego_death_max        = new Vector<Integer>();
+
     public Vector<Integer> s1_sex                  = new Vector<Integer>();
+
     public Vector<Integer> s1_mother_familyname    = new Vector<Integer>();
     public Vector<Integer> s1_mother_firstname1    = new Vector<Integer>();
     public Vector<Integer> s1_mother_firstname2    = new Vector<Integer>();
@@ -54,6 +59,7 @@ public class QueryLoader
     public Vector<Integer> s1_mother_marriage_max  = new Vector<Integer>();
     public Vector<Integer> s1_mother_death_min     = new Vector<Integer>();
     public Vector<Integer> s1_mother_death_max     = new Vector<Integer>();
+
     public Vector<Integer> s1_father_familyname    = new Vector<Integer>();
     public Vector<Integer> s1_father_firstname1    = new Vector<Integer>();
     public Vector<Integer> s1_father_firstname2    = new Vector<Integer>();
@@ -65,6 +71,7 @@ public class QueryLoader
     public Vector<Integer> s1_father_marriage_max  = new Vector<Integer>();
     public Vector<Integer> s1_father_death_min     = new Vector<Integer>();
     public Vector<Integer> s1_father_death_max     = new Vector<Integer>();
+
     public Vector<Integer> s1_partner_familyname   = new Vector<Integer>();
     public Vector<Integer> s1_partner_firstname1   = new Vector<Integer>();
     public Vector<Integer> s1_partner_firstname2   = new Vector<Integer>();
@@ -76,10 +83,11 @@ public class QueryLoader
     public Vector<Integer> s1_partner_marriage_max = new Vector<Integer>();
     public Vector<Integer> s1_partner_death_min    = new Vector<Integer>();
     public Vector<Integer> s1_partner_death_max    = new Vector<Integer>();
-    //
-    //
+
+
     public Vector<Integer> s2_id_base              = new Vector<Integer>();
     public Vector<Integer> s2_registration_days    = new Vector<Integer>();
+
     public Vector<Integer> s2_ego_familyname       = new Vector<Integer>();
     public Vector<Integer> s2_ego_firstname1       = new Vector<Integer>();
     public Vector<Integer> s2_ego_firstname2       = new Vector<Integer>();
@@ -92,6 +100,7 @@ public class QueryLoader
     public Vector<Integer> s2_ego_death_min        = new Vector<Integer>();
     public Vector<Integer> s2_ego_death_max        = new Vector<Integer>();
     public Vector<Integer> s2_sex                  = new Vector<Integer>();
+
     public Vector<Integer> s2_mother_familyname    = new Vector<Integer>();
     public Vector<Integer> s2_mother_firstname1    = new Vector<Integer>();
     public Vector<Integer> s2_mother_firstname2    = new Vector<Integer>();
@@ -103,6 +112,7 @@ public class QueryLoader
     public Vector<Integer> s2_mother_marriage_max  = new Vector<Integer>();
     public Vector<Integer> s2_mother_death_min     = new Vector<Integer>();
     public Vector<Integer> s2_mother_death_max     = new Vector<Integer>();
+
     public Vector<Integer> s2_father_familyname    = new Vector<Integer>();
     public Vector<Integer> s2_father_firstname1    = new Vector<Integer>();
     public Vector<Integer> s2_father_firstname2    = new Vector<Integer>();
@@ -114,6 +124,7 @@ public class QueryLoader
     public Vector<Integer> s2_father_marriage_max  = new Vector<Integer>();
     public Vector<Integer> s2_father_death_min     = new Vector<Integer>();
     public Vector<Integer> s2_father_death_max     = new Vector<Integer>();
+
     public Vector<Integer> s2_partner_familyname   = new Vector<Integer>();
     public Vector<Integer> s2_partner_firstname1   = new Vector<Integer>();
     public Vector<Integer> s2_partner_firstname2   = new Vector<Integer>();
@@ -152,162 +163,174 @@ public class QueryLoader
 
     private void fillArrays() throws Exception
     {
+        // Do set 1
         while( set1.next() )
         {
             // Vars to use, global
             int var_s1_id_base = 0;
             int var_s1_registration_days = 0;
-            int var_s1_ego_familyname = 0;
-            int var_s1_ego_firstname1 = 0;
-            int var_s1_ego_firstname2 = 0;
-            int var_s1_ego_firstname3 = 0;
-            int var_s1_ego_firstname4 = 0;
-            int var_s1_ego_birth_min = 0;
-            int var_s1_ego_birth_max = 0;
+
+            int var_s1_ego_familyname   = 0;
+            int var_s1_ego_firstname1   = 0;
+            int var_s1_ego_firstname2   = 0;
+            int var_s1_ego_firstname3   = 0;
+            int var_s1_ego_firstname4   = 0;
+            int var_s1_ego_birth_min    = 0;
+            int var_s1_ego_birth_max    = 0;
             int var_s1_ego_marriage_min = 0;
             int var_s1_ego_marriage_max = 0;
-            int var_s1_ego_death_min = 0;
-            int var_s1_ego_death_max = 0;
+            int var_s1_ego_death_min    = 0;
+            int var_s1_ego_death_max    = 0;
+
             int var_s1_sex = 0;
-            int var_s1_mother_familyname = 0;
-            int var_s1_mother_firstname1 = 0;
-            int var_s1_mother_firstname2 = 0;
-            int var_s1_mother_firstname3 = 0;
-            int var_s1_mother_firstname4 = 0;
-            int var_s1_mother_birth_min = 0;
-            int var_s1_mother_birth_max = 0;
+            int var_s1_mother_familyname   = 0;
+            int var_s1_mother_firstname1   = 0;
+            int var_s1_mother_firstname2   = 0;
+            int var_s1_mother_firstname3   = 0;
+            int var_s1_mother_firstname4   = 0;
+            int var_s1_mother_birth_min    = 0;
+            int var_s1_mother_birth_max    = 0;
             int var_s1_mother_marriage_min = 0;
             int var_s1_mother_marriage_max = 0;
-            int var_s1_mother_death_min = 0;
-            int var_s1_mother_death_max = 0;
-            int var_s1_father_familyname = 0;
-            int var_s1_father_firstname1 = 0;
-            int var_s1_father_firstname2 = 0;
-            int var_s1_father_firstname3 = 0;
-            int var_s1_father_firstname4 = 0;
-            int var_s1_father_birth_min = 0;
-            int var_s1_father_birth_max = 0;
+            int var_s1_mother_death_min    = 0;
+            int var_s1_mother_death_max    = 0;
+
+            int var_s1_father_familyname   = 0;
+            int var_s1_father_firstname1   = 0;
+            int var_s1_father_firstname2   = 0;
+            int var_s1_father_firstname3   = 0;
+            int var_s1_father_firstname4   = 0;
+            int var_s1_father_birth_min    = 0;
+            int var_s1_father_birth_max    = 0;
             int var_s1_father_marriage_min = 0;
             int var_s1_father_marriage_max = 0;
-            int var_s1_father_death_min = 0;
-            int var_s1_father_death_max = 0;
-            int var_s1_partner_familyname = 0;
-            int var_s1_partner_firstname1 = 0;
-            int var_s1_partner_firstname2 = 0;
-            int var_s1_partner_firstname3 = 0;
-            int var_s1_partner_firstname4 = 0;
-            int var_s1_partner_birth_min = 0;
-            int var_s1_partner_birth_max = 0;
+            int var_s1_father_death_min    = 0;
+            int var_s1_father_death_max    = 0;
+
+            int var_s1_partner_familyname   = 0;
+            int var_s1_partner_firstname1   = 0;
+            int var_s1_partner_firstname2   = 0;
+            int var_s1_partner_firstname3   = 0;
+            int var_s1_partner_firstname4   = 0;
+            int var_s1_partner_birth_min    = 0;
+            int var_s1_partner_birth_max    = 0;
             int var_s1_partner_marriage_min = 0;
             int var_s1_partner_marriage_max = 0;
-            int var_s1_partner_death_min = 0;
-            int var_s1_partner_death_max = 0;
+            int var_s1_partner_death_min    = 0;
+            int var_s1_partner_death_max    = 0;
 
             // Get all vars from table
-            var_s1_id_base = set1.getInt("id_base");
-            var_s1_registration_days = set1.getInt("registration_days");
+            var_s1_id_base = set1.getInt( "id_base" );
+            var_s1_registration_days = set1.getInt( "registration_days" );
 
+            // Ego
             // Familyname
-            var_s1_ego_familyname = set1.getInt("ego_familyname");
+            var_s1_ego_familyname = set1.getInt( "ego_familyname" );
 
             // First Names ego
-            switch (firstname) {
+            switch( firstname )     // firstname method:
+            {
                 case 1:
-                    var_s1_ego_firstname1 = set1.getInt("ego_firstname1");
-                    var_s1_ego_firstname2 = set1.getInt("ego_firstname2");
-                    var_s1_ego_firstname3 = set1.getInt("ego_firstname3");
-                    var_s1_ego_firstname3 = set1.getInt("ego_firstname4");
+                    var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
+                    var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
+                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname3" );
+                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname4" );
                     break;
                 case 2:
-                    var_s1_ego_firstname1 = set1.getInt("ego_firstname1");
+                    var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
                     break;
                 case 3:
-                    var_s1_ego_firstname1 = set1.getInt("ego_firstname1");
-                    var_s1_ego_firstname2 = set1.getInt("ego_firstname2");
+                    var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
+                    var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
                     break;
                 case 4:
-                    var_s1_ego_firstname1 = set1.getInt("ego_firstname1");
-                    var_s1_ego_firstname2 = set1.getInt("ego_firstname2");
-                    var_s1_ego_firstname3 = set1.getInt("ego_firstname3");
+                    var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
+                    var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
+                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname3" );
                     break;
                 case 5:
-                    var_s1_ego_firstname1 = set1.getInt("ego_firstname1");
-                    var_s1_ego_firstname2 = set1.getInt("ego_firstname2");
-                    var_s1_ego_firstname3 = set1.getInt("ego_firstname3");
-                    var_s1_ego_firstname3 = set1.getInt("ego_firstname4");
+                    var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
+                    var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
+                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname3" );
+                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname4" );
                     break;
             }
 
-            if (!ignore_minmax) {
-                var_s1_ego_birth_min = set1.getInt("ego_birth_min");
-                var_s1_ego_birth_max = set1.getInt("ego_birth_max");
-                var_s1_ego_marriage_min = set1.getInt("ego_marriage_min");
-                var_s1_ego_marriage_max = set1.getInt("ego_marriage_max");
-                var_s1_ego_death_min = set1.getInt("ego_death_min");
-                var_s1_ego_death_max = set1.getInt("ego_death_max");
+            if( ! ignore_minmax )
+            {
+                var_s1_ego_birth_min    = set1.getInt( "ego_birth_min" );
+                var_s1_ego_birth_max    = set1.getInt( "ego_birth_max" );
+                var_s1_ego_marriage_min = set1.getInt( "ego_marriage_min" );
+                var_s1_ego_marriage_max = set1.getInt( "ego_marriage_max" );
+                var_s1_ego_death_min    = set1.getInt( "ego_death_min" );
+                var_s1_ego_death_max    = set1.getInt( "ego_death_max" );
             }
 
-            if (use_mother) {
-
+            if( use_mother )
+            {
                 // Family name
-                var_s1_mother_familyname = set1.getInt("mother_familyname");
+                var_s1_mother_familyname = set1.getInt( "mother_familyname" );
 
                 // First name
-                switch (firstname) {
+                switch( firstname )
+                {
                     case 1:
-                        var_s1_mother_firstname1 = set1.getInt("mother_firstname1");
-                        var_s1_mother_firstname2 = set1.getInt("mother_firstname2");
-                        var_s1_mother_firstname3 = set1.getInt("mother_firstname3");
-                        var_s1_mother_firstname3 = set1.getInt("mother_firstname4");
+                        var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
+                        var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
+                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname3" );
+                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname4" );
                         break;
                     case 2:
-                        var_s1_mother_firstname1 = set1.getInt("mother_firstname1");
+                        var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
                         break;
                     case 3:
-                        var_s1_mother_firstname1 = set1.getInt("mother_firstname1");
-                        var_s1_mother_firstname2 = set1.getInt("mother_firstname2");
+                        var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
+                        var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
                         break;
                     case 4:
-                        var_s1_mother_firstname1 = set1.getInt("mother_firstname1");
-                        var_s1_mother_firstname2 = set1.getInt("mother_firstname2");
-                        var_s1_mother_firstname3 = set1.getInt("mother_firstname3");
+                        var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
+                        var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
+                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname3" );
                         break;
                     case 5:
-                        var_s1_mother_firstname1 = set1.getInt("mother_firstname1");
-                        var_s1_mother_firstname2 = set1.getInt("mother_firstname2");
-                        var_s1_mother_firstname3 = set1.getInt("mother_firstname3");
-                        var_s1_mother_firstname3 = set1.getInt("mother_firstname4");
+                        var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
+                        var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
+                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname3" );
+                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname4" );
                         break;
                 }
 
-                if (!ignore_minmax) {
-                    var_s1_mother_birth_min = set1.getInt("mother_birth_min");
-                    var_s1_mother_birth_max = set1.getInt("mother_birth_max");
-                    var_s1_mother_marriage_min = set1.getInt("mother_marriage_min");
-                    var_s1_mother_marriage_max = set1.getInt("mother_marriage_max");
-                    var_s1_mother_death_min = set1.getInt("mother_death_min");
-                    var_s1_mother_death_max = set1.getInt("mother_death_max");
+                if( ! ignore_minmax )
+                {
+                    var_s1_mother_birth_min    = set1.getInt( "mother_birth_min" );
+                    var_s1_mother_birth_max    = set1.getInt( "mother_birth_max" );
+                    var_s1_mother_marriage_min = set1.getInt( "mother_marriage_min" );
+                    var_s1_mother_marriage_max = set1.getInt( "mother_marriage_max" );
+                    var_s1_mother_death_min    = set1.getInt( "mother_death_min" );
+                    var_s1_mother_death_max    = set1.getInt( "mother_death_max" );
                 }
             }
 
-            if (use_father) {
+            if( use_father )
+            {
                 // Family Name
-                var_s1_father_familyname = set1.getInt("father_familyname");
+                var_s1_father_familyname = set1.getInt( "father_familyname" );
 
                 // First Names
-                switch (firstname) {
+                switch( firstname )
+                {
                     case 1:
-                        var_s1_father_firstname1 = set1.getInt("father_firstname1");
-                        var_s1_father_firstname2 = set1.getInt("father_firstname2");
-                        var_s1_father_firstname3 = set1.getInt("father_firstname3");
-                        var_s1_father_firstname3 = set1.getInt("father_firstname4");
+                        var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
+                        var_s1_father_firstname2 = set1.getInt( "father_firstname2" );
+                        var_s1_father_firstname3 = set1.getInt( "father_firstname3" );
+                        var_s1_father_firstname3 = set1.getInt( "father_firstname4" );
                         break;
                     case 2:
-                        var_s1_father_firstname1 = set1.getInt("father_firstname1");
+                        var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
                         break;
                     case 3:
-                        var_s1_father_firstname1 = set1.getInt("father_firstname1");
-                        var_s1_father_firstname2 = set1.getInt("father_firstname2");
+                        var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
+                        var_s1_father_firstname2 = set1.getInt( "father_firstname2" );
                         break;
                     case 4:
                         var_s1_father_firstname1 = set1.getInt("father_firstname1");
@@ -315,132 +338,141 @@ public class QueryLoader
                         var_s1_father_firstname3 = set1.getInt("father_firstname3");
                         break;
                     case 5:
-                        var_s1_father_firstname1 = set1.getInt("father_firstname1");
-                        var_s1_father_firstname2 = set1.getInt("father_firstname2");
-                        var_s1_father_firstname3 = set1.getInt("father_firstname3");
-                        var_s1_father_firstname3 = set1.getInt("father_firstname4");
+                        var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
+                        var_s1_father_firstname2 = set1.getInt( "father_firstname2" );
+                        var_s1_father_firstname3 = set1.getInt( "father_firstname3" );
+                        var_s1_father_firstname3 = set1.getInt( "father_firstname4" );
                         break;
                 }
 
-                if (!ignore_minmax) {
-                    var_s1_father_birth_min = set1.getInt("father_birth_min");
-                    var_s1_father_birth_max = set1.getInt("father_birth_max");
-                    var_s1_father_marriage_min = set1.getInt("father_marriage_min");
-                    var_s1_father_marriage_max = set1.getInt("father_marriage_max");
-                    var_s1_father_death_min = set1.getInt("father_death_min");
-                    var_s1_father_death_max = set1.getInt("father_death_max");
+                if( ! ignore_minmax )
+                {
+                    var_s1_father_birth_min    = set1.getInt( "father_birth_min" );
+                    var_s1_father_birth_max    = set1.getInt( "father_birth_max" );
+                    var_s1_father_marriage_min = set1.getInt( "father_marriage_min" );
+                    var_s1_father_marriage_max = set1.getInt( "father_marriage_max" );
+                    var_s1_father_death_min    = set1.getInt( "father_death_min" );
+                    var_s1_father_death_max    = set1.getInt( "father_death_max" );
                 }
             }
 
-            if (use_partner) {
+            if( use_partner )
+            {
                 // Family Name
-                var_s1_partner_familyname = set1.getInt("partner_familyname");
+                var_s1_partner_familyname = set1.getInt( "partner_familyname" );
 
                 // First Names
-                switch (firstname) {
+                switch( firstname )
+                {
                     case 1:
-                        var_s1_partner_firstname1 = set1.getInt("partner_firstname1");
-                        var_s1_partner_firstname2 = set1.getInt("partner_firstname2");
-                        var_s1_partner_firstname3 = set1.getInt("partner_firstname3");
-                        var_s1_partner_firstname3 = set1.getInt("partner_firstname4");
+                        var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
+                        var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
+                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname3" );
+                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname4" );
                         break;
                     case 2:
-                        var_s1_partner_firstname1 = set1.getInt("partner_firstname1");
+                        var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
                         break;
                     case 3:
-                        var_s1_partner_firstname1 = set1.getInt("partner_firstname1");
-                        var_s1_partner_firstname2 = set1.getInt("partner_firstname2");
+                        var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
+                        var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
                         break;
                     case 4:
-                        var_s1_partner_firstname1 = set1.getInt("partner_firstname1");
-                        var_s1_partner_firstname2 = set1.getInt("partner_firstname2");
-                        var_s1_partner_firstname3 = set1.getInt("partner_firstname3");
+                        var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
+                        var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
+                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname3" );
                         break;
                     case 5:
-                        var_s1_partner_firstname1 = set1.getInt("partner_firstname1");
-                        var_s1_partner_firstname2 = set1.getInt("partner_firstname2");
-                        var_s1_partner_firstname3 = set1.getInt("partner_firstname3");
-                        var_s1_partner_firstname3 = set1.getInt("partner_firstname4");
+                        var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
+                        var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
+                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname3" );
+                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname4" );
                         break;
                 }
 
-                if (!ignore_minmax) {
-                    var_s1_partner_birth_min = set1.getInt("partner_birth_min");
-                    var_s1_partner_birth_max = set1.getInt("partner_birth_max");
-                    var_s1_partner_marriage_min = set1.getInt("partner_marriage_min");
-                    var_s1_partner_marriage_max = set1.getInt("partner_marriage_max");
-                    var_s1_partner_death_min = set1.getInt("partner_death_min");
-                    var_s1_partner_death_max = set1.getInt("partner_death_max");
+                if( !ignore_minmax )
+                {
+                    var_s1_partner_birth_min    = set1.getInt( "partner_birth_min" );
+                    var_s1_partner_birth_max    = set1.getInt( "partner_birth_max" );
+                    var_s1_partner_marriage_min = set1.getInt( "partner_marriage_min" );
+                    var_s1_partner_marriage_max = set1.getInt( "partner_marriage_max" );
+                    var_s1_partner_death_min    = set1.getInt( "partner_death_min" );
+                    var_s1_partner_death_max    = set1.getInt( "partner_death_max" );
                 }
             }
 
             // convert sex to int
-            if (!ignore_sex) {
-                String s = set1.getString("ignore_sex");
+            if( !ignore_sex )
+            {
+                String s = set1.getString( "ignore_sex" );
 
-                if (s.equalsIgnoreCase("v")) {
-                    var_s1_sex = 1;
-                } else if (s.equalsIgnoreCase("m")) {
-                    var_s1_sex = 2;
-                } else {
-                    var_s1_sex = 0;
-                }
+                if( s.equalsIgnoreCase( "v" ) )      { var_s1_sex = 1; }
+                else if( s.equalsIgnoreCase( "m" ) ) { var_s1_sex = 2; }
+                else                                 { var_s1_sex = 0; }
             }
 
             // fill the arraylists
             s1_id_base.add(var_s1_id_base);
             s1_registration_days.add(var_s1_registration_days);
-            s1_ego_familyname.add(var_s1_ego_familyname);
-            s1_ego_firstname1.add(var_s1_ego_firstname1);
-            s1_ego_firstname2.add(var_s1_ego_firstname2);
-            s1_ego_firstname3.add(var_s1_ego_firstname3);
-            s1_ego_firstname4.add(var_s1_ego_firstname4);
-            s1_ego_birth_min.add(var_s1_ego_birth_min);
-            s1_ego_birth_max.add(var_s1_ego_birth_max);
-            s1_ego_marriage_min.add(var_s1_ego_marriage_min);
-            s1_ego_marriage_max.add(var_s1_ego_marriage_max);
-            s1_ego_death_min.add(var_s1_ego_death_min);
-            s1_ego_death_max.add(var_s1_ego_death_max);
+
+            s1_ego_familyname.add(   var_s1_ego_familyname );
+            s1_ego_firstname1.add(   var_s1_ego_firstname1 );
+            s1_ego_firstname2.add(   var_s1_ego_firstname2 );
+            s1_ego_firstname3.add(   var_s1_ego_firstname3 );
+            s1_ego_firstname4.add(   var_s1_ego_firstname4 );
+            s1_ego_birth_min.add(    var_s1_ego_birth_min );
+            s1_ego_birth_max.add(    var_s1_ego_birth_max );
+            s1_ego_marriage_min.add( var_s1_ego_marriage_min );
+            s1_ego_marriage_max.add( var_s1_ego_marriage_max );
+            s1_ego_death_min.add(    var_s1_ego_death_min );
+            s1_ego_death_max.add(    var_s1_ego_death_max );
+
             s1_sex.add(var_s1_sex);
-            s1_mother_familyname.add(var_s1_mother_familyname);
-            s1_mother_firstname1.add(var_s1_mother_firstname1);
-            s1_mother_firstname2.add(var_s1_mother_firstname2);
-            s1_mother_firstname3.add(var_s1_mother_firstname3);
-            s1_mother_firstname4.add(var_s1_mother_firstname4);
-            s1_mother_birth_min.add(var_s1_mother_birth_min);
-            s1_mother_birth_max.add(var_s1_mother_birth_max);
-            s1_mother_marriage_min.add(var_s1_mother_marriage_min);
-            s1_mother_marriage_max.add(var_s1_mother_marriage_max);
-            s1_mother_death_min.add(var_s1_mother_death_min);
-            s1_mother_death_max.add(var_s1_mother_death_max);
-            s1_father_familyname.add(var_s1_father_familyname);
-            s1_father_firstname1.add(var_s1_father_firstname1);
-            s1_father_firstname2.add(var_s1_father_firstname2);
-            s1_father_firstname3.add(var_s1_father_firstname3);
-            s1_father_firstname4.add(var_s1_father_firstname4);
-            s1_father_birth_min.add(var_s1_father_birth_min);
-            s1_father_birth_max.add(var_s1_father_birth_max);
-            s1_father_marriage_min.add(var_s1_father_marriage_min);
-            s1_father_marriage_max.add(var_s1_father_marriage_max);
-            s1_father_death_min.add(var_s1_father_death_min);
-            s1_father_death_max.add(var_s1_father_death_max);
-            s1_partner_familyname.add(var_s1_partner_familyname);
-            s1_partner_firstname1.add(var_s1_partner_firstname1);
-            s1_partner_firstname2.add(var_s1_partner_firstname2);
-            s1_partner_firstname3.add(var_s1_partner_firstname3);
-            s1_partner_firstname4.add(var_s1_partner_firstname4);
-            s1_partner_birth_min.add(var_s1_partner_birth_min);
-            s1_partner_birth_max.add(var_s1_partner_birth_max);
-            s1_partner_marriage_min.add(var_s1_partner_marriage_min);
-            s1_partner_marriage_max.add(var_s1_partner_marriage_max);
-            s1_partner_death_min.add(var_s1_partner_death_min);
-            s1_partner_death_max.add(var_s1_partner_death_max);
+
+            s1_mother_familyname.add(   var_s1_mother_familyname );
+            s1_mother_firstname1.add(   var_s1_mother_firstname1 );
+            s1_mother_firstname2.add(   var_s1_mother_firstname2 );
+            s1_mother_firstname3.add(   var_s1_mother_firstname3 );
+            s1_mother_firstname4.add(   var_s1_mother_firstname4 );
+            s1_mother_birth_min.add(    var_s1_mother_birth_min );
+            s1_mother_birth_max.add(    var_s1_mother_birth_max );
+            s1_mother_marriage_min.add( var_s1_mother_marriage_min );
+            s1_mother_marriage_max.add( var_s1_mother_marriage_max );
+            s1_mother_death_min.add(    var_s1_mother_death_min );
+            s1_mother_death_max.add(    var_s1_mother_death_max );
+
+            s1_father_familyname.add(   var_s1_father_familyname );
+            s1_father_firstname1.add(   var_s1_father_firstname1 );
+            s1_father_firstname2.add(   var_s1_father_firstname2 );
+            s1_father_firstname3.add(   var_s1_father_firstname3 );
+            s1_father_firstname4.add(   var_s1_father_firstname4) ;
+            s1_father_birth_min.add(    var_s1_father_birth_min );
+            s1_father_birth_max.add(    var_s1_father_birth_max );
+            s1_father_marriage_min.add( var_s1_father_marriage_min );
+            s1_father_marriage_max.add( var_s1_father_marriage_max );
+            s1_father_death_min.add(    var_s1_father_death_min );
+            s1_father_death_max.add(    var_s1_father_death_max );
+            s1_partner_familyname.add(  var_s1_partner_familyname );
+
+            s1_partner_firstname1.add(   var_s1_partner_firstname1 );
+            s1_partner_firstname2.add(   var_s1_partner_firstname2 );
+            s1_partner_firstname3.add(   var_s1_partner_firstname3 );
+            s1_partner_firstname4.add(   var_s1_partner_firstname4 );
+            s1_partner_birth_min.add(    var_s1_partner_birth_min );
+            s1_partner_birth_max.add(    var_s1_partner_birth_max );
+            s1_partner_marriage_min.add( var_s1_partner_marriage_min );
+            s1_partner_marriage_max.add( var_s1_partner_marriage_max );
+            s1_partner_death_min.add(    var_s1_partner_death_min );
+            s1_partner_death_max.add(    var_s1_partner_death_max );
         }
 
+
+        // Do set 2
         while( set2.next() )
         {
             int var_s2_id_base = 0;
             int var_s2_registration_days = 0;
+
             int var_s2_ego_familyname = 0;
             int var_s2_ego_firstname1 = 0;
             int var_s2_ego_firstname2 = 0;
@@ -452,7 +484,9 @@ public class QueryLoader
             int var_s2_ego_marriage_max = 0;
             int var_s2_ego_death_min = 0;
             int var_s2_ego_death_max = 0;
+
             int var_s2_sex = 0;
+
             int var_s2_mother_familyname = 0;
             int var_s2_mother_firstname1 = 0;
             int var_s2_mother_firstname2 = 0;
@@ -464,6 +498,7 @@ public class QueryLoader
             int var_s2_mother_marriage_max = 0;
             int var_s2_mother_death_min = 0;
             int var_s2_mother_death_max = 0;
+
             int var_s2_father_familyname = 0;
             int var_s2_father_firstname1 = 0;
             int var_s2_father_firstname2 = 0;
@@ -475,6 +510,7 @@ public class QueryLoader
             int var_s2_father_marriage_max = 0;
             int var_s2_father_death_min = 0;
             int var_s2_father_death_max = 0;
+
             int var_s2_partner_familyname = 0;
             int var_s2_partner_firstname1 = 0;
             int var_s2_partner_firstname2 = 0;
@@ -656,7 +692,7 @@ public class QueryLoader
                 }
             }
 
-            //convertsextoint
+            //convert sex toint
             if (!ignore_sex) {
                 String s = set2.getString("ignore_sex");
 
@@ -669,9 +705,10 @@ public class QueryLoader
                 }
             }
 
-            //fillthearraylists
+            //fill the arraylists
             s2_id_base.add(var_s2_id_base);
             s2_registration_days.add(var_s2_registration_days);
+
             s2_ego_familyname.add(var_s2_ego_familyname);
             s2_ego_firstname1.add(var_s2_ego_firstname1);
             s2_ego_firstname2.add(var_s2_ego_firstname2);
@@ -683,7 +720,9 @@ public class QueryLoader
             s2_ego_marriage_max.add(var_s2_ego_marriage_max);
             s2_ego_death_min.add(var_s2_ego_death_min);
             s2_ego_death_max.add(var_s2_ego_death_max);
+
             s2_sex.add(var_s2_sex);
+
             s2_mother_familyname.add(var_s2_mother_familyname);
             s2_mother_firstname1.add(var_s2_mother_firstname1);
             s2_mother_firstname2.add(var_s2_mother_firstname2);
@@ -695,6 +734,7 @@ public class QueryLoader
             s2_mother_marriage_max.add(var_s2_mother_marriage_max);
             s2_mother_death_min.add(var_s2_mother_death_min);
             s2_mother_death_max.add(var_s2_mother_death_max);
+
             s2_father_familyname.add(var_s2_father_familyname);
             s2_father_firstname1.add(var_s2_father_firstname1);
             s2_father_firstname2.add(var_s2_father_firstname2);
@@ -706,6 +746,7 @@ public class QueryLoader
             s2_father_marriage_max.add(var_s2_father_marriage_max);
             s2_father_death_min.add(var_s2_father_death_min);
             s2_father_death_max.add(var_s2_father_death_max);
+
             s2_partner_familyname.add(var_s2_partner_familyname);
             s2_partner_firstname1.add(var_s2_partner_firstname1);
             s2_partner_firstname2.add(var_s2_partner_firstname2);
