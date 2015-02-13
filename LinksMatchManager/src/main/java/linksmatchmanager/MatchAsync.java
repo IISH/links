@@ -13,12 +13,13 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-12-Feb-2015 Latest change
+ * FL-13-Feb-2015 Latest change
  */
 
 public class MatchAsync extends Thread
 {
     boolean debug;
+    boolean useExactMatch;
 
     ProcessManager pm;
 
@@ -45,6 +46,7 @@ public class MatchAsync extends Thread
     public MatchAsync
     (
         boolean debug,
+        boolean useExactMatch,
 
         ProcessManager pm,
 
@@ -65,6 +67,7 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
+        this.useExactMatch = useExactMatch;
 
         this.pm = pm;
 
@@ -90,6 +93,7 @@ public class MatchAsync extends Thread
     public MatchAsync   // variant has no root parameter
     (
         boolean debug,
+        boolean useExactMatch,
 
         ProcessManager pm,
 
@@ -112,6 +116,7 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
+        this.useExactMatch = useExactMatch;
 
         this.pm = pm;
 
@@ -157,6 +162,9 @@ public class MatchAsync extends Thread
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
 
+            System.out.println( "s1 query" + qs.query1 );
+            System.out.println( "s2 query" + qs.query2 );
+
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // Its input is a QuerySet and a database connection object.
             ql = new QueryLoader( qs, conPrematch );
@@ -166,7 +174,8 @@ public class MatchAsync extends Thread
             int lastFamilyName = 0;
 
             // Create list with potential matches for a familyname
-            ArrayList< Integer > potentialMatches = new ArrayList< Integer >();
+            ArrayList< Integer >   potentialMatches = new ArrayList< Integer >();
+            ArrayList< Integer > LvPotentialMatches = new ArrayList< Integer>();
 
             // Loop through set 1
             msg = String.format( "Thread id %d; Set 1 size: %d", threadId, ql.s1_id_base.size() );
@@ -176,12 +185,22 @@ public class MatchAsync extends Thread
             int nmatch = 0;
 
             int ibs = ql.s1_id_base.size();
+            int chunk = ibs / 10;
             for( int k = 0; k < ql.s1_id_base.size(); k++ )
             {
+                if( ( k + chunk ) % chunk == 0 ) { System.out.println( "done: " + k ); }
+
                 if( debug ) {
                     msg = String.format( "s1 %d-of-%d", k+1, ibs );
                     System.out.println( msg );
                     plog.show( msg );
+
+                    /*
+                    if( k > 1000 ) {
+                        System.out.println( "TEST: STOP" );
+                        System.exit( 0 );
+                    }
+                    */
                 }
 
                 ka = k;
@@ -199,15 +218,18 @@ public class MatchAsync extends Thread
                     lastFamilyName = s1EgoFamName;                      // Set previous name
 
                     potentialMatches.clear();                           // Empty the list
+                    LvPotentialMatches.clear();
 
                     // Load the potential matches; exact matches, plus variants
-                    variantsToList( s1EgoFamName, potentialMatches );
+                    variantsToList( s1EgoFamName, potentialMatches, LvPotentialMatches );
                 }
 
+                /*
                 if( potentialMatches.size() > 0 ) {
                     msg = String.format( "Thread id %d; Potential matches: %d", threadId, potentialMatches.size() );
                     plog.show( msg );
                 }
+                */
 
                 // Copy the existing variantList to working copy
                 ArrayList< Integer > tempVarList = new ArrayList< Integer >();
@@ -266,7 +288,7 @@ public class MatchAsync extends Thread
                     // Check min max; use new min max
                     if( !qs.ignore_minmax ) {
                         if( !CheckMinMax( qs, k, index ) ) {
-                            tempVarList.set( idIndex, 0 );    // Go to next person in Set 2
+                            tempVarList.set( idIndex, 0 );      // set 0: skip
                             continue;
                         }
                     }
@@ -278,7 +300,7 @@ public class MatchAsync extends Thread
 
                         // Empty sex is denied
                         if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
-                            tempVarList.set( idIndex, 0 );
+                            tempVarList.set( idIndex, 0 );      // set 0: skip
                             continue;
                         }
                     }
@@ -315,28 +337,31 @@ public class MatchAsync extends Thread
 
                     // Check the firstnames of ego
                     if( qs.int_firstname_e > 0 ) {
-                        if( !checkFirstName( qs.firstname,
-                                s1EgoFirName1, s1EgoFirName2, s1EgoFirName3, s1EgoFirName4,
-                                s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
-                                qs.method ) ) {
-                            tempVarList.set( idIndex, 0 );
+                        if( ! checkFirstName( qs.firstname,
+                            s1EgoFirName1, s1EgoFirName2, s1EgoFirName3, s1EgoFirName4,
+                            s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
+                            qs.method ) )
+                        {
+                            tempVarList.set( idIndex, 0 );      // set 0: skip
                             continue;
                         }
                     }
 
                     if( qs.use_mother ) {
                         if( qs.int_familyname_m > 0 ) {
-                            if( !isVariant( s1MotherFamName, s2MotherFamName, NameType.FAMILYNAME, qs.method ) ) {
-                                tempVarList.set( idIndex, 0 ); // set 0
+                            if( ! isVariant( s1MotherFamName, s2MotherFamName, NameType.FAMILYNAME, qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                         if( qs.int_firstname_m > 0 ) {
-                            if ( !checkFirstName( qs.firstname,
-                                    s1MotherFirName1, s1MotherFirName2, s1MotherFirName3, s1MotherFirName4,
-                                    s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
-                                    qs.method ) ) {
-                                tempVarList.set( idIndex, 0 );
+                            if( ! checkFirstName( qs.firstname,
+                                s1MotherFirName1, s1MotherFirName2, s1MotherFirName3, s1MotherFirName4,
+                                s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
+                                qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
@@ -344,17 +369,19 @@ public class MatchAsync extends Thread
 
                     if( qs.use_father ) {
                         if( qs.int_familyname_f > 0 ) {
-                            if( !isVariant(s1FatherFamName, s2FatherFamName, NameType.FAMILYNAME, qs.method ) ) {
-                                tempVarList.set( idIndex, 0 ); // set 0
+                            if( ! isVariant( s1FatherFamName, s2FatherFamName, NameType.FAMILYNAME, qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                         if( qs.int_firstname_f > 0 ) {
-                            if( !checkFirstName( qs.firstname,
-                                    s1FatherFirName1, s1FatherFirName2, s1FatherFirName3, s1FatherFirName4,
-                                    s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
-                                    qs.method ) ) {
-                                tempVarList.set( idIndex, 0 );
+                            if( ! checkFirstName( qs.firstname,
+                                s1FatherFirName1, s1FatherFirName2, s1FatherFirName3, s1FatherFirName4,
+                                s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
+                                qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
@@ -362,23 +389,26 @@ public class MatchAsync extends Thread
 
                     if( qs.use_partner ) {
                         if( qs.int_familyname_p > 0 ) {
-                            if( !isVariant(s1PartnerFamName, s2PartnerFamName, NameType.FAMILYNAME, qs.method ) ) {
-                                tempVarList.set( idIndex, 0 ); // set 0
+                            if( ! isVariant( s1PartnerFamName, s2PartnerFamName, NameType.FAMILYNAME, qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                         if( qs.int_firstname_p > 0 ) {
-                            if( !checkFirstName( qs.firstname,
-                                    s1PartnerFirName1, s1PartnerFirName2, s1PartnerFirName3, s1PartnerFirName4,
-                                    s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
-                                    qs.method ) ) {
-                                tempVarList.set( idIndex, 0 );
+                            if( ! checkFirstName( qs.firstname,
+                                s1PartnerFirName1, s1PartnerFirName2, s1PartnerFirName3, s1PartnerFirName4,
+                                s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
+                                qs.method ) )
+                            {
+                                tempVarList.set( idIndex, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                     }
                 }
 
+                // entries of tempVarList that have not been zeroed above imply a match
                 int tvls = tempVarList.size();
                 for( int l = 0; l < tempVarList.size(); l++ )
                 {
@@ -388,7 +418,8 @@ public class MatchAsync extends Thread
                         int id_s1 = ql.s1_id_base.get( k );
                         int id_s2 = ql.s2_id_base.get( tempVarList.get( l ) );
 
-                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2 ) VALUES (" + mis.is.get(i).get(0).id + "," + id_s1 + "," + id_s2 + ")";
+                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2 ) " +
+                            "VALUES ( " + mis.is.get(i).get(0).id + "," + id_s1 + "," + id_s2 + ")";
 
                         if( debug ) {
                             System.out.println( query );
@@ -405,7 +436,7 @@ public class MatchAsync extends Thread
             pm.removeProcess();
 
             msg = String.format( "Number of matches: %d", nmatch );
-            System.out.println( msg );
+            System.out.println(msg);
             plog.show( msg );
 
             msg = String.format( "Thread id %d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
@@ -436,7 +467,7 @@ public class MatchAsync extends Thread
      * @param fn                    // an ego familyname from the set s1
      * @param potentialMatches      // potential matches from s2
      */
-    private void variantsToList( int fn, ArrayList< Integer > potentialMatches )
+    private void variantsToList( int fn, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
     {
         try
         {
@@ -444,10 +475,13 @@ public class MatchAsync extends Thread
 
             for( int l = 0; l < ql.s2_ego_familyname.size(); l++ )
             {
-                // Use binary search to Check if this name is variant of
-                if( fn == ql.s2_ego_familyname.get( l ) ) {
-                    potentialMatches.add( l );          // Add ID of name to list
-                    continue;                           // exact match, so we are done
+                if( useExactMatch ) {
+                    // Use binary search to Check if this name is variant of
+                    if( fn == ql.s2_ego_familyname.get( l ) ) {
+                        potentialMatches.add( l );          // Add ID of name to list
+                        LvPotentialMatches.add( 0 );
+                        continue;                           // exact match, so we are done
+                    }
                 }
 
                 // Do the search in root names or variant names
@@ -466,6 +500,7 @@ public class MatchAsync extends Thread
                         for( int j = 0; j < root2.length; j++ ) {
                             if( root1[ i ] == root2[ j ] ) {
                                 potentialMatches.add( l );
+                                LvPotentialMatches.add( -1 );
                                 break;
                             }
                         }
@@ -499,6 +534,7 @@ public class MatchAsync extends Thread
                     {
                         if( debug ) { plog.show( "add: " + l ); }
                         potentialMatches.add( l );
+                        LvPotentialMatches.add( -1 );
                     }
                 }
             }

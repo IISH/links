@@ -29,12 +29,15 @@ import linksmatchmanager.DataSet.NameType;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
+ * FL-13-Feb-2015 Latest change
+ *
  */
 public class VariantLoader
 {
     private String url;
     private String user;
     private String pass;
+    PrintLogger plog;
 
     /**
      * Constructor
@@ -42,24 +45,25 @@ public class VariantLoader
      * @param user Username for the database
      * @param pass Password for the database
      */
-    public VariantLoader( String url, String user, String pass )
+    public VariantLoader( String url, String user, String pass, PrintLogger plog )
     {
         this.url  = url;
         this.user = user;
         this.pass = pass;
+        this.plog = plog;
     }
 
     /**
      * This method returns a multidimensional Array.
      * @param tableName table to load. This will work as long as the table field name requirements are met
-     * @param value max accepted value
+     * @param value max accepted Levenshtein value
      * @return multidimensional representation of the prematch table
      * @throws Exception
      */
     public int[][] loadNames( String tableName, int value )
     throws Exception
     {
-        System.out.println( "VariantLoader/loadNames() db: links_prematch, tableName: " + tableName + ", value: " + value );
+        plog.show("VariantLoader/loadNames() db: links_prematch, tableName: " + tableName + ", Levenshtein value: " + value);
 
         Connection con = General.getConnection( url, "links_prematch", user, pass );
         con.setReadOnly( true );
@@ -67,26 +71,31 @@ public class VariantLoader
         String query =  "SELECT length_1 , length_2 FROM " + tableName
             + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, 200000000;";
         System.out.println( query );
+        plog.show( query );
 
         ResultSet rs = con.createStatement().executeQuery( query );
 
         // Create an multi-dimensional array large enough for the biggest number
         rs.last();
         int max = rs.getRow();
-        int[][] names = new int[max][];
+        int[][] names = new int[ max ][];
         rs.beforeFirst(); // Put cursor back
 
-        // int[][] names = new int[max + 1][];
+        System.out.println( "VariantLoader/loadNames: number of records = " + max );
+        plog.show( "VariantLoader/loadNames: number of records = " + max );
 
         // Counter to detect if the main name is changed
         int currentName = -1;
 
         // Create an ArrayList for the temporary names
-        ArrayList<Integer> tempNames = new ArrayList<Integer>();
+        ArrayList< Integer > tempNames = new ArrayList<Integer>();
 
-        // Loop through the records from the lv table
+        // Loop through the records from the lv_ table
+        int r = 0;
         while( rs.next() )
         {
+            //System.out.println( "r: " + r );
+
             int n1 = rs.getInt( "length_1" );
             int n2 = rs.getInt( "length_2" );
 
@@ -109,6 +118,7 @@ public class VariantLoader
                     }
 
                     // load complete array into multidimensional array
+                    System.out.println( "r: " + r + ", " + namesArray.length );
                     names[ currentName ] = namesArray;
                 }
 
@@ -124,10 +134,13 @@ public class VariantLoader
                 // In this case the name must be loaded into temporary array
                 tempNames.add( n2 );
             }
+
+            r++;
         }
 
         // Load last batch
-        if( !tempNames.isEmpty() ) {
+        if( !tempNames.isEmpty() )
+        {
             // count the names
             int countNamesInTemp = tempNames.size();
 
@@ -140,7 +153,8 @@ public class VariantLoader
             }
 
             // load complete array into multidimensional array
-            names[currentName] = namesArray;
+            System.out.println( "r: " + currentName + ", " + namesArray.length );
+            names[ currentName ] = namesArray;
         }
 
         // Close
@@ -155,7 +169,13 @@ public class VariantLoader
         con.close();
         con = null;
 
-        System.out.println( "VariantLoader/loadNames: names.length = " + names.length );
+        /*
+        for( int r = 0; r < max; r ++ ) {
+            //int[] n = names[ r ][ 0 ];
+            System.out.printf( "r: ", r );
+        }
+        */
+
         return names;        // Return multidimensional array
     } // loadNames
 

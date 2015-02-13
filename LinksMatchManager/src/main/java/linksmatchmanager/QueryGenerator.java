@@ -30,7 +30,8 @@ import linksmatchmanager.DataSet.InputSet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-29-Jan-2015 Latest change
+ * FL-13-Feb-2015 Do not retrieve NULL names from links_base
+ * FL-13-Feb-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -96,7 +97,7 @@ public class QueryGenerator
     {
         if( debug ) { System.out.println( "QueryGenerator/setToArray()" ); }
 
-        int nline = 0;
+        int nline   = 0;
         int nline_y = 0;
         int nline_n = 0;
 
@@ -259,7 +260,7 @@ public class QueryGenerator
                 qs.use_father  = use_father.equalsIgnoreCase(  "y" ) ? true : false;
                 qs.use_partner = use_partner.equalsIgnoreCase( "y" ) ? true : false;
 
-                // select statement
+                // Initial part of query to get the data from links_base
                 qs.query1 = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname );
                 qs.query2 = qs.query1;
 
@@ -268,22 +269,74 @@ public class QueryGenerator
                     qs.query2 += ", ego_sex ";
                 }
 
-                // from
+                // FROM
                 qs.query1 += "FROM links_base ";
                 qs.query2 += "FROM links_base ";
 
-                // where
-                if( !s1_role_ego.isEmpty()
-                    || !s2_role_ego.isEmpty()
-                    ||  s1_maintype != 0
-                    ||  s2_maintype != 0
-                    || !s1_source.isEmpty()
-                    || !s2_source.isEmpty()
-                    ||  s1_startyear != 0
+                // FL-13-Feb-2015, suppress empty names, if used
+                String notzero = "";
+                if( int_familyname_e == 1 ) { notzero += "WHERE ego_familyname <> 0 ";  }
+
+                if( int_familyname_m == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE mother_familyname <> 0 "; }
+                    else                    { notzero +=   "AND mother_familyname <> 0 "; }
+                }
+
+                if( int_familyname_f == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE father_familyname <> 0 "; }
+                    else                    { notzero +=   "AND father_familyname <> 0 "; }
+                }
+
+                if( int_familyname_p == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE partner_familyname <> 0 "; }
+                    else                    { notzero +=   "AND partner_familyname <> 0 "; }
+                }
+
+
+                // for the time being, only firstname1
+                if( int_firstname_e == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE ego_firstname1 <> 0 ";  }
+                    else                    { notzero +=   "AND ego_firstname1 <> 0 ";  }
+                }
+
+                if( int_firstname_m == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE mother_firstname1 <> 0 "; }
+                    else                    { notzero +=   "AND mother_firstname1 <> 0 "; }
+                }
+
+                if( int_firstname_f == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE father_firstname1 <> 0 "; }
+                    else                    { notzero +=   "AND father_firstname1 <> 0 "; }
+                }
+
+                if( int_firstname_p == 1 ) {
+                    if( notzero.isEmpty() ) { notzero += "WHERE partner_firstname1 <> 0 "; }
+                    else                    { notzero +=   "AND partner_firstname1 <> 0 "; }
+                }
+
+
+                qs.query1 += notzero;
+                qs.query2 += notzero;
+
+
+                // AND
+                if( ! s1_role_ego.isEmpty()
+                    || ! s2_role_ego.isEmpty()
+                    ||   s1_maintype != 0
+                    ||   s2_maintype != 0
+                    || ! s1_source.isEmpty()
+                    || ! s2_source.isEmpty()
+                    ||   s1_startyear != 0
                 )
                 {
-                    qs.query1 += "WHERE ";
-                    qs.query2 += "WHERE ";
+                    if( notzero.isEmpty() ) {
+                        qs.query1 += "WHERE ";
+                        qs.query2 += "WHERE ";
+                    }
+                    else {
+                        qs.query1 += "AND ";
+                        qs.query2 += "AND ";
+                    }
                 }
 
                 // ego role
@@ -300,22 +353,21 @@ public class QueryGenerator
                     // where string 
                     String s1_role_ego_where = "";
 
-                    if (s1_role_ego.contains(",")) {
-
+                    if( s1_role_ego.contains( "," ) )
+                    {
                         s1_role_ego_where = "(";
 
-                        for (String s : s1_role_ego.split(",")) {
+                        for( String s : s1_role_ego.split( "," ) ) {
                             s1_role_ego_where += "OR ego_role = " + s + " ";
                         }
 
                         // replace first OR
-                        s1_role_ego_where = s1_role_ego_where.replaceFirst("OR", "");
+                        s1_role_ego_where = s1_role_ego_where.replaceFirst( "OR", "" );
 
-                        s1_role_ego_where += ") ";
+                        s1_role_ego_where += ")";
 
-                    } else {
-                        s1_role_ego_where += " ego_role = " + s1_role_ego;
                     }
+                    else { s1_role_ego_where += "ego_role = " + s1_role_ego; }
 
                     qs.query1 += s1_role_ego_where + " AND ";
                 }
@@ -326,28 +378,28 @@ public class QueryGenerator
                     // where string 
                     String s2_role_ego_where = "";
 
-                    if (s2_role_ego.contains(",")) {
+                    if( s2_role_ego.contains( "," ) )
+                    {
 
                         s2_role_ego_where = "(";
 
-                        for (String s : s2_role_ego.split(",")) {
+                        for( String s : s2_role_ego.split( "," ) ) {
                             s2_role_ego_where += "OR ego_role = " + s + " ";
                         }
 
                         // replace first OR
-                        s2_role_ego_where = s2_role_ego_where.replaceFirst("OR", "");
+                        s2_role_ego_where = s2_role_ego_where.replaceFirst( "OR", "" );
 
-                        s2_role_ego_where += ") ";
+                        s2_role_ego_where += ")";
 
-                    } else {
-                        s2_role_ego_where += " ego_role = " + s2_role_ego;
                     }
+                    else { s2_role_ego_where += "ego_role = " + s2_role_ego; }
 
                     qs.query2 += s2_role_ego_where + " AND ";
                 }
 
                 // Main type
-                if( s1_maintype != 0) {
+                if( s1_maintype != 0 ) {
                     qs.query1 += "registration_maintype = " + s1_maintype + " AND ";
                 }
                 if( s2_maintype != 0 ) {
@@ -363,49 +415,47 @@ public class QueryGenerator
                 }
 
                 // ID source
-                if( !s1_source.isEmpty() && !s1_source.equals("0") )
+                if( !s1_source.isEmpty() && !s1_source.equals( "0" ) )
                 {
                     // where string 
                     String s1_source_where = "";
 
-                    if (s1_source.contains(",")) {
+                    if( s1_source.contains( "," ) ) {
                         s1_source_where = "(";
-                        for (String s : s1_source.split(",")) {
+                        for( String s : s1_source.split( "," ) ) {
                             s1_source_where += "OR id_source = " + s + " ";
                         }
 
                         // replace first OR
-                        s1_source_where = s1_source_where.replaceFirst("OR", "");
+                        s1_source_where = s1_source_where.replaceFirst( "OR", "" );
 
                         s1_source_where += ") ";
-                    } else {
-                        s1_source_where += " id_source = " + s1_source;
                     }
+                    else { s1_source_where += " id_source = " + s1_source; }
 
                     qs.query1 += s1_source_where + " AND ";
                 }
 
                 // ID source
-                if( !s2_source.isEmpty() && !s2_source.equals("0") )
+                if( !s2_source.isEmpty() && !s2_source.equals( "0" ) )
                 {
                     // where string 
                     String s2_source_where = "";
 
-                    if (s2_source.contains(",")) {
+                    if( s2_source.contains( "," ) ) {
 
                         s2_source_where = "(";
 
-                        for (String s : s2_source.split(",")) {
+                        for( String s : s2_source.split( "," ) ) {
                             s2_source_where += "OR id_source = " + s + " ";
                         }
 
                         // replace first OR
-                        s2_source_where = s2_source_where.replaceFirst("OR", "");
+                        s2_source_where = s2_source_where.replaceFirst( "OR", "" );
 
                         s2_source_where += ") ";
-                    } else {
-                        s2_source_where += " id_source = " + s2_source;
                     }
+                    else { s2_source_where += " id_source = " + s2_source; }
 
                     qs.query2 += s2_source_where + " AND ";
                 }
@@ -485,17 +535,28 @@ public class QueryGenerator
     }
 
 
+    /**
+     * Initial part of query to get the data from links_base
+     *
+     * @param use_mother
+     * @param use_father
+     * @param use_partner
+     * @param ignore_minmax
+     * @param numberofFirstnames
+     * @return
+     */
     private String getSelectQuery( boolean use_mother, boolean use_father, boolean use_partner, boolean ignore_minmax, int numberofFirstnames )
     {
         String query;
 
         query = "SELECT id_base , registration_days , ego_familyname ";
 
-        if (!ignore_minmax) {
+        if( !ignore_minmax ) {
             query += ", ego_birth_min , ego_birth_max , ego_marriage_min , ego_marriage_max , ego_death_min , ego_death_max ";
         }
 
-        switch (numberofFirstnames) {
+        switch( numberofFirstnames )
+        {
             case 1:
                 query += ", ego_firstname1 , ego_firstname2 , ego_firstname3 , ego_firstname4 ";
                 break;
@@ -517,11 +578,12 @@ public class QueryGenerator
         {
             query += ", mother_familyname ";
 
-            if (!ignore_minmax) {
+            if( !ignore_minmax ) {
                 query += ", mother_birth_min , mother_birth_max , mother_marriage_min , mother_marriage_max , mother_death_min , mother_death_max ";
             }
 
-            switch (numberofFirstnames) {
+            switch( numberofFirstnames )
+            {
                 case 1:
                     query += ", mother_firstname1 , mother_firstname2 , mother_firstname3 , mother_firstname4 ";
                     break;
@@ -545,11 +607,12 @@ public class QueryGenerator
         {
             query += ", father_familyname ";
 
-            if (!ignore_minmax) {
+            if( !ignore_minmax ) {
                 query += ", father_birth_min , father_birth_max , father_marriage_min , father_marriage_max , father_death_min , father_death_max ";
             }
 
-            switch (numberofFirstnames) {
+            switch( numberofFirstnames )
+            {
                 case 1:
                     query += ", father_firstname1 , father_firstname2 , father_firstname3 , father_firstname4 ";
                     break;
@@ -572,12 +635,13 @@ public class QueryGenerator
         {
             query += ", partner_familyname ";
 
-            if (!ignore_minmax) {
+            if( !ignore_minmax ) {
                 query += ", partner_birth_min , partner_birth_max , partner_marriage_min , partner_marriage_max , partner_death_min , partner_death_max ";
 
             }
 
-            switch (numberofFirstnames) {
+            switch( numberofFirstnames )
+            {
                 case 1:
                     query += ", partner_firstname1 , partner_firstname2 , partner_firstname3 , partner_firstname4 ";
                     break;

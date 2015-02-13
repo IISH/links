@@ -35,6 +35,7 @@ public class Main
 {
     // Global vars
     private static boolean debug;
+    private static boolean useExactMatch = false;
 
     private static QueryLoader ql;
     private static PrintLogger plog;
@@ -144,20 +145,22 @@ public class Main
             for( int i = 0; i < mis.is.getSize(); i++ )
             {
                 // Create a new prematch variants object for every record in match_process table
-                VariantLoader vl = new VariantLoader( url, user, pass );
+                VariantLoader vl = new VariantLoader( url, user, pass, plog );
 
 
                 plog.show( String.format( "\nmatching record: %d-of-%d\n", i+1, misSize ) );
+                if( ! useExactMatch ) { plog.show( "Notice: skipping exact matches" ); }
+
 
                 int method = mis.is.get( i ).get( 0 ).method;
                 if( method == 1 )       // use root names
                 {
                     // Load the name sets
                     rootFamilyName = vl.loadRootNames( mis.is.get( i ).get( 0 ).prematch_familyname );
-                    //log.show( String.format( "rootFamilyName size = %d x %d\n", rootFamilyName[0].length, rootFamilyName[1].length ) );
+                    //plog.show( String.format( "rootFamilyName size = %d x %d\n", rootFamilyName[0].length, rootFamilyName[1].length ) );
 
                     rootFirstName =  vl.loadRootNames( mis.is.get( i ).get( 0 ).prematch_firstname );
-                    //log.show( String.format( "rootFirstName size = %d x %d\n", rootFirstName[0].length, rootFirstName[1].length ) );
+                    //plog.show( String.format( "rootFirstName size = %d x %d\n", rootFirstName[0].length, rootFirstName[1].length ) );
 
                 }
                 else    // use variant names
@@ -166,12 +169,17 @@ public class Main
                     variantFamilyName = vl.loadNames(
                         mis.is.get( i ).get( 0 ).prematch_familyname,
                         mis.is.get( i ).get( 0 ).prematch_familyname_value );
-                    //log.show( String.format( "variantFamilyName size = %d x %d\n", variantFamilyName[0].length, variantFamilyName[1].length ) );
+                    //plog.show( String.format( "variantFamilyName size = %d x %d\n", variantFamilyName[0].length, variantFamilyName[1].length ) );
 
                     variantFirstName = vl.loadNames(
                         mis.is.get( i ).get( 0 ).prematch_firstname,
                         mis.is.get( i ).get( 0 ).prematch_firstname_value );
-                    //log.show( String.format( "variantFirstName size = %d x %d\n", variantFirstName[0].length, variantFirstName[1].length ) );
+                    //plog.show( String.format( "variantFirstName size = %d x %d\n", variantFirstName[0].length, variantFirstName[1].length ) );
+                }
+
+                if( 1 == 1 ) {
+                    System.out.println( "EXIT in main()" );
+                    System.exit( 0 );
                 }
 
                 // Show user the active record and total
@@ -205,10 +213,10 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, useExactMatch, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
                     }
                     else { // 0
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, useExactMatch, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
@@ -267,9 +275,9 @@ public class Main
             plog.show( String.format( "prematch_firstname ...... = %s", qs.prematch_firstname ) );
             plog.show( String.format( "prematch_firstname_value  = %d", qs.prematch_firstname_value ) );
 
-            plog.show( String.format( "use_familyname .......... = %s", qs.use_familyname ) );
-            plog.show( String.format( "use_firstname ........... = %s", qs.use_firstname ) );
-            plog.show( String.format( "use_minmax .............  = %s", qs.use_minmax ) );
+            //plog.show( String.format( "use_familyname .......... = %s", qs.use_familyname ) );
+            //plog.show( String.format( "use_firstname ........... = %s", qs.use_firstname ) );
+            //plog.show( String.format( "use_minmax .............  = %s", qs.use_minmax ) );
 
             plog.show( String.format( "int_familyname_e ........ = %d", qs.int_familyname_e ) );
             plog.show( String.format( "int_familyname_m .......  = %d", qs.int_familyname_m ) );

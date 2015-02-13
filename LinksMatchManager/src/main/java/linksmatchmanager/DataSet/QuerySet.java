@@ -23,27 +23,27 @@ package linksmatchmanager.DataSet;
  */
 public class QuerySet
 {
-    public int      id;
-    public String   query1;
-    public String   query2;
+    public int     id;
+    public String  query1;
+    public String  query2;
     
-    public boolean  use_mother = false;
-    public boolean  use_father = false;
-    public boolean  use_partner = false;
+    public boolean use_mother  = false;
+    public boolean use_father  = false;
+    public boolean use_partner = false;
 
-    public int      method = 0;
-    public boolean  ignore_sex = false;
-    public boolean  ignore_minmax = false;
-    public int      firstname = 0;
+    public int     method = 0;
+    public boolean ignore_sex = false;
+    public boolean ignore_minmax = false;
+    public int     firstname = 0;
 
-    public String   prematch_familyname;
-    public int      prematch_familyname_value;
-    public String   prematch_firstname;
-    public int      prematch_firstname_value;
+    public String prematch_familyname;
+    public int    prematch_familyname_value;
+    public String prematch_firstname;
+    public int    prematch_firstname_value;
 
-    public String   use_familyname;
-    public String   use_firstname;
-    public String   use_minmax;
+    //public String use_familyname;
+    //public String use_firstname;
+    //public String use_minmax;
     
     public int int_familyname_e;
     public int int_familyname_m;
