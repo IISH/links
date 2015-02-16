@@ -701,7 +701,7 @@ new FormModel {
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
 					"$horizontalGroup": "par l {seq {space :::p, par l {comp jScrollPane7::l::1097:x, comp taPinfo::t::1097:x, seq l {comp cbPdoLevenshtein:::p:261:p:1, space u:::p, comp cbPdoExactmatches:::p::p, space ::462:x, comp btnStartProcessPrematch:::p:195:p:1}, seq {par l {par l:::p {comp cbPdoSplitFirstnames::l:::x:1, comp cbPdoFrequencyTables::l:::x:1, comp cbPdoStandardization::t:::x, comp cbPdoNamesToNos:::p:261:p:1}, comp cbPdoCreateBaseTable::l:p:261:p:1}, space :0:836:x}}, space :::p}}"
-					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitFirstnames:::p::p, space :::p, comp cbPdoFrequencyTables:::p::p, space :::p, comp cbPdoStandardization:::p::p, space :::p, comp cbPdoNamesToNos:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p, space :p:2:p, par l {comp btnStartProcessPrematch:::p::p, par b {comp cbPdoLevenshtein::b:p::p, comp cbPdoExactmatches::b:p::p}}, space ::15:x, comp taPinfo:::p::p, space u:::p, comp jScrollPane7:::p:437:p, space :::p}}"
+					"$verticalGroup": "par l {seq l {space :::p, comp cbPdoSplitFirstnames:::p::p, space :::p, comp cbPdoFrequencyTables:::p::p, space :::p, comp cbPdoStandardization:::p::p, space :::p, comp cbPdoNamesToNos:::p::p, space :::p, comp cbPdoCreateBaseTable:::p::p, space :p:2:p, par l {comp btnStartProcessPrematch:::p::p, par b {comp cbPdoLevenshtein::b:p::p, comp cbPdoExactmatches::b:p::p}}, space ::14:x, comp taPinfo:::p::p, space u:::p, comp jScrollPane7:::p:437:p, space :::p}}"
 				} ) {
 					name: "pPrematch"
 					"name": "jPanel1"
@@ -758,6 +758,7 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoExactmatches"
 						"text": "Including exact matches"
+						"enabled": false
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "PREMATCH"

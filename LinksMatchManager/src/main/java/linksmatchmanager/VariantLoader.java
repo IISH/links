@@ -29,7 +29,7 @@ import linksmatchmanager.DataSet.NameType;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-13-Feb-2015 Latest change
+ * FL-16-Feb-2015 Latest change
  *
  */
 public class VariantLoader
@@ -68,8 +68,14 @@ public class VariantLoader
         Connection con = General.getConnection( url, "links_prematch", user, pass );
         con.setReadOnly( true );
 
-        String query =  "SELECT length_1 , length_2 FROM " + tableName
-            + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, 200000000;";
+        int limit = 200000000;      // 200.000.000
+        //String query =  "SELECT length_1 , length_2 FROM " + tableName
+        //    + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, " + limit + ";";
+
+        // need to inspect the string names for debugging
+        String query =  "SELECT name_1 , name_2, length_1 , length_2, value FROM " + tableName
+            + " WHERE value <= " + value + " ORDER BY length_1, length_2 ASC limit 0, " + limit + ";";
+
         System.out.println( query );
         plog.show( query );
 
@@ -87,17 +93,20 @@ public class VariantLoader
         // Counter to detect if the main name is changed
         int currentName = -1;
 
-        // Create an ArrayList for the temporary names
-        ArrayList< Integer > tempNames = new ArrayList<Integer>();
+        ArrayList< String >  tempStrings = new ArrayList<String>();
+        ArrayList< Integer > tempNames   = new ArrayList<Integer>();      // Create an ArrayList for the temporary names
 
         // Loop through the records from the lv_ table
         int r = 0;
         while( rs.next() )
         {
-            //System.out.println( "r: " + r );
+            String name_1 = rs.getString( "name_1" );
+            String name_2 = rs.getString( "name_2" );
 
             int n1 = rs.getInt( "length_1" );
             int n2 = rs.getInt( "length_2" );
+
+            int Ldis = rs.getInt( "value" );
 
             // If the if statement is true, then the n1 name is changed
             // We must now process the found names
@@ -113,27 +122,36 @@ public class VariantLoader
                     int[] namesArray = new int[ countNamesInTemp ];
 
                     // Load names from temporary Arraylist into array
+                    System.out.printf( "%d variants for entry %d:\n",  namesArray.length, currentName );
+
                     for( int j = 0; j < countNamesInTemp; j++ ) {
                         namesArray[ j ] = tempNames.get( j );
+                        System.out.printf( "'%s' ", tempStrings.get( j ) );
                     }
+                    System.out.println( "" );
 
                     // load complete array into multidimensional array
-                    System.out.println( "r: " + r + ", " + namesArray.length );
                     names[ currentName ] = namesArray;
                 }
 
                 // Clear temporary array
+                tempStrings.clear();
                 tempNames.clear();
 
+                tempStrings.add( name_2 );
                 tempNames.add( n2 );
 
                 // Change current number 
                 currentName = n1;
             }
-            else {
+            else
+            {
                 // In this case the name must be loaded into temporary array
                 tempNames.add( n2 );
+                tempStrings.add( name_2 );
             }
+
+            System.out.printf( "r: %d: %s (%d) %s (%d) %d\n", r, name_1, n1, name_2, n2, Ldis );
 
             r++;
         }
@@ -148,16 +166,22 @@ public class VariantLoader
             int[] namesArray = new int[ countNamesInTemp ];
 
             // Load names from temporary Arraylist into array
+            System.out.printf( "%d variants:\n",  namesArray.length );
+
             for( int j = 0; j < countNamesInTemp; j++ ) {
                 namesArray[ j ] = tempNames.get( j );
+                System.out.printf( "'%s' ", tempStrings.get( j ) );
             }
+            System.out.println( "" );
 
             // load complete array into multidimensional array
-            System.out.println( "r: " + currentName + ", " + namesArray.length );
             names[ currentName ] = namesArray;
         }
 
         // Close
+        tempStrings.clear();
+        tempStrings = null;
+
         tempNames.clear();
         tempNames = null;
 
@@ -169,12 +193,15 @@ public class VariantLoader
         con.close();
         con = null;
 
-        /*
-        for( int r = 0; r < max; r ++ ) {
-            //int[] n = names[ r ][ 0 ];
-            System.out.printf( "r: ", r );
+        System.out.println( "Summary:" );
+        for( int i = 0; i < max; i ++ ) {
+            int[] v = names[ i ];
+            if( v != null ) {
+                int nvariants = v.length;
+                System.out.printf( "i: %d, variants: %d\n", i, nvariants );
+            }
         }
-        */
+
 
         return names;        // Return multidimensional array
     } // loadNames

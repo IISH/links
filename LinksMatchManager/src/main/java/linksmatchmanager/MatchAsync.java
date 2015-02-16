@@ -760,7 +760,8 @@ public class MatchAsync extends Thread
                 break;
             }
             return false;
-        } else {
+        }
+        else {
             return false;
         }
     } // isVariant
@@ -768,18 +769,18 @@ public class MatchAsync extends Thread
 
     private boolean checkFirstName
     (
-        int fn,
+        int fn_method,          // 'firstname' in match_process table: {0,1,2,3,4,5}
         int s1Name1, int s1Name2, int s1Name3, int s1Name4,
         int s2Name1, int s2Name2, int s2Name3, int s2Name4,
-        int method
+        int method              // 'method' in match_process table: {0,1}
     )
     {
         if( debug ) {
-            try { plog.show( "checkFirstName() fn = " + fn ); }
+            try { plog.show( "checkFirstName() fn_method = " + fn_method ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
 
-        if( fn == 1 )
+        if( fn_method == 1 )
         {
             if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
                 ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) ||
@@ -787,26 +788,25 @@ public class MatchAsync extends Thread
                 ! isVariant( s1Name4, s2Name4, NameType.FIRSTNAME, method ) )
             { return false; }
         }
-        else if( fn == 2 )
+        else if( fn_method == 2 )
         {
             if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) )
             { return false; }
         }
-        else if( fn == 3 )
+        else if( fn_method == 3 )
         {
             if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
                 ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) )
             { return false; }
         }
-        else if( fn == 4 )
+        else if( fn_method == 4 )
         {
-            // FL-12-Feb-2015: fn -> s1Name1 ?
-            if( ! isVariant( fn,      s2Name1, NameType.FIRSTNAME, method ) ||
+            if( ! isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
                 ! isVariant( s1Name2, s2Name2, NameType.FIRSTNAME, method ) ||
                 ! isVariant( s1Name3, s2Name3, NameType.FIRSTNAME, method ) )
             { return false; }
         }
-        else if( fn == 5 )
+        else if( fn_method == 5 )
         {
             if( isVariant( s1Name1, s2Name1, NameType.FIRSTNAME, method ) ||
                 isVariant( s1Name1, s2Name2, NameType.FIRSTNAME, method ) ||

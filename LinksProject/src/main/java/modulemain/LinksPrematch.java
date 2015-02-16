@@ -137,7 +137,7 @@ public class LinksPrematch extends Thread
 
             doNamesToNumbers( debug, bNamesToNos );
 
-            doUpdateBaseTable( debug, bBaseTable );
+            doCreateNewBaseTable( debug, bBaseTable );
 
             doLevenshtein( debug, bLevenshtein, bExactMatches );        // starts 4 threads
 
@@ -637,9 +637,9 @@ public class LinksPrematch extends Thread
      * @param debug
      * @throws Exception
      */
-    public void doUpdateBaseTable( boolean debug, boolean go ) throws Exception
+    public void doCreateNewBaseTable( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doUpdateBaseTable";
+        String funcname = "doCreateNewBaseTable";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -680,7 +680,7 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doUpdateBaseTable
+    } // doCreateNewBaseTable
 
 
     /*---< Levenshtein >------------------------------------------------------*/

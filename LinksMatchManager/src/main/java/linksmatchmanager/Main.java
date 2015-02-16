@@ -177,10 +177,12 @@ public class Main
                     //plog.show( String.format( "variantFirstName size = %d x %d\n", variantFirstName[0].length, variantFirstName[1].length ) );
                 }
 
+                /*
                 if( 1 == 1 ) {
                     System.out.println( "EXIT in main()" );
                     System.exit( 0 );
                 }
+                */
 
                 // Show user the active record and total
                 plog.show( "Record " + (i + 1) + " of " + mis.is.getSize() );
