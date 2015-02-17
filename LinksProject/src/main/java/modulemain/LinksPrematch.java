@@ -410,7 +410,7 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         //dropCreateDbFrequency();
-        truncateFreqTables();
+        //truncateFreqTables();
 
         // Execute queries
         int nqFirst = 1;
@@ -421,6 +421,7 @@ public class LinksPrematch extends Thread
         {
             long start = System.currentTimeMillis();
             String qPath = String.format( qPrefix + "%02d", n );
+            if( debug ) { showMessage( qPath, false, true ); }
             String query = LinksSpecific.getSqlQuery( qPath );
 
             String msg = "";
@@ -449,11 +450,14 @@ public class LinksPrematch extends Thread
     {
         String funcname = "doStandardization";
 
-        go = false;
-        showMessage( "Automatic standardization is currently not enabled", false, true );
-
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        go = false;
+        if( !go ) {
+            showMessage( "Automatic standardization is currently not enabled", false, true );
             return;
         }
 
@@ -523,6 +527,7 @@ public class LinksPrematch extends Thread
     /**
      *
      */
+    /*
     public void doUniqueNameTablesTemp() throws Exception
     {
         //if( debug ) { System.out.println( funcname ); }
@@ -544,7 +549,7 @@ public class LinksPrematch extends Thread
         }
 
     } // doUniqueNameTablesTemp
-
+    */
 
     /**
      *
@@ -569,6 +574,7 @@ public class LinksPrematch extends Thread
     /**
      *
      */
+    /*
     private void truncateFreqTables() throws Exception
     {
         String[] queries =
@@ -585,7 +591,7 @@ public class LinksPrematch extends Thread
             conPrematch.runQuery( q );
         }
     }
-
+    */
 
     /*---< Names to Numbers >-------------------------------------------------*/
 

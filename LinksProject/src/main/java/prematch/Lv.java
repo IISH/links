@@ -20,7 +20,8 @@ import general.PrintLogger;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
- * FL-11-Feb-2015 Latest change
+ * FL-17-Feb-2015 Add names as integers to the ls_* tables
+ * FL-17-Feb-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -34,6 +35,7 @@ public class Lv extends Thread
 
     private JTextField outputLine;
     private JTextArea  outputArea;
+
     private PrintLogger plog;
 
     /**
@@ -64,8 +66,8 @@ public class Lv extends Thread
     {
         this.debug                = debug;
         this.db_conn              = db_conn;
-        this.db_name              = db_name;
-        this.db_table             = db_table;
+        this.db_name              = db_name;                // e.g. links_prematch
+        this.db_table             = db_table;               // e.g. freq_firstnames or freq_familyname
         this.strict               = strict;
         this.also_exact_matches   = also_exact_matches;
         this.outputLine           = outputLine;
@@ -94,14 +96,11 @@ public class Lv extends Thread
 
         try
         {
-            ResultSet rs = null;
-            //String query = "SELECT id, name FROM " + db_table;
             String query = "SELECT id, name FROM " + db_name + "." + db_table;
             if( debug ) { showMessage( query, false, true ); }
 
-            try {
-                rs = db_conn.runQueryWithResult( query );
-            }
+            ResultSet rs = null;
+            try { rs = db_conn.runQueryWithResult( query ); }
             catch( Exception ex ) {
                 System.out.println( query );
                 showMessage( query, false, true );

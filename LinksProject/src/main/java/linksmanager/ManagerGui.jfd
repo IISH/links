@@ -754,6 +754,7 @@ new FormModel {
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoStandardization"
 						"text": "Automatic Standardization"
+						"enabled": false
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoExactmatches"

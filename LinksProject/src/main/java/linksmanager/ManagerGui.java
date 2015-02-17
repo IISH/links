@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-11-Feb-2015 Latest change
+ * FL-17-Feb-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -1671,6 +1671,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 				//---- cbPdoStandardization ----
 				cbPdoStandardization.setText("Automatic Standardization");
+				cbPdoStandardization.setEnabled(false);
 				cbPdoStandardization.setName("cbPdoStandardization");
 
 				//---- cbPdoExactmatches ----
@@ -2669,7 +2670,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "11-Feb-2015 13:56";
+                String timestamp1 = "17-Feb-2015 13:57";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 

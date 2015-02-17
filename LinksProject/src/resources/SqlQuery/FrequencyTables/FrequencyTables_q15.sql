@@ -1,2 +1,2 @@
 -- query 15 
-DROP TABLE links_prematch.freq_firstnames_sex_tmp;
+DROP TABLE links_prematch.freq_firstname_sex_tmp;

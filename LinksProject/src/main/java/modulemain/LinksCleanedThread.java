@@ -39,7 +39,7 @@ import general.PrintLogger;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-10-Feb-2015 Latest change
+ * FL-17-Feb-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -2650,7 +2650,7 @@ public class LinksCleanedThread extends Thread
 
                             if( sex != null && !sex.isEmpty() ) {           // Extra check on sex
                                 if( !sex.equalsIgnoreCase( this.almmCivilstatus.value( "standard_sex", civil_status) ) ) {
-                                    if( sex != "u" ) {
+                                    if( sex != SC_U ) {
                                         addToReportPerson(id_person, source, 68, civil_status);    // warning 68
                                     }
                                 }
@@ -2817,7 +2817,7 @@ public class LinksCleanedThread extends Thread
                     }
                 }
                 else
-                {      // not in reference; add to reference with "x"
+                {      // not in reference; add to reference with SC_X
                     if( debug ) { showMessage( "Warning 51 (not in ref): id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51

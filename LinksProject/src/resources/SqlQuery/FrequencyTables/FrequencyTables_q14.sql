@@ -1,5 +1,5 @@
 -- query 14 
-INSERT INTO links_prematch.freq_firstnames_sex ( name, sex, frequency )
-SELECT name , sex, COUNT(*) AS frequency 
-FROM links_prematch.freq_firstnames_sex_tmp 
-GROUP BY sex , name ;
+INSERT INTO links_prematch.freq_firstname_sex ( name_str , name_int , sex, frequency )
+SELECT name_str , name_int , sex, COUNT(*) AS frequency 
+FROM links_prematch.freq_firstname_sex_tmp 
+GROUP BY sex , name_str ;
