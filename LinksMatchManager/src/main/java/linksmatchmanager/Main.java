@@ -28,7 +28,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-14-Jan-2015 Latest change
+ * FL-18-Feb-2015 Latest change
  */
 
 public class Main

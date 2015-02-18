@@ -21,7 +21,8 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Remove hard-code usr's/pwd's
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
- * FL-10-Feb-2015 Latest change
+ * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
+ * FL-18-Feb-2015 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -710,8 +711,8 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
-        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", true,  bExactMatches, outputLine, outputArea, plog );
-        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstnames", false, bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
         prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
         prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
 

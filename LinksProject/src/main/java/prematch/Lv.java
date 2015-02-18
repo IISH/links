@@ -96,7 +96,7 @@ public class Lv extends Thread
 
         try
         {
-            String query = "SELECT id, name FROM " + db_name + "." + db_table;
+            String query = "SELECT id, name_str, name_int FROM " + db_name + "." + db_table;
             if( debug ) { showMessage( query, false, true ); }
 
             ResultSet rs = null;
@@ -110,17 +110,20 @@ public class Lv extends Thread
                 return;
             }
 
-            ArrayList<Integer> id  = new ArrayList<Integer>();
-            ArrayList<String> name = new ArrayList<String>();
+            ArrayList< Integer > id       = new ArrayList< Integer >();
+            ArrayList< String > name_str  = new ArrayList< String >();
+            ArrayList< Integer > name_int = new ArrayList< Integer >();
 
             while( rs.next() ) {
-                id.add( rs.getInt( "id" ) );
-                name.add( rs.getString( "name" ) );
+                      id.add( rs.getInt(    "id" ) );
+                name_str.add( rs.getString( "name_str" ) );
+                name_int.add( rs.getInt(    "name_int" ) );
             }
 
-            showMessage( "table " + db_table + " loaded", false, true );
+            int size = id.size();
+            showMessage( "table " + db_table + " loaded, records: " + size, false, true );
             
-            int size = name.size();
+
 
             FileWriter csvwriter = new FileWriter( csvname );
 
@@ -137,20 +140,24 @@ public class Lv extends Thread
                 int id1 = id.get(i);
                 int id2 = 0;
 
-                String name_1 = name.get(i);
-                String name_2 = "";
+                String name_str_1 = name_str.get( i );
+                   int name_int_1 = name_int.get( i );
+
+                String name_str_2 = "";
+                   int name_int_2 = 0;
 
                 //int begin = i+1;                          // Omar
                 int begin = i;                              // starting at i: also gives Levenshtein 0 values
                 if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
 
-                for( int j = begin; j < name.size() ; j++ )
+                for( int j = begin; j < name_str.size() ; j++ )
                 {
-                    id2   = id.get( j );
-                    name_2 = name.get(j);
+                    id2        = id.get( j );
+                    name_str_2 = name_str.get( j );
+                    name_int_2 = name_int.get( j );
 
-                    int a = name_1.length();
-                    int b = name_2.length();
+                    int a = name_str_1.length();
+                    int b = name_str_2.length();
                     
                     int smallest = (a < b) ?  a : b;
 
@@ -189,7 +196,7 @@ public class Lv extends Thread
                         if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    ld = levenshtein( name_1, name_2 );             // levenshtein distance
+                    ld = levenshtein( name_str_1, name_str_2 );             // levenshtein distance
 
                     if( ld > 4 ) { continue; }                      // too high, -> not in CSV
 
@@ -213,7 +220,8 @@ public class Lv extends Thread
                     // Write to CSV
                     //String line = id1 + "," + id2 + "," + name_1 + "," + name_2 + "," + ld + "\r\n";    // old
                     //String line = name_1 + "," + name_2 + "," + smallest + "," + ld + "\r\n";
-                    String line = name_1 + "," + name_2 + "," + a + ","+ b + "," + ld + "\r\n";
+                    //String line = name_str_1 + "," + name_str_2 + "," + a + ","+ b + "," + ld + "\r\n";
+                    String line = name_str_1 + "," + name_str_2 + "," + a + ","+ b + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
                     //if( debug ) { System.out.println( line ); }
 
                     nline ++;
@@ -240,7 +248,7 @@ public class Lv extends Thread
         catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
 
         String ls_table = "";
-        if( db_table.equals( "freq_firstnames" ) ) {
+        if( db_table.equals( "freq_firstname" ) ) {
             if( strict ) { ls_table = "ls_firstname_strict"; }
             else { ls_table = "ls_firstname"; }
         }
@@ -327,7 +335,7 @@ public class Lv extends Thread
         query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE `" + db_name + "`.`" + db_table + "`"
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
-            + " ( `name_1` , `name_2`, `length_1`, `length_2`, `value` );";
+            + " ( `name_str_1` , `name_str_2`, `length_1`, `length_2`, `name_int_1` , `name_int_2`, `value` );";
 
         if(debug ) { showMessage( query, false, true ); }
         db_conn.runQuery( query );
@@ -358,7 +366,7 @@ public class Lv extends Thread
                 "ALTER TABLE "  + ls_table_first + " DISABLE KEYS;",
                 "INSERT INTO "  + ls_table_first + " SELECT * FROM " + ls_table + ";",
                 "ALTER TABLE "  + ls_table_first + " ENABLE KEYS;",
-                "DELETE FROM "  + ls_table_first + " WHERE SUBSTRING( `name_1`,1,1 ) <> SUBSTRING( `name_2`,1,1 );"
+                "DELETE FROM "  + ls_table_first + " WHERE SUBSTRING( `name_str_1`,1,1 ) <> SUBSTRING( `name_str_2`,1,1 );"
             };
 
             for( String query : queries ) {
