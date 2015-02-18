@@ -33,7 +33,7 @@ import linksmatchmanager.DataSet.QuerySet;
 
 public class Main
 {
-    // Global vars
+    // class global vars
     private static boolean debug;
     private static boolean useExactMatch = false;
 
@@ -144,6 +144,9 @@ public class Main
             // Loop through the records from the match_process table
             for( int i = 0; i < mis.is.getSize(); i++ )
             {
+                // The VariantLoader is broken.
+                // And we will get the Levenshtein variants for each name of s1 one-by-one
+                /*
                 // Create a new prematch variants object for every record in match_process table
                 VariantLoader vl = new VariantLoader( url, user, pass, plog );
 
@@ -175,12 +178,6 @@ public class Main
                         mis.is.get( i ).get( 0 ).prematch_firstname,
                         mis.is.get( i ).get( 0 ).prematch_firstname_value );
                     //plog.show( String.format( "variantFirstName size = %d x %d\n", variantFirstName[0].length, variantFirstName[1].length ) );
-                }
-
-                /*
-                if( 1 == 1 ) {
-                    System.out.println( "EXIT in main()" );
-                    System.exit( 0 );
                 }
                 */
 

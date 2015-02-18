@@ -1,6 +1,7 @@
 package linksmatchmanager;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -143,8 +144,9 @@ public class MatchAsync extends Thread
     @Override
     public void run()
     {
-        int ka = 0;
-        int ix = 0;
+        // in order to show the indexes when an exception occurs, we define copies outside the try/catch
+        int s1_idx_cpy = 0;
+        int lv_idx_cpy = 0;
 
         try
         {
@@ -183,36 +185,30 @@ public class MatchAsync extends Thread
             plog.show( msg );
 
             int nmatch = 0;
+            int s1_size = ql.s1_id_base.size();
+            int s1_chunk = s1_size / 10;
 
-            int ibs = ql.s1_id_base.size();
-            int chunk = ibs / 10;
-            for( int k = 0; k < ql.s1_id_base.size(); k++ )
+            //for( int k = 0; k < ql.s1_id_base.size(); k++ )
+            for( int s1_idx = 0; s1_idx < ql.s1_id_base.size(); s1_idx++ )
             {
-                if( ( k + chunk ) % chunk == 0 ) { System.out.println( "done: " + k ); }
+                s1_idx_cpy = s1_idx;   // copy for exception display
+
+                if( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) { System.out.println( "done: " + s1_idx ); }
 
                 if( debug ) {
-                    msg = String.format( "s1 %d-of-%d", k+1, ibs );
+                    msg = String.format( "s1 idx: %d-of-%d", s1_idx, s1_size -1 );
                     System.out.println( msg );
                     plog.show( msg );
-
-                    /*
-                    if( k > 1000 ) {
-                        System.out.println( "TEST: STOP" );
-                        System.exit( 0 );
-                    }
-                    */
                 }
 
-                ka = k;
-                ix = 0;
 
                 // The order of the steps has to be dynamic
                 // Now it starts with the check of the familyname
 
                 // Get familyname of Set 1
-                int s1EgoFamName = ql.s1_ego_familyname.get( k );
+                int s1EgoFamName = ql.s1_ego_familyname.get( s1_idx );
 
-                // If the familyname is not the same, then build up the list. Otherwise go on
+                // If the familyname changes, create a new potentialMatches list, otherwise go on
                 if( s1EgoFamName != lastFamilyName )
                 {
                     lastFamilyName = s1EgoFamName;                      // Set previous name
@@ -224,134 +220,147 @@ public class MatchAsync extends Thread
                     variantsToList( s1EgoFamName, potentialMatches, LvPotentialMatches );
                 }
 
-                /*
-                if( potentialMatches.size() > 0 ) {
-                    msg = String.format( "Thread id %d; Potential matches: %d", threadId, potentialMatches.size() );
-                    plog.show( msg );
-                }
-                */
 
+                //if( potentialMatches.size() > 0 ) {
+                    msg = String.format( "Thread id %d; potential matches: %d", threadId, potentialMatches.size() );
+                    System.out.println( msg );
+                    plog.show( msg );
+                //}
+
+
+                // FL: when we remove non-matches from potentialMatches, we do not need a copy
                 // Copy the existing variantList to working copy
                 ArrayList< Integer > tempVarList = new ArrayList< Integer >();
-
                 tempVarList.addAll( potentialMatches );
 
-                // Get the lowest to greatest frequency of the names
-                // TODO: make it dynamic
+                // TODO: improve performance: process from lowest to highest frequency
 
-                // Now test the names with the lowest frequency
-                // s1EgoFamName -> Already loaded
-                int s1MotherFamName  = ql.s1_mother_familyname.get( k );
-                int s1FatherFamName  = ql.s1_father_familyname.get( k );
-                int s1PartnerFamName = ql.s1_partner_familyname.get( k );
+                // familyname
+                //  s1EgoFamName -> already loaded
+                int s1MotherFamName  = ql.s1_mother_familyname .get( s1_idx );
+                int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
+                int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
 
-                // First name 1
-                int s1EgoFirName1     = ql.s1_ego_firstname1.get( k );
-                int s1MotherFirName1  = ql.s1_mother_firstname1.get( k );
-                int s1FatherFirName1  = ql.s1_father_firstname1.get( k );
-                int s1PartnerFirName1 = ql.s1_partner_firstname1.get( k );
+                // firstname 1
+                int s1EgoFirName1     = ql.s1_ego_firstname1    .get( s1_idx );
+                int s1MotherFirName1  = ql.s1_mother_firstname1 .get( s1_idx );
+                int s1FatherFirName1  = ql.s1_father_firstname1 .get( s1_idx );
+                int s1PartnerFirName1 = ql.s1_partner_firstname1.get( s1_idx );
 
-                // First name 2
-                int s1EgoFirName2     = ql.s1_ego_firstname2.get( k );
-                int s1MotherFirName2  = ql.s1_mother_firstname2.get( k );
-                int s1FatherFirName2  = ql.s1_father_firstname2.get( k );
-                int s1PartnerFirName2 = ql.s1_partner_firstname2.get( k );
+                // firstname 2
+                int s1EgoFirName2     = ql.s1_ego_firstname2    .get( s1_idx );
+                int s1MotherFirName2  = ql.s1_mother_firstname2 .get( s1_idx );
+                int s1FatherFirName2  = ql.s1_father_firstname2 .get( s1_idx );
+                int s1PartnerFirName2 = ql.s1_partner_firstname2.get( s1_idx );
 
-                // first name 3
-                int s1EgoFirName3     = ql.s1_ego_firstname3.get( k );
-                int s1MotherFirName3  = ql.s1_mother_firstname3.get( k );
-                int s1FatherFirName3  = ql.s1_father_firstname3.get( k );
-                int s1PartnerFirName3 = ql.s1_partner_firstname3.get( k );
+                // firstname 3
+                int s1EgoFirName3     = ql.s1_ego_firstname3    .get( s1_idx );
+                int s1MotherFirName3  = ql.s1_mother_firstname3 .get( s1_idx );
+                int s1FatherFirName3  = ql.s1_father_firstname3 .get( s1_idx );
+                int s1PartnerFirName3 = ql.s1_partner_firstname3.get( s1_idx );
 
-                // first name 4
-                int s1EgoFirName4     = ql.s1_ego_firstname4.get( k );
-                int s1MotherFirName4  = ql.s1_mother_firstname4.get( k );
-                int s1FatherFirName4  = ql.s1_father_firstname4.get( k );
-                int s1PartnerFirName4 = ql.s1_partner_firstname4.get( k );
+                // firstname 4
+                int s1EgoFirName4     = ql.s1_ego_firstname4    .get( s1_idx );
+                int s1MotherFirName4  = ql.s1_mother_firstname4 .get( s1_idx );
+                int s1FatherFirName4  = ql.s1_father_firstname4 .get( s1_idx );
+                int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
-                // loop through set 2
-                // Visit only the id in variantList
-                for( int idIndex = 0; idIndex < tempVarList.size(); idIndex++ )
+                // loop through the Levenshtein variants
+                for( int lv_idx = 0; lv_idx < tempVarList.size(); lv_idx++ )
                 {
+                    lv_idx_cpy = lv_idx;        // copy for exception display
+
                     if( debug ) {
-                        msg = String.format( "s2 %d/%d", idIndex+1, tempVarList.size() );
+                        msg = String.format( "lv idx: %d-of-%d", lv_idx, tempVarList.size() -1 );
                         System.out.println( msg );
                         plog.show( msg );
                     }
 
-                    ix = idIndex;
+                    int s2_idx = tempVarList.get( lv_idx );
 
-                    if( k == 3 && ix == 0 ) { int g = 0; }
+                    if( debug ) {
+                        msg = String.format( "s2 idx: %d", s2_idx );
+                        System.out.println( msg );
+                        plog.show( msg );
+                    }
 
-                    int index = tempVarList.get( idIndex );
+                    if( s1_idx == 10 ) {
+                        System.out.println( "EXIT in MatchAsync/run()" );
+                        System.exit( 0 );
+                    }
 
                     // Check min max; use new min max
                     if( !qs.ignore_minmax ) {
-                        if( !CheckMinMax( qs, k, index ) ) {
-                            tempVarList.set( idIndex, 0 );      // set 0: skip
+                        if( !CheckMinMax( qs, s1_idx, s2_idx ) ) {
+                            tempVarList.set( lv_idx, 0 );      // set 0: skip
                             continue;
                         }
                     }
 
                     // Check sex
                     if( !qs.ignore_sex ) {
-                        int s1s = ql.s1_sex.get( k );
-                        int s2s = ql.s2_sex.get( index );
+                        int s1s = ql.s1_sex.get( s1_idx );
+                        int s2s = ql.s2_sex.get( s2_idx );
 
                         // Empty sex is denied
                         if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
-                            tempVarList.set( idIndex, 0 );      // set 0: skip
+                            tempVarList.set( lv_idx, 0 );      // set 0: skip
                             continue;
                         }
                     }
 
-                    // Get all names
-                    //  s2EgoFamName already used
-                    int s2MotherFamName  = ql.s2_mother_familyname.get( index );
-                    int s2FatherFamName  = ql.s2_father_familyname.get( index );
-                    int s2PartnerFamName = ql.s2_partner_familyname.get( index );
+                    System.out.println( "1" );
 
-                    // First name 1
-                    int s2EgoFirName1     = ql.s2_ego_firstname1.get( index );
-                    int s2MotherFirName1  = ql.s2_mother_firstname1.get( index );
-                    int s2FatherFirName1  = ql.s2_father_firstname1.get( index );
-                    int s2PartnerFirName1 = ql.s2_partner_firstname1.get( index );
+                    // familyname
+                    //  s2EgoFamName -> already loaded
+                    int s2MotherFamName  = ql.s2_mother_familyname .get( s2_idx );
+                    int s2FatherFamName  = ql.s2_father_familyname .get( s2_idx );
+                    int s2PartnerFamName = ql.s2_partner_familyname.get( s2_idx );
 
-                    // First name 2
-                    int s2EgoFirName2     = ql.s2_ego_firstname2.get( index );
-                    int s2MotherFirName2  = ql.s2_mother_firstname2.get( index );
-                    int s2FatherFirName2  = ql.s2_father_firstname2.get( index );
-                    int s2PartnerFirName2 = ql.s2_partner_firstname2.get( index );
+                    // firstname 1
+                    int s2EgoFirName1     = ql.s2_ego_firstname1    .get( s2_idx );
+                    int s2MotherFirName1  = ql.s2_mother_firstname1 .get( s2_idx );
+                    int s2FatherFirName1  = ql.s2_father_firstname1 .get( s2_idx );
+                    int s2PartnerFirName1 = ql.s2_partner_firstname1.get( s2_idx );
 
-                    // first name 3
-                    int s2EgoFirName3     = ql.s2_ego_firstname3.get( index );
-                    int s2MotherFirName3  = ql.s2_mother_firstname3.get( index );
-                    int s2FatherFirName3  = ql.s2_father_firstname3.get( index );
-                    int s2PartnerFirName3 = ql.s2_partner_firstname3.get( index );
+                    // firstname 2
+                    int s2EgoFirName2     = ql.s2_ego_firstname2    .get( s2_idx );
+                    int s2MotherFirName2  = ql.s2_mother_firstname2 .get( s2_idx );
+                    int s2FatherFirName2  = ql.s2_father_firstname2 .get( s2_idx );
+                    int s2PartnerFirName2 = ql.s2_partner_firstname2.get( s2_idx );
 
-                    // first name 4
-                    int s2EgoFirName4     = ql.s2_ego_firstname4.get( index );
-                    int s2MotherFirName4  = ql.s2_mother_firstname4.get( index );
-                    int s2FatherFirName4  = ql.s2_father_firstname4.get( index );
-                    int s2PartnerFirName4 = ql.s2_partner_firstname4.get( index );
+                    // firstname 3
+                    int s2EgoFirName3     = ql.s2_ego_firstname3    .get( s2_idx );
+                    int s2MotherFirName3  = ql.s2_mother_firstname3 .get( s2_idx );
+                    int s2FatherFirName3  = ql.s2_father_firstname3 .get( s2_idx );
+                    int s2PartnerFirName3 = ql.s2_partner_firstname3.get( s2_idx );
 
+                    // firstname 4
+                    int s2EgoFirName4     = ql.s2_ego_firstname4    .get( s2_idx );
+                    int s2MotherFirName4  = ql.s2_mother_firstname4 .get( s2_idx );
+                    int s2FatherFirName4  = ql.s2_father_firstname4 .get( s2_idx );
+                    int s2PartnerFirName4 = ql.s2_partner_firstname4.get( s2_idx );
+
+                    System.out.println( "2" );
                     // Check the firstnames of ego
                     if( qs.int_firstname_e > 0 ) {
+                        System.out.println( "2a" );
                         if( ! checkFirstName( qs.firstname,
                             s1EgoFirName1, s1EgoFirName2, s1EgoFirName3, s1EgoFirName4,
                             s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
                             qs.method ) )
                         {
-                            tempVarList.set( idIndex, 0 );      // set 0: skip
+                            tempVarList.set( lv_idx, 0 );      // set 0: skip
                             continue;
                         }
                     }
 
+                    System.out.println( "3" );
                     if( qs.use_mother ) {
                         if( qs.int_familyname_m > 0 ) {
                             if( ! isVariant( s1MotherFamName, s2MotherFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
@@ -361,17 +370,18 @@ public class MatchAsync extends Thread
                                 s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                     }
 
+                    System.out.println( "4" );
                     if( qs.use_father ) {
                         if( qs.int_familyname_f > 0 ) {
                             if( ! isVariant( s1FatherFamName, s2FatherFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
@@ -381,17 +391,18 @@ public class MatchAsync extends Thread
                                 s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                     }
 
+                    System.out.println( "5" );
                     if( qs.use_partner ) {
                         if( qs.int_familyname_p > 0 ) {
                             if( ! isVariant( s1PartnerFamName, s2PartnerFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
@@ -401,12 +412,13 @@ public class MatchAsync extends Thread
                                 s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( idIndex, 0 );  // set 0: skip
+                                tempVarList.set( lv_idx, 0 );  // set 0: skip
                                 continue;
                             }
                         }
                     }
                 }
+                System.out.println( "variants done" );
 
                 // entries of tempVarList that have not been zeroed above imply a match
                 int tvls = tempVarList.size();
@@ -415,7 +427,7 @@ public class MatchAsync extends Thread
                     if( tempVarList.get( l ) != 0 ) {
                         nmatch++;
 
-                        int id_s1 = ql.s1_id_base.get( k );
+                        int id_s1 = ql.s1_id_base.get( s1_idx );
                         int id_s2 = ql.s2_id_base.get( tempVarList.get( l ) );
 
                         String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2 ) " +
@@ -451,7 +463,7 @@ public class MatchAsync extends Thread
         {
             pm.removeProcess();
 
-            String err = "MatchAsync/run(): thread error: ka = " + ka + ", ix = " + ix + ", error = " + ex1.getMessage();
+            String err = "MatchAsync/run(): thread error: s1_idx_cpy = " + s1_idx_cpy + ", lv_idx_cpy = " + lv_idx_cpy + ", error = " + ex1.getMessage();
             System.out.println( err );
             try { plog.show( err ); }
             catch( Exception ex2 ) { ex2.printStackTrace(); }
@@ -460,13 +472,148 @@ public class MatchAsync extends Thread
 
 
     /**
+     * Query table ls_familyname for ego_familyname in name_int_1,
+       to get the name_int_2 as levenshtein variants for the set s2.
+     *
+     * @param ego_familyname        // an ego familyname from the set s1
+     * @param potentialMatches      // Levenshtein variants of ego familyname
+     * @param LvPotentialMatches    // Levenshtein distances of potential matches
+     */
+    private void variantsToList( int ego_familyname, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
+    {
+        String url = "localhost";
+        String usr = "links";
+        String pwd = "mslinks";
+
+        int Ldist = 1;
+
+        try
+        {
+            if( debug ) { plog.show( "variantsToList(): ego_familyname = " + ego_familyname ); }
+
+            Connection con = General.getConnection( url, "links_prematch", usr, pwd );
+            con.setReadOnly( true );
+
+            String query = "SELECT * FROM links_prematch.ls_familyname WHERE value = 1 AND name_int_1 = " + ego_familyname ;
+            ResultSet rs = con.createStatement().executeQuery( query );
+
+            int nrecs = 0;
+            while( rs.next() )
+            {
+                String name_str_1 = rs.getString( "name_str_1" );
+                String name_str_2 = rs.getString( "name_str_2" );
+
+                int length_1 = rs.getInt( "length_1" );
+                int length_2 = rs.getInt( "length_2" );
+
+                int name_int_1 = rs.getInt( "name_int_1" );
+                int name_int_2 = rs.getInt( "name_int_2" );
+
+                //int Ldist = rs.getInt( "value" );
+
+                if( nrecs == 0 ) { System.out.printf("variants for %s (%d): ", name_str_1, name_int_1 ); }
+                System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+
+                potentialMatches  .add( name_int_2 );
+                LvPotentialMatches.add( Ldist );
+
+                nrecs++;
+            }
+            if( nrecs != 0 ) { System.out.println( "" ); }
+
+            con.createStatement().close();
+            con.close();
+            con = null;
+        }
+        catch( Exception ex ) {
+            System.out.println( "Exception in variantsToList: " + ex.getMessage() );
+            System.out.println( "Abort" );
+            System.exit( 1 );
+        }
+    } // variantsToList
+
+
+     /**
+     * Query table ls_firstname for 1Name in name_int_1,
+     * to get the name_int_2 as levenshtein variants for the set s2.
+      * Compare the variants for a match with s2Name
+     */
+    //private void variantsFirstnameToList( int ego_firstname, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
+    private boolean compareFirstnames( int s1Name, int s2Name )
+    {
+        String url = "localhost";
+        String usr = "links";
+        String pwd = "mslinks";
+
+        int Ldist = 1;
+
+        boolean match = false;
+
+        try
+        {
+            if( debug ) { plog.show( "variantsToList(): s1Name = " + s1Name + ", s2Name = " + s2Name ); }
+
+            Connection con = General.getConnection( url, "links_prematch", usr, pwd );
+            con.setReadOnly( true );
+
+            String query = "SELECT * FROM links_prematch.ls_familyname WHERE value = 1 AND name_int_1 = " + s1Name ;
+            ResultSet rs = con.createStatement().executeQuery( query );
+
+            int nrecs = 0;
+            while( rs.next() )
+            {
+                String name_str_1 = rs.getString( "name_str_1" );
+                String name_str_2 = rs.getString( "name_str_2" );
+
+                int length_1 = rs.getInt( "length_1" );
+                int length_2 = rs.getInt( "length_2" );
+
+                int name_int_1 = rs.getInt( "name_int_1" );
+                int name_int_2 = rs.getInt( "name_int_2" );
+
+                //int Ldist = rs.getInt( "value" );
+
+                if( nrecs == 0 ) { System.out.printf("variants for %s (%d): ", name_str_1, name_int_1 ); }
+                System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+
+                //potentialMatches  .add( name_int_2 );
+                //LvPotentialMatches.add( Ldist );
+
+                if( s2Name == name_int_2 ) {
+                    match = true;
+                    break;
+                }
+
+                nrecs++;
+            }
+            if( nrecs != 0 ) { System.out.println( "" ); }
+
+            con.createStatement().close();
+            con.close();
+            con = null;
+        }
+        catch( Exception ex ) {
+            System.out.println( "Exception in variantsToList: " + ex.getMessage() );
+            System.out.println( "Abort" );
+            System.exit( 1 );
+        }
+
+        return match;
+    } // variantsFirstnameToList
+
+
+    /**
+     * This was the Omar version
+     *
      * Loop through the whole set of ego familynames to get all ids with names
      * that are a Levenshtein variant of this name.
      * Notice: exact matches are also included in this list
      *
-     * @param fn                    // an ego familyname from the set s1
-     * @param potentialMatches      // potential matches from s2
+     * //@param fn                    // an ego familyname from the set s1
+     * //@param potentialMatches      // Levenshtein variants of ego familyname
+     * //param LvPotentialMatches     // Levenshtein distances of potential matches
      */
+    /*
     private void variantsToList( int fn, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
     {
         try
@@ -546,7 +693,7 @@ public class MatchAsync extends Thread
         }
 
     } // variantsToList
-
+    */
 
     private boolean CheckMinMax( QuerySet qs, int k, int index )
     {
@@ -691,69 +838,72 @@ public class MatchAsync extends Thread
     } // firstGreater
 
 
-    private boolean isVariant( int basicName, int seconName, NameType tnt, int method )
+    private boolean isVariant( int s1Name, int s2Name, NameType tnt, int method )
     {
+        System.out.println( "isVariant() " + s1Name + ", " + s2Name + ", " + tnt );
+
+        // is s2Name a Levenshtein variant of s1Name ?
+
         if( debug ) {
             try { plog.show( "isVariant()" ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
 
-        if (method == 0)
+        if( method == 0 )
         {
-            if (tnt == NameType.FAMILYNAME) {
-                if (basicName == 0 || seconName == 0) {
-                    return false;
-                } else if (basicName == seconName) {
-                } else if (variantFamilyName.length > basicName && variantFamilyName[basicName] != null && Arrays.binarySearch(variantFamilyName[basicName], seconName) > -1) {
-                } else if (variantFamilyName.length > seconName && variantFamilyName[seconName] != null && Arrays.binarySearch(variantFamilyName[seconName], basicName) > -1) {
-                } else {
-                    return false;
-                }
+            if( tnt == NameType.FAMILYNAME )
+            {
+                if( s1Name == 0 || s2Name == 0 ) { return false; }    // NULL string names
+                else if( s1Name == s2Name ) { ; }                     // identical names
+                else if( variantFamilyName.length > s1Name && variantFamilyName[ s1Name ] != null && Arrays.binarySearch( variantFamilyName[ s1Name ], s2Name ) > -1) { ; }
+                else if( variantFamilyName.length > s2Name && variantFamilyName[ s2Name ] != null && Arrays.binarySearch( variantFamilyName[ s2Name ], s1Name ) > -1) { ; }
+                else { return false; }
 
-            } else if (tnt == NameType.FIRSTNAME) {
-                if (basicName == 0 || seconName == 0) {
-                    return false;
-                } else if (basicName == seconName) {
-                } else if (variantFirstName.length > basicName && variantFirstName[basicName] != null && Arrays.binarySearch(variantFirstName[basicName], seconName) > -1) {
-                } else if (variantFirstName.length > seconName && variantFirstName[seconName] != null && Arrays.binarySearch(variantFirstName[seconName], basicName) > -1) {
-                } else {
-                    return false;
-                }
+            }
+            else if( tnt == NameType.FIRSTNAME )
+            {
+
+                return compareFirstnames( s1Name, s2Name );
+
+                /*
+                if( s1Name == 0 || s2Name == 0 ) { return false; }    // NULL string names
+                else if( s1Name == s2Name ) { ; }                     // identical names
+                else if( variantFirstName.length > s1Name && variantFirstName[ s1Name ] != null && Arrays.binarySearch( variantFirstName[ s1Name ], s2Name ) > -1) { ; }
+                else if( variantFirstName.length > s2Name && variantFirstName[ s2Name ] != null && Arrays.binarySearch( variantFirstName[ s2Name ], s1Name ) > -1) { ; }
+                else { return false; }
+                */
             }
 
             return true;
         }
-        else if (method == 1)
+
+        else if( method == 1 )
         {
-            if (basicName == seconName) {
-                return true;
-            }
+            if( s1Name == s2Name ) { return true; }
 
             int[] root1;
             int[] root2;
 
-            if (tnt == NameType.FAMILYNAME) {
+            if( tnt == NameType.FAMILYNAME )
+            {
 
-                if ((basicName >= rootFamilyName.length) || ((seconName >= rootFamilyName.length))) {
-                    return false;
-                }
+                if( ( s1Name >= rootFamilyName.length ) || ( ( s2Name >= rootFamilyName.length ) ) ) { return false; }
 
-                root1 = this.rootFamilyName[basicName];
-                root2 = this.rootFamilyName[seconName];
+                root1 = this.rootFamilyName[ s1Name ];
+                root2 = this.rootFamilyName[ s2Name ];
 
-            } else {
+            }
+            else
+            {
+                if( ( s1Name >= rootFirstName.length ) || ( ( s2Name >= rootFirstName.length ) ) ) { return false; }
 
-                if ((basicName >= rootFirstName.length) || ((seconName >= rootFirstName.length))) {
-                    return false;
-                }
-
-                root1 = this.rootFirstName[basicName];
-                root2 = this.rootFirstName[seconName];
+                root1 = this.rootFirstName[ s1Name ];
+                root2 = this.rootFirstName[ s2Name ];
             }
 
-            for (int i = 0; i < root1.length; i++) {
-                for (int j = 0; j < root2.length; j++) {
-                    if (root1[i] == root2[j]) {
+            for( int i = 0; i < root1.length; i++ ) {
+                for( int j = 0; j < root2.length; j++ ) {
+                    if( root1[ i ] == root2[ j ]) {
                         return true;
                     }
                 }
@@ -761,9 +911,8 @@ public class MatchAsync extends Thread
             }
             return false;
         }
-        else {
-            return false;
-        }
+
+        else { return false; }
     } // isVariant
 
 
@@ -775,6 +924,8 @@ public class MatchAsync extends Thread
         int method              // 'method' in match_process table: {0,1}
     )
     {
+        System.out.println( "checkFirstName() fn_method: " + fn_method );
+
         if( debug ) {
             try { plog.show( "checkFirstName() fn_method = " + fn_method ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
