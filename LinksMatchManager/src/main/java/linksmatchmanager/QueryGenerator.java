@@ -58,7 +58,6 @@ public class QueryGenerator
 
 
     /**
-     * 
      * @return String with al the generated queries  
      */
     public String printToString()
@@ -238,11 +237,11 @@ public class QueryGenerator
                 qs.int_minmax_p = int_minmax_p;
 
                 // booleans
-                qs.use_mother    = use_mother.equalsIgnoreCase(    "y" ) ? true : false;
-                qs.use_father    = use_father.equalsIgnoreCase(    "y" ) ? true : false;
-                qs.use_partner   = use_partner.equalsIgnoreCase(   "y" ) ? true : false;
+                qs.use_mother    = use_mother   .equalsIgnoreCase( "y" ) ? true : false;
+                qs.use_father    = use_father   .equalsIgnoreCase( "y" ) ? true : false;
+                qs.use_partner   = use_partner  .equalsIgnoreCase( "y" ) ? true : false;
                 qs.ignore_minmax = ignore_minmax.equalsIgnoreCase( "y" ) ? true : false;
-                qs.ignore_sex    = ignore_sex.equalsIgnoreCase(    "y" ) ? true : false;
+                qs.ignore_sex    = ignore_sex   .equalsIgnoreCase( "y" ) ? true : false;
 
                 qs.firstname = firstname;
 
@@ -256,8 +255,8 @@ public class QueryGenerator
                 qs.prematch_firstname_value  = prematch_firstname_value;
 
                 //new
-                qs.use_mother  = use_mother.equalsIgnoreCase(  "y" ) ? true : false;
-                qs.use_father  = use_father.equalsIgnoreCase(  "y" ) ? true : false;
+                qs.use_mother  = use_mother .equalsIgnoreCase( "y" ) ? true : false;
+                qs.use_father  = use_father .equalsIgnoreCase( "y" ) ? true : false;
                 qs.use_partner = use_partner.equalsIgnoreCase( "y" ) ? true : false;
 
                 // Initial part of query to get the data from links_base

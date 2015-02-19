@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-13-Feb-2015 Latest change
+ * FL-19-Feb-2015 Latest change
  */
 
 public class MatchAsync extends Thread
@@ -164,8 +164,12 @@ public class MatchAsync extends Thread
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
 
-            System.out.println( "s1 query" + qs.query1 );
-            System.out.println( "s2 query" + qs.query2 );
+            msg = "s1 query:\n" + qs.query1;
+            System.out.println( msg );
+            plog.show( msg );
+            msg = "s2 query:\n" + qs.query2;
+            System.out.println( msg );
+            plog.show( msg );
 
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // Its input is a QuerySet and a database connection object.
@@ -186,17 +190,25 @@ public class MatchAsync extends Thread
 
             int nmatch = 0;
             int s1_size = ql.s1_id_base.size();
-            int s1_chunk = s1_size / 10;
+            int s1_chunk = s1_size / 20;
 
             //for( int k = 0; k < ql.s1_id_base.size(); k++ )
             for( int s1_idx = 0; s1_idx < ql.s1_id_base.size(); s1_idx++ )
             {
-                s1_idx_cpy = s1_idx;   // copy for exception display
+                /*
+                if( s1_idx > 10 ) {
+                    System.out.println( "EXIT in MatchAsync/run()" );
+                    System.exit( 0 );
+                }
+                */
 
-                if( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) { System.out.println( "done: " + s1_idx ); }
+                s1_idx_cpy = s1_idx;   // copy for display if exception occurs
+
+                if( ( s1_idx + s1_chunk ) % s1_chunk == 0 )
+                { System.out.println( "records processed: " + s1_idx + ", matches found: " + nmatch ); }
 
                 if( debug ) {
-                    msg = String.format( "s1 idx: %d-of-%d", s1_idx, s1_size -1 );
+                    msg = String.format( "\ns1 idx: %d-of-%d", s1_idx + 1, s1_size );
                     System.out.println( msg );
                     plog.show( msg );
                 }
@@ -216,22 +228,21 @@ public class MatchAsync extends Thread
                     potentialMatches.clear();                           // Empty the list
                     LvPotentialMatches.clear();
 
-                    // Load the potential matches; exact matches, plus variants
-                    variantsToList( s1EgoFamName, potentialMatches, LvPotentialMatches );
+                    // Load the potential matches;
+                    // these are names (as ints) from the ls_ table
+                    variantsToList( s1EgoFamName, "ls_familyname", potentialMatches, LvPotentialMatches );
                 }
 
 
-                //if( potentialMatches.size() > 0 ) {
+                if( debug  && potentialMatches.size() > 0 ) {
                     msg = String.format( "Thread id %d; potential matches: %d", threadId, potentialMatches.size() );
                     System.out.println( msg );
                     plog.show( msg );
-                //}
+                }
 
-
-                // FL: when we remove non-matches from potentialMatches, we do not need a copy
-                // Copy the existing variantList to working copy
-                ArrayList< Integer > tempVarList = new ArrayList< Integer >();
-                tempVarList.addAll( potentialMatches );
+                // Copy the existing variantList to working copy, zeroing non-matches as we proceed
+                ArrayList< Integer > matchesList = new ArrayList< Integer >();
+                matchesList.addAll( potentialMatches );
 
                 // TODO: improve performance: process from lowest to highest frequency
 
@@ -266,17 +277,25 @@ public class MatchAsync extends Thread
                 int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
                 // loop through the Levenshtein variants
-                for( int lv_idx = 0; lv_idx < tempVarList.size(); lv_idx++ )
+                for( int lv_idx = 0; lv_idx < potentialMatches.size(); lv_idx++ )
                 {
-                    lv_idx_cpy = lv_idx;        // copy for exception display
+                    lv_idx_cpy = lv_idx;        // copy for display if exception occurs
 
                     if( debug ) {
-                        msg = String.format( "lv idx: %d-of-%d", lv_idx, tempVarList.size() -1 );
+                        msg = String.format( "lv idx: %d-of-%d", lv_idx + 1, potentialMatches.size() );
                         System.out.println( msg );
                         plog.show( msg );
                     }
 
-                    int s2_idx = tempVarList.get( lv_idx );
+                    int s2EgoFamName = potentialMatches.get( lv_idx );          // potential match
+                    int s2_idx = ql.s2_ego_familyname.indexOf( s2EgoFamName );  // index in s2 set
+
+                    if( s2_idx == -1 ) {
+                        if( debug ) { System.out.println( "s1 variant not in s2: " + s2EgoFamName ); }
+                        matchesList.set( lv_idx, 0 );               // no match
+                        continue;                                   // next potential match
+                    }
+                    else { matchesList.set( lv_idx, s2_idx ); }     // replace Lv int from ls_ with index from s2 set
 
                     if( debug ) {
                         msg = String.format( "s2 idx: %d", s2_idx );
@@ -284,32 +303,27 @@ public class MatchAsync extends Thread
                         plog.show( msg );
                     }
 
-                    if( s1_idx == 10 ) {
-                        System.out.println( "EXIT in MatchAsync/run()" );
-                        System.exit( 0 );
-                    }
-
                     // Check min max; use new min max
-                    if( !qs.ignore_minmax ) {
-                        if( !CheckMinMax( qs, s1_idx, s2_idx ) ) {
-                            tempVarList.set( lv_idx, 0 );      // set 0: skip
+                    if( ! qs.ignore_minmax ) {
+                        if( ! CheckMinMax( qs, s1_idx, s2_idx ) ) {
+                            matchesList.set( lv_idx, 0 );           // no match
+                            if( debug ) { System.out.println( "failed ignore_minmax" ); }
                             continue;
                         }
                     }
 
                     // Check sex
-                    if( !qs.ignore_sex ) {
+                    if( ! qs.ignore_sex ) {
                         int s1s = ql.s1_sex.get( s1_idx );
                         int s2s = ql.s2_sex.get( s2_idx );
 
                         // Empty sex is denied
                         if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
-                            tempVarList.set( lv_idx, 0 );      // set 0: skip
+                            matchesList.set( lv_idx, 0 );           // no match
+                            if( debug ) { System.out.println( "failed ignore_sex" ); }
                             continue;
                         }
                     }
-
-                    System.out.println( "1" );
 
                     // familyname
                     //  s2EgoFamName -> already loaded
@@ -341,94 +355,98 @@ public class MatchAsync extends Thread
                     int s2FatherFirName4  = ql.s2_father_firstname4 .get( s2_idx );
                     int s2PartnerFirName4 = ql.s2_partner_firstname4.get( s2_idx );
 
-                    System.out.println( "2" );
                     // Check the firstnames of ego
                     if( qs.int_firstname_e > 0 ) {
-                        System.out.println( "2a" );
                         if( ! checkFirstName( qs.firstname,
                             s1EgoFirName1, s1EgoFirName2, s1EgoFirName3, s1EgoFirName4,
                             s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
                             qs.method ) )
                         {
-                            tempVarList.set( lv_idx, 0 );      // set 0: skip
+                            matchesList.set( lv_idx, 0 );           // no match
+                            if( debug ) { System.out.println( "failed int_firstname_e" ); }
                             continue;
                         }
                     }
 
-                    System.out.println( "3" );
                     if( qs.use_mother ) {
                         if( qs.int_familyname_m > 0 ) {
                             if( ! isVariant( s1MotherFamName, s2MotherFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_familyname_m" ); }
                                 continue;
                             }
                         }
+
                         if( qs.int_firstname_m > 0 ) {
                             if( ! checkFirstName( qs.firstname,
                                 s1MotherFirName1, s1MotherFirName2, s1MotherFirName3, s1MotherFirName4,
                                 s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_firstname_m" ); }
                                 continue;
                             }
                         }
                     }
 
-                    System.out.println( "4" );
                     if( qs.use_father ) {
                         if( qs.int_familyname_f > 0 ) {
                             if( ! isVariant( s1FatherFamName, s2FatherFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_familyname_f" ); }
                                 continue;
                             }
                         }
+
                         if( qs.int_firstname_f > 0 ) {
                             if( ! checkFirstName( qs.firstname,
                                 s1FatherFirName1, s1FatherFirName2, s1FatherFirName3, s1FatherFirName4,
                                 s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_firstname_f" ); }
                                 continue;
                             }
                         }
                     }
 
-                    System.out.println( "5" );
                     if( qs.use_partner ) {
                         if( qs.int_familyname_p > 0 ) {
                             if( ! isVariant( s1PartnerFamName, s2PartnerFamName, NameType.FAMILYNAME, qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_familyname_p" ); }
                                 continue;
                             }
                         }
+
                         if( qs.int_firstname_p > 0 ) {
                             if( ! checkFirstName( qs.firstname,
                                 s1PartnerFirName1, s1PartnerFirName2, s1PartnerFirName3, s1PartnerFirName4,
                                 s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
                                 qs.method ) )
                             {
-                                tempVarList.set( lv_idx, 0 );  // set 0: skip
+                                matchesList.set( lv_idx, 0 );       // no match
+                                if( debug ) { System.out.println( "failed int_firstname_p" ); }
                                 continue;
                             }
                         }
                     }
                 }
-                System.out.println( "variants done" );
+                //System.out.println( "variants done" );
 
-                // entries of tempVarList that have not been zeroed above imply a match
-                int tvls = tempVarList.size();
-                for( int l = 0; l < tempVarList.size(); l++ )
+                // entries of matchesList that have not been zeroed above imply a match
+                for( int l = 0; l < matchesList.size(); l++ )
                 {
-                    if( tempVarList.get( l ) != 0 ) {
+                    if( matchesList.get( l ) != 0 ) {
                         nmatch++;
 
                         int id_s1 = ql.s1_id_base.get( s1_idx );
-                        int id_s2 = ql.s2_id_base.get( tempVarList.get( l ) );
+                        int id_s2 = ql.s2_id_base.get( matchesList.get( l ) );
 
                         String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2 ) " +
                             "VALUES ( " + mis.is.get(i).get(0).id + "," + id_s1 + "," + id_s2 + ")";
@@ -442,13 +460,13 @@ public class MatchAsync extends Thread
                         conMatch.createStatement().close();
                     }
                 }
-                tempVarList.clear();
+                matchesList.clear();
             }
 
             pm.removeProcess();
 
             msg = String.format( "Number of matches: %d", nmatch );
-            System.out.println(msg);
+            System.out.println( msg );
             plog.show( msg );
 
             msg = String.format( "Thread id %d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
@@ -465,6 +483,7 @@ public class MatchAsync extends Thread
 
             String err = "MatchAsync/run(): thread error: s1_idx_cpy = " + s1_idx_cpy + ", lv_idx_cpy = " + lv_idx_cpy + ", error = " + ex1.getMessage();
             System.out.println( err );
+            ex1.printStackTrace();
             try { plog.show( err ); }
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
@@ -479,7 +498,7 @@ public class MatchAsync extends Thread
      * @param potentialMatches      // Levenshtein variants of ego familyname
      * @param LvPotentialMatches    // Levenshtein distances of potential matches
      */
-    private void variantsToList( int ego_familyname, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
+    private void variantsToList( int ego_familyname, String ls_table, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
     {
         String url = "localhost";
         String usr = "links";
@@ -494,32 +513,34 @@ public class MatchAsync extends Thread
             Connection con = General.getConnection( url, "links_prematch", usr, pwd );
             con.setReadOnly( true );
 
-            String query = "SELECT * FROM links_prematch.ls_familyname WHERE value = 1 AND name_int_1 = " + ego_familyname ;
+            String query = "SELECT * FROM links_prematch." + ls_table + " WHERE value = 1 AND name_int_1 = " + ego_familyname ;
             ResultSet rs = con.createStatement().executeQuery( query );
 
             int nrecs = 0;
             while( rs.next() )
             {
-                String name_str_1 = rs.getString( "name_str_1" );
-                String name_str_2 = rs.getString( "name_str_2" );
-
-                int length_1 = rs.getInt( "length_1" );
-                int length_2 = rs.getInt( "length_2" );
+                //int length_1 = rs.getInt( "length_1" );
+                //int length_2 = rs.getInt( "length_2" );
 
                 int name_int_1 = rs.getInt( "name_int_1" );
                 int name_int_2 = rs.getInt( "name_int_2" );
 
                 //int Ldist = rs.getInt( "value" );
 
-                if( nrecs == 0 ) { System.out.printf("variants for %s (%d): ", name_str_1, name_int_1 ); }
-                System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+                if( debug ) {
+                    String name_str_1 = rs.getString( "name_str_1" );
+                    String name_str_2 = rs.getString( "name_str_2" );
+
+                    if( nrecs == 0 ) { System.out.printf( "variants for %s (%d): ", name_str_1, name_int_1 ); }
+                    System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+                }
 
                 potentialMatches  .add( name_int_2 );
                 LvPotentialMatches.add( Ldist );
 
                 nrecs++;
             }
-            if( nrecs != 0 ) { System.out.println( "" ); }
+            if( debug && nrecs != 0 ) { System.out.println( "" ); }
 
             con.createStatement().close();
             con.close();
@@ -534,59 +555,64 @@ public class MatchAsync extends Thread
 
 
      /**
-     * Query table ls_firstname for 1Name in name_int_1,
+     * Query table ls_firstname or ls_lastname for s1Name in name_int_1 column,
      * to get the name_int_2 as levenshtein variants for the set s2.
-      * Compare the variants for a match with s2Name
+     * Compare the variants for a match with s2Name
      */
     //private void variantsFirstnameToList( int ego_firstname, ArrayList< Integer > potentialMatches, ArrayList< Integer > LvPotentialMatches )
-    private boolean compareFirstnames( int s1Name, int s2Name )
+    private boolean compareLSnames( int s1Name, int s2Name, String ls_table, int Ldist )
     {
         String url = "localhost";
         String usr = "links";
         String pwd = "mslinks";
 
-        int Ldist = 1;
-
         boolean match = false;
 
         try
         {
-            if( debug ) { plog.show( "variantsToList(): s1Name = " + s1Name + ", s2Name = " + s2Name ); }
+            if( debug ) {
+                String msg = "compareLSnames(): s1Name = " + s1Name + ", s2Name = " + s2Name;
+                System.out.println( msg );
+                plog.show( msg );
+            }
 
             Connection con = General.getConnection( url, "links_prematch", usr, pwd );
             con.setReadOnly( true );
 
-            String query = "SELECT * FROM links_prematch.ls_familyname WHERE value = 1 AND name_int_1 = " + s1Name ;
+            String query = "SELECT * FROM links_prematch." + ls_table + " WHERE value <= " + Ldist + " AND name_int_1 = " + s1Name ;
             ResultSet rs = con.createStatement().executeQuery( query );
 
             int nrecs = 0;
             while( rs.next() )
             {
-                String name_str_1 = rs.getString( "name_str_1" );
-                String name_str_2 = rs.getString( "name_str_2" );
-
-                int length_1 = rs.getInt( "length_1" );
-                int length_2 = rs.getInt( "length_2" );
+                //int length_1 = rs.getInt( "length_1" );
+                //int length_2 = rs.getInt( "length_2" );
 
                 int name_int_1 = rs.getInt( "name_int_1" );
                 int name_int_2 = rs.getInt( "name_int_2" );
 
                 //int Ldist = rs.getInt( "value" );
 
-                if( nrecs == 0 ) { System.out.printf("variants for %s (%d): ", name_str_1, name_int_1 ); }
-                System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+                if( debug ) {
+                    String name_str_1 = rs.getString( "name_str_1" );
+                    String name_str_2 = rs.getString( "name_str_2" );
+
+                    if( nrecs == 0 ) { System.out.printf( "variants for %s (%d): ", name_str_1, name_int_1 ); }
+                    System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+                }
 
                 //potentialMatches  .add( name_int_2 );
                 //LvPotentialMatches.add( Ldist );
 
                 if( s2Name == name_int_2 ) {
                     match = true;
+                    if( debug ) { System.out.println( "variantsToList(): match" );  }
                     break;
                 }
 
                 nrecs++;
             }
-            if( nrecs != 0 ) { System.out.println( "" ); }
+            if( debug ) { System.out.println( "" ); }
 
             con.createStatement().close();
             con.close();
@@ -599,7 +625,7 @@ public class MatchAsync extends Thread
         }
 
         return match;
-    } // variantsFirstnameToList
+    } // compareLSnames
 
 
     /**
@@ -840,12 +866,14 @@ public class MatchAsync extends Thread
 
     private boolean isVariant( int s1Name, int s2Name, NameType tnt, int method )
     {
-        System.out.println( "isVariant() " + s1Name + ", " + s2Name + ", " + tnt );
+        int Ldist = 1;      // should become a parameter
 
         // is s2Name a Levenshtein variant of s1Name ?
 
         if( debug ) {
-            try { plog.show( "isVariant()" ); }
+            String msg = "isVariant() " + s1Name + ", " + s2Name + ", " + tnt + ", " + Ldist;
+            System.out.println( msg );
+            try { plog.show( msg ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
 
@@ -853,17 +881,20 @@ public class MatchAsync extends Thread
         {
             if( tnt == NameType.FAMILYNAME )
             {
+                return compareLSnames( s1Name, s2Name, "ls_familyname", Ldist );
+
+                /*
                 if( s1Name == 0 || s2Name == 0 ) { return false; }    // NULL string names
                 else if( s1Name == s2Name ) { ; }                     // identical names
                 else if( variantFamilyName.length > s1Name && variantFamilyName[ s1Name ] != null && Arrays.binarySearch( variantFamilyName[ s1Name ], s2Name ) > -1) { ; }
                 else if( variantFamilyName.length > s2Name && variantFamilyName[ s2Name ] != null && Arrays.binarySearch( variantFamilyName[ s2Name ], s1Name ) > -1) { ; }
                 else { return false; }
-
+                */
             }
             else if( tnt == NameType.FIRSTNAME )
             {
 
-                return compareFirstnames( s1Name, s2Name );
+                return compareLSnames( s1Name, s2Name, "ls_firstname", Ldist );
 
                 /*
                 if( s1Name == 0 || s2Name == 0 ) { return false; }    // NULL string names
@@ -886,7 +917,6 @@ public class MatchAsync extends Thread
 
             if( tnt == NameType.FAMILYNAME )
             {
-
                 if( ( s1Name >= rootFamilyName.length ) || ( ( s2Name >= rootFamilyName.length ) ) ) { return false; }
 
                 root1 = this.rootFamilyName[ s1Name ];
@@ -924,9 +954,8 @@ public class MatchAsync extends Thread
         int method              // 'method' in match_process table: {0,1}
     )
     {
-        System.out.println( "checkFirstName() fn_method: " + fn_method );
-
         if( debug ) {
+            System.out.println( "checkFirstName() fn_method: " + fn_method );
             try { plog.show( "checkFirstName() fn_method = " + fn_method ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }

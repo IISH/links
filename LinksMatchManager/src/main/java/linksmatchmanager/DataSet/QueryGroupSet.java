@@ -20,42 +20,39 @@ package linksmatchmanager.DataSet;
 import java.util.ArrayList;
 
 /**
- * this Class contains an array of query 
- * objects that are generated from one 
+ * This Class contains an array of query objects that are generated from one
  * record in the match_process table
  * 
  * @author oaz
  */
-public class QueryGroupSet {
+public class QueryGroupSet
+{
+    // We use an ArrayList because of its posibilities to add new items
+
+    private ArrayList< QuerySet > al = new ArrayList< QuerySet >();
 
     /**
-     * We use an ArrayList because of 
-     * its posibilities to add new items
-     */ 
-    private ArrayList<QuerySet> al = new ArrayList<QuerySet>();
-
-    /**
-     * Use this method to get an 
-     * individual QuerySet object
+     * Use this method to get an individual QuerySet object
      * 
      * @param index index of the Queryset in the ArrayList
      * @return Queryset object
      */
-    public QuerySet get(int index) {
-        return al.get(index);
+    public QuerySet get( int index ) {
+        return al.get( index );
     }
 
     /**
-     * Use this method to add a QuerySet 
-     * object to the array
+     * Use this method to add a QuerySet object to the array
+     *
      * @param qs QuerySet object to add 
      */
-    public void add(QuerySet qs) {
-        al.add(qs);
+    public void add( QuerySet qs ) {
+        al.add( qs );
     }
 
     /**
      * Returns the size of the ArrayList
+     *
      * @return size
      */
     public int getSize() {

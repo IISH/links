@@ -17,45 +17,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package linksmatchmanager.DataSet;
 
-// Imports
 import java.util.ArrayList;
 
 /**
- * This iclass contains an ArrayList
- * of QueryGroupSets. This class
- * is the root class that contains 
- * a structure of queries
+ * This class contains an ArrayList of QueryGroupSets. This class
+ * is the root class that contains a structure of queries
  * 
  * @author oaz
  */
-public class InputSet {
+public class InputSet
+{
+    // We use an ArrayList because of its possibilities to add new items
+
+    private ArrayList< QueryGroupSet > al = new ArrayList< QueryGroupSet >();
 
     /**
-     * We use an ArrayList because of 
-     * its posibilities to add new items
-     * 
-     */
-    private ArrayList<QueryGroupSet> al = new ArrayList<QueryGroupSet>();
-
-    /**
-     * 
      * @param index
      * @return 
      */
-    public QueryGroupSet get(int index) {
-        return al.get(index);
+    public QueryGroupSet get( int index ) {
+        return al.get( index );
     }
 
     /**
-     * 
      * @param qgs 
      */
-    public void add(QueryGroupSet qgs) {
-        al.add(qgs);
+    public void add( QueryGroupSet qgs ) {
+        al.add( qgs );
     }
 
     /**
-     * 
      * @return 
      */
     public int getSize() {
