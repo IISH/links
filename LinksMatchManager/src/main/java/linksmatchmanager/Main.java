@@ -35,12 +35,15 @@ public class Main
 {
     // class global vars
     private static boolean debug;
-    private static boolean useExactMatch = false;
+
+    private static boolean doExactMatch = true;
+    private static boolean doLevyMatch  = true;
 
     private static QueryLoader ql;
     private static PrintLogger plog;
-    private static Connection conPrematch;
-    private static Connection conMatch;
+
+    private static Connection dbconPrematch;
+    private static Connection dbconMatch;
 
     private static int[][] variantFamilyName;
     private static int[][] variantFirstName;
@@ -99,10 +102,10 @@ public class Main
             plog.show( msg );
 
             /* Create database connections*/
-            conMatch    = General.getConnection( url, "links_match", user, pass );
-            conPrematch = General.getConnection( url, "links_prematch",  user, pass );
+            dbconMatch    = General.getConnection( url, "links_match", user, pass );
+            dbconPrematch = General.getConnection( url, "links_prematch",  user, pass );
 
-            conPrematch.setReadOnly( true );                // Set read only
+            dbconPrematch.setReadOnly( true );                // Set read only
 
             /*
             // only delete matches for the match ids (from table match_process) that are being [re-]computed
@@ -116,7 +119,7 @@ public class Main
              * Run Query Generator to generate queries.
              * As input we use the records from the match_process table in the links_match db
              */
-            QueryGenerator mis = new QueryGenerator( plog, conMatch );
+            QueryGenerator mis = new QueryGenerator( plog, dbconMatch );
 
             // TEST LINE: Print queries to check 
             // System.out.println(mis.printToString());
@@ -148,7 +151,7 @@ public class Main
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
                 /*
                 // Create a new prematch variants object for every record in match_process table
-                VariantLoader vl = new VariantLoader( url, user, pass, plog );
+                VariantLoader vl = new VariantLoader( dbconPrematch, plog );
 
 
                 plog.show( String.format( "\nmatching record: %d-of-%d\n", i+1, misSize ) );
@@ -212,10 +215,10 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, useExactMatch, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, doExactMatch, doLevyMatch, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, rootFirstName, rootFamilyName, true );
                     }
                     else { // 0
-                        ma = new MatchAsync( debug, useExactMatch, pm, i, j, ql, plog, qgs, mis, conPrematch, conMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, doExactMatch, doLevyMatch, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
@@ -239,8 +242,8 @@ public class Main
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
             String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
 
-            conMatch.createStatement().execute( query );
-            conMatch.createStatement().close();
+            dbconMatch.createStatement().execute( query );
+            dbconMatch.createStatement().close();
         }
         catch( Exception ex ) { System.out.println( "LinksMatchManager/deleteMatches() Exception: " + ex.getMessage() ); }
     } // deleteMatches

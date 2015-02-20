@@ -13,11 +13,11 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-13-Feb-2015 Latest change
+ * FL-20-Feb-2015 Latest change
  */
 public class QueryLoader
 {
-    private Connection con;
+    private Connection dbconPrematch;
 
     private boolean use_mother;
     private boolean use_father;
@@ -33,6 +33,8 @@ public class QueryLoader
     // Set variables
     public Vector< Integer > s1_id_base              = new Vector< Integer >();
     public Vector< Integer > s1_registration_days    = new Vector< Integer >();
+
+    public Vector< String >  s1_ego_familyname_str    = new Vector< String >();
 
     public Vector< Integer > s1_ego_familyname       = new Vector< Integer >();
     public Vector< Integer > s1_ego_firstname1       = new Vector< Integer >();
@@ -88,6 +90,8 @@ public class QueryLoader
     public Vector< Integer > s2_id_base              = new Vector< Integer >();
     public Vector< Integer > s2_registration_days    = new Vector< Integer >();
 
+    public Vector< String >  s2_ego_familyname_str   = new Vector< String >();
+
     public Vector< Integer > s2_ego_familyname       = new Vector< Integer >();
     public Vector< Integer > s2_ego_firstname1       = new Vector< Integer >();
     public Vector< Integer > s2_ego_firstname2       = new Vector< Integer >();
@@ -141,9 +145,9 @@ public class QueryLoader
     /**
      * 
      * @param qs
-     * @param con
+     * @param dbconPrematch
      */
-    public QueryLoader( QuerySet qs, Connection con ) throws Exception
+    public QueryLoader( QuerySet qs, Connection dbconPrematch ) throws Exception
     {
         this.use_mother    = qs.use_mother;
         this.use_father    = qs.use_father;
@@ -152,12 +156,18 @@ public class QueryLoader
         this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
-        set1 = con.createStatement().executeQuery( qs.query1 );
-        set2 = con.createStatement().executeQuery( qs.query2 );
+        // get set 1 from links_base
+        System.out.println( "Retrieving set 1 from links_base..." );
+        set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
+
+        // get set 1 from links_base
+        System.out.println( "Retrieving set 2 from links_base..." );
+        set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
+        //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // matching TEST only !
 
         fillArrays();
 
-        this.con = con;
+        this.dbconPrematch = dbconPrematch;
     }
 
 
@@ -169,6 +179,8 @@ public class QueryLoader
             // Vars to use, global
             int var_s1_id_base = 0;
             int var_s1_registration_days = 0;
+
+            String var_s1_ego_familyname_str = "";
 
             int var_s1_ego_familyname   = 0;
             int var_s1_ego_firstname1   = 0;
@@ -225,6 +237,7 @@ public class QueryLoader
 
             // Ego
             // Familyname
+            var_s1_ego_familyname_str = set1.getString( "ego_familyname_str" );
             var_s1_ego_familyname = set1.getInt( "ego_familyname" );
 
             // First Names ego
@@ -412,8 +425,10 @@ public class QueryLoader
             }
 
             // fill the arraylists
-            s1_id_base          .add(var_s1_id_base);
-            s1_registration_days.add(var_s1_registration_days);
+            s1_id_base          .add( var_s1_id_base );
+            s1_registration_days.add( var_s1_registration_days );
+
+            s1_ego_familyname_str.add( var_s1_ego_familyname_str );
 
             s1_ego_familyname  .add( var_s1_ego_familyname );
             s1_ego_firstname1  .add( var_s1_ego_firstname1 );
@@ -473,6 +488,8 @@ public class QueryLoader
             int var_s2_id_base = 0;
             int var_s2_registration_days = 0;
 
+            String var_s2_ego_familyname_str = "";
+
             int var_s2_ego_familyname   = 0;
             int var_s2_ego_firstname1   = 0;
             int var_s2_ego_firstname2   = 0;
@@ -529,6 +546,7 @@ public class QueryLoader
 
             // Ego
             // familyname
+            var_s2_ego_familyname_str = set2.getString( "ego_familyname_str" );
             var_s2_ego_familyname = set2.getInt( "ego_familyname" );
 
             // First name
@@ -717,6 +735,8 @@ public class QueryLoader
             //fill the arraylists
             s2_id_base.add( var_s2_id_base );
             s2_registration_days.add( var_s2_registration_days );
+
+            s2_ego_familyname_str.add( var_s2_ego_familyname_str );
 
             s2_ego_familyname  .add( var_s2_ego_familyname );
             s2_ego_firstname1  .add( var_s2_ego_firstname1 );

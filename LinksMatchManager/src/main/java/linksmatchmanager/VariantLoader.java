@@ -37,19 +37,20 @@ public class VariantLoader
     private String url;
     private String user;
     private String pass;
+
+    Connection dbconPrematch;
+
     PrintLogger plog;
 
     /**
      * Constructor
-     * @param url  URL of the database
-     * @param user Username for the database
-     * @param pass Password for the database
+     * @param dbconPrematch
+     * @param plog
      */
-    public VariantLoader( String url, String user, String pass, PrintLogger plog )
+    public VariantLoader( Connection dbconPrematch, PrintLogger plog )
     {
-        this.url  = url;
-        this.user = user;
-        this.pass = pass;
+        this.dbconPrematch = dbconPrematch;
+
         this.plog = plog;
     }
 
@@ -63,10 +64,7 @@ public class VariantLoader
     public int[][] loadNames( String tableName, int value )
     throws Exception
     {
-        plog.show("VariantLoader/loadNames() db: links_prematch, tableName: " + tableName + ", Levenshtein value: " + value);
-
-        Connection con = General.getConnection( url, "links_prematch", user, pass );
-        con.setReadOnly( true );
+        plog.show( "VariantLoader/loadNames() db: links_prematch, tableName: " + tableName + ", Levenshtein value: " + value );
 
         int limit = 200000000;      // 200.000.000
         //String query =  "SELECT length_1 , length_2 FROM " + tableName
@@ -79,7 +77,7 @@ public class VariantLoader
         System.out.println( query );
         plog.show( query );
 
-        ResultSet rs = con.createStatement().executeQuery( query );
+        ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
         // Create an multi-dimensional array large enough for the biggest number
         rs.last();
@@ -189,10 +187,6 @@ public class VariantLoader
         rs.close();
         rs = null;
 
-        con.createStatement().close();
-        con.close();
-        con = null;
-
         System.out.println( "Summary:" );
         for( int i = 0; i < max; i ++ ) {
             int[] v = names[ i ];
@@ -202,19 +196,15 @@ public class VariantLoader
             }
         }
 
-
         return names;        // Return multidimensional array
     } // loadNames
 
 
     public int[][] loadRootNames( String tableName ) throws Exception
     {
-        Connection con = General.getConnection( url, "links_prematch", user, pass );
-        con.setReadOnly( true );
-
         // Get the root from table
         String query =  "SELECT length_1 , length_2 FROM " + tableName + " ORDER BY length_1;";
-        ResultSet rs = con.createStatement().executeQuery( query );
+        ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
         // Create an array large enough for the biggest number
         rs.last();
@@ -244,7 +234,6 @@ public class VariantLoader
                     catch( Exception ex ) { nl[ i ] = 0; }
                 }
                 names[ n1 ] = nl;
-
             }
         }
 
@@ -254,13 +243,8 @@ public class VariantLoader
             }
         }
 
-
         rs.close();
         rs = null;
-
-        con.createStatement().close();
-        con.close();
-        con = null;
 
         // Return multidimensional array
         return names;
@@ -270,12 +254,8 @@ public class VariantLoader
     /*
     public String[] loadRootNames(String tableName) throws Exception
     {
-        Connection con = General.getConnection(url, "links_prematch", user, pass);
-        con.setReadOnly(true);
-
-
         // Get the root from table
-        ResultSet rs = con.createStatement().executeQuery(
+        ResultSet rs = dbconPrematch.createStatement().executeQuery(
                 "SELECT n1 , n2 FROM " + tableName + " ORDER BY n1;");
 
         // Create an array large enough for the biggest number
@@ -300,16 +280,10 @@ public class VariantLoader
             if(names[i] == null){
                 names[i] = "";
             }
-
         }
-
 
         rs.close();
         rs = null;
-
-        con.createStatement().close();
-        con.close();
-        con = null;
 
         // Return multidimensional array
         return names;
