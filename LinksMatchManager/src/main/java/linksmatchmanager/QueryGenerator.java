@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-13-Feb-2015 Latest change
+ * FL-23-Feb-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -492,7 +492,7 @@ public class QueryGenerator
                         loop = false;
                     }
 
-                    if( s1_days >= 0 ) { qs.query1 += "registration_days <= " + s1_days + " AND "; }
+                    if( s1_days > 0 ) { qs.query1 += "registration_days <= " + s1_days + " AND "; }
 
                     if( s2_range > 0 ) {
                         if( once ) {
@@ -549,7 +549,7 @@ public class QueryGenerator
     {
         String query;
 
-        query = "SELECT id_base , registration_days , ego_familyname_str , ego_familyname ";
+        query = "SELECT id_base , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
 
         if( !ignore_minmax ) {
             query += ", ego_birth_min , ego_birth_max , ego_marriage_min , ego_marriage_max , ego_death_min , ego_death_max ";

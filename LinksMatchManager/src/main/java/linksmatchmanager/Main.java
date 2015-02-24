@@ -28,16 +28,13 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-18-Feb-2015 Latest change
+ * FL-23-Feb-2015 Latest change
  */
 
 public class Main
 {
     // class global vars
     private static boolean debug;
-
-    private static boolean doExactMatch = true;
-    private static boolean doLevyMatch  = true;
 
     private static QueryLoader ql;
     private static PrintLogger plog;
@@ -215,10 +212,10 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, doExactMatch, doLevyMatch, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, rootFirstName, rootFamilyName, true );
                     }
                     else { // 0
-                        ma = new MatchAsync( debug, doExactMatch, doLevyMatch, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
