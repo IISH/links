@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-17-Feb-2015 Latest change
+ * FL-25-Feb-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -267,6 +267,9 @@ public class Lv extends Thread
         try { createLsFirstTable( debug, db_conn, db_name, ls_table ); }
         catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
 
+        showMessage( "Removing file " + csvname, false, true );
+        java.io.File f = new java.io.File( csvname );
+        f.delete();
 
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
         showMessage_nl();

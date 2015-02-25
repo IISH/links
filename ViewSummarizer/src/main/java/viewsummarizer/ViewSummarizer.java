@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 
+import java.util.ArrayList;
+
 import java.util.HashMap;
 
 
@@ -66,9 +68,9 @@ public class ViewSummarizer
             String msg = "Links View Summarizer 2.0";
             plog.show( msg );
 
-            if( args.length != 5 ) {
-                System.out.println( "Invalid argument length, it should be 5" );
-                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <id_match_process>" );
+            if( args.length < 5 ) {
+                System.out.println( "Invalid argument length, it should be 5 or 6" );
+                System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <hostname> [<id_match_process>]" );
 
                 return;
             }
@@ -83,7 +85,13 @@ public class ViewSummarizer
         String db_name    = args[ 1 ];
         String db_user    = args[ 2 ];
         String db_pass    = args[ 3 ];
-        String id_process = args[ 4 ];
+        String hostname   = args[ 4 ];
+
+        String id_process = "";
+        if( args.length == 6 ) { id_process = args[ 5 ]; }
+        int[] ids = getIdProcessList( id_process );
+
+        System.out.println( "Hostname: " + hostname );
 
         String template   = "LVS-template.html";
         String output     = "links-vs.html/LVS-%.html";
@@ -91,8 +99,6 @@ public class ViewSummarizer
 
         // Create connection
         try {
-            plog.show( String.format( "cmd line parameters: %s %s %s %s %s",
-                db_url, db_name, db_user, db_pass, id_process ) );
             db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
         }
         catch( Exception ex ) {
@@ -100,34 +106,99 @@ public class ViewSummarizer
             return;
         }
 
-        // put the id_process used in the name of the html output file for clarity
-        output = output.replaceAll( "%", id_process );
-        try { plog.show( String.format( "Output file will be: %s", output ) ); }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        for( int i = 0; i < ids.length; i++ )
+        {
+            id_process = "" + ids[ i ];
 
-        // read template file to be used for queries output
-        try { plog.show( String.format( "Reading template file: %s", template ) ); }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-        templateFile = General.fileToString( template );
+            try {
+                plog.show( String.format( "cmd line parameters: %s %s %s %s %s",
+                    db_url, db_name, db_user, db_pass, id_process ) );
+            }
+            catch( Exception ex ) {
+                System.out.println( "Exception: " + ex.getMessage() );
+                return;
+            }
 
-        // get variables from match_process table for the given id_process
-        if( ! readMatchProcess( id_process ) ) { return; }  // id not found in the process table
+            // put the id_process used in the name of the html output file for clarity
+            output = output.replaceAll( "%", id_process );
+            try { plog.show( String.format( "Output file will be: %s", output ) ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-        // Write template to output
-        try {
-            System.out.printf( "Writing template %s to output %s...\n", template, output );
+            // read template file to be used for queries output
+            try { plog.show( String.format( "Reading template file: %s", template ) ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+            templateFile = General.fileToString( template );
 
-            File newTextFile = new File( output );
-            FileWriter fileWriter = new FileWriter( newTextFile );
-            fileWriter.write( templateFile );
-            fileWriter.close();
-        }
-        catch( Exception ex ) {
-            System.out.println( "Output error - Error message: " + ex.getMessage() );
+            replaceInTemplate( "hostname", hostname );
+
+            // get variables from match_process table for the given id_process
+            if( ! readMatchProcess( id_process ) ) { return; }  // id not found in the process table
+
+            // Write template to output
+            try {
+                System.out.printf( "Writing template %s to output %s...\n", template, output );
+
+                File newTextFile = new File( output );
+                FileWriter fileWriter = new FileWriter( newTextFile );
+                fileWriter.write( templateFile );
+                fileWriter.close();
+            }
+            catch( Exception ex ) {
+                System.out.println( "Output error - Error message: " + ex.getMessage() );
+            }
         }
 
         System.out.println( "Done." );
-    }
+    } // main
+
+
+     /**
+     *
+     */
+    private static int[] getIdProcessList( String id_process )
+    {
+        System.out.println( "getIdProcessList()" );
+
+        if( ! id_process.isEmpty() ) {
+            int[] idsInt = new int[ 1 ];
+            idsInt[ 0 ] = Integer.parseInt( id_process );
+            return idsInt;
+        }
+
+        //String query = "SELECT `id` FROM `match_process` WHERE `match` = 'y'";
+        String query = "SELECT * FROM match_process;";
+        System.out.println( "query: " + query );
+
+        ArrayList< String > ids = new ArrayList();
+
+        try {
+            ResultSet rs = db_conn.createStatement().executeQuery( query );
+
+            rs.first();
+            int count = 0;
+            while( rs.next() ) {
+                count += 1;
+                String id    = rs.getString( "id" );
+                String match = rs.getString("`match`");
+                System.out.printf( "%d: %s %s", count, id, match );
+                if( match.equals( "y") ) {  ids.add( id );}
+            }
+            System.out.printf( "count: %s", count );
+        }
+        catch( Exception ex ) {
+            System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() );
+        }
+
+        int[] idsInt = new int[ ids.size() ];
+        int i = 0;
+        for( String id : ids ) {
+            //System.out.println( id );
+            idsInt[ i ] = Integer.parseInt( id );
+            i += 1;
+        }
+
+        return idsInt;
+     } // getIdProcessList
 
 
      /**
@@ -143,13 +214,16 @@ public class ViewSummarizer
             rs.first();
             result = rs.getString( 1 );
         }
-        catch( Exception ex ) {
-            System.out.println( "Query error: " + query + " - Error message: " + ex.getMessage() );
-        }
+        catch( Exception ex ) { System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() ); }
 
         System.out.printf( "varname: %s, result: %s, query: %s\n", varname, result, query );
 
-        if( varname.equals( "s1_source" ) || varname.equals( "s2_source" ) )
+        if( varname.equals( "date" ) ) {
+            if( result.length() > 16 ) { display = result.substring( 0, 16 ); } // date + hh:mm is enough
+            else { display = result;}
+        }
+
+        else if( varname.equals( "s1_source" ) || varname.equals( "s2_source" ) )
         {
             display = result;
 
@@ -250,7 +324,7 @@ public class ViewSummarizer
         replaceInTemplate( varname, display );
 
         return result;
-    }
+    } // executeQuery
 
 
      /**
@@ -277,15 +351,13 @@ public class ViewSummarizer
             }
 
         }
-        catch( Exception ex ) {
-            System.out.println( "Query error: " + query + " - Error message: " + ex.getMessage() );
-        }
+        catch( Exception ex ) { System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() ); }
 
         System.out.println( display );
         replaceInTemplate( varname, display );
 
         return display;
-    }
+    } // collectQuery
 
 
      /**
@@ -364,7 +436,7 @@ public class ViewSummarizer
         }
 
         replaceInTemplate( "trows", trows );
-    }
+    } // allcntsToTable
 
 
      /**
@@ -375,7 +447,7 @@ public class ViewSummarizer
         // replace template variable
         if( result == null ) { templateFile = templateFile.replaceAll( "\\{" + varname + "\\}", " " ); }
         else { templateFile = templateFile.replaceAll( "\\{" + varname + "\\}", result ); }
-    }
+    } // replaceInTemplate
 
 
     /**
@@ -384,7 +456,6 @@ public class ViewSummarizer
     private static boolean readMatchProcess( String id_process )
     {
         String query = "";
-
         query = "SELECT NOW()";
         date = executeQuery( "date", query );
 
@@ -578,6 +649,6 @@ public class ViewSummarizer
         allcntsToTable( s1_allcnts, s2_allcnts );
 
         return true;
-    }
+    } // readMatchProcess
 
 }

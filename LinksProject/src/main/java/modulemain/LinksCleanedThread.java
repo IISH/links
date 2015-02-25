@@ -244,7 +244,7 @@ public class LinksCleanedThread extends Thread
 
 
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
-            sourceList  = createSourceList( sourceIdsGui, sourceListAvail );
+            sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
             if( sourceList.length == 1 ) { s = "Processing source: "; }
