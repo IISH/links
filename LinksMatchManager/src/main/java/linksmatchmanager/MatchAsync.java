@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QueryGroupSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-23-Feb-2015 Latest change
+ * FL-26-Feb-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -38,6 +38,7 @@ public class MatchAsync extends Thread
 
     Connection dbconPrematch;
     Connection dbconMatch;
+    Connection dbconTemp;
 
     int[][] variantFirstName;
     int[][] variantFamilyName;
@@ -64,6 +65,7 @@ public class MatchAsync extends Thread
 
         Connection dbconPrematch,
         Connection dbconMatch,
+        Connection dbconTemp,
 
         int[][] variantFirstName,
         int[][] variantFamilyName
@@ -84,6 +86,7 @@ public class MatchAsync extends Thread
 
         this.dbconPrematch = dbconPrematch;
         this.dbconMatch    = dbconMatch;
+        this.dbconTemp     = dbconTemp;
 
         this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
@@ -109,6 +112,7 @@ public class MatchAsync extends Thread
 
         Connection dbconPrematch,
         Connection dbconMatch,
+        Connection dbconTemp,
 
         int[][] rootFirstName,
         int[][] rootFamilyName,
@@ -130,7 +134,8 @@ public class MatchAsync extends Thread
         this.mis = mis;
 
         this.dbconPrematch = dbconPrematch;
-        this.dbconMatch = dbconMatch;
+        this.dbconMatch    = dbconMatch;
+        this.dbconTemp     = dbconTemp;
 
         this.rootFirstName  = rootFirstName;
         this.rootFamilyName = rootFamilyName;
@@ -150,18 +155,18 @@ public class MatchAsync extends Thread
         int lv_idx_cpy = 0;
 
         // count why the matches fail
-        int n_sex    = 0;
-        int n_minmax = 0;
+        long n_sex    = 0;
+        long n_minmax = 0;
 
-        int n_int_firstname_e = 0;
-        int n_int_firstname_m = 0;
-        int n_int_firstname_f = 0;
-        int n_int_firstname_p = 0;
+        long n_int_firstname_e = 0;
+        long n_int_firstname_m = 0;
+        long n_int_firstname_f = 0;
+        long n_int_firstname_p = 0;
 
-        int n_int_familyname_e = 0;
-        int n_int_familyname_m = 0;
-        int n_int_familyname_f = 0;
-        int n_int_familyname_p = 0;
+        long n_int_familyname_e = 0;
+        long n_int_familyname_m = 0;
+        long n_int_familyname_f = 0;
+        long n_int_familyname_p = 0;
 
 
         try
@@ -199,6 +204,20 @@ public class MatchAsync extends Thread
             System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
             System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
 
+            // Create memory tables to hold the ls_* tables
+            // need much more heap for ls_ tables
+            long max_heap_table_size = ( 512 + 64 + 32 ) * 1024 * 1024;    // default is 16 GB: 16 * 1024 * 1024
+            System.out.println( "max_heap_table_size: " + max_heap_table_size );
+            String table_firstname_src  = "ls_firstname";
+            String table_familyname_src = "ls_familyname";
+            String name_postfix = "_mem";
+            memtables_create( threadId, max_heap_table_size, table_firstname_src, table_familyname_src, name_postfix );
+
+            // and now change the names to the actual table names used !
+            lvs_table_familyname += name_postfix;
+            lvs_table_firstname  += name_postfix;
+
+
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // Its input is a QuerySet and a database connection object.
             ql = new QueryLoader( threadId, qs, dbconPrematch );
@@ -221,8 +240,9 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
-            int n_recs   = 0;
-            int n_match  = 0;
+            long n_recs   = 0;
+            long n_match  = 0;
+
             int s1_size  = ql.s1_id_base.size();
             int s1_chunk = s1_size / 20;
 
@@ -564,86 +584,93 @@ public class MatchAsync extends Thread
                     }
                 }
                 s2_idx_variants_cpy = null;
+                System.out.flush();
+                System.err.flush();
             }
 
             pm.removeProcess();
 
-            msg = String.format( "s1 records processed: %d", n_recs );
+            // remove the memory tables
+            // we could gain some speed by using the same mem tables for all threads, but via
+            // match_process they could specify different tables for different threads: normal, _first, _strict.
+            memtables_drop( threadId, table_firstname_src, table_familyname_src, name_postfix );
+
+            msg = String.format( "Thread id %d; s1 records processed: %d", threadId, n_recs );
             System.out.println( msg );
             plog.show( msg );
 
-            msg = String.format( "Number of matches: %d", n_match );
+            msg = String.format( "Thread id %d; Number of matches: %d", threadId, n_match );
             System.out.println( msg ); plog.show( msg );
 
 
-            int n_fail = 0;
+            long n_fail = 0;
 
             if( n_minmax != 0 ) {
                 n_fail += n_minmax;
-                msg = String.format( "failures n_minmax: %d", n_minmax );
+                msg = String.format( "Thread id %d; failures n_minmax: %d", threadId, n_minmax );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_sex != 0 ) {
                 n_fail += n_sex;
-                msg = String.format( "failures n_sex: %d", n_minmax );
+                msg = String.format( "Thread id %d; failures n_sex: %d", threadId, n_minmax );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_e != 0 ) {
                 n_fail += n_int_familyname_e;
-                msg = String.format( "failures n_int_familyname_e: %d", n_int_familyname_e );
+                msg = String.format( "Thread id %d; failures n_int_familyname_e: %d", threadId, n_int_familyname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_e != 0 ) {
                 n_fail += n_int_firstname_e;
-                msg = String.format( "failures n_int_firstname_e: %d", n_int_firstname_e );
+                msg = String.format( "Thread id %d; failures n_int_firstname_e: %d", threadId, n_int_firstname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_m != 0 ) {
                 n_fail += n_int_familyname_m;
-                msg = String.format( "failures n_int_familyname_m: %d", n_int_familyname_m );
+                msg = String.format( "Thread id %d; failures n_int_familyname_m: %d", threadId, n_int_familyname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_m != 0 ) {
                 n_fail += n_int_firstname_m;
-                msg = String.format( "failures n_int_firstname_m: %d", n_int_firstname_m );
+                msg = String.format( "Thread id %d; failures n_int_firstname_m: %d", threadId, n_int_firstname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_f != 0 ) {
                 n_fail += n_int_familyname_f;
-                msg = String.format( "failures n_int_familyname_f: %d", n_int_familyname_f );
+                msg = String.format( "Thread id %d; failures n_int_familyname_f: %d", threadId, n_int_familyname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_f != 0 ) {
                 n_fail += n_int_firstname_f;
-                msg = String.format( "failures n_int_firstname_f: %d", n_int_firstname_f );
+                msg = String.format( "Thread id %d; failures n_int_firstname_f: %d", threadId, n_int_firstname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_p != 0 ) {
                 n_fail += n_int_familyname_p;
-                msg = String.format( "failures n_int_familyname_p: %d", n_int_familyname_p );
+                msg = String.format( "Thread id %d; failures n_int_familyname_p: %d", threadId, n_int_familyname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_p != 0 ) {
                 n_fail += n_int_firstname_p;
-                msg = String.format( "failures n_int_firstname_p: %d", n_int_firstname_p );
+                msg = String.format( "Thread id %d; failures n_int_firstname_p: %d", threadId, n_int_firstname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
-            msg = String.format( "total match attempt failures: %d", n_fail );
+            msg = String.format( "Thread id %d; total match attempt failures: %d", threadId, n_fail );
             System.out.println( msg ); plog.show( msg );
 
-            int n_mismatch = n_recs - ( n_fail + n_match );
+            long n_mismatch = n_recs - ( n_fail + n_match );
             if( n_mismatch > 0 ) {
-                msg = String.format( "missing records: %d ??", n_mismatch );
+                msg = String.format( "Thread id %d; missing records: %d ??", threadId, n_mismatch );
                 System.out.println( msg ); plog.show( msg );
             }
 
@@ -667,6 +694,88 @@ public class MatchAsync extends Thread
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
     } // run
+
+
+    private void memtables_create( long threadId, long max_heap_table_size, String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        System.out.println( "Thread id "+ threadId + "; memtables_create()" );
+
+        try
+        {
+            String query = "SET max_heap_table_size = " + max_heap_table_size;
+            dbconPrematch.createStatement().execute( query );
+
+            String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
+            String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+
+            memtable_ls_name( threadId, table_firstname_src, table_firstname_dst );
+
+            memtable_ls_name( threadId, table_familyname_src, table_familyname_dst );
+        }
+        catch( Exception ex ) { System.out.println( "Exception in memtables_create(): " + ex.getMessage() ); }
+    } // memtables_create
+
+
+    private void memtables_drop( long threadId, String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        System.out.println( "Thread id "+ threadId + "; memtables_drop()" );
+
+        try
+        {
+            String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
+            String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+
+            String query = "DROP TABLE " + table_firstname_dst;
+            dbconPrematch.createStatement().execute( query );
+
+            query = "DROP TABLE " + table_familyname_dst;
+            dbconPrematch.createStatement().execute( query );
+        }
+        catch( Exception ex ) { System.out.println( "Exception in memtables_drop(): " + ex.getMessage() ); }
+    } // memtables_drop
+
+
+    private void memtable_ls_name( long threadId, String src_table, String dst_table )
+    {
+        System.out.println( "Thread id "+ threadId + "; memtable_ls_name() copying " + src_table + " -> " + dst_table );
+
+        try
+        {
+            String[] name_queries =
+            {
+                "DROP TABLE IF EXISTS " + dst_table,
+
+                "CREATE TABLE " + dst_table
+                    + " ( "
+                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                    + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                    + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                    + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
+                    + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
+                    + "  `name_int_1` int(11) DEFAULT NULL,"
+                    + "  `name_int_2` int(11) DEFAULT NULL,"
+                    + "  `value` tinyint(3) unsigned DEFAULT NULL,"
+                    + "  PRIMARY KEY (`id`),"
+                    + "  KEY `value` (`value`),"
+                    + "  KEY `length_1` (`length_1`),"
+                    + "  KEY `length_2` (`length_2`),"
+                    + "  KEY `name_1` (`name_str_1`),"
+                    + "  KEY `name_2` (`name_str_2`),"
+                    + "  KEY `n_int_1` (`name_int_1`)"
+                    + " )"
+                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+                "ALTER TABLE " + dst_table + " DISABLE KEYS",
+
+                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
+
+                "ALTER TABLE " + dst_table + " ENABLE KEYS"
+            };
+
+            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
+        }
+        catch( Exception ex ) { System.out.println( "Exception in memtable_ls_name(): " + ex.getMessage() ); }
+    } // memtable_ls_name
 
 
     /**

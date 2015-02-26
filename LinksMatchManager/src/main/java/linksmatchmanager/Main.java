@@ -41,6 +41,7 @@ public class Main
 
     private static Connection dbconPrematch;
     private static Connection dbconMatch;
+    private static Connection dbconTemp;
 
     private static int[][] variantFamilyName;
     private static int[][] variantFirstName;
@@ -100,9 +101,10 @@ public class Main
 
             /* Create database connections*/
             dbconMatch    = General.getConnection( url, "links_match", user, pass );
-            dbconPrematch = General.getConnection( url, "links_prematch",  user, pass );
+            dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
+            dbconTemp     = General.getConnection( url, "links_temp", user, pass );
 
-            dbconPrematch.setReadOnly( true );                // Set read only
+            //dbconPrematch.setReadOnly( true );                // Set read only
 
             /*
             // only delete matches for the match ids (from table match_process) that are being [re-]computed
@@ -212,10 +214,10 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, dbconTemp, rootFirstName, rootFamilyName, true );
                     }
                     else { // 0
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, dbconTemp, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );

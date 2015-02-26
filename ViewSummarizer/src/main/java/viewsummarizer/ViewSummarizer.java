@@ -15,10 +15,12 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-11-Feb-2015 Latest change
+ * FL-26-Feb-2015 Latest change
  */
 public class ViewSummarizer
 {
+    private static boolean debug = false;
+
     private static Connection db_conn;
     private static PrintLogger plog;
     private static String templateFile;
@@ -61,6 +63,8 @@ public class ViewSummarizer
      */
     public static void main( String[] args )
     {
+        //System.out.println( "main()" );
+
         try
         {
             plog = new PrintLogger();
@@ -87,14 +91,10 @@ public class ViewSummarizer
         String db_pass    = args[ 3 ];
         String hostname   = args[ 4 ];
 
-        String id_process = "";
-        if( args.length == 6 ) { id_process = args[ 5 ]; }
-        int[] ids = getIdProcessList( id_process );
+        if( debug ) { System.out.println( "Hostname: " + hostname ); }
 
-        System.out.println( "Hostname: " + hostname );
-
-        String template   = "LVS-template.html";
-        String output     = "links-vs.html/LVS-%.html";
+        String template = "LVS-template.html";
+        String output_  = "links-vs.html/LVS-%.html";
 
 
         // Create connection
@@ -106,9 +106,16 @@ public class ViewSummarizer
             return;
         }
 
+        String id_process = "";
+        if( args.length == 6 ) { id_process = args[ 5 ]; }
+        // without a id_process, we process all entries of match_process that have 'match' set to 'y'
+        int[] ids = getIdProcessList( id_process );
+
+
         for( int i = 0; i < ids.length; i++ )
         {
             id_process = "" + ids[ i ];
+            if( debug ) { System.out.println( "id_process: " + id_process ); }
 
             try {
                 plog.show( String.format( "cmd line parameters: %s %s %s %s %s",
@@ -120,7 +127,7 @@ public class ViewSummarizer
             }
 
             // put the id_process used in the name of the html output file for clarity
-            output = output.replaceAll( "%", id_process );
+            String output = output_.replaceAll( "%", id_process );
             try { plog.show( String.format( "Output file will be: %s", output ) ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -136,7 +143,7 @@ public class ViewSummarizer
 
             // Write template to output
             try {
-                System.out.printf( "Writing template %s to output %s...\n", template, output );
+                System.out.printf( "Writing template %s to output %s\n", template, output );
 
                 File newTextFile = new File( output );
                 FileWriter fileWriter = new FileWriter( newTextFile );
@@ -157,7 +164,7 @@ public class ViewSummarizer
      */
     private static int[] getIdProcessList( String id_process )
     {
-        System.out.println( "getIdProcessList()" );
+        //System.out.println( "getIdProcessList()" );
 
         if( ! id_process.isEmpty() ) {
             int[] idsInt = new int[ 1 ];
@@ -165,9 +172,7 @@ public class ViewSummarizer
             return idsInt;
         }
 
-        //String query = "SELECT `id` FROM `match_process` WHERE `match` = 'y'";
         String query = "SELECT * FROM match_process;";
-        System.out.println( "query: " + query );
 
         ArrayList< String > ids = new ArrayList();
 
@@ -177,13 +182,15 @@ public class ViewSummarizer
             rs.first();
             int count = 0;
             while( rs.next() ) {
-                count += 1;
                 String id    = rs.getString( "id" );
-                String match = rs.getString("`match`");
-                System.out.printf( "%d: %s %s", count, id, match );
-                if( match.equals( "y") ) {  ids.add( id );}
+                String match = rs.getString( "match" );
+                if( match.equals( "y") ) {
+                    if( debug ) { System.out.printf( "%d: %s %s\n", count, id, match ); }
+                    count += 1;
+                    ids.add( id );
+                }
             }
-            System.out.printf( "count: %s", count );
+            if( debug ) { System.out.printf( "count: %s\n", count ); }
         }
         catch( Exception ex ) {
             System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() );
@@ -206,6 +213,8 @@ public class ViewSummarizer
      */
     private static String executeQuery( String varname, String query )
     {
+        //System.out.println( "executeQuery()" );
+
         String result = "";
         String display = "";
 
@@ -216,7 +225,7 @@ public class ViewSummarizer
         }
         catch( Exception ex ) { System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() ); }
 
-        System.out.printf( "varname: %s, result: %s, query: %s\n", varname, result, query );
+        if( debug ) { System.out.printf( "varname: %s, result: %s, query: %s\n", varname, result, query ); }
 
         if( varname.equals( "date" ) ) {
             if( result.length() > 16 ) { display = result.substring( 0, 16 ); } // date + hh:mm is enough
@@ -282,7 +291,7 @@ public class ViewSummarizer
             // the result may be a comma separated list
             //String[] results = result.split( "," );
             String[] results = result.split( "\\s*,\\s*" );     // and 'strip'
-            System.out.printf( "result: %s, len results: %d\n", result, results.length );
+            if( debug ) { System.out.printf( "result: %s, len results: %d\n", result, results.length ); }
 
             display = result;
             for( int i = 0; i < results.length; i++ )
@@ -332,6 +341,8 @@ public class ViewSummarizer
      */
     private static String collectQuery( String varname, String query )
     {
+        //System.out.println( "collectQuery()" );
+
         String result = "";
         String display = "";
 
@@ -353,7 +364,7 @@ public class ViewSummarizer
         }
         catch( Exception ex ) { System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() ); }
 
-        System.out.println( display );
+        if( debug ) { System.out.println( display ); }
         replaceInTemplate( varname, display );
 
         return display;
@@ -365,7 +376,7 @@ public class ViewSummarizer
      */
     private static void allcntsToTable( String s1_allcnts, String s2_allcnts )
     {
-        System.out.println( "allcntsToTable()" );
+        //System.out.println( "allcntsToTable()" );
 
         if( s1_allcnts.isEmpty() && s2_allcnts.isEmpty() ) {
             System.out.println( "No counts." );
@@ -375,10 +386,10 @@ public class ViewSummarizer
         String s1_counts[] = s1_allcnts.split( "," );
         String s2_counts[] = s2_allcnts.split( "," );
 
-        System.out.printf( "%d counts: '%s'\n", s1_counts.length, s1_allcnts );
-        System.out.printf( "%d counts: '%s'\n", s2_counts.length, s2_allcnts );
-
-
+        if( debug ) {
+            System.out.printf( "%d counts: '%s'\n", s1_counts.length, s1_allcnts );
+            System.out.printf( "%d counts: '%s'\n", s2_counts.length, s2_allcnts );
+        }
 
         String trows = "";  // contents for template variable
         int rows = 9;       // max num of rows for (variable) explicit matching occurrences
@@ -455,6 +466,8 @@ public class ViewSummarizer
      */
     private static boolean readMatchProcess( String id_process )
     {
+        //System.out.println( "readMatchProcess()" );
+
         String query = "";
         query = "SELECT NOW()";
         date = executeQuery( "date", query );

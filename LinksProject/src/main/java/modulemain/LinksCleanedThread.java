@@ -5649,7 +5649,7 @@ public class LinksCleanedThread extends Thread
         }
 
         showMessage( "Removing Duplicates for all sources...", false, true );
-        testDoubleRegistration( debug );
+        removeDuplicateRegistrations( debug );
 
     } // doRemoveDuplicates
 
@@ -5658,12 +5658,12 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void testDoubleRegistration( boolean debug )
+    private void removeDuplicateRegistrations( boolean debug )
     throws Exception
     {
         // Do we want to add "WHERE id_source = ..." to the first query?
 
-        showMessage( "testDoubleRegistration()", false, true );
+        showMessage( "removeDuplicateRegistrations()", false, true );
         showMessage( "Notice: the familyname prefix is not used for comparisons", false , true );
 
         int min_cnt = 2;
@@ -5972,7 +5972,7 @@ public class LinksCleanedThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
-    } // testDoubleRegistration
+    } // removeDuplicateRegistrations
 
 
     /**
