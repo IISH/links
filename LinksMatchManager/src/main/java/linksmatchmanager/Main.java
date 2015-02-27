@@ -63,24 +63,26 @@ public class Main
             plog.show( "Links Match Manager 2.0" );
 
             // Load arguments; check length
-            if( args.length != 5 ) {
-                plog.show( "Invalid argument length, it should be 5" );
+            if( args.length != 6 ) {
+                plog.show( "Invalid argument length, it should be 6" );
                 plog.show( "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <debug>" );
 
                 return;
             }
 
             // cmd line args
-            String url       = args[ 0 ];
-            String user      = args[ 1 ];
-            String pass      = args[ 2 ];
-            String threads   = args[ 3 ];
-            String debug_str = args[ 4 ];
+            String url                 = args[ 0 ];
+            String user                = args[ 1 ];
+            String pass                = args[ 2 ];
+            String threads             = args[ 3 ];
+            String max_heap_table_size = args[ 4 ];
+            String debug_str           = args[ 5 ];
 
             if( debug_str.equals( "true" ) ) { debug = true; }
             else { debug = false; }
 
-            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, debug: %s", url, user, pass, threads, debug );
+            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, debug: %s",
+                url, user, pass, threads, max_heap_table_size, debug );
             System.out.println( msg );
             plog.show( msg );
 
@@ -104,7 +106,18 @@ public class Main
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
             dbconTemp     = General.getConnection( url, "links_temp", user, pass );
 
+            // we now use links_prematch for tmp mem tables, so it must be writable
             //dbconPrematch.setReadOnly( true );                // Set read only
+
+            msg = String.format( "Setting MySQL max_heap_table_size to: %s", max_heap_table_size );
+            System.out.println( msg );
+            plog.show( msg );
+            try
+            {
+                String query = "SET max_heap_table_size = " + max_heap_table_size;
+                dbconPrematch.createStatement().execute( query );
+            }
+            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
 
             /*
             // only delete matches for the match ids (from table match_process) that are being [re-]computed

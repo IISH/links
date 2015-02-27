@@ -39,7 +39,7 @@ import general.PrintLogger;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-17-Feb-2015 Latest change
+ * FL-27-Feb-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -591,11 +591,11 @@ public class LinksCleanedThread extends Thread
         con = LinksSpecific.prepareForMysql( con );
 
         // get registration values from links_original.registration_o
-        String location = "";
-        String reg_type = "";
-        String date = "";
+        String location  = "";
+        String reg_type  = "";
+        String date      = "";
         String sequence  = "";
-        String guid = "";
+        String guid      = "";
 
         String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
             + " FROM registration_o WHERE id_registration = " + id;
@@ -615,15 +615,54 @@ public class LinksCleanedThread extends Thread
         }
 
         // save to links_logs
+        /*
         String insertQuery = ""
             + " INSERT INTO links_logs.`" + logTableName + "`"
             + " ( reg_key , id_source , report_class , report_type , content , date_time ,"
             + " location , reg_type , date , sequence , guid )"
-            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
-            + " \"" + location + "\" ,"
-            + " '" + reg_type + "' , '" + date + "' , '" + sequence + "' , '" + guid + "' ) ; ";
+            + " VALUES ( "
+                + id + " , "
+                        + id_source + " , "
+                + "'"   + cla.toUpperCase() + "' , "
+                        + errorCode + " , "
+                + "'"   + con + "' , NOW() ,"
+                + " \"" + location + "\" ,"
+                + " '"  + reg_type + "' , '"
+                        + date     + "' , '"
+                        + sequence + "' , '"
+                        + guid     + "' ) ; ";
+        */
 
-        if( debug ) { showMessage( insertQuery, false, true ); }
+        String s = "INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( reg_key , id_source , report_class , report_type , content ,"
+            + " date_time , location , reg_type , date , sequence , guid )"
+            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+        if( debug ) { showMessage( s, false, true ); }
+
+        String insertQuery = "";
+        try {
+            insertQuery = String.format ( s,
+                id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, guid );
+        }
+        catch( Exception ex ) {
+
+            System.out.println( "reg_key     : " + id );
+            System.out.println( "id_source   : " + id_source );
+            System.out.println( "report_class: " + cla.toUpperCase() );
+            System.out.println( "report_type : " + errorCode );
+            System.out.println( "content     : " + con );
+            System.out.println( "date_time:  : " + "NOW()" );
+            System.out.println( "location    : " + location );
+            System.out.println( "reg_type    : " + reg_type );
+            System.out.println( "date        : " + date );
+            System.out.println( "sequence    : " + sequence );
+            System.out.println( "guid        : " + guid );
+
+            showMessage( s, false, true );
+            showMessage(insertQuery, false, true);
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
 
         dbconLog.runQuery( insertQuery );
     } // addToReportRegistration
@@ -672,11 +711,11 @@ public class LinksCleanedThread extends Thread
         }
 
         // get registration values from links_original.registration_o
-        String location = "";
-        String reg_type = "";
-        String date = "";
+        String location  = "";
+        String reg_type  = "";
+        String date      = "";
         String sequence  = "";
-        String guid = "";
+        String guid      = "";
 
         if( !id_registration.isEmpty() )
         {
@@ -705,11 +744,12 @@ public class LinksCleanedThread extends Thread
             + " INSERT INTO links_logs.`" + logTableName + "`"
             + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
             + " location , reg_type , date , sequence , reg_key , guid )"
-            + " VALUES ( " + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
-            + " \"" + location + "\" ,"
-            + " '" + reg_type + "' , '" + date + "' ,"
-            + " \"" + sequence + "\" ,"
-            + " '" + id_registration + "' , '" + guid + "' ) ; ";
+            + " VALUES ( "
+                + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
+                + " \"" + location + "\" ,"
+                + " '"  + reg_type + "' , '" + date + "' ,"
+                + " \"" + sequence + "\" ,"
+                + " '"  + id_registration + "' , '" + guid + "' ) ; ";
 
         if( debug ) { showMessage( insertQuery, false, true ); }
 
@@ -5701,6 +5741,9 @@ public class LinksCleanedThread extends Thread
                 int id_registration1 = 0;
                 int id_registration2 = 0;
 
+                String id_source1  = "";
+                String id_source2  = "";
+
                 String newborn_firstname1  = "";
                 String newborn_prefix1     = "";
                 String newborn_familyname1 = "";
@@ -5713,13 +5756,13 @@ public class LinksCleanedThread extends Thread
                 String bride_prefix1     = "";
                 String bride_familyname1 = "";
 
-                String groom_firstname1  = "";
-                String groom_prefix1     = "";
-                String groom_familyname1 = "";
-
                 String bride_firstname2  = "";
                 String bride_prefix2     = "";
                 String bride_familyname2 = "";
+
+                String groom_firstname1  = "";
+                String groom_prefix1     = "";
+                String groom_familyname1 = "";
 
                 String groom_firstname2  = "";
                 String groom_prefix2     = "";
@@ -5762,7 +5805,7 @@ public class LinksCleanedThread extends Thread
 
                     if( registration_maintype == 1 )
                     {
-                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
+                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
 
                         if( debug ) { System.out.println( query_p ); }
 
@@ -5772,6 +5815,7 @@ public class LinksCleanedThread extends Thread
                         {
                             int role = rs_p.getInt( "role" );
 
+                            String id_source  = rs_p.getString( "id_source" );
                             String firstname  = rs_p.getString( "firstname" );
                             String prefix     = rs_p.getString( "prefix" );
                             String familyname = rs_p.getString( "familyname" );
@@ -5784,6 +5828,7 @@ public class LinksCleanedThread extends Thread
 
                             if( rid1 == 0 ) {
                                 id_registration1 = id_registration;
+                                id_source1       = id_source;
 
                                 newborn_firstname1  = firstname;
                                 newborn_prefix1     = prefix;
@@ -5791,6 +5836,7 @@ public class LinksCleanedThread extends Thread
                             }
                             else {
                                 id_registration2 = id_registration;
+                                id_source2       = id_source;
 
                                 newborn_firstname2  = firstname;
                                 newborn_prefix2     = prefix;
@@ -5815,7 +5861,7 @@ public class LinksCleanedThread extends Thread
 
                     if( registration_maintype == 2 )    // marriage
                     {
-                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
+                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
 
                         if( debug ) { System.out.println( query_p ); }
 
@@ -5825,6 +5871,7 @@ public class LinksCleanedThread extends Thread
                         {
                             int role = rs_p.getInt( "role" );
 
+                            String id_source  = rs_p.getString( "id_source" );
                             String firstname  = rs_p.getString( "firstname" );
                             String prefix     = rs_p.getString( "prefix" );
                             String familyname = rs_p.getString( "familyname" );
@@ -5839,11 +5886,15 @@ public class LinksCleanedThread extends Thread
                                 id_registration1 = id_registration;
 
                                 if( role == 4 ) {
+                                    id_source1  = id_source;
+
                                     bride_firstname1  = firstname;
                                     bride_prefix1     = prefix;
                                     bride_familyname1 = familyname;
                                 }
                                 else {
+                                    id_source1  = id_source;
+
                                     groom_firstname1  = firstname;
                                     groom_prefix1     = prefix;
                                     groom_familyname1 = familyname;
@@ -5853,11 +5904,15 @@ public class LinksCleanedThread extends Thread
                                 id_registration2 = id_registration;
 
                                 if( role == 4 ) {
+                                    id_source2  = id_source;
+
                                     bride_firstname2  = firstname;
                                     bride_prefix2     = prefix;
                                     bride_familyname2 = familyname;
                                 }
                                 else {
+                                    id_source2  = id_source;
+
                                     groom_firstname2  = firstname;
                                     groom_prefix2     = prefix;
                                     groom_familyname2 = familyname;
@@ -5888,7 +5943,7 @@ public class LinksCleanedThread extends Thread
 
                     else if( registration_maintype == 3 )
                     {
-                        String query_p = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
+                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
 
                         if( debug ) { System.out.println( query_p ); }
 
@@ -5898,6 +5953,7 @@ public class LinksCleanedThread extends Thread
                         {
                             int role = rs_p.getInt( "role" );
 
+                            String id_source  = rs_p.getString( "id_source" );
                             String firstname  = rs_p.getString( "firstname" );
                             String prefix     = rs_p.getString( "prefix" );
                             String familyname = rs_p.getString( "familyname" );
@@ -5910,6 +5966,7 @@ public class LinksCleanedThread extends Thread
 
                             if( rid1 == 0 ) {
                                 id_registration1 = id_registration;
+                                id_source1       = id_source;
 
                                 deceased_firstname1  = firstname;
                                 deceased_prefix1     = prefix;
@@ -5917,6 +5974,7 @@ public class LinksCleanedThread extends Thread
                             }
                             else {
                                 id_registration2 = id_registration;
+                                id_source2       = id_source;
 
                                 deceased_firstname2  = firstname;
                                 deceased_prefix2     = prefix;
@@ -5947,7 +6005,8 @@ public class LinksCleanedThread extends Thread
 
                         //String warn = "Duplicate registration: keep id: " + id_registration1 + ", delete id: " + id_registration2;
                         //addToReportRegistration( int id, String id_source, int errorCode, String value )
-                        addToReportRegistration( id_registration2, "", 1, "" );       // warning 1
+                        if( id_source2.isEmpty() ) { id_source2 = "0"; }    // it must be a valid integer string for the log table
+                        addToReportRegistration( id_registration2, id_source2, 1, "" );       // warning 1
 
                         // Deleting duplicate registration
                         String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration2;

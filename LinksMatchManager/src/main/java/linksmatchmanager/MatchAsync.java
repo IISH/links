@@ -9,6 +9,7 @@ import java.util.Vector;
 import linksmatchmanager.DataSet.QuerySet;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
+import linksmatchmanager.MemTables;
 
 /**
  * @author Omar Azouguagh
@@ -180,7 +181,7 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
-            System.out.println( "process id: " + qgs.get( 0 ).id );
+            System.out.println( String.format( "Thread id %d; process id: ", threadId, qgs.get( 0 ).id ) );
 
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
@@ -205,13 +206,10 @@ public class MatchAsync extends Thread
             System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
 
             // Create memory tables to hold the ls_* tables
-            // need much more heap for ls_ tables
-            long max_heap_table_size = ( 512 + 64 + 32 ) * 1024 * 1024;    // default is 16 GB: 16 * 1024 * 1024
-            System.out.println( "max_heap_table_size: " + max_heap_table_size );
             String table_firstname_src  = "ls_firstname";
             String table_familyname_src = "ls_familyname";
-            String name_postfix = "_mem";
-            memtables_create( threadId, max_heap_table_size, table_firstname_src, table_familyname_src, name_postfix );
+            String name_postfix = "_mem" + threadId;        // each thread his own ls_ tables
+            memtables_create( threadId, table_firstname_src, table_familyname_src, name_postfix );
 
             // and now change the names to the actual table names used !
             lvs_table_familyname += name_postfix;
@@ -696,15 +694,12 @@ public class MatchAsync extends Thread
     } // run
 
 
-    private void memtables_create( long threadId, long max_heap_table_size, String table_firstname_src, String table_familyname_src, String name_postfix )
+    private void memtables_create( long threadId, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         System.out.println( "Thread id "+ threadId + "; memtables_create()" );
 
         try
         {
-            String query = "SET max_heap_table_size = " + max_heap_table_size;
-            dbconPrematch.createStatement().execute( query );
-
             String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
             String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
 
@@ -743,27 +738,27 @@ public class MatchAsync extends Thread
         {
             String[] name_queries =
             {
-                "DROP TABLE IF EXISTS " + dst_table,
-
                 "CREATE TABLE " + dst_table
-                    + " ( "
-                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
-                    + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                    + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                    + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
-                    + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
-                    + "  `name_int_1` int(11) DEFAULT NULL,"
-                    + "  `name_int_2` int(11) DEFAULT NULL,"
-                    + "  `value` tinyint(3) unsigned DEFAULT NULL,"
-                    + "  PRIMARY KEY (`id`),"
-                    + "  KEY `value` (`value`),"
-                    + "  KEY `length_1` (`length_1`),"
-                    + "  KEY `length_2` (`length_2`),"
-                    + "  KEY `name_1` (`name_str_1`),"
-                    + "  KEY `name_2` (`name_str_2`),"
-                    + "  KEY `n_int_1` (`name_int_1`)"
-                    + " )"
-                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+                + " ( "
+                + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
+                + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
+                + "  `name_int_1` int(11) DEFAULT NULL,"
+                + "  `name_int_2` int(11) DEFAULT NULL,"
+                + "  `value` tinyint(3) unsigned DEFAULT NULL,"
+                + "  PRIMARY KEY (`id`),"
+                + "  KEY `value` (`value`),"
+                + "  KEY `length_1` (`length_1`),"
+                + "  KEY `length_2` (`length_2`),"
+                + "  KEY `name_1` (`name_str_1`),"
+                + "  KEY `name_2` (`name_str_2`),"
+                + "  KEY `n_int_1` (`name_int_1`)"
+                + " )"
+                + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+                "TRUNCATE TABLE " + dst_table,
 
                 "ALTER TABLE " + dst_table + " DISABLE KEYS",
 
