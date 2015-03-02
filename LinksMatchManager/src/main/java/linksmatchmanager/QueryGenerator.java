@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-23-Feb-2015 Latest change
+ * FL-01-Mar-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -42,19 +42,23 @@ public class QueryGenerator
     private ResultSet rs;
 
     /**
-     * Constructor, Sets connection
+     * Constructor
      * @param plog
      * @param dbconMatch
-     * @throws Exception 
+     * @throws Exception
+     *
+     * There is just one QueryGenerator containing all input variables, plus resultSet from match_process.
+     * So it could/should have been a singleton object.
      */
     public QueryGenerator( PrintLogger plog, Connection dbconMatch ) throws Exception
     {
         this.plog = plog;
+
         rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process" );   // Get the input
 
-        is = new InputSet();        // Put into list
+        is = new InputSet();
 
-        setToArray();
+        setToArray();   // fill 1 or more QueryGroupSets, and add them to the InputSet 'is'
     }
 
 
@@ -106,7 +110,7 @@ public class QueryGenerator
             nline++;
             String match = rs.getString( "match" );
 
-            if( !match.equalsIgnoreCase( "y" ) ) {
+            if( ! match.equalsIgnoreCase( "y" ) ) {
                 nline_n++;
                 continue;
             }
@@ -139,7 +143,6 @@ public class QueryGenerator
                 System.out.println( "s1_range: " + s1_range );
                 System.out.println( "s2_range: " + s2_range );
             }
-
 
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
@@ -215,10 +218,14 @@ public class QueryGenerator
                 once = true;
             }
 
-            // evt for/while loop
+            // FL-02-Mar-2015
+            // If 'once' is true, the next while loop is executed only once, and the InputSet will contain just
+            // one QueryGroupSet. With a given s1_range > 0 from the match_process table, multiple QueryGroupSets
+            // will be generated. The variables in those QueryGroupSets will be mostly the same; the difference
+            // lies in the values for s1_days, s2_days and s1_range.
             while( loop )
             {
-                // create first one
+                // collect the above variables in a QuerySet object
                 QuerySet qs = new QuerySet();
 
                 // new
@@ -507,26 +514,24 @@ public class QueryGenerator
 
                 // clean
                 if( qs.query1.endsWith( " AND " ) ) {
-                    qs.query1 = qs.query1.substring(0, (qs.query1.length() - 4));
+                    qs.query1 = qs.query1.substring( 0, (qs.query1.length() - 4) );
                 }
 
                 if( qs.query2.endsWith( " AND " ) ) {
-                    qs.query2 = qs.query2.substring(0, (qs.query2.length() - 4));
+                    qs.query2 = qs.query2.substring( 0, (qs.query2.length() - 4) );
                 }
 
                 // Order
                 qs.query1 += "ORDER BY ego_familyname LIMIT 0,100000000";
                 qs.query2 += "ORDER BY ego_familyname LIMIT 0,100000000";
 
-                // Add set to group
-                qgs.add( qs );
+                qgs.add( qs );      // add the QuerySet to the QueryGroupSet
                 counter++;
                 
                 if( once ) { loop = false; }
             }
 
-            // Add qgs to is
-            is.add( qgs );
+            is.add( qgs );          // add the QueryGroupSet to the InputSet
         }
 
         String msg = String.format( "match_process lines: %s, using %d, ignoring %d", nline, nline_y, nline_n );

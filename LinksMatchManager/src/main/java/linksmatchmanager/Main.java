@@ -20,6 +20,7 @@ package linksmatchmanager;
 
 import java.sql.Connection;
 
+import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
 
@@ -119,45 +120,22 @@ public class Main
             }
             catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
 
-            /*
-            // only delete matches for the match ids (from table match_process) that are being [re-]computed
-            String query = "TRUNCATE table matches";        // delete previous matches
-            System.out.println( query );
-            plog.show( query );
-            conMatch.createStatement().execute( query );
-            */
+            // Create a single QueryGenerator object, that contains the input from the match_process table.
+            // The input is derived from the 'y' records in the match_process table.
+            QueryGenerator queryGen = new QueryGenerator( plog, dbconMatch );
 
-            /** 
-             * Run Query Generator to generate queries.
-             * As input we use the records from the match_process table in the links_match db
-             */
-            QueryGenerator mis = new QueryGenerator( plog, dbconMatch );
+            // The InputSet 'is', is the only accessible object from queryGen
+            InputSet inputSet = queryGen.is;
 
-            // TEST LINE: Print queries to check 
-            // System.out.println(mis.printToString());
-
-            // KM-01-Dec-2014: frequencies not used for matching,
-            // but used for automatic matching based on Levenshtein
-            /* Frequency In this stadium we do not use the frequencies */
-            // log.show("Loading Frequency tables");
-
-            // 
-            // Create instance
-            // FrequencyLoader fl = new FrequencyLoader(url, user, pass);
-
-            // Load the frequencies
-            // fl.load();
-
-
-            int misSize = mis.is.getSize();
-            plog.show( String.format( "Number of matching records from links_match.match_process: %d\n", misSize ) );
-            if( misSize == 0 ) {
+            int isSize = inputSet.getSize();
+            plog.show( String.format( "Number of matching records from links_match.match_process: %d\n", isSize ) );
+            if( isSize == 0 ) {
                 System.out.println( "Nothing to do; Stop." );
                 plog.show( "Nothing to do; Stop." );
             }
 
             // Loop through the records from the match_process table
-            for( int i = 0; i < mis.is.getSize(); i++ )
+            for( int i = 0; i < isSize; i++ )
             {
                 // The VariantLoader is broken.
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
@@ -196,17 +174,45 @@ public class Main
                 }
                 */
 
-                // Show user the active record and total
-                plog.show( "Record " + (i + 1) + " of " + mis.is.getSize() );
 
-                /**
-                 * Get a QueryGroupSet object which contains a arraylist of objects
-                 * every object contains information about the subqueries
-                 */
-                QueryGroupSet qgs = mis.is.get( i );
+                plog.show( "Record " + (i + 1) + " of " + isSize );     // Show user the active record and total
 
-                //List< MatchAsync > threads = new ArrayList< MatchAsync >();
+                // The inputSet contains an ArrayList< QueryGroupSet >
+                // Each QueryGroupSet contains an ArrayList< QuerySet >
+                // A QuerySet contains a row of the match_process table, plus the generated s1 & s2 queries.
+                QueryGroupSet qgs = inputSet.get( i );
 
+                // TODO Remember the first ls_firstname and ls_familyname, they go to a memory copy
+                // If the ls_firstname and ls_familyname do not change, we keep on providing the
+                // memory tables to matchAsync, otherwise they have to use the original tables.
+
+
+                String lvs_table_familyname = qgs.get( 0 ).prematch_familyname;
+                String lvs_table_firstname  = qgs.get( 0 ).prematch_firstname;
+
+                System.out.println( "lvs familyname table: " + lvs_table_familyname );
+                System.out.println( "lvs firstname  table: " + lvs_table_firstname );
+
+                int lvs_dist_familyname = qgs.get( 0 ).prematch_familyname_value;
+                int lvs_dist_firstname  = qgs.get( 0 ).prematch_firstname_value;
+
+                System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
+                System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
+
+                // Create memory tables to hold the ls_* tables
+                String table_firstname_src  = "ls_firstname";
+                String table_familyname_src = "ls_familyname";
+                String name_postfix = "_mem";
+
+                // creates table_firstname_mem & table_familyname_mem
+                memtables_create( table_firstname_src, table_familyname_src, name_postfix );
+
+                // and now change the names to the actual table names used !
+                String lvs_table_familyname_use = lvs_table_familyname + name_postfix;
+                String lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
+
+
+                // The qgs QueryGroupSet is an ArrayList< QuerySet >
                 // Loop through ranges/subqueries
                 for( int j = 0; j < qgs.getSize(); j++ )
                 {
@@ -227,10 +233,12 @@ public class Main
                     MatchAsync ma;
                     // Here begins threading
                     if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, dbconTemp, rootFirstName, rootFamilyName, true );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, inputSet, dbconPrematch, dbconMatch, dbconTemp,
+                                lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
                     }
                     else { // 0
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, mis, dbconPrematch, dbconMatch, dbconTemp, variantFirstName, variantFamilyName );
+                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, inputSet, dbconPrematch, dbconMatch, dbconTemp,
+                                lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
                     }
 
                     plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
@@ -238,10 +246,124 @@ public class Main
                     ma.start();
                     //ma.join();        // blocks parent thread?
                 }
+
+                // the tables should only be dropped after all threads have finished.
+                //memtables_drop( table_firstname_src, table_familyname_src, name_postfix );
+
             }
         }
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exeption: " + ex.getMessage() ); }
     } // main
+
+
+    private static void memtables_create( String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        System.out.println( "memtables_create()" );
+
+        try
+        {
+            //String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
+            //String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+
+            // without backticks
+            String table_firstname_dst  = table_firstname_src  + name_postfix;
+            String table_familyname_dst = table_familyname_src + name_postfix;
+
+            memtable_ls_name( table_firstname_src, table_firstname_dst );
+
+            memtable_ls_name( table_familyname_src, table_familyname_dst );
+        }
+        catch( Exception ex ) { System.out.println( "Exception in memtables_create(): " + ex.getMessage() ); }
+    } // memtables_create
+
+
+    private static void memtables_drop( String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        System.out.println( "memtables_drop()" );
+
+        try
+        {
+            //String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
+            //String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+
+            // without backticks
+            String table_firstname_dst  = table_firstname_src  + name_postfix;
+            String table_familyname_dst = table_familyname_src + name_postfix;
+
+            String query = "DROP TABLE " + table_firstname_dst;
+            dbconPrematch.createStatement().execute( query );
+
+            query = "DROP TABLE " + table_familyname_dst;
+            dbconPrematch.createStatement().execute( query );
+        }
+        catch( Exception ex ) { System.out.println( "Exception in memtables_drop(): " + ex.getMessage() ); }
+    } // memtables_drop
+
+
+    private static void memtable_ls_name( String src_table, String dst_table )
+    {
+        System.out.println( "memtable_ls_name() copying " + src_table + " -> " + dst_table );
+
+        // Notice: leave out original keys if we do not need them now
+        /*
+                    + "  PRIMARY KEY (`id`),"
+                    + "  KEY `value` (`value`),"
+                    + "  KEY `length_1` (`length_1`),"
+                    + "  KEY `length_2` (`length_2`),"
+                    + "  KEY `name_str_1` (`name_str_1`),"
+                    + "  KEY `name_str_2` (`name_str_2`),"
+                    + "  KEY `name_int_1` (`name_int_1`)"
+        */
+
+        try
+        {
+            String[] name_queries =
+            {
+                "CREATE TABLE " + dst_table
+                    + " ( "
+                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                    + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                    + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                    + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
+                    + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
+                    + "  `name_int_1` int(11) DEFAULT NULL,"
+                    + "  `name_int_2` int(11) DEFAULT NULL,"
+                    + "  `value` tinyint(3) unsigned DEFAULT NULL,"
+                    + "  PRIMARY KEY (`id`),"
+                    + "  KEY `value` (`value`),"
+                    + "  KEY `name_int_1` (`name_int_1`)"
+                    + " )"
+                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+                "TRUNCATE TABLE " + dst_table,
+
+                "ALTER TABLE " + dst_table + " DISABLE KEYS",
+
+                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
+
+                "ALTER TABLE " + dst_table + " ENABLE KEYS"
+            };
+
+            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
+        }
+        catch( Exception ex ) {
+            String err = ex.getMessage();
+            String msg = "Exception in memtable_ls_name(): " + err;
+            System.out.println( msg );
+
+            try {
+                 plog.show( msg );
+                if( err.equals( "The table '" + dst_table + "' is full" ) ) {
+                    System.out.println( "EXIT" ); plog.show( "EXIT" );
+                    System.exit( 1 );       // should not continue; would give wrong matching results.
+                }
+            }
+            catch( Exception ex1 ) {
+                System.out.println( "EXIT" );
+                System.exit( 1 );
+            }
+        }
+    } // memtable_ls_name
 
 
     /**

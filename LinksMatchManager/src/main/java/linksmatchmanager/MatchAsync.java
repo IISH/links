@@ -3,13 +3,13 @@ package linksmatchmanager;
 import java.sql.Connection;
 import java.sql.ResultSet;
 
-//import java.util.ArrayList;
 import java.util.Vector;
 
-import linksmatchmanager.DataSet.QuerySet;
+import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
-import linksmatchmanager.MemTables;
+import linksmatchmanager.DataSet.QuerySet;
+
 
 /**
  * @author Omar Azouguagh
@@ -35,11 +35,14 @@ public class MatchAsync extends Thread
     PrintLogger plog;
 
     QueryGroupSet qgs;
-    QueryGenerator mis;
+    InputSet inputSet;
 
     Connection dbconPrematch;
     Connection dbconMatch;
     Connection dbconTemp;
+
+    String lvs_table_firstname;
+    String lvs_table_familyname;
 
     int[][] variantFirstName;
     int[][] variantFamilyName;
@@ -62,11 +65,14 @@ public class MatchAsync extends Thread
         PrintLogger plog,
 
         QueryGroupSet qgs,
-        QueryGenerator mis,
+        InputSet inputSet,
 
         Connection dbconPrematch,
         Connection dbconMatch,
         Connection dbconTemp,
+
+        String lvs_table_firstname,
+        String lvs_table_familyname,
 
         int[][] variantFirstName,
         int[][] variantFamilyName
@@ -83,11 +89,14 @@ public class MatchAsync extends Thread
         this.plog = plog;
 
         this.qgs = qgs;
-        this.mis = mis;
+        this.inputSet = inputSet;
 
         this.dbconPrematch = dbconPrematch;
         this.dbconMatch    = dbconMatch;
         this.dbconTemp     = dbconTemp;
+
+        this.lvs_table_firstname  = lvs_table_firstname;
+        this.lvs_table_familyname = lvs_table_familyname;
 
         this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
@@ -109,11 +118,14 @@ public class MatchAsync extends Thread
         PrintLogger plog,
 
         QueryGroupSet qgs,
-        QueryGenerator mis,
+        InputSet inputSet,
 
         Connection dbconPrematch,
         Connection dbconMatch,
         Connection dbconTemp,
+
+        String lvs_table_firstname,
+        String lvs_table_familyname,
 
         int[][] rootFirstName,
         int[][] rootFamilyName,
@@ -132,11 +144,14 @@ public class MatchAsync extends Thread
         this.plog = plog;
 
         this.qgs = qgs;
-        this.mis = mis;
+        this.inputSet = inputSet;
 
         this.dbconPrematch = dbconPrematch;
         this.dbconMatch    = dbconMatch;
         this.dbconTemp     = dbconTemp;
+
+        this.lvs_table_firstname  = lvs_table_firstname;
+        this.lvs_table_familyname = lvs_table_familyname;
 
         this.rootFirstName  = rootFirstName;
         this.rootFamilyName = rootFamilyName;
@@ -181,40 +196,25 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
+            // TODO: WHY here qgs.get( 0 ) and below qgs.get( j ) ???
             System.out.println( String.format( "Thread id %d; process id: ", threadId, qgs.get( 0 ).id ) );
 
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
 
+            // Levenshtein distances to use to get the variant names
+            int lvs_dist_firstname  = qs.prematch_firstname_value;
+            int lvs_dist_familyname = qs.prematch_familyname_value;
+
+            msg = String.format( "Thread id %d; use firstname  levenshtein distance for variants: %d", threadId, lvs_dist_firstname );
+            System.out.println( msg ); plog.show( msg );
+            msg = String.format( "Thread id %d; use familyname levenshtein distance for variants: %d", threadId, lvs_dist_familyname );
+            System.out.println( msg ); plog.show( msg );
+
             msg = "s1 query:\n" + qs.query1;
-            System.out.println( msg );
-            plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
             msg = "s2 query:\n" + qs.query2;
-            System.out.println( msg );
-            plog.show( msg );
-
-            String lvs_table_familyname = qgs.get( 0 ).prematch_familyname;
-            String lvs_table_firstname  = qgs.get( 0 ).prematch_firstname;
-
-            System.out.println( "lvs familyname table: " + lvs_table_familyname );
-            System.out.println( "lvs firstname  table: " + lvs_table_firstname );
-
-            int lvs_dist_familyname = qgs.get( 0 ).prematch_familyname_value;
-            int lvs_dist_firstname  = qgs.get( 0 ).prematch_firstname_value;
-
-            System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
-            System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
-
-            // Create memory tables to hold the ls_* tables
-            String table_firstname_src  = "ls_firstname";
-            String table_familyname_src = "ls_familyname";
-            String name_postfix = "_mem" + threadId;        // each thread his own ls_ tables
-            memtables_create( threadId, table_firstname_src, table_familyname_src, name_postfix );
-
-            // and now change the names to the actual table names used !
-            lvs_table_familyname += name_postfix;
-            lvs_table_firstname  += name_postfix;
-
+            System.out.println( msg ); plog.show( msg );
 
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // Its input is a QuerySet and a database connection object.
@@ -246,8 +246,14 @@ public class MatchAsync extends Thread
 
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
-                //int ids1 = ql.s1_id_base.get( s1_idx );
-                //if( ids1 != 88685 ) { continue; }
+                // debug false 'null' duplicate
+                int ids1 = ql.s1_id_base.get( s1_idx );
+                if( ids1 == 2206518 )
+                { debug = true; debugfail = true; }
+                else {
+                    debug = false; debugfail = false;
+                    continue;
+                }
 
                 /*
                 if( n_recs > 10 ) {
@@ -270,8 +276,7 @@ public class MatchAsync extends Thread
                 }
 
                 // Get familyname of Set 1
-                int s1EgoFamName = ql.s1_ego_familyname    .get(s1_idx);
-
+                int    s1EgoFamName    = ql.s1_ego_familyname    .get( s1_idx );
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                 String s1EgoFirNameStr = ql.s1_ego_firstname1_str.get( s1_idx );
                 if( debug ) { System.out.printf( "s1 ego familyname: %s,  s1 ego firstname1: %s\n", s1EgoFamNameStr, s1EgoFirNameStr ); }
@@ -452,6 +457,11 @@ public class MatchAsync extends Thread
                     int s2FatherFirName4  = ql.s2_father_firstname4 .get( s2_idx );
                     int s2PartnerFirName4 = ql.s2_partner_firstname4.get( s2_idx );
 
+                    if( s1MotherFirName1 == 22823 || s2MotherFirName1 == 22823 ) {
+                        System.out.println( "HEBBES!" );
+                        System.exit( 0 );
+                    }
+
                     // Check the firstnames of ego
                     if( qs.int_firstname_e > 0 ) {
                         int lv_dist = checkFirstName( qs.firstname,
@@ -561,7 +571,7 @@ public class MatchAsync extends Thread
                     {
                         n_match++;
 
-                        int id_match_process = mis.is.get( i ).get( 0 ).id;
+                        int id_match_process = inputSet.get( i ).get( 0 ).id;
 
                         int id_s1 = ql.s1_id_base.get( s1_idx );
                         int id_s2 = ql.s2_id_base.get( lv_idx );
@@ -587,11 +597,6 @@ public class MatchAsync extends Thread
             }
 
             pm.removeProcess();
-
-            // remove the memory tables
-            // we could gain some speed by using the same mem tables for all threads, but via
-            // match_process they could specify different tables for different threads: normal, _first, _strict.
-            memtables_drop( threadId, table_firstname_src, table_familyname_src, name_postfix );
 
             msg = String.format( "Thread id %d; s1 records processed: %d", threadId, n_recs );
             System.out.println( msg );
@@ -692,85 +697,6 @@ public class MatchAsync extends Thread
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
     } // run
-
-
-    private void memtables_create( long threadId, String table_firstname_src, String table_familyname_src, String name_postfix )
-    {
-        System.out.println( "Thread id "+ threadId + "; memtables_create()" );
-
-        try
-        {
-            String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
-            String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
-
-            memtable_ls_name( threadId, table_firstname_src, table_firstname_dst );
-
-            memtable_ls_name( threadId, table_familyname_src, table_familyname_dst );
-        }
-        catch( Exception ex ) { System.out.println( "Exception in memtables_create(): " + ex.getMessage() ); }
-    } // memtables_create
-
-
-    private void memtables_drop( long threadId, String table_firstname_src, String table_familyname_src, String name_postfix )
-    {
-        System.out.println( "Thread id "+ threadId + "; memtables_drop()" );
-
-        try
-        {
-            String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
-            String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
-
-            String query = "DROP TABLE " + table_firstname_dst;
-            dbconPrematch.createStatement().execute( query );
-
-            query = "DROP TABLE " + table_familyname_dst;
-            dbconPrematch.createStatement().execute( query );
-        }
-        catch( Exception ex ) { System.out.println( "Exception in memtables_drop(): " + ex.getMessage() ); }
-    } // memtables_drop
-
-
-    private void memtable_ls_name( long threadId, String src_table, String dst_table )
-    {
-        System.out.println( "Thread id "+ threadId + "; memtable_ls_name() copying " + src_table + " -> " + dst_table );
-
-        try
-        {
-            String[] name_queries =
-            {
-                "CREATE TABLE " + dst_table
-                + " ( "
-                + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
-                + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
-                + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
-                + "  `name_int_1` int(11) DEFAULT NULL,"
-                + "  `name_int_2` int(11) DEFAULT NULL,"
-                + "  `value` tinyint(3) unsigned DEFAULT NULL,"
-                + "  PRIMARY KEY (`id`),"
-                + "  KEY `value` (`value`),"
-                + "  KEY `length_1` (`length_1`),"
-                + "  KEY `length_2` (`length_2`),"
-                + "  KEY `name_1` (`name_str_1`),"
-                + "  KEY `name_2` (`name_str_2`),"
-                + "  KEY `n_int_1` (`name_int_1`)"
-                + " )"
-                + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
-
-                "TRUNCATE TABLE " + dst_table,
-
-                "ALTER TABLE " + dst_table + " DISABLE KEYS",
-
-                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
-
-                "ALTER TABLE " + dst_table + " ENABLE KEYS"
-            };
-
-            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
-        }
-        catch( Exception ex ) { System.out.println( "Exception in memtable_ls_name(): " + ex.getMessage() ); }
-    } // memtable_ls_name
 
 
     /**
