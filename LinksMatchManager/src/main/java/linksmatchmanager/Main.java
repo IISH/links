@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 package linksmatchmanager;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.QueryGroupSet;
@@ -29,7 +30,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-23-Feb-2015 Latest change
+ * FL-03-Mar-2015 Latest change
  */
 
 public class Main
@@ -60,6 +61,8 @@ public class Main
     public static void main( String[] args )
     {
         try {
+            long matchStart = System.currentTimeMillis();
+
             plog = new PrintLogger( "LMM-" );
             plog.show( "Links Match Manager 2.0" );
 
@@ -134,6 +137,39 @@ public class Main
                 plog.show( "Nothing to do; Stop." );
             }
 
+            // TODO Remember the first ls_firstname and ls_familyname, they go to a memory copy
+            // If the ls_firstname and ls_familyname do not change, we keep on providing the
+            // memory tables to matchAsync, otherwise they have to use the original tables.
+
+            QueryGroupSet tmp_qgs = inputSet.get( 0 );
+
+            String lvs_table_familyname = tmp_qgs.get( 0 ).prematch_familyname;
+            String lvs_table_firstname  = tmp_qgs.get( 0 ).prematch_firstname;
+
+            System.out.println( "lvs familyname table: " + lvs_table_familyname );
+            System.out.println( "lvs firstname  table: " + lvs_table_firstname );
+
+            int lvs_dist_familyname = tmp_qgs.get( 0 ).prematch_familyname_value;
+            int lvs_dist_firstname  = tmp_qgs.get( 0 ).prematch_firstname_value;
+
+            System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
+            System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
+
+            // Create memory tables to hold the ls_* tables
+            String table_firstname_src  = "ls_firstname";
+            String table_familyname_src = "ls_familyname";
+            String name_postfix = "_mem";
+
+            // creates table_firstname_mem & table_familyname_mem
+            memtables_create( table_firstname_src, table_familyname_src, name_postfix );
+
+            // and now change the names to the actual table names used !
+            String lvs_table_familyname_use = lvs_table_familyname + name_postfix;
+            String lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
+
+            msg = "Before threading";
+            elapsedShowMessage( msg, matchStart, System.currentTimeMillis() );
+
             // Loop through the records from the match_process table
             for( int i = 0; i < isSize; i++ )
             {
@@ -182,36 +218,6 @@ public class Main
                 // A QuerySet contains a row of the match_process table, plus the generated s1 & s2 queries.
                 QueryGroupSet qgs = inputSet.get( i );
 
-                // TODO Remember the first ls_firstname and ls_familyname, they go to a memory copy
-                // If the ls_firstname and ls_familyname do not change, we keep on providing the
-                // memory tables to matchAsync, otherwise they have to use the original tables.
-
-
-                String lvs_table_familyname = qgs.get( 0 ).prematch_familyname;
-                String lvs_table_firstname  = qgs.get( 0 ).prematch_firstname;
-
-                System.out.println( "lvs familyname table: " + lvs_table_familyname );
-                System.out.println( "lvs firstname  table: " + lvs_table_firstname );
-
-                int lvs_dist_familyname = qgs.get( 0 ).prematch_familyname_value;
-                int lvs_dist_firstname  = qgs.get( 0 ).prematch_firstname_value;
-
-                System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
-                System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
-
-                // Create memory tables to hold the ls_* tables
-                String table_firstname_src  = "ls_firstname";
-                String table_familyname_src = "ls_familyname";
-                String name_postfix = "_mem";
-
-                // creates table_firstname_mem & table_familyname_mem
-                memtables_create( table_firstname_src, table_familyname_src, name_postfix );
-
-                // and now change the names to the actual table names used !
-                String lvs_table_familyname_use = lvs_table_familyname + name_postfix;
-                String lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
-
-
                 // The qgs QueryGroupSet is an ArrayList< QuerySet >
                 // Loop through ranges/subqueries
                 for( int j = 0; j < qgs.getSize(); j++ )
@@ -256,14 +262,50 @@ public class Main
     } // main
 
 
+    public static String millisec2hms( long millisec_start, long millisec_stop ) {
+        long millisec = millisec_stop - millisec_start;
+        long sec = millisec / 1000;
+
+        long hour = sec / 3600;
+        long min = sec / 60;
+        long rmin = min - 60 * hour;
+        long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
+
+        String hms = "";
+        if( hour == 0 ) {
+            if( rmin == 0 ) {
+                double fsec = ((double)millisec) / 1000.0;
+                //hms = String.format("[%d sec]", rsec );
+                hms = String.format("[%.1f sec]", fsec );
+            }
+            else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+        }
+        else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
+
+        return hms;
+    }
+
+
+    /**
+     * @param msg_in
+     * @param start
+     * @param stop
+     */
+    private static void elapsedShowMessage( String msg_in, long start, long stop )
+    {
+        String elapsed = millisec2hms( start, stop );
+        String msg_out = msg_in + " " + elapsed + " elapsed";
+        System.out.println( msg_out);
+        try { plog.show( msg_out ); } catch( Exception ex ) { System.out.println( ex.getMessage()); }
+    } // elapsedShowMessage
+
+
     private static void memtables_create( String table_firstname_src, String table_familyname_src, String name_postfix )
     {
-        System.out.println( "memtables_create()" );
-
         try
         {
-            //String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
-            //String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+            String msg = "memtables_create()";
+            System.out.println( msg ); plog.show( msg );
 
             // without backticks
             String table_firstname_dst  = table_firstname_src  + name_postfix;
@@ -273,36 +315,71 @@ public class Main
 
             memtable_ls_name( table_familyname_src, table_familyname_dst );
         }
-        catch( Exception ex ) { System.out.println( "Exception in memtables_create(): " + ex.getMessage() ); }
+        catch( Exception ex ) {
+            String err = "Exception in memtables_create(): " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
     } // memtables_create
 
 
-    private static void memtables_drop( String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtable_drop( String table_name )
     {
-        System.out.println( "memtables_drop()" );
+        try {
+            String msg = "memtable_drop() " + table_name;
+            System.out.println( msg ); plog.show( msg );
 
-        try
-        {
-            //String table_firstname_dst  = "`" + table_firstname_src  + name_postfix + "`";
-            //String table_familyname_dst = "`" + table_familyname_src + name_postfix + "`";
+            String query = "DROP TABLE " + table_name;
 
-            // without backticks
-            String table_firstname_dst  = table_firstname_src  + name_postfix;
-            String table_familyname_dst = table_familyname_src + name_postfix;
-
-            String query = "DROP TABLE " + table_firstname_dst;
-            dbconPrematch.createStatement().execute( query );
-
-            query = "DROP TABLE " + table_familyname_dst;
             dbconPrematch.createStatement().execute( query );
         }
-        catch( Exception ex ) { System.out.println( "Exception in memtables_drop(): " + ex.getMessage() ); }
-    } // memtables_drop
+        catch( Exception ex ) {
+            String err = "Exception in memtables_drop(): " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+    } // memtable_drop
+
+
+    private static boolean memtable_ls_exists( String table_name )
+    {
+        boolean exists = false;
+
+        String query = "SELECT COUNT(*) AS count FROM information_schema.tables " +
+            "WHERE table_schema = 'links_prematch' AND table_name = '" + table_name + "'";
+
+        try {
+            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+            while( rs.next() )
+            {
+                int count = rs.getInt( "count" );
+                if( count == 1 ) { exists = true; }
+            }
+        }
+        catch( Exception ex ) {
+        String err = "Exception in memtables_drop_family(): " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+
+        return exists;
+    }
 
 
     private static void memtable_ls_name( String src_table, String dst_table )
     {
-        System.out.println( "memtable_ls_name() copying " + src_table + " -> " + dst_table );
+        if( memtable_ls_exists( dst_table ) ) {
+            String msg = "memtable_ls_name() deleting previous " + dst_table;
+            System.out.println( msg );
+            try { plog.show( msg ); } catch( Exception ex ) { ; }
+
+            memtable_drop( dst_table );
+        }
+
+        String msg = "memtable_ls_name() copying " + src_table + " -> " + dst_table;
+        System.out.println( msg );
+        try { plog.show( msg ); } catch( Exception ex ) { ; }
+
 
         // Notice: leave out original keys if we do not need them now
         /*
@@ -348,11 +425,11 @@ public class Main
         }
         catch( Exception ex ) {
             String err = ex.getMessage();
-            String msg = "Exception in memtable_ls_name(): " + err;
+            msg = "Exception in memtable_ls_name(): " + err;
             System.out.println( msg );
 
             try {
-                 plog.show( msg );
+                plog.show( msg );
                 if( err.equals( "The table '" + dst_table + "' is full" ) ) {
                     System.out.println( "EXIT" ); plog.show( "EXIT" );
                     System.exit( 1 );       // should not continue; would give wrong matching results.
@@ -379,7 +456,11 @@ public class Main
             dbconMatch.createStatement().execute( query );
             dbconMatch.createStatement().close();
         }
-        catch( Exception ex ) { System.out.println( "LinksMatchManager/deleteMatches() Exception: " + ex.getMessage() ); }
+        catch( Exception ex ) {
+            String err = "LinksMatchManager/deleteMatches() Exception: " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
     } // deleteMatches
 
 

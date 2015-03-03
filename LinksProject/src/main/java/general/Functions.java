@@ -42,7 +42,7 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * <p/>
- * FL-15-Aug-2014 Latest change
+ * FL-03-Mar-2015 Latest change
  *
  */
 public class Functions
@@ -475,27 +475,27 @@ public class Functions
     }
 
 
-     public static String millisec2hms( long millisec_start, long millisec_stop ) {
-         long millisec = millisec_stop - millisec_start;
-         long sec = millisec / 1000;
+    public static String millisec2hms( long millisec_start, long millisec_stop ) {
+        long millisec = millisec_stop - millisec_start;
+        long sec = millisec / 1000;
 
-         long hour = sec / 3600;
-         long min = sec / 60;
-         long rmin = min - 60 * hour;
-         long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
+        long hour = sec / 3600;
+        long min = sec / 60;
+        long rmin = min - 60 * hour;
+        long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
 
-         String hms = "";
-         if( hour == 0 ) {
-             if( rmin == 0 ) {
-                 double fsec = ((double)millisec) / 1000.0;
-                 //hms = String.format("[%d sec]", rsec );
-                 hms = String.format("[%.1f sec]", fsec );
-             }
-             else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
-         }
-         else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
+        String hms = "";
+        if( hour == 0 ) {
+            if( rmin == 0 ) {
+                double fsec = ((double)millisec) / 1000.0;
+                //hms = String.format("[%d sec]", rsec );
+                hms = String.format("[%.1f sec]", fsec );
+            }
+            else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+        }
+        else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
 
-         return hms;
+        return hms;
     }
 
 

@@ -15,7 +15,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-26-Feb-2015 Latest change
+ * FL-03-Mar-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -187,17 +187,17 @@ public class MatchAsync extends Thread
 
         try
         {
+            long threadStart = System.currentTimeMillis();
+
             long threadId = Thread.currentThread().getId();
             String msg = String.format( "\nMatchAsync/run(): thread id %d running", threadId );
-            System.out.println( msg );
-            plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
+
+            msg = String.format( "Thread id %d; process id: %d", threadId, qgs.get( 0 ).id );
+            System.out.println( msg ); plog.show( msg );
 
             msg = String.format( "Thread id %d; Range %d of %d", threadId, (j + 1), qgs.getSize() );
-            System.out.println( msg );
-            plog.show( msg );
-
-            // TODO: WHY here qgs.get( 0 ) and below qgs.get( j ) ???
-            System.out.println( String.format( "Thread id %d; process id: ", threadId, qgs.get( 0 ).id ) );
+            System.out.println( msg ); plog.show( msg );
 
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
             QuerySet qs = qgs.get( j );
@@ -246,6 +246,7 @@ public class MatchAsync extends Thread
 
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
+                /*
                 // debug false 'null' duplicate
                 int ids1 = ql.s1_id_base.get( s1_idx );
                 if( ids1 == 2206518 )
@@ -254,6 +255,7 @@ public class MatchAsync extends Thread
                     debug = false; debugfail = false;
                     continue;
                 }
+                */
 
                 /*
                 if( n_recs > 10 ) {
@@ -267,7 +269,8 @@ public class MatchAsync extends Thread
                 s1_idx_cpy = s1_idx;   // copy for display if exception occurs
 
                 if( ( s1_idx + s1_chunk ) % s1_chunk == 0 )
-                { System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
+                { System.out.println( String.format( "Thread id %d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
+                //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
                 if( debug ) {
                     msg = String.format( "\ns1 idx: %d-of-%d", s1_idx + 1, s1_size );
@@ -389,6 +392,13 @@ public class MatchAsync extends Thread
                 int s1FatherFirName4  = ql.s1_father_firstname4 .get( s1_idx );
                 int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
+                /*
+                if( s1MotherFirName1 == 22823 ) {
+                    System.out.println( "null s1MotherFirName1: 22823" );
+                    plog.show( "null s1MotherFirName1: 22823" );
+                }
+                */
+
                 // loop through the familynames of s2; exact + variants
                 for( int lv_idx = 0; lv_idx < s2_idx_variants_cpy.size(); lv_idx++ )
                 {
@@ -457,11 +467,6 @@ public class MatchAsync extends Thread
                     int s2FatherFirName4  = ql.s2_father_firstname4 .get( s2_idx );
                     int s2PartnerFirName4 = ql.s2_partner_firstname4.get( s2_idx );
 
-                    if( s1MotherFirName1 == 22823 || s2MotherFirName1 == 22823 ) {
-                        System.out.println( "HEBBES!" );
-                        System.exit( 0 );
-                    }
-
                     // Check the firstnames of ego
                     if( qs.int_firstname_e > 0 ) {
                         int lv_dist = checkFirstName( qs.firstname,
@@ -506,6 +511,8 @@ public class MatchAsync extends Thread
                                 if( debugfail ) { System.out.println( "failed int_firstname_m" ); }
                                 continue;
                             }
+                            else
+                            { if( debugfail ) { System.out.println( "matched int_firstname_m" ); } }
                         }
                     }
 
@@ -579,7 +586,7 @@ public class MatchAsync extends Thread
                         int lvs_dist_first  = s2_idx_firstname_lvs .get( l );
                         int lvs_dist_family = s2_idx_familyname_lvs.get( l );
 
-                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, value_firstname, value_familyname ) " +
+                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, value_firstname_ego, value_familyname_ego ) " +
                             "VALUES ( " + id_match_process + "," + id_s1 + "," + id_s2 + "," + lvs_dist_first+ "," + lvs_dist_family + ")";
 
                         if( debug ) {
@@ -685,6 +692,9 @@ public class MatchAsync extends Thread
             msg = String.format( "MatchAsync/run(): thread id %d is done", threadId );
             System.out.println( msg );
             plog.show( msg );
+
+            msg = "thread";
+            elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
         }
         catch( Exception ex1 )
         {
@@ -697,6 +707,44 @@ public class MatchAsync extends Thread
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
     } // run
+
+
+    public String millisec2hms( long millisec_start, long millisec_stop ) {
+        long millisec = millisec_stop - millisec_start;
+        long sec = millisec / 1000;
+
+        long hour = sec / 3600;
+        long min = sec / 60;
+        long rmin = min - 60 * hour;
+        long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
+
+        String hms = "";
+        if( hour == 0 ) {
+            if( rmin == 0 ) {
+                double fsec = ((double)millisec) / 1000.0;
+                //hms = String.format("[%d sec]", rsec );
+                hms = String.format("[%.1f sec]", fsec );
+            }
+            else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+        }
+        else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
+
+        return hms;
+    }
+
+
+    /**
+     * @param msg_in
+     * @param start
+     * @param stop
+     */
+    private void elapsedShowMessage( String msg_in, long start, long stop )
+    {
+        String elapsed = millisec2hms( start, stop );
+        String msg_out = msg_in + " " + elapsed + " elapsed";
+        System.out.println( msg_out);
+        try { plog.show( msg_out ); } catch( Exception ex ) { System.out.println( ex.getMessage()); }
+    } // elapsedShowMessage
 
 
     /**
@@ -758,17 +806,13 @@ public class MatchAsync extends Thread
      */
     private int compareLvsNames( int s1Name, int s2Name, String lvs_table, int lvs_dist_max )
     {
-        // but..., we first check for an exact match
-        if( s1Name == s2Name ) { return 0; }
-
         int lvs_dist = -1;      // -1 = no match, otherwise the found distance
 
         try
         {
             if( debug ) {
                 String msg = "compareLSnames(): s1Name = " + s1Name + ", s2Name = " + s2Name;
-                System.out.println( msg );
-                plog.show( msg );
+                System.out.println( msg ); plog.show( msg );
             }
 
             // the "ORDER BY value" gives us the smallest lvs distances first
@@ -805,7 +849,10 @@ public class MatchAsync extends Thread
 
                 nrecs++;
             }
-            if( debug ) { System.out.println( "" ); }
+            if( debug ) {
+                String msg = "rs nrecs: " + nrecs;
+                System.out.println( msg ); plog.show( msg );
+            }
         }
         catch( Exception ex ) {
             System.out.println( "Exception in compareLvsNames: " + ex.getMessage() );
