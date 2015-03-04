@@ -138,6 +138,7 @@ public class PersonNumber implements Runnable
             {
                 Statement statement = connection.createStatement();
 
+                /*
                 String select = "SELECT X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
                     " FROM links_match.matches AS M, links_prematch.links_base AS X,  links_prematch.links_base AS Y " +
                     " WHERE X.id_base = id_linksbase_1 AND " +
@@ -145,7 +146,21 @@ public class PersonNumber implements Runnable
                     "      (M.id_match_process = 330 OR M.id_match_process = 334) AND " +
                     "       M.id_matches >= " + i + " AND " +
                     "       M.id_matches < " + (i + pageSize) ;
+                */
 
+                String select = "SELECT X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
+                    " FROM "
+                    + " links_match.matches AS M, "
+                    + " links_match.match_process AS MP, "
+                    + " links_prematch.links_base AS X, "
+                    + " links_prematch.links_base AS Y " +
+                    " WHERE " +
+                    " M.id_match_process = MP.id AND " +
+                    " MP.ids = 'y'               AND " +
+                    " X.id_base = id_linksbase_1 AND " +
+                    " Y.id_base = id_linksbase_2 AND " +
+                    " M.id_matches >= " + i + "  AND " +
+                    " M.id_matches <  " + (i + pageSize) ;
 
                 //System.out.println( select );
 

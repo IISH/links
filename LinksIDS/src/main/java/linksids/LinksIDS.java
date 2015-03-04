@@ -802,6 +802,21 @@ public class LinksIDS
                 addIndivContext(connection, person_number, Id_C_l,  "" + registration_maintype, "LIVING_LOCATION", "Event", "Exact", registration_day, registration_month, registration_year);
 
             }
+
+            // Special processing for HSN Start
+            columnName = " P.id_source";
+            if( h.get( columnName ) != null && persons.get( i )[ h.get( columnName ) ] != null ) { id_source = new Integer ( persons.get( i )[ h.get( columnName ) ] ); }
+
+            if( id_source == 10 )
+            {
+                columnName = " P.id_person_o";
+                if( h.get( columnName ) != null && persons.get( i )[ h.get( columnName ) ] != null ) { id_person_o = new Integer ( persons.get( i )[ h.get( columnName ) ] ); }
+
+                if( id_person_o > 0 ) {
+                    addIndiv( connection, person_number, "" + registration_maintype, "HSN_IDENTIFIER",   "" +
+                        id_person_o, 0, "Declared", "Exact", registration_day, registration_month, registration_year, 0, 0, 0, 0, 0, 0 ); }
+            }
+            // Special processing for HSN End
         }
     } // writeIndividual
      
