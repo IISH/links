@@ -30,7 +30,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-03-Mar-2015 Latest change
+ * FL-04-Mar-2015 Latest change
  */
 
 public class Main
@@ -141,31 +141,66 @@ public class Main
             // If the ls_firstname and ls_familyname do not change, we keep on providing the
             // memory tables to matchAsync, otherwise they have to use the original tables.
 
-            QueryGroupSet tmp_qgs = inputSet.get( 0 );
+            boolean ls_tables_mem = true;
 
-            String lvs_table_familyname = tmp_qgs.get( 0 ).prematch_familyname;
-            String lvs_table_firstname  = tmp_qgs.get( 0 ).prematch_firstname;
+            String lvs_table_familyname_use = "";
+            String lvs_table_firstname_use  = "";
 
-            System.out.println( "lvs familyname table: " + lvs_table_familyname );
-            System.out.println( "lvs firstname  table: " + lvs_table_firstname );
+            QueryGroupSet qgs0 = inputSet.get( 0 );
+            QuerySet qs0 = qgs0.get( 0 );
 
-            int lvs_dist_familyname = tmp_qgs.get( 0 ).prematch_familyname_value;
-            int lvs_dist_firstname  = tmp_qgs.get( 0 ).prematch_firstname_value;
+            String lvs_table_familyname = qs0.prematch_familyname;
+            String lvs_table_firstname  = qs0.prematch_firstname;
 
-            System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
-            System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
+            if( ls_tables_mem )     // use memory tables
+            {
+                // levenshtein methods should not change; check before we go
+                for( int i = 0; i < isSize; i++ )
+                {
+                    QueryGroupSet qgs = inputSet.get( i );
+                    for( int j = 0; j < qgs.getSize(); j++ )
+                    {
+                        QuerySet qs = qgs.get( 0 );
+                        String lvs_table_familyname_ij = qs.prematch_familyname;
+                        String lvs_table_firstname_ij  = qs.prematch_firstname;
 
-            // Create memory tables to hold the ls_* tables
-            String table_firstname_src  = "ls_firstname";
-            String table_familyname_src = "ls_familyname";
-            String name_postfix = "_mem";
+                        if( ! lvs_table_familyname_ij.contentEquals( lvs_table_familyname ) ||
+                            ! lvs_table_firstname_ij .contentEquals( lvs_table_firstname  ) ) {
+                            String err = "Thou shall not mix different Levenshtein methods within a job\nEXIT.";
+                            System.out.println( err ); plog.show( err );
+                            System.exit( 1 );
+                        }
+                    }
+                }
 
-            // creates table_firstname_mem & table_familyname_mem
-            memtables_create( table_firstname_src, table_familyname_src, name_postfix );
+                System.out.println( "Using lvs memory tables" );
+                System.out.println( "lvs familyname table: " + lvs_table_familyname );
+                System.out.println( "lvs firstname  table: " + lvs_table_firstname );
 
-            // and now change the names to the actual table names used !
-            String lvs_table_familyname_use = lvs_table_familyname + name_postfix;
-            String lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
+                int lvs_dist_familyname = qs0.prematch_familyname_value;
+                int lvs_dist_firstname  = qs0.prematch_firstname_value;
+
+                System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
+                System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
+
+                // Create memory tables to hold the ls_* tables
+                String table_familyname_src = "ls_familyname";
+                String table_firstname_src  = "ls_firstname";
+                String name_postfix = "_mem";
+
+                // creates table_firstname_mem & table_familyname_mem
+                memtables_create( table_firstname_src, table_familyname_src, name_postfix );
+
+                // and now change the names to the actual table names used !
+                lvs_table_familyname_use = lvs_table_familyname + name_postfix;
+                lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
+            }
+            else            // do not use memory tables
+            {
+                System.out.println( "Not using lvs memory tables" );
+                lvs_table_familyname_use = lvs_table_familyname;
+                lvs_table_firstname_use  = lvs_table_firstname;
+            }
 
             msg = "Before threading";
             elapsedShowMessage( msg, matchStart, System.currentTimeMillis() );

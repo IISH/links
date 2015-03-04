@@ -190,13 +190,13 @@ public class MatchAsync extends Thread
             long threadStart = System.currentTimeMillis();
 
             long threadId = Thread.currentThread().getId();
-            String msg = String.format( "\nMatchAsync/run(): thread id %d running", threadId );
+            String msg = String.format( "\nMatchAsync/run(): thread id %2d running", threadId );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %d; process id: %d", threadId, qgs.get( 0 ).id );
+            msg = String.format( "Thread id %2d; process id: %d", threadId, qgs.get( 0 ).id );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %d; Range %d of %d", threadId, (j + 1), qgs.getSize() );
+            msg = String.format( "Thread id %2d; Range %d of %d", threadId, (j + 1), qgs.getSize() );
             System.out.println( msg ); plog.show( msg );
 
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
@@ -206,9 +206,9 @@ public class MatchAsync extends Thread
             int lvs_dist_firstname  = qs.prematch_firstname_value;
             int lvs_dist_familyname = qs.prematch_familyname_value;
 
-            msg = String.format( "Thread id %d; use firstname  levenshtein distance for variants: %d", threadId, lvs_dist_firstname );
+            msg = String.format( "Thread id %2d; use firstname  levenshtein distance for variants: %d", threadId, lvs_dist_firstname );
             System.out.println( msg ); plog.show( msg );
-            msg = String.format( "Thread id %d; use familyname levenshtein distance for variants: %d", threadId, lvs_dist_familyname );
+            msg = String.format( "Thread id %2d; use familyname levenshtein distance for variants: %d", threadId, lvs_dist_familyname );
             System.out.println( msg ); plog.show( msg );
 
             msg = "s1 query:\n" + qs.query1;
@@ -234,7 +234,7 @@ public class MatchAsync extends Thread
             Vector< Integer > s2_idx_familyname_lvs = new Vector< Integer >();
 
             // Loop through set 1
-            msg = String.format( "Thread id %d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
+            msg = String.format( "Thread id %2d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
             System.out.println( msg );
             plog.show( msg );
 
@@ -269,7 +269,7 @@ public class MatchAsync extends Thread
                 s1_idx_cpy = s1_idx;   // copy for display if exception occurs
 
                 if( ( s1_idx + s1_chunk ) % s1_chunk == 0 )
-                { System.out.println( String.format( "Thread id %d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
+                { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
                 if( debug ) {
@@ -355,7 +355,7 @@ public class MatchAsync extends Thread
                     }
                     System.out.println( "" );
 
-                    msg = String.format( "Thread id %d; potential matches: %d", threadId, s2_idx_variants.size() );
+                    msg = String.format( "Thread id %2d; potential matches: %d", threadId, s2_idx_variants.size() );
                     System.out.println( msg );
                     plog.show( msg );
                 }
@@ -605,11 +605,11 @@ public class MatchAsync extends Thread
 
             pm.removeProcess();
 
-            msg = String.format( "Thread id %d; s1 records processed: %d", threadId, n_recs );
+            msg = String.format( "Thread id %2d; s1 records processed: %d", threadId, n_recs );
             System.out.println( msg );
             plog.show( msg );
 
-            msg = String.format( "Thread id %d; Number of matches: %d", threadId, n_match );
+            msg = String.format( "Thread id %2d; Number of matches: %d", threadId, n_match );
             System.out.println( msg ); plog.show( msg );
 
 
@@ -617,79 +617,79 @@ public class MatchAsync extends Thread
 
             if( n_minmax != 0 ) {
                 n_fail += n_minmax;
-                msg = String.format( "Thread id %d; failures n_minmax: %d", threadId, n_minmax );
+                msg = String.format( "Thread id %2d; failures n_minmax: %d", threadId, n_minmax );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_sex != 0 ) {
                 n_fail += n_sex;
-                msg = String.format( "Thread id %d; failures n_sex: %d", threadId, n_minmax );
+                msg = String.format( "Thread id %2d; failures n_sex: %d", threadId, n_minmax );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_e != 0 ) {
                 n_fail += n_int_familyname_e;
-                msg = String.format( "Thread id %d; failures n_int_familyname_e: %d", threadId, n_int_familyname_e );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_e: %d", threadId, n_int_familyname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_e != 0 ) {
                 n_fail += n_int_firstname_e;
-                msg = String.format( "Thread id %d; failures n_int_firstname_e: %d", threadId, n_int_firstname_e );
+                msg = String.format( "Thread id %2d; failures n_int_firstname_e: %d", threadId, n_int_firstname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_m != 0 ) {
                 n_fail += n_int_familyname_m;
-                msg = String.format( "Thread id %d; failures n_int_familyname_m: %d", threadId, n_int_familyname_m );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_m: %d", threadId, n_int_familyname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_m != 0 ) {
                 n_fail += n_int_firstname_m;
-                msg = String.format( "Thread id %d; failures n_int_firstname_m: %d", threadId, n_int_firstname_m );
+                msg = String.format( "Thread id %2d; failures n_int_firstname_m: %d", threadId, n_int_firstname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_f != 0 ) {
                 n_fail += n_int_familyname_f;
-                msg = String.format( "Thread id %d; failures n_int_familyname_f: %d", threadId, n_int_familyname_f );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_f: %d", threadId, n_int_familyname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_f != 0 ) {
                 n_fail += n_int_firstname_f;
-                msg = String.format( "Thread id %d; failures n_int_firstname_f: %d", threadId, n_int_firstname_f );
+                msg = String.format( "Thread id %2d; failures n_int_firstname_f: %d", threadId, n_int_firstname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_p != 0 ) {
                 n_fail += n_int_familyname_p;
-                msg = String.format( "Thread id %d; failures n_int_familyname_p: %d", threadId, n_int_familyname_p );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_p: %d", threadId, n_int_familyname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_p != 0 ) {
                 n_fail += n_int_firstname_p;
-                msg = String.format( "Thread id %d; failures n_int_firstname_p: %d", threadId, n_int_firstname_p );
+                msg = String.format( "Thread id %2d; failures n_int_firstname_p: %d", threadId, n_int_firstname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
-            msg = String.format( "Thread id %d; total match attempt failures: %d", threadId, n_fail );
+            msg = String.format( "Thread id %2d; total match attempt failures: %d", threadId, n_fail );
             System.out.println( msg ); plog.show( msg );
 
             long n_mismatch = n_recs - ( n_fail + n_match );
             if( n_mismatch > 0 ) {
-                msg = String.format( "Thread id %d; missing records: %d ??", threadId, n_mismatch );
+                msg = String.format( "Thread id %2d; missing records: %d ??", threadId, n_mismatch );
                 System.out.println( msg ); plog.show( msg );
             }
 
 
-            msg = String.format( "Thread id %d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
+            msg = String.format( "Thread id %2d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
             System.out.println( msg );
             plog.show( msg );
 
-            msg = String.format( "MatchAsync/run(): thread id %d is done", threadId );
+            msg = String.format( "MatchAsync/run(): thread id %2d is done", threadId );
             System.out.println( msg );
             plog.show( msg );
 
