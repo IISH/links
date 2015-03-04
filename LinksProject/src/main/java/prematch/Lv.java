@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-25-Feb-2015 Latest change
+ * FL-04-Mar-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -64,15 +64,15 @@ public class Lv extends Thread
         PrintLogger plog
     )
     {
-        this.debug                = debug;
-        this.db_conn              = db_conn;
-        this.db_name              = db_name;                // e.g. links_prematch
-        this.db_table             = db_table;               // e.g. freq_firstnames or freq_familyname
-        this.strict               = strict;
-        this.also_exact_matches   = also_exact_matches;
-        this.outputLine           = outputLine;
-        this.outputArea           = outputArea;
-        this.plog                  = plog;
+        this.debug              = debug;
+        this.db_conn            = db_conn;
+        this.db_name            = db_name;                // e.g. links_prematch
+        this.db_table           = db_table;               // e.g. freq_firstnames or freq_familyname
+        this.strict             = strict;
+        this.also_exact_matches = also_exact_matches;
+        this.outputLine         = outputLine;
+        this.outputArea         = outputArea;
+        this.plog               = plog;
     }
 
 
@@ -348,20 +348,30 @@ public class Lv extends Thread
     } // loadCsvLsToTable
 
 
-        /**
+    /**
+     * @param debug
+     * @param db_conn
+     * @param db_name
+     * @param ls_table
      * @throws Exception
+     *
+     * Create the _first variant from the normal ls table,
+     * so skip if the _strict variant is provided.
+     * After the _first variant is created, delete 3 & 4 distance entries from the input table
      */
     private void createLsFirstTable( boolean debug, MySqlConnector db_conn, String db_name, String ls_table )
     throws Exception
     {
+        // the _first variants are only created from the normal ls tables, not from the _strict ones.
         if( ls_table.equals( "ls_firstname" ) || ls_table.equals( "ls_familyname" ) )
         {
-            long start = System.currentTimeMillis();
-            String msg = "Filling table " + ls_table;
-            showMessage( msg + "...", false, true );
-
             // copy the table to '_first', and delete records that differ in 1st char of names
             String ls_table_first = ls_table + "_first";
+
+            long start = System.currentTimeMillis();
+            String msg = "Filling table " + ls_table_first;
+            showMessage( msg + "...", false, true );
+
             String[] queries =
             {
                 "DROP TABLE IF EXISTS " + ls_table_first,
@@ -369,7 +379,8 @@ public class Lv extends Thread
                 "ALTER TABLE "  + ls_table_first + " DISABLE KEYS;",
                 "INSERT INTO "  + ls_table_first + " SELECT * FROM " + ls_table + ";",
                 "ALTER TABLE "  + ls_table_first + " ENABLE KEYS;",
-                "DELETE FROM "  + ls_table_first + " WHERE SUBSTRING( `name_str_1`,1,1 ) <> SUBSTRING( `name_str_2`,1,1 );"
+                "DELETE FROM "  + ls_table_first + " WHERE SUBSTRING( `name_str_1`,1,1 ) <> SUBSTRING( `name_str_2`,1,1 );",
+                "DELETE FROM "  + ls_table + " WHERE value = 3 OR value = 4;"
             };
 
             for( String query : queries ) {
@@ -387,8 +398,13 @@ public class Lv extends Thread
             }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
         }
+
         else
-        { showMessage( "createLsFirstTable, skipping: " + ls_table, false, true ); }
+        {
+            showMessage( "createLsFirstTable, deleting Lvs 3 and 4: " + ls_table, false, true );
+            String query = "DELETE FROM " + ls_table + " WHERE value = 3 OR value = 4;";
+            db_conn.runQuery( query );
+        }
 
     } // createLsFirstTable
 

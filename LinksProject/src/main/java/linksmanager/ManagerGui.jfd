@@ -758,7 +758,7 @@ new FormModel {
 					} )
 					add( new FormComponent( "javax.swing.JCheckBox" ) {
 						name: "cbPdoExactmatches"
-						"text": "Including exact matches"
+						"text": "Levenshtein including exact matches"
 						"enabled": false
 					} )
 				}, new FormLayoutConstraints( null ) {

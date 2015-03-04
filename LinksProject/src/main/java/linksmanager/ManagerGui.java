@@ -1675,7 +1675,7 @@ public class ManagerGui extends javax.swing.JFrame
 				cbPdoStandardization.setName("cbPdoStandardization");
 
 				//---- cbPdoExactmatches ----
-				cbPdoExactmatches.setText("Including exact matches");
+				cbPdoExactmatches.setText("Levenshtein including exact matches");
 				cbPdoExactmatches.setEnabled(false);
 				cbPdoExactmatches.setName("cbPdoExactmatches");
 
