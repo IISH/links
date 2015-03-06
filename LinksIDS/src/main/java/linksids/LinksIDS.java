@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-11-Feb-2015 Latest change
+ * FL-05-Mar-2015 Latest change
  */
 public class LinksIDS
 {
@@ -804,6 +804,9 @@ public class LinksIDS
             }
 
             // Special processing for HSN Start
+            int id_source = 0;
+            int id_person_o = 0;
+
             columnName = " P.id_source";
             if( h.get( columnName ) != null && persons.get( i )[ h.get( columnName ) ] != null ) { id_source = new Integer ( persons.get( i )[ h.get( columnName ) ] ); }
 

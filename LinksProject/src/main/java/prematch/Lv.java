@@ -177,13 +177,13 @@ public class Lv extends Thread
 
                     int diff = extra - basic;
 
-                    if( diff > 4 ) { continue; }            // check difference
+                    if( diff > 4 ) { continue; }                    // too much length difference
 
                     if( strict )
                     {
                         if( basic <  6 && diff > 1 ) { continue; }
 
-                        if( basic <  9 && diff > 2 ) { continue; }          // 3 4 5
+                        if( basic <  9 && diff > 2 ) { continue; }
 
                         if( basic < 12 && diff > 3 ) { continue; }
                     }
@@ -191,14 +191,14 @@ public class Lv extends Thread
                     {
                         if( basic < 3 && diff > 1 ) { continue; }
 
-                        if( basic < 6 && diff > 2 ) { continue; }           // 3 4 5
+                        if( basic < 6 && diff > 2 ) { continue; }
 
                         if( basic < 9 && diff > 3 ) { continue; }
                     }
 
-                    ld = levenshtein( name_str_1, name_str_2 );             // levenshtein distance
+                    ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
 
-                    if( ld > 4 ) { continue; }                      // too high, -> not in CSV
+                    if( ld > 4 ) { continue; }                      // distance too high
 
                     if( strict )
                     {
