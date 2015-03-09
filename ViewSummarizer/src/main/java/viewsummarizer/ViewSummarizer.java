@@ -19,7 +19,7 @@ import java.util.HashMap;
  */
 public class ViewSummarizer
 {
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     private static Connection db_conn;
     private static PrintLogger plog;
@@ -172,14 +172,13 @@ public class ViewSummarizer
             return idsInt;
         }
 
-        String query = "SELECT * FROM match_process;";
+        String query = "SELECT * FROM match_process ORDER BY id;";
 
         ArrayList< String > ids = new ArrayList();
 
         try {
             ResultSet rs = db_conn.createStatement().executeQuery( query );
 
-            rs.first();
             int count = 0;
             while( rs.next() ) {
                 String id    = rs.getString( "id" );
@@ -572,10 +571,12 @@ public class ViewSummarizer
         System.out.printf( "use_minmax: .............. %s\n", use_minmax );
         */
 
-        query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s1_source + " AND registration_maintype = " + s1_maintype;
+        if( s1_source.isEmpty() ) { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE registration_maintype = " + s1_maintype; }
+        else { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s1_source + " AND registration_maintype = " + s1_maintype; }
         s1_potential = executeQuery( "s1_potential", query );
 
-        query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s2_source + " AND registration_maintype = " + s2_maintype;
+        if( s2_source.isEmpty() ) { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE registration_maintype = " + s2_maintype; }
+        else { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s2_source + " AND registration_maintype = " + s2_maintype; }
         s2_potential = executeQuery( "s2_potential", query );
 
 

@@ -571,7 +571,7 @@ public class LinksCleanedThread extends Thread
     private void addToReportRegistration( int id, String id_source, int errorCode, String value )
     throws Exception
     {
-        boolean debug = false;
+        boolean debug = true;
         if( debug ) { showMessage( "addToReportRegistration()", false, true ); }
 
         String errorCodeStr = Integer.toString( errorCode );
@@ -600,9 +600,20 @@ public class LinksCleanedThread extends Thread
         String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
             + " FROM registration_o WHERE id_registration = " + id;
 
+        if( debug ) {
+            System.out.println( selectQuery );
+            showMessage( selectQuery, false, true );
+        }
+
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            rs.next();
+            rs.first();
+            int fetchSize = rs.getFetchSize();
+            if( fetchSize == 0 ) {
+                System.out.println( "zero fetchSize of resultSet" );
+                showMessage( "zero fetchSize of resultSet", false, true );
+            }
+
             location = rs.getString( "registration_location" );
             reg_type = rs.getString( "registration_type" );
             date     = rs.getString( "registration_date" );
@@ -637,7 +648,11 @@ public class LinksCleanedThread extends Thread
             + " ( reg_key , id_source , report_class , report_type , content ,"
             + " date_time , location , reg_type , date , sequence , guid )"
             + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
-        if( debug ) { showMessage( s, false, true ); }
+
+        if( debug ) {
+            System.out.println( s );
+            showMessage( s, false, true );
+        }
 
         String insertQuery = "";
         try {
@@ -5801,7 +5816,7 @@ public class LinksCleanedThread extends Thread
                     boolean isDuplicate = false;
 
                     int id_registration = Integer.parseInt( registrationIds[ rid1 ] );
-                    //System.out.printf( "reg_id: %d\n", id_registration );
+                    if( debug ) { System.out.printf( "rid1: %d-of-%d, reg_id: %d\n", rid1, registrationIds.length, id_registration ); }
 
                     if( registration_maintype == 1 )
                     {
@@ -6018,6 +6033,11 @@ public class LinksCleanedThread extends Thread
 
                         dbconCleaned.runQuery( deleteRegist );
                         dbconCleaned.runQuery( deletePerson );
+
+                        if( 1 == 1 ) {
+                            System.out.println( "EXIT" );
+                            System.exit( 1 );
+                        }
                     }
                 }
             }
