@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-04-Mar-2015 Latest change
+ * FL-11-Mar-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -122,8 +122,6 @@ public class Lv extends Thread
 
             int size = id.size();
             showMessage( "table " + db_table + " loaded, records: " + size, false, true );
-            
-
 
             FileWriter csvwriter = new FileWriter( csvname );
 
@@ -156,72 +154,115 @@ public class Lv extends Thread
                     name_str_2 = name_str.get( j );
                     name_int_2 = name_int.get( j );
 
-                    int a = name_str_1.length();
-                    int b = name_str_2.length();
+                    int len_1 = name_str_1.length();
+                    int len_2 = name_str_2.length();
                     
-                    int smallest = (a < b) ?  a : b;
+                    int len_smallest = (len_1 < len_2) ?  len_1 : len_2;
 
-                    int ld = 4;
+                    int len_small;
+                    int len_great;
 
-                    int basic;
-                    int extra;
-
-                    if( a == smallest ) {
-                        basic = a;
-                        extra = b;
+                    if( len_1 == len_smallest ) {
+                        len_small = len_1;
+                        len_great = len_2;
                     }
                     else {
-                        basic = b;
-                        extra = a;
+                        len_small = len_2;
+                        len_great = len_1;
                     }
 
-                    int diff = extra - basic;
+                    int len_diff = len_great - len_small;
 
-                    if( diff > 4 ) { continue; }                    // too much length difference
+
+                    // the length difference imposes a lower bound on the levenshtein distance,
+                    // which is used to discard name pairs is the distance is too big.
+                    if( len_diff > 4 ) { continue; }                    // ld > 4
 
                     if( strict )
                     {
-                        if( basic <  6 && diff > 1 ) { continue; }
+                        if( len_small ==  1                    && len_diff > 0 ) { continue; }
 
-                        if( basic <  9 && diff > 2 ) { continue; }
+                        if( len_small >=  2 && len_small <=  5 && len_diff > 1 ) { continue; }
 
-                        if( basic < 12 && diff > 3 ) { continue; }
+                        if( len_small >=  6 && len_small <=  8 && len_diff > 2 ) { continue; }
+
+                        if( len_small >=  9 && len_small <= 11 && len_diff > 3 ) { continue; }
+
+                        if( len_small >= 12                    && len_diff > 4 ) { continue; }
                     }
                     else
                     {
-                        if( basic < 3 && diff > 1 ) { continue; }
+                        if( len_small == 1                   && len_diff > 0 ) { continue; }
 
-                        if( basic < 6 && diff > 2 ) { continue; }
+                        if( len_small == 2                   && len_diff > 1 ) { continue; }
 
-                        if( basic < 9 && diff > 3 ) { continue; }
+                        if( len_small >= 3 && len_small <= 7 && len_diff > 2 ) { continue; }
+
+                        if( len_small == 8                   && len_diff > 3 ) { continue; }
+
+                        if( len_small >= 9                   && len_diff > 4 ) { continue; }
                     }
 
-                    ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
 
-                    if( ld > 4 ) { continue; }                      // distance too high
+                    // in order to discard additional name pairs we use the
+                    // actual levenshtein distance
+                    int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
+
+                    if( ld > 4 ) { continue; }                          // distance too high
 
                     if( strict )
                     {
-                        if( basic <  6 && ld > 1 ) { continue; }
+                        if( len_small ==  1                    && ld > 0 ) { continue; }
 
-                        if( basic <  9 && ld > 2 ) { continue; }
+                        if( len_small >=  2 && len_small <=  5 && ld > 1 ) { continue; }
 
-                        if( basic < 12 && ld > 3 ) { continue; }
+                        if( len_small >=  6 && len_small <=  8 && ld > 2 ) { continue; }
+
+                        if( len_small >=  9 && len_small <= 11 && ld > 3 ) { continue; }
+
+                        if( len_small >= 12                    && ld > 4 ) { continue; }
                     }
-                    else    // levenshtein + length
+                    else
                     {
-                        if( basic <  3 && ld > 1 ) { continue; }
+                        if( len_small == 1                   && ld > 0 ) { continue; }
 
-                        if( basic <  6 && ld > 2 ) { continue; }
+                        if( len_small == 2                   && ld > 1 ) { continue; }
 
-                        if( basic < 10 && ld > 3 ) { continue; }
+                        if( len_small >= 3 && len_small <= 7 && ld > 2 ) { continue; }
+
+                        if( len_small == 8                   && ld > 3 ) { continue; }
+
+                        if( len_small >= 9                   && ld > 4 ) { continue; }
                     }
+
+
+                    /*
+                    int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
+
+                    if( strict )
+                    {
+                        if( ld == 0 && ( len_small ==  1 )                    ||
+                            ld <= 1 && ( len_small >=  2 && len_small <=  5 ) ||
+                            ld <= 2 && ( len_small >=  6 && len_small <=  8 ) ||
+                            ld <= 3 && ( len_small >=  9 && len_small <= 11 ) ||
+                            ld <= 4 && ( len_small >= 12 ) )
+                        { ; }                   // pass
+                        else { continue; }      // try next pair
+                    }
+                    else
+                    {
+                        if( ld == 0 && ( len_small == 1 )                   ||
+                            ld <= 1 && ( len_small == 2 )                   ||
+                            ld <= 2 && ( len_small >= 3 && len_small <= 7 ) ||
+                            ld <= 3 && ( len_small == 8 )                   ||
+                            ld <= 4 && ( len_small >= 9 ) )
+                        { ; }                   // pass
+                        else { continue; }      // try next pair
+                    }
+                    */
 
                     // Write to CSV
-                    //String line = id1 + "," + id2 + "," + name_1 + "," + name_2 + "," + ld + "\r\n";    // old
-                    //String line = name_1 + "," + name_2 + "," + smallest + "," + ld + "\r\n";
-                    //String line = name_str_1 + "," + name_str_2 + "," + a + ","+ b + "," + ld + "\r\n";
-                    String line = name_str_1 + "," + name_str_2 + "," + a + ","+ b + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
+                    String line = name_str_1 + "," + name_str_2 + "," + len_1 + ","+ len_2 + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
                     //if( debug ) { System.out.println( line ); }
 
                     nline ++;
@@ -239,7 +280,7 @@ public class Lv extends Thread
 
             showMessage( "", true, true );      // clear
             csvwriter.close();
-            if(debug ) { showMessage( nline + " records written to CSV file", false, true ); }
+            if( debug ) { showMessage( nline + " records written to CSV file", false, true ); }
 
             // elapsed
             timeExpand = System.currentTimeMillis() - begintime;

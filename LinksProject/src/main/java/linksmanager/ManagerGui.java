@@ -71,7 +71,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-27-Feb-2015 Latest change
+ * FL-11-Mar-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -1454,7 +1454,7 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoPrepieceSuffix.setName("cbCdoPrepieceSuffix");
 
 				//---- cbCdoRemoveDuplicates ----
-				cbCdoRemoveDuplicates.setText("Remove Duplicates");
+				cbCdoRemoveDuplicates.setText("Remove Bad & Dup Regs");
 				cbCdoRemoveDuplicates.setName("cbCdoRemoveDuplicates");
 
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
@@ -1515,9 +1515,8 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoPrepieceSuffix)
 										.addComponent(cbCdoRefreshData, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
 										.addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
-									.addGap(49, 49, 49)
-									.addComponent(cbCdoRemoveDuplicates, GroupLayout.PREFERRED_SIZE, 162, GroupLayout.PREFERRED_SIZE)
-									.addGap(0, 0, Short.MAX_VALUE)))
+									.addGap(29, 29, 29)
+									.addComponent(cbCdoRemoveDuplicates, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGap(6, 6, 6)
@@ -1692,7 +1691,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addComponent(cbPdoLevenshtein, GroupLayout.PREFERRED_SIZE, 261, GroupLayout.PREFERRED_SIZE)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbPdoExactmatches)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 462, Short.MAX_VALUE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
 									.addComponent(btnStartProcessPrematch, GroupLayout.PREFERRED_SIZE, 195, GroupLayout.PREFERRED_SIZE))
 								.addGroup(pPrematchLayout.createSequentialGroup()
 									.addGroup(pPrematchLayout.createParallelGroup()
@@ -2670,7 +2669,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "27-Feb-2015 15:15";
+                String timestamp1 = "11-Mar-2015 16:37";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
