@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-11-Mar-2015 Latest change
+ * FL-12-Mar-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -194,9 +194,9 @@ public class Lv extends Thread
                     {
                         if( len_small == 1                   && len_diff > 0 ) { continue; }
 
-                        if( len_small == 2                   && len_diff > 1 ) { continue; }
+                        if( len_small >= 2 && len_small <= 4 && len_diff > 1 ) { continue; }
 
-                        if( len_small >= 3 && len_small <= 7 && len_diff > 2 ) { continue; }
+                        if( len_small >= 5 && len_small <= 7 && len_diff > 2 ) { continue; }
 
                         if( len_small == 8                   && len_diff > 3 ) { continue; }
 
@@ -226,9 +226,9 @@ public class Lv extends Thread
                     {
                         if( len_small == 1                   && ld > 0 ) { continue; }
 
-                        if( len_small == 2                   && ld > 1 ) { continue; }
+                        if( len_small >= 2 && len_small <= 4 && ld > 1 ) { continue; }
 
-                        if( len_small >= 3 && len_small <= 7 && ld > 2 ) { continue; }
+                        if( len_small >= 5 && len_small <= 7 && ld > 2 ) { continue; }
 
                         if( len_small == 8                   && ld > 3 ) { continue; }
 
@@ -237,6 +237,7 @@ public class Lv extends Thread
 
 
                     /*
+                    // this 'direct' implementation is indeed slower than the above one
                     int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
 
                     if( strict )
@@ -252,8 +253,8 @@ public class Lv extends Thread
                     else
                     {
                         if( ld == 0 && ( len_small == 1 )                   ||
-                            ld <= 1 && ( len_small == 2 )                   ||
-                            ld <= 2 && ( len_small >= 3 && len_small <= 7 ) ||
+                            ld <= 1 && ( len_small >= 2 && len_small <= 4 ) ||
+                            ld <= 2 && ( len_small >= 5 && len_small <= 7 ) ||
                             ld <= 3 && ( len_small == 8 )                   ||
                             ld <= 4 && ( len_small >= 9 ) )
                         { ; }                   // pass

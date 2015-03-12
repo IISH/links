@@ -415,7 +415,7 @@ public class LinksPrematch extends Thread
 
         // Execute queries
         int nqFirst = 1;
-        int nqLast = 15;
+        int nqLast = 18;
         String qPrefix = "FrequencyTables/FrequencyTables_q";
 
         for( int n = nqFirst; n <= nqLast; n++ )
