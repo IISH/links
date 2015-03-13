@@ -5704,7 +5704,7 @@ public class LinksCleanedThread extends Thread
             return;
         }
 
-        showMessage( "Removing Duplicates for all sources...", false, true );
+        showMessage( "Removing Bad registrations and Duplicates for all sources...", false, true );
 
         //removeEmptyDateRegistrations( debug );      // needs only registration_c, so first
         removeEmptyRoleRegistrations( debug );    // needs registration_c plus person_c
@@ -5730,15 +5730,23 @@ public class LinksCleanedThread extends Thread
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRegDate = 0;
+        int stepstate = count_step;
 
         try
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+            int nregs =  rs_r.getFetchSize();
+
             int row = 0;
 
             while( rs_r.next() )        // process all results
             {
                 row++;
+                if( row == stepstate ) {
+                    showMessage( row + " of " + nregs, true, true );
+                    stepstate += count_step;
+                }
+
                 int id_registration      = rs_r.getInt( "id_registration" );
                 int id_source            = rs_r.getInt( "id_source" );
                 String registration_date = rs_r.getString( "registration_date" );
@@ -5818,35 +5826,25 @@ public class LinksCleanedThread extends Thread
                 String query_p = "SELECT id_person, role FROM person_c WHERE id_registration = " + id_registration;
                 if ( debug ) { showMessage( query_p, false, true ); }
 
-                ResultSet rs_p = dbconCleaned.runQueryWithResult(query_p);
+                ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
                 if (rs_p.getFetchSize() == 0) { continue; }    // no result
 
                 boolean norole = false;
-                while (rs_p.next())        // process all results
+                while (rs_p.next())        // process the persons of this registration
                 {
                     int id_person    = rs_r.getInt( "id_person" );
                     String role      = rs_r.getString( "role" );
 
-                    if( role == null || role.isEmpty() || role.equals( "null" ) ) { norole =  true; }
+                    if( role == null || role.isEmpty() || role.equals( "null" ) ) {
+                        norole =  true;
 
-                    if( debug && norole ) {
-                        String msg = String.format( "id_registration: %d, id_person: %d, registration_maintype: %d, role: %d" );
-                        System.out.println( msg ); showMessage( msg, false, true );
-                    }
+                        if( debug ) {
+                            String msg = String.format( "No role: id_registration: %d, id_person: %d, registration_maintype: %d, role: %d" );
+                            System.out.println( msg ); showMessage( msg, false, true );
 
-                    if( registration_maintype == 1 )
-                    {
-
-                    }
-
-                    else if( registration_maintype == 2 )
-                    {
-
-                    }
-
-                    else if( registration_maintype == 3 )
-                    {
-
+                            // Kees: all person of a registration must have a role, so we are done for this reg
+                            break;
+                        }
                     }
                 }
 
@@ -5854,7 +5852,6 @@ public class LinksCleanedThread extends Thread
                     if( debug ) {}
                     nNoRole++;
 
-                    /*
                     // Delete records with this registration
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
@@ -5865,6 +5862,7 @@ public class LinksCleanedThread extends Thread
                         showMessage( deletePerson, false, true );
                     }
 
+                    /*
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 3, "" );       // warning 3
 
@@ -5874,7 +5872,7 @@ public class LinksCleanedThread extends Thread
                 }
             }
 
-            String msg = "Number of registrations removed: " + nNoRole;
+            String msg = "Number of registrations with missing role(s) removed: " + nNoRole;
             System.out.println( msg ); showMessage( msg, false, true );
         }
         catch( Exception ex ) {

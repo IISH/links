@@ -22,7 +22,8 @@ import general.PrintLogger;
  * FL-17-Nov-2014 Processing all of links_cleaned: not selecting by "... AND id_source = ..."
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
- * FL-18-Feb-2015 Latest change
+ * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
+ * FL-13-Mar-2015 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -248,11 +249,14 @@ public class LinksPrematch extends Thread
         {
             count++;
 
-            int id_person    = rsFirstName.getInt( "id_person" );
-            String firstname = rsFirstName.getString( "firstname" );
+            int id_person        = rsFirstName.getInt( "id_person" );
+            String firstnames_in = rsFirstName.getString( "firstname" );
+
+            // remove leading and trailing spaces, and replace serried spaces by just 1
+            String firstnames = firstnames_in.replaceAll( "\\s+", " " ).trim();
 
             // limit -- This controls the number of times the pattern is applied and therefore affects the length of the resulting array
-            String[] fn = firstname.split( " ", 4 );
+            String[] fn = firstnames.split( " ", 5 );   // using '5' makes the first 4 components free of spaces
 
             String p0 = "";
             String p1 = "";
@@ -304,16 +308,25 @@ public class LinksPrematch extends Thread
      */
     private void createTempFirstname( boolean debug ) throws Exception
     {
-        String query = "CREATE  TABLE links_temp.firstname_t_split ("
+        String table_name = "links_temp.firstname_t_split";
+
+        String[] queries =
+        {
+            "DROP TABLE IF EXISTS " + table_name,
+
+            "CREATE  TABLE " + table_name + " ("
                 + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
                 + " firstname1 VARCHAR(30) NULL ,"
                 + " firstname2 VARCHAR(30) NULL ,"
                 + " firstname3 VARCHAR(30) NULL ,"
                 + " firstname4 VARCHAR(30) NULL ,"
-                + " PRIMARY KEY (person_id) );";
+                + " PRIMARY KEY (person_id) );"
+        };
 
-        if( debug ) { showMessage( query, false, true); }
-        conTemp.runQuery( query );
+        for( String query : queries ) {
+            if( debug ) { showMessage( query, false, true); }
+            conTemp.runQuery( query );
+        }
     } // createTempFirstname
 
 

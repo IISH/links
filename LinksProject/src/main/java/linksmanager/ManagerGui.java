@@ -3,6 +3,7 @@ package linksmanager;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -71,7 +72,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-12-Mar-2015 Latest change
+ * FL-13-Mar-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2665,11 +2666,20 @@ public class ManagerGui extends javax.swing.JFrame
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
+        Font Font = new JLabel().getFont();
+        System.out.println( "System font: " + Font.getFontName() );
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        String[] fontnames = ge.getAvailableFontFamilyNames();
+
+        for( String fontname : fontnames ) {
+            System.out.println( "available font: " + fontname );
+        }
+
         java.awt.EventQueue.invokeLater( new Runnable()
         {
             public void run()
             {
-                String timestamp1 = "12-Mar-2015 16:34";
+                String timestamp1 = "13-Mar-2015 10:42";
 
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
