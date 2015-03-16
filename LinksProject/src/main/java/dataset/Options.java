@@ -32,7 +32,7 @@ import general.PrintLogger;
  * FL-12-Nov-2014 dbg
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
- * FL-09-Feb-2015 Latest change
+ * FL-16-Mar-2015 Latest change
  */
 public class Options
 {
@@ -97,8 +97,14 @@ public class Options
     private boolean doPostTasks;
     private boolean dbgPostTasks;
 
-    private boolean doRemoveDuplicates;
-    private boolean dbgRemoveDuplicates;
+    private boolean doRemoveEmptyDateRegs;
+    private boolean dbgRemoveEmptyDateRegs;
+
+    private boolean doRemoveEmptyRoleRegs;
+    private boolean dbgRemoveEmptyRoleRegs;
+
+    private boolean doRemoveDuplicateRegs;
+    private boolean dbgRemoveDuplicateRegs;
 
     private boolean doPrematch;
     private boolean dbgPrematch;
@@ -264,11 +270,25 @@ public class Options
     public void setDbgPostTasks( boolean dbgPostTasks ) { this.dbgPostTasks = dbgPostTasks; }
 
 
-    public boolean  isDoRemoveDuplicates() { return doRemoveDuplicates; }
-    public boolean isDbgRemoveDuplicates() { return dbgRemoveDuplicates; }
+    public boolean  isDoRemoveEmptyDateRegs() { return doRemoveEmptyDateRegs; }
+    public boolean isDbgRemoveEmptyDateRegs() { return dbgRemoveEmptyDateRegs; }
 
-    public void setDoRemoveDuplicates(  boolean  doRemoveDuplicates ) { this.doRemoveDuplicates  = doRemoveDuplicates; }
-    public void setDbgRemoveDuplicates( boolean dbgRemoveDuplicates ) { this.dbgRemoveDuplicates = dbgRemoveDuplicates; }
+    public void setDoRemoveEmptyDateRegs(  boolean  doRemoveEmptyDateRegs ) { this.doRemoveEmptyDateRegs  = doRemoveEmptyDateRegs; }
+    public void setDbgRemoveEmptyDateRegs( boolean dbgRemoveEmptyDateRegs ) { this.dbgRemoveEmptyDateRegs = dbgRemoveEmptyDateRegs; }
+
+
+    public boolean  isDoRemoveEmptyRoleRegs() { return doRemoveEmptyRoleRegs; }
+    public boolean isDbgRemoveEmptyRoleRegs() { return dbgRemoveEmptyRoleRegs; }
+
+    public void setDoRemoveEmptyRoleRegs(  boolean  doRemoveEmptyRoleRegs ) { this.doRemoveEmptyRoleRegs  = doRemoveEmptyRoleRegs; }
+    public void setDbgRemoveEmptyRoleRegs( boolean dbgRemoveEmptyRoleRegs ) { this.dbgRemoveEmptyRoleRegs = dbgRemoveEmptyRoleRegs; }
+
+
+    public boolean  isDoRemoveDuplicateRegs() { return doRemoveDuplicateRegs; }
+    public boolean isDbgRemoveDuplicateRegs() { return dbgRemoveDuplicateRegs; }
+
+    public void setDoRemoveDuplicateRegs(  boolean  doRemoveDuplicateRegs ) { this.doRemoveDuplicateRegs  = doRemoveDuplicateRegs; }
+    public void setDbgRemoveDuplicateRegs( boolean dbgRemoveDuplicateRegs ) { this.dbgRemoveDuplicateRegs = dbgRemoveDuplicateRegs; }
 
 
     public boolean  isDoPrematch() { return doPrematch; }

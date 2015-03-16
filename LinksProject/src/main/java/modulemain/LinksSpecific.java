@@ -1,7 +1,5 @@
 package modulemain;
 
-import java.util.Calendar;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,6 +7,7 @@ import java.io.File;
 
 import java.text.SimpleDateFormat;
 
+import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +39,7 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-18-Nov-2014 Latest change
+ * FL-16-Mar-2015 Latest change
  */
 public class LinksSpecific
 {
@@ -300,7 +299,7 @@ public class LinksSpecific
 
 
     /**
-     *
+     * @param format
      * @return
      */
     public static String getTimeStamp2( String format ) {

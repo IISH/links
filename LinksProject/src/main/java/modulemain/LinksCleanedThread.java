@@ -39,7 +39,7 @@ import general.PrintLogger;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-11-Mar-2015 Latest change
+ * FL-16-Mar-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -299,7 +299,11 @@ public class LinksCleanedThread extends Thread
 
                 doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source );                     // GUI cb: Post Tasks
 
-                doRemoveDuplicates( opts.isDbgRemoveDuplicates(), opts.isDoRemoveDuplicates() );      // GUI cb: Dup & Bad Regs
+                doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs() );   // GUI cb: Remove Empty Role Reg's
+
+                doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs() );   // GUI cb: Remove Empty Role Reg's
+
+                doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs() );   // GUI cb: Remove Duplicate Reg's
 
                 String msg = "Cleaning sourceId " + sourceId + " is done";
                 elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
@@ -607,12 +611,6 @@ public class LinksCleanedThread extends Thread
 
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-
-            if( rs.getFetchSize() == 0 ) {
-                String msg = "addToReportRegistration(): zero fetchSize of resultSet for query:\n" + selectQuery;
-                System.out.println( msg );
-                showMessage( msg, false, true );
-            }
 
             rs.first();
             location = rs.getString( "registration_location" );
@@ -4685,14 +4683,15 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int stepstate = count_step;
+        int nEmptyRegDates = 0;
 
         try
         {
-            String startQuery = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + source;
+            String query_r = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + source;
 
-            ResultSet rs = dbconOriginal.runQueryWithResult( startQuery );
+            ResultSet rs_r = dbconOriginal.runQueryWithResult( query_r );
 
-            while( rs.next() )
+            while( rs_r.next() )
             {
                 count++;
                 if( count == stepstate ) {
@@ -4701,15 +4700,41 @@ public class LinksCleanedThread extends Thread
                 }
 
                 // Get Opmerking
-                int id_registration      = rs.getInt( "id_registration" );
-                String registration_date = rs.getString( "registration_date" );
+                int id_registration      = rs_r.getInt( "id_registration" );
+                String registration_date = rs_r.getString( "registration_date" );
 
-                if( registration_date == null ) {
+                boolean reg_date = true;
+                if( registration_date == null || registration_date.isEmpty() )
+                {
+                    reg_date = false;
+                    nEmptyRegDates++;
+
+                    if( debug ) { System.out.println( "No registration date for id_registration: " + id_registration ); }
+
                     addToReportRegistration( id_registration, source, 202, "" );   // EC 202
 
-                    continue;
+                    String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_o WHERE id_registration = " + id_registration;
+
+                    ResultSet rs_p = dbconOriginal.runQueryWithResult( query_p );
+
+                    while( rs_p.next() )
+                    {
+                        int registration_maintype = rs_p.getInt( "registration_maintype" );
+
+                        // try to use the event date
+                        String event_date = "";
+                             if( registration_maintype == 1 ) { event_date = rs_p.getString( "birth_date" ); }
+                        else if( registration_maintype == 2 ) { event_date = rs_p.getString( "mar_date" ); }
+                        else if( registration_maintype == 3 ) { event_date = rs_p.getString( "death_date" ); }
+
+                        if( ! ( event_date == null || event_date.isEmpty() ) ) {
+                            registration_date = event_date;
+                            break;      // we have a date; skip the remaining reg persons
+                        }
+                    }
                 }
 
+                // check the date string
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
 
                 if( ! dymd.isValidDate() )
@@ -4756,17 +4781,31 @@ public class LinksCleanedThread extends Thread
                     registration_date = String.format( "%02d-%02d-%04d", day, month, year );
                 }
 
-                String query = "UPDATE registration_c"
-                    + " SET registration_c.registration_date = '" + registration_date + "' , "
-                    + "registration_c.registration_day = "        + dymd.getDay() + " , "
-                    + "registration_c.registration_month = "      + dymd.getMonth() + " , "
-                    + "registration_c.registration_year = "       + dymd.getYear()
-                    + " WHERE registration_c.id_registration = "  + id_registration;
+                String query = "";
+                if( reg_date )
+                {
+                    query = "UPDATE registration_c "
+                        + "SET registration_c.registration_date = '" + registration_date + "' , "
+                        + "registration_c.registration_day = "       + dymd.getDay()     + " , "
+                        + "registration_c.registration_month = "     + dymd.getMonth()   + " , "
+                        + "registration_c.registration_year = "      + dymd.getYear()    + " "
+                        + "WHERE registration_c.id_registration = "  + id_registration;
+                }
+                else
+                {
+                    query = "UPDATE registration_c "
+                        + "SET registration_c.registration_date = '" + registration_date + "' , "
+                        + "registration_c.registration_day = "       + dymd.getDay()     + " , "
+                        + "registration_c.registration_month = "     + dymd.getMonth()   + " , "
+                        + "registration_c.registration_year = "      + dymd.getYear()    + " , "
+                        + "registration_c.registration_flag = "      + 1                 + " "
+                        + "WHERE registration_c.id_registration = "  + id_registration;
+                }
 
                 dbconCleaned.runQuery( query );
-
             }
-            rs = null;
+
+            if( nEmptyRegDates > 0 ) { showMessage( "Number of registrations without a reg date: " + nEmptyRegDates, false, true ); }
         }
         catch( Exception ex ) {
             showMessage( "count: " + count + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
@@ -5689,29 +5728,66 @@ public class LinksCleanedThread extends Thread
     } // postTasks
 
 
-    /*---< Remove Duplicates >------------------------------------------------*/
+    /*---< Remove Bad Registrations >-----------------------------------------*/
 
-        /**
-     * Post Tasks
+    /**
+     * @param debug
      * @param go
      * @throws Exception
      */
-    private void doRemoveDuplicates( boolean debug, boolean go ) throws Exception
+    private void doRemoveEmptyDateRegs( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doRemoveDuplicates";
+        String funcname = "doRemoveEmptyDateRegs";
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
             return;
         }
 
-        showMessage( "Removing Bad registrations and Duplicates for all sources...", false, true );
+        showMessage( "Removing Registrations without dates...", false, true );
 
-        //removeEmptyDateRegistrations( debug );      // needs only registration_c, so first
-        removeEmptyRoleRegistrations( debug );    // needs registration_c plus person_c
+        removeEmptyDateRegs( debug );      // needs only registration_c, so do this one first
 
-        //removeDuplicateRegistrations( debug );
+    } // doRemoveEmptyDateRegs
 
-    } // doRemoveDuplicates
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doRemoveEmptyRoleRegs( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doRemoveEmptyRoleRegs";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        showMessage( "Removing Registrations without roles...", false, true );
+
+        removeEmptyRoleRegs( debug );    // needs registration_c plus person_c
+
+    } // doRemoveEmptyRoleRegs
+
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doRemoveDuplicateRegs( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doRemoveDuplicateRegs";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        showMessage( "Removing Duplicate Registrations...", false, true );
+
+        removeDuplicateRegs( debug );
+
+    } // doRemoveDuplicateRegs
 
 
     /**
@@ -5720,10 +5796,10 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyDateRegistrations( boolean debug )
+    private void removeEmptyDateRegs( boolean debug )
     throws Exception
     {
-        showMessage( "removeEmptyDateRegistrations()", false, true );
+        showMessage( "removeEmptyDateRegs()", false, true );
 
         String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c ";
 
@@ -5735,7 +5811,6 @@ public class LinksCleanedThread extends Thread
         try
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
-            int nregs =  rs_r.getFetchSize();
 
             int row = 0;
 
@@ -5743,7 +5818,7 @@ public class LinksCleanedThread extends Thread
             {
                 row++;
                 if( row == stepstate ) {
-                    showMessage( row + " of " + nregs, true, true );
+                    showMessage( "" + row, true, true );
                     stepstate += count_step;
                 }
 
@@ -5783,7 +5858,7 @@ public class LinksCleanedThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
-    } // removeEmptyDateRegistrations
+    } // removeEmptyDateRegs
 
 
     /**
@@ -5792,10 +5867,10 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyRoleRegistrations( boolean debug )
+    private void removeEmptyRoleRegs( boolean debug )
     throws Exception
     {
-        showMessage( "removeEmptyRoleRegistrations()", false, true );
+        showMessage( "removeEmptyRoleRegs()", false, true );
 
         String query_r = "SELECT id_registration, id_source, registration_maintype FROM registration_c ";
         if( debug ) { showMessage( query_r, false, true ); }
@@ -5806,7 +5881,6 @@ public class LinksCleanedThread extends Thread
         try
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
-            int nregs =  rs_r.getFetchSize();
 
             int row = 0;
 
@@ -5814,7 +5888,7 @@ public class LinksCleanedThread extends Thread
             {
                 row++;
                 if( row == stepstate ) {
-                    showMessage( row + " of " + nregs, true, true );
+                    showMessage( "" + row, true, true );
                     stepstate += count_step;
                 }
 
@@ -5827,7 +5901,6 @@ public class LinksCleanedThread extends Thread
                 if ( debug ) { showMessage( query_p, false, true ); }
 
                 ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                if (rs_p.getFetchSize() == 0) { continue; }    // no result
 
                 boolean norole = false;
                 while (rs_p.next())        // process the persons of this registration
@@ -5842,7 +5915,7 @@ public class LinksCleanedThread extends Thread
                             String msg = String.format( "No role: id_registration: %d, id_person: %d, registration_maintype: %d, role: %d" );
                             System.out.println( msg ); showMessage( msg, false, true );
 
-                            // Kees: all person of a registration must have a role, so we are done for this reg
+                            // Kees: all persons of a registration must have a role, so we are done for this reg
                             break;
                         }
                     }
@@ -5879,19 +5952,19 @@ public class LinksCleanedThread extends Thread
                 System.out.printf("'%s'\n", ex.getMessage());
                 ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // removeEmptyRoleRegistrations
+    } // removeEmptyRoleRegs
 
 
     /**
      * @param debug
      * @throws Exception
      */
-    private void removeDuplicateRegistrations( boolean debug )
+    private void removeDuplicateRegs( boolean debug )
     throws Exception
     {
         // Do we want to add "WHERE id_source = ..." to the first query?
 
-        showMessage( "removeDuplicateRegistrations()", false, true );
+        showMessage( "removeDuplicateRegs()", false, true );
         showMessage( "Notice: the familyname prefix is not used for comparisons", false , true );
 
         int min_cnt = 2;
@@ -6002,7 +6075,6 @@ public class LinksCleanedThread extends Thread
                         if( debug ) { System.out.println( query_p ); }
 
                         ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                        if( rs_p.getFetchSize() == 0 ) { continue; }    // no result
 
                         while( rs_p.next() )
                         {
@@ -6059,7 +6131,6 @@ public class LinksCleanedThread extends Thread
                         if( debug ) { System.out.println( query_p ); }
 
                         ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                        if( rs_p.getFetchSize() == 0 ) { continue; }    // no result
 
                         while( rs_p.next() )
                         {
@@ -6159,7 +6230,6 @@ public class LinksCleanedThread extends Thread
                         if( debug ) { System.out.println( query_p ); }
 
                         ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-                        if( rs_p.getFetchSize() == 0 ) { continue; }    // no result
 
                         while( rs_p.next() )
                         {
@@ -6245,7 +6315,7 @@ public class LinksCleanedThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
-    } // removeDuplicateRegistrations
+    } // removeDuplicateRegs
 
 
     /**

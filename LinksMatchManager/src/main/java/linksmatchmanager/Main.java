@@ -18,6 +18,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package linksmatchmanager;
 
+import java.text.SimpleDateFormat;
+
+import java.util.Calendar;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 
@@ -30,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-04-Mar-2015 Latest change
+ * FL-16-Mar-2015 Latest change
  */
 
 public class Main
@@ -61,10 +65,13 @@ public class Main
     public static void main( String[] args )
     {
         try {
-            long matchStart = System.currentTimeMillis();
-
             plog = new PrintLogger( "LMM-" );
-            plog.show( "Links Match Manager 2.0" );
+
+            long matchStart = System.currentTimeMillis();
+            String timestamp1 = "16-Mar-2015 11:17";
+            String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+            plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
+            plog.show( "Start at: " + timestamp2 );
 
             // Load arguments; check length
             if( args.length != 6 ) {
@@ -295,6 +302,17 @@ public class Main
         }
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exeption: " + ex.getMessage() ); }
     } // main
+
+
+    /**
+     * @param format
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
+        return sdf.format(cal.getTime());
+    }
 
 
     public static String millisec2hms( long millisec_start, long millisec_stop ) {

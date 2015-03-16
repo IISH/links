@@ -72,7 +72,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-13-Mar-2015 Latest change
+ * FL-16-Mar-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -88,24 +88,26 @@ public class ManagerGui extends javax.swing.JFrame
     private Options opts;
 
     // strings read from property file
-    private String dbgRenewData        = "";
-    private String dbgPrepieceSuffix   = "";
-    private String dbgFirstnames       = "";
-    private String dbgFamilynames      = "";
-    private String dbgLocations        = "";
-    private String dbgStatusSex        = "";
-    private String dbgRegType          = "";
-    private String dbgOccupation       = "";
-    private String dbgAge              = "";
-    private String dbgRole             = "";
-    private String dbgDates            = "";
-    private String dbgMinMaxMarriage   = "";
-    private String dbgPartsToFullDate  = "";
-    private String dbgDaysSinceBegin   = "";
-    private String dbgPostTasks        = "";
-    private String dbgRemoveDuplicates = "";
-    private String dbgPrematch         = "";
-    private String dbgMatch            = "";
+    private String dbgRenewData           = "";
+    private String dbgPrepieceSuffix      = "";
+    private String dbgFirstnames          = "";
+    private String dbgFamilynames         = "";
+    private String dbgLocations           = "";
+    private String dbgStatusSex           = "";
+    private String dbgRegType             = "";
+    private String dbgOccupation          = "";
+    private String dbgAge                 = "";
+    private String dbgRole                = "";
+    private String dbgDates               = "";
+    private String dbgMinMaxMarriage      = "";
+    private String dbgPartsToFullDate     = "";
+    private String dbgDaysSinceBegin      = "";
+    private String dbgPostTasks           = "";
+    private String dbgRemoveEmptyDateRegs = "";
+    private String dbgRemoveEmptyRoleRegs = "";
+    private String dbgRemoveDuplicateRegs = "";
+    private String dbgPrematch            = "";
+    private String dbgMatch               = "";
 
 
     public ManagerGui()
@@ -293,7 +295,9 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoOccupation = new JCheckBox();
 		cbCdoFirstnames = new JCheckBox();
 		cbCdoPrepieceSuffix = new JCheckBox();
-		cbCdoRemoveDuplicates = new JCheckBox();
+		cbCdoRemoveEmptyRoleRegs = new JCheckBox();
+		cbCdoRemoveEmptyDateRegs = new JCheckBox();
+		cbCdoRemoveDuplicateRegs = new JCheckBox();
 		pPrematch = new JPanel();
 		cbPdoFrequencyTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
@@ -1454,9 +1458,17 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoPrepieceSuffix.setText("Prepiece, Suffix");
 				cbCdoPrepieceSuffix.setName("cbCdoPrepieceSuffix");
 
-				//---- cbCdoRemoveDuplicates ----
-				cbCdoRemoveDuplicates.setText("Remove Bad & Dup Regs");
-				cbCdoRemoveDuplicates.setName("cbCdoRemoveDuplicates");
+				//---- cbCdoRemoveEmptyRoleRegs ----
+				cbCdoRemoveEmptyRoleRegs.setText("Remove Empty Role Reg's");
+				cbCdoRemoveEmptyRoleRegs.setName("cbCdoRemoveEmptyRoleRegs");
+
+				//---- cbCdoRemoveEmptyDateRegs ----
+				cbCdoRemoveEmptyDateRegs.setText("Remove Empty Date Reg's");
+				cbCdoRemoveEmptyDateRegs.setName("cbCdoRemoveEmptyDateRegs");
+
+				//---- cbCdoRemoveDuplicateRegs ----
+				cbCdoRemoveDuplicateRegs.setText("Remove Duplicate Reg's");
+				cbCdoRemoveDuplicateRegs.setName("cbCdoRemoveDuplicateRegs");
 
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
@@ -1517,7 +1529,11 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoRefreshData, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
 										.addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
 									.addGap(29, 29, 29)
-									.addComponent(cbCdoRemoveDuplicates, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+										.addComponent(cbCdoRemoveDuplicateRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+										.addComponent(cbCdoRemoveEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+										.addComponent(cbCdoRemoveEmptyDateRegs, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+									.addGap(0, 0, Short.MAX_VALUE)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGap(6, 6, 6)
@@ -1597,13 +1613,17 @@ public class ManagerGui extends javax.swing.JFrame
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoOccupation)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoDates)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoDates)
+										.addComponent(cbCdoRemoveEmptyDateRegs))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoMinMaxMarriage)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoMinMaxMarriage)
+										.addComponent(cbCdoRemoveEmptyRoleRegs))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(cbCdoPartsToFullDate)
-										.addComponent(cbCdoRemoveDuplicates))
+										.addComponent(cbCdoRemoveDuplicateRegs))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoDaysSinceBegin)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1984,33 +2004,49 @@ public class ManagerGui extends javax.swing.JFrame
             else { cbCdoPostTasks.setSelected( false ); }
         }
 
-        // Remove Duplicates
-        String doRemoveDuplicates = properties.getProperty( "doRemoveDuplicates" );
-        if( doRemoveDuplicates != null ) {
-            if( doRemoveDuplicates.equals( "true" ) ) { cbCdoRemoveDuplicates.setSelected( true ); }
-            else { cbCdoRemoveDuplicates.setSelected( false ); }
+        // Remove Empty Date Regs
+        String doRemoveEmptyDateRegs = properties.getProperty( "doRemoveEmptyDateRegs" );
+        if( doRemoveEmptyDateRegs != null ) {
+            if( doRemoveEmptyDateRegs.equals( "true" ) ) { cbCdoRemoveEmptyDateRegs.setSelected( true ); }
+            else { cbCdoRemoveEmptyDateRegs.setSelected( false ); }
         }
 
-        // debug flags
-        dbgRenewData        = properties.getProperty( "dbgRenewData" );
-        dbgPrepieceSuffix   = properties.getProperty( "dbgPrepieceSuffix" );
-        dbgFirstnames       = properties.getProperty( "dbgFirstnames" );
-        dbgFamilynames      = properties.getProperty( "dbgFamilynames" );
-        dbgLocations        = properties.getProperty( "dbgLocations" );
-        dbgStatusSex        = properties.getProperty( "dbgStatusSex" );
-        dbgRegType          = properties.getProperty( "dbgRegType" );
-        dbgOccupation       = properties.getProperty( "dbgOccupation" );
-        dbgAge              = properties.getProperty( "dbgAge" );
-        dbgRole             = properties.getProperty( "dbgRole" );
-        dbgDates            = properties.getProperty( "dbgDates" );
-        dbgMinMaxMarriage   = properties.getProperty( "dbgMinMaxMarriage" );
-        dbgPartsToFullDate  = properties.getProperty( "dbgPartsToFullDate" );
-        dbgDaysSinceBegin   = properties.getProperty( "dbgDaysSinceBegin" );
-        dbgPostTasks        = properties.getProperty( "dbgPostTasks" );
-        dbgRemoveDuplicates = properties.getProperty( "dbgRemoveDuplicates" );
+        // Remove Empty Role Regs
+        String doRemoveEmptyRoleRegs = properties.getProperty( "doRemoveEmptyRoleRegs" );
+        if( doRemoveEmptyRoleRegs != null ) {
+            if( doRemoveEmptyRoleRegs.equals( "true" ) ) { cbCdoRemoveEmptyRoleRegs.setSelected( true ); }
+            else { cbCdoRemoveEmptyRoleRegs.setSelected( false ); }
+        }
 
-        dbgPrematch         = properties.getProperty( "dbgPrematch" );
-        dbgMatch            = properties.getProperty( "dbgMatch" );
+        // Remove Duplicate Regs
+        String doRemoveDuplicateRegs = properties.getProperty( "doRemoveDuplicateRegs" );
+        if( doRemoveDuplicateRegs != null ) {
+            if( doRemoveDuplicateRegs.equals( "true" ) ) { cbCdoRemoveDuplicateRegs.setSelected( true ); }
+            else { cbCdoRemoveDuplicateRegs.setSelected( false ); }
+        }
+
+        
+        // debug flags
+        dbgRenewData           = properties.getProperty( "dbgRenewData" );
+        dbgPrepieceSuffix      = properties.getProperty( "dbgPrepieceSuffix" );
+        dbgFirstnames          = properties.getProperty( "dbgFirstnames" );
+        dbgFamilynames         = properties.getProperty( "dbgFamilynames" );
+        dbgLocations           = properties.getProperty( "dbgLocations" );
+        dbgStatusSex           = properties.getProperty( "dbgStatusSex" );
+        dbgRegType             = properties.getProperty( "dbgRegType" );
+        dbgOccupation          = properties.getProperty( "dbgOccupation" );
+        dbgAge                 = properties.getProperty( "dbgAge" );
+        dbgRole                = properties.getProperty( "dbgRole" );
+        dbgDates               = properties.getProperty( "dbgDates" );
+        dbgMinMaxMarriage      = properties.getProperty( "dbgMinMaxMarriage" );
+        dbgPartsToFullDate     = properties.getProperty( "dbgPartsToFullDate" );
+        dbgDaysSinceBegin      = properties.getProperty( "dbgDaysSinceBegin" );
+        dbgPostTasks           = properties.getProperty( "dbgPostTasks" );
+        dbgRemoveEmptyDateRegs = properties.getProperty( "dbgRemoveEmptyDateRegs" );
+        dbgRemoveEmptyRoleRegs = properties.getProperty( "dbgRemoveEmptyRoleRegs" );
+        dbgRemoveDuplicateRegs = properties.getProperty( "dbgRemoveDuplicateRegs" );
+        dbgPrematch            = properties.getProperty( "dbgPrematch" );
+        dbgMatch               = properties.getProperty( "dbgMatch" );
 
 
         String doSplitFirstnames = properties.getProperty( "doSplitFirstnames" );
@@ -2377,8 +2413,14 @@ public class ManagerGui extends javax.swing.JFrame
         if( cbCdoPostTasks.isSelected() ) { opts.setDoPostTasks( true ); }
         else { opts.setDoPostTasks( false ); }
 
-        if( cbCdoRemoveDuplicates.isSelected() ) { opts.setDoRemoveDuplicates( true ); }
-        else { opts.setDoRemoveDuplicates( false ); }
+        if( cbCdoRemoveEmptyDateRegs.isSelected() ) { opts.setDoRemoveEmptyDateRegs( true ); }
+        else { opts.setDoRemoveEmptyDateRegs( false ); }
+
+        if( cbCdoRemoveEmptyRoleRegs.isSelected() ) { opts.setDoRemoveEmptyRoleRegs( true ); }
+        else { opts.setDoRemoveEmptyRoleRegs( false ); }
+
+        if( cbCdoRemoveDuplicateRegs.isSelected() ) { opts.setDoRemoveDuplicateRegs( true ); }
+        else { opts.setDoRemoveDuplicateRegs( false ); }
 
 
         if( dbgRenewData != null ) {
@@ -2456,9 +2498,19 @@ public class ManagerGui extends javax.swing.JFrame
             else { opts.setDbgPostTasks(false); }
         }
 
-        if( dbgRemoveDuplicates != null ) {
-            if( dbgRemoveDuplicates.equals( "true" ) ) { opts.setDbgRemoveDuplicates(true); }
-            else { opts.setDbgRemoveDuplicates(false); }
+        if( dbgRemoveEmptyDateRegs != null ) {
+            if( dbgRemoveEmptyDateRegs.equals( "true" ) ) { opts.setDbgRemoveEmptyDateRegs(true); }
+            else { opts.setDbgRemoveEmptyDateRegs(false); }
+        }
+
+        if( dbgRemoveEmptyRoleRegs != null ) {
+            if( dbgRemoveEmptyRoleRegs.equals( "true" ) ) { opts.setDbgRemoveEmptyRoleRegs(true); }
+            else { opts.setDbgRemoveEmptyRoleRegs(false); }
+        }
+
+        if( dbgRemoveDuplicateRegs != null ) {
+            if( dbgRemoveDuplicateRegs.equals( "true" ) ) { opts.setDbgRemoveDuplicateRegs(true); }
+            else { opts.setDbgRemoveDuplicateRegs(false); }
         }
 
         if( dbgPrematch != null ) {
@@ -2666,6 +2718,7 @@ public class ManagerGui extends javax.swing.JFrame
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
+        /*
         Font Font = new JLabel().getFont();
         System.out.println( "System font: " + Font.getFontName() );
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -2674,17 +2727,17 @@ public class ManagerGui extends javax.swing.JFrame
         for( String fontname : fontnames ) {
             System.out.println( "available font: " + fontname );
         }
+        */
 
         java.awt.EventQueue.invokeLater( new Runnable()
         {
             public void run()
             {
-                String timestamp1 = "13-Mar-2015 10:42";
-
+                String timestamp1 = "16-Mar-2015 16:53";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {
-                    plog.show( "LINKS timestamp: " + timestamp1 );
+                    plog.show( "Links Data Manager 2.0 timestamp: " + timestamp1 );
                     plog.show( "Start at: " + timestamp2 );
                     plog.show( "ManagerGui/main/run()" );
                 }
@@ -2847,7 +2900,9 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoOccupation;
 	private JCheckBox cbCdoFirstnames;
 	private JCheckBox cbCdoPrepieceSuffix;
-	private JCheckBox cbCdoRemoveDuplicates;
+	private JCheckBox cbCdoRemoveEmptyRoleRegs;
+	private JCheckBox cbCdoRemoveEmptyDateRegs;
+	private JCheckBox cbCdoRemoveDuplicateRegs;
 	private JPanel pPrematch;
 	private JCheckBox cbPdoFrequencyTables;
 	private JCheckBox cbPdoLevenshtein;
