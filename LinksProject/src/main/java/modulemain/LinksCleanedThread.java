@@ -18,6 +18,8 @@ import java.util.Set;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import com.google.common.base.Splitter;
+
 import dataset.*;
 import dataset.TableToArrayListMultimap;
 
@@ -39,7 +41,7 @@ import general.PrintLogger;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-16-Mar-2015 Latest change
+ * FL-17-Mar-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -878,10 +880,10 @@ public class LinksCleanedThread extends Thread
         //almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
 
         showMessage( "standardPrepiece", false, true );
-        standardPrepiece( source );
+        standardPrepiece( debug, source );
 
         showMessage( "standardSuffix", false, true );
-        standardSuffix( source );
+        standardSuffix( debug, source );
 
         // Update reference
         showMessage( "Updating reference tables: Prepiece/Suffix", false, true );
@@ -1093,7 +1095,7 @@ public class LinksCleanedThread extends Thread
         {
             // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
-            con.isReadOnly();       // TODO did Omar mean con.setReadOnly(true); ?
+            con.setReadOnly(true);
 
             String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source;
 
@@ -1120,7 +1122,7 @@ public class LinksCleanedThread extends Thread
                 // Is firstname empty?
                 if( firstname != null && !firstname.isEmpty() )
                 {
-                    firstname = cleanFirstName( firstname );
+                    firstname = cleanFirstname( debug, source, id_person, firstname );
                     firstname = firstname.toLowerCase();
 
                     // Check name on aliases
@@ -1188,7 +1190,7 @@ public class LinksCleanedThread extends Thread
                         else    // name part does not exist in ref_firstname
                         {
                             // check on invalid token
-                            String nameNoInvalidChars = cleanName( prename );
+                            String nameNoInvalidChars = cleanName( debug, source, id_person, prename );
 
                             // name contains invalid chars ?
                             if( ! prename.equalsIgnoreCase( nameNoInvalidChars ) )
@@ -1425,7 +1427,7 @@ public class LinksCleanedThread extends Thread
 
             // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
-            con.isReadOnly();       // TODO did Omar mean con.setReadOnly(true); ?
+            con.setReadOnly(true);
 
             // Read family names from table
             ResultSet rsFamilyname = con.createStatement().executeQuery( selectQuery );
@@ -1452,7 +1454,7 @@ public class LinksCleanedThread extends Thread
                 // Check is Familyname is not empty or null
                 if( familyname != null && !familyname.isEmpty() )
                 {
-                    familyname = cleanFamilyname( familyname );
+                    familyname = cleanFamilyname( debug, source, id_person, familyname );
                     familyname = familyname.toLowerCase();
 
                     // familyname in ref_familyname ?
@@ -1499,7 +1501,7 @@ public class LinksCleanedThread extends Thread
                             addToReportPerson(id_person, source, 1003, familyname);  // EC 1003
                         }
 
-                        String nameNoInvalidChars = cleanName( nameNoSerriedSpaces );
+                        String nameNoInvalidChars = cleanName( debug, source, id_person, nameNoSerriedSpaces );
 
                         // Family name contains invalid chars ?
                         if( !nameNoSerriedSpaces.equalsIgnoreCase( nameNoInvalidChars ) ) {
@@ -1684,7 +1686,7 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardPrepiece( String source )
+    public void standardPrepiece( boolean debug, String source )
     {
         int count = 0;
         int stepstate = count_step;
@@ -1723,7 +1725,7 @@ public class LinksCleanedThread extends Thread
                 int id_person = rsPrepiece.getInt( "id_person" );
                 String prepiece = rsPrepiece.getString( "prefix" ).toLowerCase();
 
-                prepiece = cleanName( prepiece );
+                prepiece = cleanName( debug, source, id_person, prepiece );
 
                 String[] prefixes = prepiece.split( " " );
 
@@ -1815,7 +1817,7 @@ public class LinksCleanedThread extends Thread
     /**
      * @param source
      */
-    public void standardSuffix( String source )
+    public void standardSuffix( boolean debug, String source )
     {
         int count = 0;
         int stepstate = count_step;
@@ -1847,7 +1849,8 @@ public class LinksCleanedThread extends Thread
                 int id_person = rsSuffix.getInt( "id_person" );
                 String suffix = rsSuffix.getString( "suffix" ).toLowerCase();
 
-                suffix = cleanName( suffix );
+                //cleanFirstname( boolean debug, String id_source, int id_person, String name )
+                suffix = cleanName( debug, source, id_person, suffix );
 
                 // Check occurrence in ref table
                 if( almmSuffix.contains( suffix ) )
@@ -1931,9 +1934,11 @@ public class LinksCleanedThread extends Thread
 
                 // we must clean the name because of the braces used in aliases
                 // Set alias
-                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides( cleanName( names[ 1 ] ) ), id );
+                String clean = cleanName( debug, source, id, names[ 1 ] );
+                PersonC.updateQuery( "alias", LinksSpecific.funcCleanSides( clean ), id );
 
-                return LinksSpecific.funcCleanSides( cleanName( names[ 0 ] ) );
+                clean = cleanName( debug, source, id, names[ 0 ] );
+                return LinksSpecific.funcCleanSides( clean );
             }
         }
 
@@ -1945,8 +1950,17 @@ public class LinksCleanedThread extends Thread
      * @param name
      * @return
      */
-    private String cleanName( String name ) {
-        return name.replaceAll( "[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+    private String cleanName( boolean debug, String id_source, int id_person, String name )
+    throws Exception
+    {
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+
+        if( !clean.contains( " " ) && clean.length() > 18 ) {
+            if( debug ) { System.out.println( "cleanName() long name: " + clean ); }
+            addToReportPerson( id_person, id_source, 1121, clean );
+        }
+
+        return clean;
     } // cleanName
 
 
@@ -1954,17 +1968,47 @@ public class LinksCleanedThread extends Thread
      * @param name
      * @return
      */
-    private String cleanFirstName( String name ) {
-        return name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
-    } // cleanFirstName
+    private String cleanFirstname( boolean debug, String id_source, int id_person, String name )
+    throws Exception
+    {
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+
+        if( clean.contains( " " ) ) {
+            // check components
+            Iterable< String > parts = Splitter.on( ' ' ).split( clean );
+            for ( String part : parts ) {
+                if( part.length() > 18 ) {
+                    if( debug ) { System.out.println( "cleanName() long firstname: " + part + " in: " + part ); }
+                    addToReportPerson( id_person, id_source, 1121, part );
+                }
+            }
+        }
+        else {
+            if( clean.length() > 18 ) {
+                if( debug ) { System.out.println( "cleanName() long firstname: " + clean ); }
+                addToReportPerson( id_person, id_source, 1121, clean );
+            }
+        }
+
+        return clean;
+    } // cleanFirstname
 
 
     /**
      * @param name
      * @return
      */
-    private String cleanFamilyname( String name ) {
-        return name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " " );
+    private String cleanFamilyname( boolean debug, String id_source, int id_person, String name )
+    throws Exception
+    {
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " " );
+
+        if( !clean.contains( " " ) && clean.length() > 18 ) {
+            if( debug ) { System.out.println( "cleanFamilyname() long familyname: " + clean ); }
+            addToReportPerson( id_person, id_source, 1121, clean );
+        }
+
+        return clean;
     } // cleanFamilyname
 
 
@@ -5743,9 +5787,13 @@ public class LinksCleanedThread extends Thread
             return;
         }
 
+        long timeStart = System.currentTimeMillis();
         showMessage( "Removing Registrations without dates...", false, true );
 
         removeEmptyDateRegs( debug );      // needs only registration_c, so do this one first
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
 
     } // doRemoveEmptyDateRegs
 
@@ -5763,10 +5811,13 @@ public class LinksCleanedThread extends Thread
             return;
         }
 
+        long timeStart = System.currentTimeMillis();
         showMessage( "Removing Registrations without roles...", false, true );
 
         removeEmptyRoleRegs( debug );    // needs registration_c plus person_c
 
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doRemoveEmptyRoleRegs
 
 
@@ -5783,10 +5834,13 @@ public class LinksCleanedThread extends Thread
             return;
         }
 
+        long timeStart = System.currentTimeMillis();
         showMessage( "Removing Duplicate Registrations...", false, true );
 
         removeDuplicateRegs( debug );
 
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
     } // doRemoveDuplicateRegs
 
 
@@ -5836,11 +5890,9 @@ public class LinksCleanedThread extends Thread
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
 
-                    if( debug ) {
-                        showMessage( "Deleting id_registration without date: " + id_registration, false, true );
-                        showMessage( deleteRegist, false, true );
-                        showMessage( deletePerson, false, true );
-                    }
+                    showMessage( "Deleting id_registration without date: " + id_registration, false, true );
+                    showMessage( deleteRegist, false, true );
+                    showMessage(deletePerson, false, true);
 
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 2, "" );       // warning 2
@@ -5849,8 +5901,8 @@ public class LinksCleanedThread extends Thread
                     dbconCleaned.runQuery( deletePerson );
                 }
             }
-
-            showMessage( "Number of registrations without date: " + nNoRegDate, false, true );
+            String msg =  "Number of registrations without date: " + nNoRegDate;
+            System.out.println( msg ); showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
@@ -5905,8 +5957,8 @@ public class LinksCleanedThread extends Thread
                 boolean norole = false;
                 while (rs_p.next())        // process the persons of this registration
                 {
-                    int id_person    = rs_r.getInt( "id_person" );
-                    String role      = rs_r.getString( "role" );
+                    int id_person = rs_p.getInt( "id_person" );
+                    String role   = rs_p.getString( "role" );
 
                     if( role == null || role.isEmpty() || role.equals( "null" ) ) {
                         norole =  true;
@@ -5914,34 +5966,28 @@ public class LinksCleanedThread extends Thread
                         if( debug ) {
                             String msg = String.format( "No role: id_registration: %d, id_person: %d, registration_maintype: %d, role: %d" );
                             System.out.println( msg ); showMessage( msg, false, true );
-
-                            // Kees: all persons of a registration must have a role, so we are done for this reg
-                            break;
                         }
+                        break;  // Kees: all persons of a registration must have a role, so we are done for this reg
                     }
                 }
 
-                if( norole ) {
-                    if( debug ) {}
+                if( norole )
+                {
                     nNoRole++;
 
                     // Delete records with this registration
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
 
-                    if( debug ) {
-                        showMessage( "Deleting id_registration without role: " + id_registration, false, true );
-                        showMessage( deleteRegist, false, true );
-                        showMessage( deletePerson, false, true );
-                    }
+                    showMessage( "Deleting id_registration without role: " + id_registration, false, true );
+                    showMessage( deleteRegist, false, true );
+                    showMessage(deletePerson, false, true);
 
-                    /*
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 3, "" );       // warning 3
 
                     dbconCleaned.runQuery( deleteRegist );
                     dbconCleaned.runQuery( deletePerson );
-                    */
                 }
             }
 
@@ -5949,8 +5995,8 @@ public class LinksCleanedThread extends Thread
             System.out.println( msg ); showMessage( msg, false, true );
         }
         catch( Exception ex ) {
-                System.out.printf("'%s'\n", ex.getMessage());
-                ex.printStackTrace( new PrintStream( System.out ) );
+            System.out.printf("'%s'\n", ex.getMessage());
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // removeEmptyRoleRegs
 
@@ -6306,8 +6352,7 @@ public class LinksCleanedThread extends Thread
                 }
             }
 
-            showMessage_nl();
-            showMessage( "Number of duplicates in links_cleaned: " + nDuplicates, false , true );
+            showMessage("Number of duplicates removed: " + nDuplicates, false, true);
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
