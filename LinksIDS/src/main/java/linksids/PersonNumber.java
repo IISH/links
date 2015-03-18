@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  * <p/>
  * FL-21-Jan-2014 Imported from CM
  * FL-03-Feb-2015 Also use partner in personNumber (from KM + CM)
- * FL-03-Mar-2015 Latest change
+ * FL-18-Mar-2015 Latest change
  *
  */
 public class PersonNumber implements Runnable
@@ -404,46 +404,8 @@ public class PersonNumber implements Runnable
                 //ResultSet r = statement.executeQuery(select);
                 ResultSet r = connection.createStatement().executeQuery( select );
 
-                /*
-                while( r.next() )
-                {
-                    count++;
-                    if(r.getInt("person_number") != prevPersonNumber){
-                        if(h != null){
-                            //personNumberToP_IDs.put(prevPersonNumber, h);
-                            if(h.size() == 0){
-                                id_person[prevPersonNumber] = onlySelf;
-                            }
-                            else{
-                                id_person[prevPersonNumber] = h;
-                                h = new HashSet<Integer>();
-                            }
-                        }
-                        else
-                            h = new HashSet<Integer>();
-                        prevPersonNumber = r.getInt("person_number");
-                    }
-                    
-                    int id_person     = r.getInt("id_person");
-                    int person_number = r.getInt("person_number");
-                    
-                    if(person_number != id_person)
-                        h.add(r.getInt("id_person"));
-                    personNumber[id_person] = person_number;
-                    
-                }
-                if(h != null){
-                    if(h.size() == 0){
-                        id_person[prevPersonNumber] = onlySelf;
-                    }
-                    else{
-                        id_person[prevPersonNumber] = h;
-                    }
-                    h = null;
-                        
-                }
-                */
 
+                /*
                 while( r.next() )
                 {
                     count++;
@@ -470,6 +432,37 @@ public class PersonNumber implements Runnable
 
                     int id_person     = r.getInt( "id_person" );
                     int person_number = r.getInt( "person_number" );
+
+                    h.add(r.getInt("id_person"));
+                }
+                */
+
+                while( r.next() )
+                {
+                    count++;
+                    if(r.getInt("person_number") != prevPersonNumber){
+
+                        //personNumberToP_IDs.put(prevPersonNumber, h);
+
+                        if(h == null){
+                            h = new ArrayList<Integer>();
+                        }
+                        else{
+                            if(h.size() == 1){
+                                aliases[prevPersonNumber] = onlySelf;
+                            }
+                            else{
+                                for(Integer y1: h)
+                                    aliases[y1] = h;
+
+                            }
+                            h = new ArrayList<Integer>();
+                        }
+                        prevPersonNumber = r.getInt("person_number");
+                    }
+
+                    //int id_person     = r.getInt("id_person");
+                    //int person_number = r.getInt("person_number");
 
                     h.add(r.getInt("id_person"));
                 }

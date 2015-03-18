@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-05-Mar-2015 Latest change
+ * FL-18-Mar-2015 Latest change, changes by CM
  */
 public class LinksIDS
 {
@@ -674,15 +674,27 @@ public class LinksIDS
                 String birthdate = "BIRTH_DATE";
                 if(stillborn != null && stillborn.trim().equals("1")) birthdate = "STILLBIRTH_DATE";
 
-                if(birth_year != 0 || birth_year_min != 0 || birth_year_max != 0){
-                    addIndiv(connection, person_number, "" + registration_maintype, birthdate, null,  0, "Declared", "Exact", birth_day, birth_month, birth_year,
-                            birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max);
+                if( birth_year != 0 || birth_year_min != 0 || birth_year_max != 0 )
+                {
+                    if( birth_year != 0 )
+                    {
+                        birth_day_min   = 0;
+                        birth_month_min = 0;
+                        birth_year_min  = 0;
+                        birth_day_max   = 0;
+                        birth_month_max = 0;
+                        birth_year_max  = 0;
+                    }
+
+                    addIndiv( connection, person_number, "" + registration_maintype, birthdate, null,  0, "Declared", "Exact", birth_day, birth_month, birth_year,
+                        birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max );
 
                     birthDay = true;
                 }
             }
             
-            if(bl == false){
+            if( bl == false )
+            {
                 columnName = "birth_location";
                 if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null){
                     Integer bll = new Integer(persons.get(i)[h.get(columnName)]);
@@ -698,39 +710,56 @@ public class LinksIDS
                 }
             }
 
-            if(fn == false){
+            if( fn == false )
+            {
                 columnName = "firstname";
-                if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0){ 
-                    addIndiv(connection, person_number, "" + registration_maintype, "FIRST_NAME",   persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact", registration_day, registration_month, registration_year,0,0,0,0,0,0);
+                if( h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0 )
+                {
+                    addIndiv( connection, person_number, "" + registration_maintype, "FIRST_NAME", persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact",
+                        birth_day, birth_month, birth_year, birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max );
+
                     fn = true;
                 }
             }
 
-            if(ln == false){
+            if( ln == false )
+            {
                 columnName = "familyname";
-                if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0){ 
-                    addIndiv(connection, person_number, "" + registration_maintype, "LAST_NAME",   persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact", registration_day, registration_month, registration_year,0,0,0,0,0,0);
+                if( h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0 )
+                {
+                    addIndiv( connection, person_number, "" + registration_maintype, "LAST_NAME", persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact",
+                        birth_day, birth_month, birth_year, birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max );
+
                     ln = true;
                 }
             }
 
-            if(pf == false){
+            if( pf == false )
+            {
                 columnName = "prefix";
-                if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0) {
-                    addIndiv(connection, person_number, "" + registration_maintype, "PREFIX_LAST_NAME",   persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact", registration_day, registration_month, registration_year,0,0,0,0,0,0);
+                if( h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0 )
+                {
+                    addIndiv( connection, person_number, "" + registration_maintype, "PREFIX_LAST_NAME", persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact",
+                        birth_day, birth_month, birth_year, birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max );
+
                     pf = true;
                 }
             }
             
-            if(sx == false){
+            if( sx == false )
+            {
                 columnName = "sex";
-                if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0){ 
-                    addIndiv(connection, person_number, "" + registration_maintype, "SEX",   persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact", registration_day, registration_month, registration_year,0,0,0,0,0,0);
+                if( h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null && persons.get(i)[h.get(columnName)].trim().length() > 0 )
+                {
+                    addIndiv( connection, person_number, "" + registration_maintype, "SEX", persons.get(i)[h.get(columnName)].trim(), 0, "Declared", "Exact",
+                        birth_day, birth_month, birth_year, birth_day_min, birth_month_min, birth_year_min,  birth_day_max, birth_month_max, birth_year_max );
+
                     sx = true;
                 }
             }
 
-            if(deathDay == false){
+            if( deathDay == false )
+            {
                 
                 columnName = "death_day";
                 if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null) death_day = new Integer (persons.get(i)[h.get(columnName)]);
@@ -759,23 +788,36 @@ public class LinksIDS
                 columnName = "death_year_max";
                 if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null) death_year_max = new Integer (persons.get(i)[h.get(columnName)]);
 
-                if(death_year != 0 || death_year_min != 0 || death_year_max != 0){
-                    addIndiv(connection, person_number, "" + registration_maintype, "DEATH_DATE",   null, 0, "Declared", "Exact", death_day, death_month, death_year,
-                            death_day_min, death_month_min, death_year_min, death_day_max, death_month_max, death_year_max);
+                if( death_year != 0 || death_year_min != 0 || death_year_max != 0 )
+                {
+                    if( death_year != 0 )
+                    {
+                        death_day_min   = 0;
+                        death_month_min = 0;
+                        death_year_min  = 0;
+                        death_day_max   = 0;
+                        death_month_max = 0;
+                        death_year_max  = 0;
+                    }
+
+                    addIndiv( connection, person_number, "" + registration_maintype, "DEATH_DATE",   null, 0, "Declared", "Exact", death_day, death_month, death_year,
+                        death_day_min, death_month_min, death_year_min, death_day_max, death_month_max, death_year_max );
 
                     deathDay = true;
                 }
             }
             
-            if(dl == false){
+            if( dl == false )
+            {
                 columnName = "death_location";
-                if(h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null){
+                if( h.get(columnName) != null && persons.get(i)[h.get(columnName)] != null )
+                {
                     Integer pn = new Integer(persons.get(i)[h.get(columnName)]);
                     Integer Id_C = locNo2Id_C.get(pn);
-                    if(Id_C != null && Id_C != 0){
-                        addIndiv(connection, person_number, "" + registration_maintype, "DEATH_PLACE",   null, Id_C, "Declared", "Exact", 
-                                death_day, death_month, death_year,
-                                death_day_min, death_month_min, death_year_min, death_day_max, death_month_max, death_year_max);
+                    if( Id_C != null && Id_C != 0 )
+                    {
+                        addIndiv( connection, person_number, "" + registration_maintype, "DEATH_PLACE",   null, Id_C, "Declared", "Exact",
+                            death_day, death_month, death_year, death_day_min, death_month_min, death_year_min, death_day_max, death_month_max, death_year_max );
 
                         dl = true;
                     }

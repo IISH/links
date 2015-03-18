@@ -1849,7 +1849,6 @@ public class LinksCleanedThread extends Thread
                 int id_person = rsSuffix.getInt( "id_person" );
                 String suffix = rsSuffix.getString( "suffix" ).toLowerCase();
 
-                //cleanFirstname( boolean debug, String id_source, int id_person, String name )
                 suffix = cleanName( debug, source, id_person, suffix );
 
                 // Check occurrence in ref table
@@ -1955,7 +1954,7 @@ public class LinksCleanedThread extends Thread
     {
         String clean = name.replaceAll( "[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
 
-        if( !clean.contains( " " ) && clean.length() > 18 ) {
+        if( ! clean.contains( " " ) && clean.length() > 18 ) {
             if( debug ) { System.out.println( "cleanName() long name: " + clean ); }
             addToReportPerson( id_person, id_source, 1121, clean );
         }
@@ -1971,12 +1970,29 @@ public class LinksCleanedThread extends Thread
     private String cleanFirstname( boolean debug, String id_source, int id_person, String name )
     throws Exception
     {
+        // some characters should be interpreted as a missing <space>, e.g.:
+        // '/' -> ' ', '<br/>' -> ' '
+        // check components
+        Iterable< String > rawparts = Splitter.on( ' ' ).split( name );
+        for ( String part : rawparts ) {
+            if( part.contains( "/" ) ) { System.out.println( "firstname contains '/': " + name ); }
+
+            if( part.contains( "<br/>" ) ) { System.out.println( "firstname contains '<br/>': " + name ); }
+
+            // check for uppercase letters beyond the first char; notice: IJ should be an exception (IJsbrand)
+            // there are many garbage characters
+            //String subpart  = part.substring( 1 );
+            //String sublower = subpart.toLowerCase();
+            //if( ! subpart.equals( sublower ) ) { System.out.println( "firstname contains inside uppercase letter: " + name ); }
+        }
+
         String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+
 
         if( clean.contains( " " ) ) {
             // check components
-            Iterable< String > parts = Splitter.on( ' ' ).split( clean );
-            for ( String part : parts ) {
+            Iterable< String > cleanparts = Splitter.on( ' ' ).split( clean );
+            for ( String part : cleanparts ) {
                 if( part.length() > 18 ) {
                     if( debug ) { System.out.println( "cleanName() long firstname: " + part + " in: " + part ); }
                     addToReportPerson( id_person, id_source, 1121, part );
@@ -2003,7 +2019,7 @@ public class LinksCleanedThread extends Thread
     {
         String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " " );
 
-        if( !clean.contains( " " ) && clean.length() > 18 ) {
+        if( ! clean.contains( " " ) && clean.length() > 18 ) {
             if( debug ) { System.out.println( "cleanFamilyname() long familyname: " + clean ); }
             addToReportPerson( id_person, id_source, 1121, clean );
         }
@@ -6105,6 +6121,7 @@ public class LinksCleanedThread extends Thread
                     }
                     */
 
+
                     boolean isDuplicate = false;
 
                     int id_registration = Integer.parseInt( registrationIds[ rid1 ] );
@@ -6330,9 +6347,11 @@ public class LinksCleanedThread extends Thread
                         // write error msg with EC=1
                         // remove second member of duplicates from registration_c and person_c
                         String msg = "keep id: " + id_registration1 + ", delete: " + id_registration2;
-                        System.out.println( msg );
-                        showMessage( msg, false, true );
+                        System.out.println( msg ); showMessage( msg, false, true );
 
+                        msg = "TEST RUN; NOT DELETING";
+                        System.out.println( msg ); showMessage( msg, false, true );
+                        /*
                         //String warn = "Duplicate registration: keep id: " + id_registration1 + ", delete id: " + id_registration2;
                         //addToReportRegistration( int id, String id_source, int errorCode, String value )
                         if( id_source2.isEmpty() ) { id_source2 = "0"; }    // it must be a valid integer string for the log table
@@ -6348,7 +6367,9 @@ public class LinksCleanedThread extends Thread
 
                         dbconCleaned.runQuery( deleteRegist );
                         dbconCleaned.runQuery( deletePerson );
+                        */
                     }
+
                 }
             }
 
