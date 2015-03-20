@@ -405,38 +405,6 @@ public class PersonNumber implements Runnable
                 ResultSet r = connection.createStatement().executeQuery( select );
 
 
-                /*
-                while( r.next() )
-                {
-                    count++;
-                    if( r.getInt( "person_number" ) != prevPersonNumber )
-                    {
-                        if( h != null ) {
-                                //personNumberToP_IDs.put(prevPersonNumber, h);
-                                if( h.size() == 1 ) {
-                                    aliases[ prevPersonNumber ] = onlySelf;
-                                }
-                                else {
-                                    for( Integer y1: h ) {
-                                        aliases[ y1 ] = h;
-                                    }
-                                    h = new ArrayList< Integer >();
-                                }
-                        }
-                        else {
-                            h = new ArrayList< Integer >();
-                        }
-
-                        prevPersonNumber = r.getInt( "person_number" );
-                    }
-
-                    int id_person     = r.getInt( "id_person" );
-                    int person_number = r.getInt( "person_number" );
-
-                    h.add(r.getInt("id_person"));
-                }
-                */
-
                 while( r.next() )
                 {
                     count++;
