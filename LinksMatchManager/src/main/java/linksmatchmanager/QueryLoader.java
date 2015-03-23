@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-20-Feb-2015 Latest change
+ * FL-23-Mar-2015 Latest change
  */
 public class QueryLoader
 {
@@ -421,7 +421,7 @@ public class QueryLoader
             // convert sex to int
             if( !ignore_sex )
             {
-                String s = set1.getString( "ignore_sex" );
+                String s = set1.getString( "ego_sex" );
 
                 if( s.equalsIgnoreCase( "v" ) )      { var_s1_sex = 1; }
                 else if( s.equalsIgnoreCase( "m" ) ) { var_s1_sex = 2; }
@@ -732,7 +732,7 @@ public class QueryLoader
             //convert sex to int
             if( !ignore_sex )
             {
-                String s = set2.getString( "ignore_sex" );
+                String s = set2.getString( "ego_sex" );
 
                 if( s.equalsIgnoreCase( "v" ) )      { var_s2_sex = 1; }
                 else if( s.equalsIgnoreCase( "m" ) ) { var_s2_sex = 2; }

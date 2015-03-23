@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-01-Mar-2015 Latest change
+ * FL-23-Mar-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -54,7 +54,8 @@ public class QueryGenerator
     {
         this.plog = plog;
 
-        rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process" );   // Get the input
+        // Get all records and fields from the match_process table
+        rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process" );
 
         is = new InputSet();
 
@@ -105,6 +106,7 @@ public class QueryGenerator
         int nline_y = 0;
         int nline_n = 0;
 
+        // Process the records from the match_process table
         while( rs.next() )
         {
             nline++;
@@ -112,7 +114,7 @@ public class QueryGenerator
 
             if( ! match.equalsIgnoreCase( "y" ) ) {
                 nline_n++;
-                continue;
+                continue;       // skip records that have 'match' set to 'n'
             }
             nline_y++;
 
@@ -511,6 +513,10 @@ public class QueryGenerator
                         if( s2_days > 0 ) { qs.query2 += "registration_days <= " + s2_days + " AND "; }
                     }
                 }
+
+                // ignore_sex
+
+
 
                 // clean
                 if( qs.query1.endsWith( " AND " ) ) {
