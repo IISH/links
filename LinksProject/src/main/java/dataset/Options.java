@@ -32,7 +32,7 @@ import general.PrintLogger;
  * FL-12-Nov-2014 dbg
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
- * FL-16-Mar-2015 Latest change
+ * FL-25-Mar-2015 Latest change
  */
 public class Options
 {
@@ -105,6 +105,9 @@ public class Options
 
     private boolean doRemoveDuplicateRegs;
     private boolean dbgRemoveDuplicateRegs;
+
+    private boolean doScanRemarks;
+    private boolean dbgScanRemarks;
 
     private boolean doPrematch;
     private boolean dbgPrematch;
@@ -289,6 +292,13 @@ public class Options
 
     public void setDoRemoveDuplicateRegs(  boolean  doRemoveDuplicateRegs ) { this.doRemoveDuplicateRegs  = doRemoveDuplicateRegs; }
     public void setDbgRemoveDuplicateRegs( boolean dbgRemoveDuplicateRegs ) { this.dbgRemoveDuplicateRegs = dbgRemoveDuplicateRegs; }
+
+
+    public boolean  isDoScanRemarks() { return doScanRemarks; }
+    public boolean isDbgScanRemarks() { return dbgScanRemarks; }
+
+    public void setDoScanRemarks(  boolean  doScanRemarks ) { this.doScanRemarks  = doScanRemarks; }
+    public void setDbgScanRemarks( boolean dbgScanRemarks ) { this.dbgScanRemarks = dbgScanRemarks; }
 
 
     public boolean  isDoPrematch() { return doPrematch; }

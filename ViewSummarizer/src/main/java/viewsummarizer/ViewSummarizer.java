@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-26-Feb-2015 Latest change
+ * FL-25-Feb-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -266,6 +266,7 @@ public class ViewSummarizer
             else if( result.equals( "240" ) ) { display += " = Z-H_Westland"; }
             else if( result.equals( "241" ) ) { display += " = Z-H_Leidschendam"; }
             else if( result.equals( "242" ) ) { display += " = Z-H_Wassenaar"; }
+            else { display += " = onbekend archief"; }
         }
 
         else if( varname.equals( "s1_maintype" ) || varname.equals( "s2_maintype" ) )
@@ -274,6 +275,7 @@ public class ViewSummarizer
                  if( result.equals( "1" ) ) { display += " = Birth"; }
             else if( result.equals( "2" ) ) { display += " = Marriage"; }
             else if( result.equals( "3" ) ) { display += " = Death"; }
+            else { display += " = Unknown"; }
         }
 
         else if( varname.equals( "s1_type" ) || varname.equals( "s2_type" ) )
@@ -283,6 +285,7 @@ public class ViewSummarizer
             else if( result.equals( "h" ) ) { display += " = huwelijk"; }
             else if( result.equals( "s" ) ) { display += " = scheiding"; }
             else if( result.equals( "o" ) ) { display += " = overlijden"; }
+            else { display += " = onbekend"; }
         }
 
         else if( varname.equals( "s1_role_ego" ) || varname.equals( "s2_role_ego" ) )
@@ -313,6 +316,7 @@ public class ViewSummarizer
                 else if( r.equals(  "9" ) ) { display += "Father bridegroom"; }
                 else if( r.equals( "10" ) ) { display += "Deceased"; }
                 else if( r.equals( "11" ) ) { display += "Partner"; }
+                else { display += "Alien"; }
             }
             if( display.isEmpty() ) { display = result; }
         }
@@ -320,11 +324,10 @@ public class ViewSummarizer
         else if( varname.equals( "firstname" ) )
         {
             display = result;
-                 if( result.equals( "1" ) ) { display += " = firstnames_1_2_3_4"; }
+                 if( result.equals( "1" ) ) { display += " = firstname_1_2"; }
             else if( result.equals( "2" ) ) { display += " = firstname_1"; }
-            else if( result.equals( "3" ) ) { display += " = firstnames_1_2"; }
-            else if( result.equals( "4" ) ) { display += " = firstnames_1_2_3"; }
-            else if( result.equals( "5" ) ) { display += " = firstnames_1_(2-or-3-or-4)"; }
+            else if( result.equals( "3" ) ) { display += " = firstname_1-or-2-or-3-or-4"; }
+            else { display += " = unknown method"; }
         }
 
         else { display = result; }

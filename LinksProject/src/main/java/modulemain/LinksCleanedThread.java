@@ -307,6 +307,8 @@ public class LinksCleanedThread extends Thread
 
                 doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs() );   // GUI cb: Remove Duplicate Reg's
 
+                doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks());                       // GUI cb: Scan Remarks
+
                 String msg = "Cleaning sourceId " + sourceId + " is done";
                 elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
                 System.out.println( msg );
@@ -6382,6 +6384,73 @@ public class LinksCleanedThread extends Thread
             }
         }
     } // removeDuplicateRegs
+
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doScanRemarks( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doScanRemarks";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( "Scanning Remarks...", false, true );
+
+        scanRemarks(debug);
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doScanRemarks
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    private void scanRemarks( boolean debug ) throws Exception
+    {
+        // Do we want to add "WHERE id_source = ..." to the first query?
+
+        showMessage( "scanRemarks()", false, true );
+
+        String selectQuery = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
+
+        if( debug ) {
+            System.out.println( selectQuery );
+            showMessage( selectQuery, false, true );
+        }
+
+        try {
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+
+            while( rs.next() )
+            {
+                int id_registration       = rs.getInt( "id_registration" );
+                int registration_maintype = rs.getInt( "registration_maintype" );
+                String remarks            = rs.getString( "remarks" );
+
+                if( remarks == null || remarks.isEmpty() ) { continue; }
+
+                System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
+                    id_registration, registration_maintype, remarks );
+
+
+
+            }
+        }
+        catch( Exception ex ) {
+            showMessage(ex.getMessage(), false, true);
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+
+    } // scanRemarks
 
 
     /**

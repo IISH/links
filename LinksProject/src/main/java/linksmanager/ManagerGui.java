@@ -72,7 +72,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-17-Mar-2015 Latest change
+ * FL-25-Mar-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -106,6 +106,7 @@ public class ManagerGui extends javax.swing.JFrame
     private String dbgRemoveEmptyDateRegs = "";
     private String dbgRemoveEmptyRoleRegs = "";
     private String dbgRemoveDuplicateRegs = "";
+    private String dbgScanRemarks         = "";
     private String dbgPrematch            = "";
     private String dbgMatch               = "";
 
@@ -298,6 +299,7 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoRemoveEmptyRoleRegs = new JCheckBox();
 		cbCdoRemoveEmptyDateRegs = new JCheckBox();
 		cbCdoRemoveDuplicateRegs = new JCheckBox();
+		cbCdoScanRemarks = new JCheckBox();
 		pPrematch = new JPanel();
 		cbPdoFrequencyTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
@@ -1470,6 +1472,10 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoRemoveDuplicateRegs.setText("Remove Duplicate Reg's");
 				cbCdoRemoveDuplicateRegs.setName("cbCdoRemoveDuplicateRegs");
 
+				//---- cbCdoScanRemarks ----
+				cbCdoScanRemarks.setText("Scan Remarks");
+				cbCdoScanRemarks.setName("cbCdoScanRemarks");
+
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
 				pLOLCLayout.setHorizontalGroup(
@@ -1532,7 +1538,8 @@ public class ManagerGui extends javax.swing.JFrame
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
 										.addComponent(cbCdoRemoveDuplicateRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
 										.addComponent(cbCdoRemoveEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
-										.addComponent(cbCdoRemoveEmptyDateRegs, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+										.addComponent(cbCdoRemoveEmptyDateRegs, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+										.addComponent(cbCdoScanRemarks, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
 									.addGap(0, 0, Short.MAX_VALUE)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1625,7 +1632,9 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoPartsToFullDate)
 										.addComponent(cbCdoRemoveDuplicateRegs))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoDaysSinceBegin)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoDaysSinceBegin)
+										.addComponent(cbCdoScanRemarks))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoPostTasks)
 									.addGap(8, 8, 8)
@@ -2025,6 +2034,12 @@ public class ManagerGui extends javax.swing.JFrame
             else { cbCdoRemoveDuplicateRegs.setSelected( false ); }
         }
 
+        // Scan Remarks in Regs
+        String doScanRemarks = properties.getProperty( "doScanRemarks" );
+        if( doScanRemarks != null ) {
+            if( doScanRemarks.equals( "true" ) ) { cbCdoScanRemarks.setSelected( true ); }
+            else { cbCdoScanRemarks.setSelected( false ); }
+        }
         
         // debug flags
         dbgRenewData           = properties.getProperty( "dbgRenewData" );
@@ -2045,6 +2060,7 @@ public class ManagerGui extends javax.swing.JFrame
         dbgRemoveEmptyDateRegs = properties.getProperty( "dbgRemoveEmptyDateRegs" );
         dbgRemoveEmptyRoleRegs = properties.getProperty( "dbgRemoveEmptyRoleRegs" );
         dbgRemoveDuplicateRegs = properties.getProperty( "dbgRemoveDuplicateRegs" );
+        dbgScanRemarks         = properties.getProperty( "dbgScanRemarks" );
         dbgPrematch            = properties.getProperty( "dbgPrematch" );
         dbgMatch               = properties.getProperty( "dbgMatch" );
 
@@ -2422,6 +2438,8 @@ public class ManagerGui extends javax.swing.JFrame
         if( cbCdoRemoveDuplicateRegs.isSelected() ) { opts.setDoRemoveDuplicateRegs( true ); }
         else { opts.setDoRemoveDuplicateRegs( false ); }
 
+        if( cbCdoScanRemarks.isSelected() ) { opts.setDoScanRemarks( true ); }
+        else { opts.setDoScanRemarks( false ); }
 
         if( dbgRenewData != null ) {
             if( dbgRenewData.equals( "true" ) ) { opts.setDbgRenewData( true ); }
@@ -2511,6 +2529,11 @@ public class ManagerGui extends javax.swing.JFrame
         if( dbgRemoveDuplicateRegs != null ) {
             if( dbgRemoveDuplicateRegs.equals( "true" ) ) { opts.setDbgRemoveDuplicateRegs(true); }
             else { opts.setDbgRemoveDuplicateRegs(false); }
+        }
+
+        if( dbgScanRemarks != null ) {
+            if( dbgScanRemarks.equals( "true" ) ) { opts.setDbgScanRemarks(true); }
+            else { opts.setDbgScanRemarks(false); }
         }
 
         if( dbgPrematch != null ) {
@@ -2733,7 +2756,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "17-Mar-2015 17:29";
+                String timestamp1 = "25-Mar-2015 14:00";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {
@@ -2903,6 +2926,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoRemoveEmptyRoleRegs;
 	private JCheckBox cbCdoRemoveEmptyDateRegs;
 	private JCheckBox cbCdoRemoveDuplicateRegs;
+	private JCheckBox cbCdoScanRemarks;
 	private JPanel pPrematch;
 	private JCheckBox cbPdoFrequencyTables;
 	private JCheckBox cbPdoLevenshtein;

@@ -15,7 +15,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-23-Mar-2015 Latest change
+ * FL-25-Mar-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -1290,7 +1290,7 @@ public class MatchAsync extends Thread
     )
     {
         //int lvs_dist_name1, lvs_dist_name2, lvs_dist_name3, lvs_dist_name4 = -1;
-        int retval = -1;
+        int lvs_dist = -1;
 
         if( debug ) {
             System.out.println( "checkFirstName() fn_method: " + fn_method );
@@ -1298,6 +1298,7 @@ public class MatchAsync extends Thread
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
 
+        /*
         if( fn_method == 1 )
         {
             // compare compare firstname1 + firstname2 + firstname3 + firstname4 of s1 & s2
@@ -1311,64 +1312,74 @@ public class MatchAsync extends Thread
             if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 || lvs_dist_name3 == -1|| lvs_dist_name4 == -1 ) { retval = -1; }  // no match
             else { retval =  lvs_dist_name1 + lvs_dist_name2 + lvs_dist_name3 + lvs_dist_name4; }
         }
-        else if( fn_method == 2 )
-        {
-            // only compare firstname1 of s1 & s2
-            int lvs_dist_name1 = -1;
+        */
 
-            lvs_dist_name1 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-
-            retval = lvs_dist_name1 ;
-        }
-        else if( fn_method == 3 )
+        if( fn_method == 1 )
         {
-            // compare compare firstname1 + firstname2 of s1 & s2
+            // compare firstname1 + firstname2 of s1 & s2, but skip firstname2 comparison if they both empty
             int lvs_dist_name1, lvs_dist_name2 = -1;
 
             lvs_dist_name1 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
 
-            if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 ) { retval = -1; }   // no match
-            else { retval = lvs_dist_name1 + lvs_dist_name2; }
+            if( s1Name2 == 0 && s2Name2 == 0 ) {
+                if( lvs_dist_name1 == -1 ) { lvs_dist = -1; }   // no match
+                else { lvs_dist = lvs_dist_name1; }
+            }
+            else
+            {
+                lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
 
+                if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 ) { lvs_dist = -1; }   // no match
+                else { lvs_dist = lvs_dist_name1 + lvs_dist_name2; }
+            }
         }
-        else if( fn_method == 4 )
+        else if( fn_method == 2 )
         {
-            // compare compare firstname1 + firstname2 + firstname3 of s1 & s2
-            int lvs_dist_name1, lvs_dist_name2, lvs_dist_name3 = -1;
-
-            lvs_dist_name1 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name3 = isVariant( s1Name3, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-
-            if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 || lvs_dist_name3 == -1 ) { retval = -1; }      // no match
-            else { retval =  lvs_dist_name1 + lvs_dist_name2 + lvs_dist_name3; }
+            // only compare firstname1 of s1 & s2
+            lvs_dist = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
         }
-        else if( fn_method == 5 )
+        else if( fn_method == 3 )
         {
-            // also deal with swapped firstnames
+            // also deal with swapped firstnames, accept as match when at least one combination matches
 
-            int lvs_dist_name11, lvs_dist_name12, lvs_dist_name13, lvs_dist_name14 = -1;
-            int lvs_dist_name22, lvs_dist_name23, lvs_dist_name24 = -1;
-            int lvs_dist_name33, lvs_dist_name34 = -1;
-            int lvs_dist_name44;
+            lvs_dist = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name1, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name1, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name1, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
 
-            lvs_dist_name11 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name12 = isVariant( s1Name1, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name13 = isVariant( s1Name1, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name14 = isVariant( s1Name1, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            lvs_dist = isVariant( s1Name2, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name2, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name2, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
 
-            lvs_dist_name22 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name23 = isVariant( s1Name2, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name24 = isVariant( s1Name2, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            lvs_dist = isVariant( s1Name3, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name3, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name3, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name3, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
 
-            lvs_dist_name33 = isVariant( s1Name3, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name34 = isVariant( s1Name3, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-
-            retval = -1;        // TODO: NOT FINISHED
+            lvs_dist = isVariant( s1Name4, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name4, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name4, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
+            lvs_dist = isVariant( s1Name4, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
+            if( lvs_dist >= 0 ) { return lvs_dist; }
         }
 
-        return retval;
+        return lvs_dist;
     } // checkFirstName
 
 }
