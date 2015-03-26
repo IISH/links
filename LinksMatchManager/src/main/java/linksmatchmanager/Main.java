@@ -187,12 +187,13 @@ public class Main
                 int lvs_dist_familyname = qs0.prematch_familyname_value;
                 int lvs_dist_firstname  = qs0.prematch_firstname_value;
 
-                System.out.println( "lvs familyname dist: " + lvs_dist_familyname );
-                System.out.println( "lvs firstname  dist: " + lvs_dist_firstname );
+                // not relevant here
+                //System.out.println( "lvs familyname distance: " + lvs_dist_familyname );
+                //System.out.println( "lvs firstname  distance: " + lvs_dist_firstname );
 
                 // Create memory tables to hold the ls_* tables
-                String table_familyname_src = "ls_familyname";
-                String table_firstname_src  = "ls_firstname";
+                String table_familyname_src = lvs_table_familyname;
+                String table_firstname_src  = lvs_table_firstname;
                 String name_postfix = "_mem";
 
                 // creates table_firstname_mem & table_familyname_mem

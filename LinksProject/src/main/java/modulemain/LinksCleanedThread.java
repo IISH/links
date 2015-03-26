@@ -7,28 +7,38 @@ import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-
 import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import com.google.common.base.Splitter;
 
-import dataset.*;
+import dataset.DateYearMonthDaySet;
+import dataset.DivideMinMaxDatumSet;
+import dataset.MinMaxMainAgeSet;
+import dataset.MinMaxDateSet;
+import dataset.MinMaxYearSet;
+import dataset.Options;
+import dataset.PersonC;
+import dataset.RegistrationC;
+import dataset.Remarks;
 import dataset.TableToArrayListMultimap;
 
 import connectors.MySqlConnector;
 import enumdefinitions.TableType;
 import enumdefinitions.TimeType;
-import linksmanager.ManagerGui;
 import general.Functions;
 import general.PrintLogger;
+import linksmanager.ManagerGui;
+
 
 /**
  * @author Omar Azouguagh
@@ -6402,7 +6412,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( "Scanning Remarks...", false, true );
 
-        scanRemarks(debug);
+        scanRemarks( debug );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -6417,31 +6427,58 @@ public class LinksCleanedThread extends Thread
     {
         // Do we want to add "WHERE id_source = ..." to the first query?
 
+        debug = true;
+
         showMessage( "scanRemarks()", false, true );
 
-        String selectQuery = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
-
+        // load the table data from links_general.scan_remarks
+        String selectQuery_r = "SELECT * FROM scan_remarks ORDER BY id_scan";
         if( debug ) {
-            System.out.println( selectQuery );
-            showMessage( selectQuery, false, true );
+            System.out.println( selectQuery_r );
+            showMessage( selectQuery_r, false, true );
         }
 
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+        Vector< Remarks > remarksVec = new Vector();
 
-            while( rs.next() )
+        try
+        {
+            ResultSet rs_r = dbconRefRead.runQueryWithResult( selectQuery_r );
+
+            int nrecord = 0;
+            while( rs_r.next() )
             {
-                int id_registration       = rs.getInt( "id_registration" );
-                int registration_maintype = rs.getInt( "registration_maintype" );
-                String remarks            = rs.getString( "remarks" );
+                int id_scan  = rs_r.getInt( "id_scan" );
+                int maintype = rs_r.getInt( "maintype" );
+                int role     = rs_r.getInt( "role" );
 
-                if( remarks == null || remarks.isEmpty() ) { continue; }
+                String string_1   = rs_r.getString( "string_1" );
+                String string_2   = rs_r.getString( "string_2" );
+                String string_3   = rs_r.getString( "string_3" );
+                String not_string = rs_r.getString( "not_string" );
+                String name_table = rs_r.getString( "name_table" );
+                String name_field = rs_r.getString( "name_field" );
+                String value      = rs_r.getString( "value" );
 
-                System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
-                    id_registration, registration_maintype, remarks );
 
+                Remarks remarks = new Remarks();
 
+                remarks.setIdScan(id_scan);
+                remarks.setMaintype(  maintype );
+                remarks.setRole(      role );
+                remarks.setString_1(  string_1 );
+                remarks.setString_2(  string_2 );
+                remarks.setString_3(  string_3 );
+                remarks.setNotString( not_string );
+                remarks.setNameTable( name_table );
+                remarks.setNameField( name_field );
+                remarks.setValue(     value );
 
+                remarksVec.add( remarks  );
+
+                System.out.printf("%d, id_scan: %d, maintype: %d, role : %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s, name_table: %s, name_field: %s, value: %s\n",
+                        nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value);
+
+                nrecord++;
             }
         }
         catch( Exception ex ) {
@@ -6450,7 +6487,127 @@ public class LinksCleanedThread extends Thread
         }
 
 
+        // loop through the registration remarks
+        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
+        if( debug ) {
+            System.out.println( selectQuery_o );
+            showMessage( selectQuery_o, false, true );
+        }
+
+        try
+        {
+            ResultSet rs_o = dbconOriginal.runQueryWithResult( selectQuery_o );
+
+            int nupdates = 0;
+
+            while( rs_o.next() )
+            {
+                int id_registration       = rs_o.getInt( "id_registration" );
+                int registration_maintype = rs_o.getInt( "registration_maintype" );
+
+                String remarks_str        = rs_o.getString( "remarks" );
+
+                if( remarks_str == null || remarks_str.isEmpty() ) { continue; }
+
+                //System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
+                //    id_registration, registration_maintype, remarks_str );
+
+                // compare against remarks table
+                int record = 0;
+
+                for( Remarks remarks : remarksVec )
+                {
+                    boolean found = false;
+
+                    int id_scan   = remarks.getIdScan();
+                    int maintype  = remarks.getMaintype();
+                    int role      = remarks.getRole();
+
+                    String string_1   = remarks.getString_1();
+                    String string_2   = remarks.getString_2();
+                    String string_3   = remarks.getString_3();
+                    String not_string = remarks.getNotString();
+                    String name_table = remarks.getNameTable();
+                    String name_field = remarks.getNameField();
+                    String value      = remarks.getValue();
+
+                    if( registration_maintype ==  maintype )
+                    {
+                        if( string_2 == null || string_2.isEmpty() )
+                        {
+                            if( remarks_str.indexOf( string_1 ) != -1 )     // string_1 found in remarks
+                            { found = true; }
+                        }
+                        else        // string_2 not empty
+                        {
+                            if( string_3 == null || string_3.isEmpty() )
+                            {
+                                if( remarks_str.indexOf( string_1 ) != -1 &&
+                                    remarks_str.indexOf( string_2 ) != -1 )     // first 2 found in remarks
+                                { found = true; }
+                            }
+                            else    // string_3 not empty
+                            {
+                                if( remarks_str.indexOf( string_1 ) != -1 &&
+                                    remarks_str.indexOf( string_2 ) != -1 &&
+                                    remarks_str.indexOf( string_3 ) != -1 )     // all 3 found in remarks
+                                { found = true; }
+                            }
+                        }
+                    }
+
+                    if( found )
+                    {
+                        nupdates++;
+
+                        if( not_string == null || not_string.isEmpty() )
+                        { scanRemarksUpdate( debug, remarks_str, id_scan, id_registration, role, name_table, name_field, value );  }
+                        else    // not_string not empty
+                        {
+                            if( remarks_str.indexOf( not_string ) == -1 )   // but not found
+                            { scanRemarksUpdate( debug, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
+                        }
+                    }
+                }
+            }
+
+            System.out.printf( "Number of updates: %d\n", nupdates );
+        }
+        catch( Exception ex ) {
+            showMessage(ex.getMessage(), false, true);
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+
     } // scanRemarks
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    private void scanRemarksUpdate( boolean debug, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
+    throws Exception
+    {
+        String query_u = "";
+
+        if( name_table.equals( "registration_c" ) ) {
+            query_u = String.format( "UPDATE links_cleaned.registration_c SET %s = %s WHERE id_registration = %d",
+                name_field, value, id_registration );
+        }
+        else if( name_table.equals( "person_c" ) ) {
+            query_u = String.format( "UPDATE links_cleaned.person_c SET %s = %s WHERE id_registration = %d AND role = %d",
+                name_field, value, id_registration, role );
+        }
+
+        if( debug ) {
+            System.out.printf( "Update based on id_scan: %d and remarks: %s\n", id_scan, remarks_str );
+            System.out.printf("%s\n\n", query_u);
+        }
+
+        System.out.println( "NOT YET UPDATING" );
+        //dbconCleaned.runQuery( query_u );
+    }
 
 
     /**

@@ -1,8 +1,12 @@
 package linksmatchmanager;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 
+import java.util.concurrent.TimeUnit;
 import java.util.Vector;
 
 import linksmatchmanager.DataSet.InputSet;
@@ -15,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-25-Mar-2015 Latest change
+ * FL-26-Mar-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -187,7 +191,10 @@ public class MatchAsync extends Thread
 
         try
         {
-            long threadStart = System.currentTimeMillis();
+            long threadStart = System.currentTimeMillis();      // ? clock time or process time
+
+            long nanoseconds_begin  = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
+            long milliseconds_begin = TimeUnit.SECONDS.convert( nanoseconds_begin, TimeUnit.MILLISECONDS );
 
             long threadId = Thread.currentThread().getId();
             String msg = String.format( "\nMatchAsync/run(): thread id %2d running", threadId );
@@ -781,6 +788,11 @@ public class MatchAsync extends Thread
 
             msg = "thread";
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
+
+            long nanoseconds_end = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
+            long milliseconds_end = TimeUnit.SECONDS.convert( nanoseconds_end, TimeUnit.MILLISECONDS );
+            msg = "thread timing";
+            elapsedShowMessage( msg, milliseconds_begin, milliseconds_end );
         }
         catch( Exception ex1 )
         {
