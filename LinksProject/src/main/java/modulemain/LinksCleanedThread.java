@@ -51,7 +51,7 @@ import linksmanager.ManagerGui;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-17-Mar-2015 Latest change
+ * FL-27-Mar-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5827,59 +5827,13 @@ public class LinksCleanedThread extends Thread
 
 
     /**
-     * @param debug
-     * @param go
-     * @throws Exception
-     */
-    private void doRemoveEmptyRoleRegs( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doRemoveEmptyRoleRegs";
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        showMessage( "Removing Registrations without roles...", false, true );
-
-        removeEmptyRoleRegs( debug );    // needs registration_c plus person_c
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doRemoveEmptyRoleRegs
-
-
-    /**
-     * @param debug
-     * @param go
-     * @throws Exception
-     */
-    private void doRemoveDuplicateRegs( boolean debug, boolean go ) throws Exception
-    {
-        String funcname = "doRemoveDuplicateRegs";
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        showMessage( "Removing Duplicate Registrations...", false, true );
-
-        removeDuplicateRegs( debug );
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doRemoveDuplicateRegs
-
-
-    /**
      * Delete registrations with empty registration dates from links_cleaned
      *
      * @param debug
      * @throws Exception
      */
     private void removeEmptyDateRegs( boolean debug )
-    throws Exception
+            throws Exception
     {
         showMessage( "removeEmptyDateRegs()", false, true );
 
@@ -5909,8 +5863,8 @@ public class LinksCleanedThread extends Thread
                 String registration_date = rs_r.getString( "registration_date" );
 
                 if( registration_date == null   ||
-                    registration_date.isEmpty() ||
-                    registration_date.equals( "null" ) )
+                        registration_date.isEmpty() ||
+                        registration_date.equals( "null" ) )
                 {
                     nNoRegDate++;
 
@@ -5942,13 +5896,36 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doRemoveEmptyRoleRegs( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doRemoveEmptyRoleRegs";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( "Removing Registrations without roles...", false, true );
+
+        removeEmptyRoleRegs( debug );    // needs registration_c plus person_c
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doRemoveEmptyRoleRegs
+
+
+    /**
      * Delete registrations with empty person roles from links_cleaned
      *
      * @param debug
      * @throws Exception
      */
     private void removeEmptyRoleRegs( boolean debug )
-    throws Exception
+            throws Exception
     {
         showMessage( "removeEmptyRoleRegs()", false, true );
 
@@ -6027,6 +6004,29 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // removeEmptyRoleRegs
+
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doRemoveDuplicateRegs( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doRemoveDuplicateRegs";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( "Removing Duplicate Registrations...", false, true );
+
+        removeDuplicateRegs( debug );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doRemoveDuplicateRegs
 
 
     /**
@@ -6398,6 +6398,96 @@ public class LinksCleanedThread extends Thread
 
     /**
      * @param debug
+     * @param rid1
+     * @param rid2
+     * @param registrationIds
+     * @param registration_maintype
+     *
+     * @throws Exception
+     */
+    private boolean compareRegistrations( boolean debug, int rid1, int rid2, String registrationIds[], int registration_maintype )
+            throws Exception
+    {
+        int id_registration1 = Integer.parseInt( registrationIds[ rid1 ] );
+        int id_registration2 = Integer.parseInt( registrationIds[ rid2 ] );
+
+        if( debug ) { showMessage( "Comparing, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true ); }
+
+        boolean duplicate = false;
+
+        if( registration_maintype == 1 )
+        {
+            String query_p1 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
+            if( debug ) { System.out.println( query_p1 ); }
+            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
+
+            String newborn_firstname1  = "";
+            String newborn_prefix1     = "";
+            String newborn_familyname1 = "";
+
+            while( rs_p1.next() )
+            {
+                int role = rs_p1.getInt( "role" );
+
+                newborn_firstname1  = rs_p1.getString( "firstname" );
+                newborn_prefix1     = rs_p1.getString( "prefix" );
+                newborn_familyname1 = rs_p1.getString( "familyname" );
+
+                if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
+                if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
+                if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
+
+                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+            }
+
+
+            String query_p2 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
+            if( debug ) { System.out.println( query_p2 ); }
+            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
+
+            String newborn_firstname2  = "";
+            String newborn_prefix2     = "";
+            String newborn_familyname2 = "";
+
+            while( rs_p2.next() )
+            {
+                int role = rs_p2.getInt( "role" );
+
+                newborn_firstname2  = rs_p2.getString( "firstname" );
+                newborn_prefix2     = rs_p2.getString( "prefix" );
+                String familyname = rs_p2.getString( "familyname" );
+
+                if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
+                if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
+                if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
+
+                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+            }
+
+            if( newborn_firstname1.equals(  newborn_firstname2 )  &&
+                    newborn_familyname1.equals( newborn_familyname2 )
+                    ) {
+                showMessage_nl();
+                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
+                showMessage( "Duplicate registrations, ids, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true );
+
+                showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
+                showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+
+                duplicate = true;
+            }
+        }
+
+
+        // ...
+
+
+        return duplicate;
+    } // compareRegistrations
+
+
+    /**
+     * @param debug
      * @param go
      * @throws Exception
      */
@@ -6426,8 +6516,6 @@ public class LinksCleanedThread extends Thread
     private void scanRemarks( boolean debug ) throws Exception
     {
         // Do we want to add "WHERE id_source = ..." to the first query?
-
-        debug = true;
 
         showMessage( "scanRemarks()", false, true );
 
@@ -6458,6 +6546,14 @@ public class LinksCleanedThread extends Thread
                 String name_table = rs_r.getString( "name_table" );
                 String name_field = rs_r.getString( "name_field" );
                 String value      = rs_r.getString( "value" );
+
+                if( string_1   != null ) { string_1   = string_1  .toLowerCase(); }
+                if( string_2   != null ) { string_2   = string_2  .toLowerCase(); }
+                if( string_3   != null ) { string_3   = string_3  .toLowerCase(); }
+                if( not_string != null ) { not_string = not_string.toLowerCase(); }
+                if( name_table != null ) { name_table = name_table.toLowerCase(); }
+                if( name_field != null ) { name_field = name_field.toLowerCase(); }
+                if( value      != null ) { value      = value     .toLowerCase(); }
 
 
                 Remarks remarks = new Remarks();
@@ -6505,9 +6601,10 @@ public class LinksCleanedThread extends Thread
                 int id_registration       = rs_o.getInt( "id_registration" );
                 int registration_maintype = rs_o.getInt( "registration_maintype" );
 
-                String remarks_str        = rs_o.getString( "remarks" );
+                String remarks_str = rs_o.getString( "remarks" );
 
                 if( remarks_str == null || remarks_str.isEmpty() ) { continue; }
+                else { remarks_str = remarks_str.toLowerCase(); }
 
                 //System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
                 //    id_registration, registration_maintype, remarks_str );
@@ -6577,8 +6674,6 @@ public class LinksCleanedThread extends Thread
             showMessage(ex.getMessage(), false, true);
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-
-
     } // scanRemarks
 
 
@@ -6608,96 +6703,6 @@ public class LinksCleanedThread extends Thread
         System.out.println( "NOT YET UPDATING" );
         //dbconCleaned.runQuery( query_u );
     }
-
-
-    /**
-     * @param debug
-     * @param rid1
-     * @param rid2
-     * @param registrationIds
-     * @param registration_maintype
-     *
-     * @throws Exception
-     */
-    private boolean compareRegistrations( boolean debug, int rid1, int rid2, String registrationIds[], int registration_maintype )
-    throws Exception
-    {
-        int id_registration1 = Integer.parseInt( registrationIds[ rid1 ] );
-        int id_registration2 = Integer.parseInt( registrationIds[ rid2 ] );
-
-        if( debug ) { showMessage( "Comparing, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true ); }
-
-        boolean duplicate = false;
-
-        if( registration_maintype == 1 )
-        {
-            String query_p1 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
-            if( debug ) { System.out.println( query_p1 ); }
-            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
-
-            String newborn_firstname1  = "";
-            String newborn_prefix1     = "";
-            String newborn_familyname1 = "";
-
-            while( rs_p1.next() )
-            {
-                int role = rs_p1.getInt( "role" );
-
-                newborn_firstname1  = rs_p1.getString( "firstname" );
-                newborn_prefix1     = rs_p1.getString( "prefix" );
-                newborn_familyname1 = rs_p1.getString( "familyname" );
-
-                if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
-                if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
-                if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-            }
-
-
-            String query_p2 = "SELECT role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
-            if( debug ) { System.out.println( query_p2 ); }
-            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
-
-            String newborn_firstname2  = "";
-            String newborn_prefix2     = "";
-            String newborn_familyname2 = "";
-
-            while( rs_p2.next() )
-            {
-                int role = rs_p2.getInt( "role" );
-
-                newborn_firstname2  = rs_p2.getString( "firstname" );
-                newborn_prefix2     = rs_p2.getString( "prefix" );
-                String familyname = rs_p2.getString( "familyname" );
-
-                if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
-                if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
-                if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-            }
-
-            if( newborn_firstname1.equals(  newborn_firstname2 )  &&
-                newborn_familyname1.equals( newborn_familyname2 )
-            ) {
-                showMessage_nl();
-                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                showMessage( "Duplicate registrations, ids, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true );
-
-                showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
-                showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
-
-                duplicate = true;
-            }
-        }
-
-
-        // ...
-
-
-        return duplicate;
-    } // compareRegistrations
 
 
     /*---< Run PreMatch >-----------------------------------------------------*/
