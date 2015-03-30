@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-26-Mar-2015 Latest change
+ * FL-30-Mar-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -1333,10 +1333,7 @@ public class MatchAsync extends Thread
 
             lvs_dist_name1 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
 
-            if( s1Name2 == 0 && s2Name2 == 0 ) {
-                if( lvs_dist_name1 == -1 ) { lvs_dist = -1; }   // no match
-                else { lvs_dist = lvs_dist_name1; }
-            }
+            if( s1Name2 == 0 && s2Name2 == 0 ) { lvs_dist = lvs_dist_name1; }   // only using firstname1 comparison
             else
             {
                 lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
@@ -1345,11 +1342,13 @@ public class MatchAsync extends Thread
                 else { lvs_dist = lvs_dist_name1 + lvs_dist_name2; }
             }
         }
+
         else if( fn_method == 2 )
         {
             // only compare firstname1 of s1 & s2
             lvs_dist = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
         }
+
         else if( fn_method == 3 )
         {
             // also deal with swapped firstnames, accept as match when at least one combination matches

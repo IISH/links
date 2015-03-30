@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-25-Feb-2015 Latest change
+ * FL-30-Mar-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -28,6 +28,7 @@ public class ViewSummarizer
     private static String date;
     private static String id_match_process;
 
+    private static String s1_factor,    s2_factor;
     private static String s1_maintype,  s2_maintype;
     private static String s1_type,      s2_type;
     private static String s1_role_ego,  s2_role_ego;
@@ -330,6 +331,24 @@ public class ViewSummarizer
             else { display += " = unknown method"; }
         }
 
+        else if( varname.equals( "s1_potential" ) ) {
+            if( s1_factor.equals( "2" ) ) {             // double count the registrations (marriage & divorce)
+                int count = 2 * Integer.parseInt( result );
+                display = result = Integer.toString( count );
+                System.out.printf( "s1_potential: %s -> %s\n", result, display );
+            }
+            else { display = result; }                  // birth & death: no change
+        }
+
+        else if( varname.equals( "s2_potential" ) ) {
+            if( s2_factor.equals( "2" ) ) {             // double count the registrations (marriage & divorce)
+                int count = 2 * Integer.parseInt( result );
+                display = result = Integer.toString( count );
+                System.out.printf( "s2_potential: %s -> %s\n", result, display );
+            }
+            else { display = result; }                  // birth & death: no change
+        }
+
         else { display = result; }
 
         replaceInTemplate( varname, display );
@@ -457,6 +476,8 @@ public class ViewSummarizer
      */
     private static void replaceInTemplate( String varname, String result )
     {
+        //System.out.printf( "varname: %s, result: %s\n", varname, result );
+
         // replace template variable
         if( result == null ) { templateFile = templateFile.replaceAll( "\\{" + varname + "\\}", " " ); }
         else { templateFile = templateFile.replaceAll( "\\{" + varname + "\\}", result ); }
@@ -492,6 +513,15 @@ public class ViewSummarizer
         s1_type =  executeQuery( "s1_type", query );
         query = "SELECT s2_type FROM links_match.match_process WHERE id = " + id_process;
         s2_type = executeQuery( "s2_type", query );
+
+        if( s1_type.equals( "h" ) || s1_type.equals( "s" ) ) { s1_factor = "2"; }
+        else { s1_factor = "1"; }
+
+        if( s2_type.equals( "h" ) || s2_type.equals( "s" ) ) { s2_factor = "2"; }
+        else { s2_factor = "1"; }
+
+        replaceInTemplate( "s1_factor", s1_factor );
+        replaceInTemplate( "s2_factor", s2_factor );
 
         query = "SELECT s1_role_ego FROM links_match.match_process WHERE id = " + id_process;
         s1_role_ego = executeQuery( "s1_role_ego", query );

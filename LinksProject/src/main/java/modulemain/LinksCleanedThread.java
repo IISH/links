@@ -6522,7 +6522,7 @@ public class LinksCleanedThread extends Thread
         // load the table data from links_general.scan_remarks
         String selectQuery_r = "SELECT * FROM scan_remarks ORDER BY id_scan";
         if( debug ) {
-            System.out.println( selectQuery_r );
+            System.out.printf( "\n%s\n", selectQuery_r );
             showMessage( selectQuery_r, false, true );
         }
 
@@ -6555,7 +6555,6 @@ public class LinksCleanedThread extends Thread
                 if( name_field != null ) { name_field = name_field.toLowerCase(); }
                 if( value      != null ) { value      = value     .toLowerCase(); }
 
-
                 Remarks remarks = new Remarks();
 
                 remarks.setIdScan(id_scan);
@@ -6571,11 +6570,12 @@ public class LinksCleanedThread extends Thread
 
                 remarksVec.add( remarks  );
 
-                System.out.printf("%d, id_scan: %d, maintype: %d, role : %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s, name_table: %s, name_field: %s, value: %s\n",
-                        nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value);
+                if( debug ) { System.out.printf( "%2d, id_scan: %3d, maintype: %d, role : %2d,  string_1: %s,  string_2: %s,  string_3: %s,  not_string: %s,  name_table: %s, name_field: %s, value: %s\n",
+                        nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value ); }
 
                 nrecord++;
             }
+            if( debug ) { System.out.println( "" ); }
         }
         catch( Exception ex ) {
             showMessage(ex.getMessage(), false, true);
@@ -6584,9 +6584,9 @@ public class LinksCleanedThread extends Thread
 
 
         // loop through the registration remarks
-        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
+        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o ORDER BY id_registration";
         if( debug ) {
-            System.out.println( selectQuery_o );
+            System.out.printf( "%s\n\n", selectQuery_o );
             showMessage( selectQuery_o, false, true );
         }
 
@@ -6655,15 +6655,17 @@ public class LinksCleanedThread extends Thread
 
                     if( found )
                     {
-                        nupdates++;
-
-                        if( not_string == null || not_string.isEmpty() )
-                        { scanRemarksUpdate( debug, remarks_str, id_scan, id_registration, role, name_table, name_field, value );  }
+                        if( not_string == null || not_string.isEmpty() || remarks_str.indexOf( not_string ) == -1 ) {
+                            nupdates++;
+                            scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value );
+                        }
+                        /*
                         else    // not_string not empty
                         {
                             if( remarks_str.indexOf( not_string ) == -1 )   // but not found
-                            { scanRemarksUpdate( debug, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
+                            { scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
                         }
+                        */
                     }
                 }
             }
@@ -6681,7 +6683,7 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void scanRemarksUpdate( boolean debug, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
+    private void scanRemarksUpdate( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
     throws Exception
     {
         String query_u = "";
@@ -6696,11 +6698,11 @@ public class LinksCleanedThread extends Thread
         }
 
         if( debug ) {
-            System.out.printf( "Update based on id_scan: %d and remarks: %s\n", id_scan, remarks_str );
-            System.out.printf("%s\n\n", query_u);
+            System.out.printf( "Update: %d, based on id_scan: %d, and id_registration: %d, and remarks: %s\n", nupdates, id_scan, id_registration, remarks_str );
+            System.out.printf("%s\n", query_u);
         }
 
-        System.out.println( "NOT YET UPDATING" );
+        System.out.printf( "NOT YET UPDATING\n\n" );
         //dbconCleaned.runQuery( query_u );
     }
 
