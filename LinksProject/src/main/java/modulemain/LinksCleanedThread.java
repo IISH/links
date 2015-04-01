@@ -51,12 +51,11 @@ import linksmanager.ManagerGui;
  * FL-13-Oct-2014 Removed ttal code
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-05-Feb-2015 Remove duplicate registrations from links_cleaned
- * FL-27-Mar-2015 Latest change
+ * FL-01-Apr-2015 DivorceLocation
+ * FL-01-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
- * - TableToArrayListMultimap, function updateTable() writes new entries to links_general, by calling
- *   function insertIntoTable() of connector MySqlConnector. We might have to add IGNORE to the query for duplicates.
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
  *   that can store (and write) not only the the registration_maintype but also the registration_type.
  */
@@ -2312,6 +2311,10 @@ public class LinksCleanedThread extends Thread
         showTimingMessage( "standardMarLocation ", start );
 
         start = System.currentTimeMillis();
+        standardDivorceLocation( debug, source );
+        showTimingMessage( "standardDivorceLocation ", start );
+
+        start = System.currentTimeMillis();
         standardLivingLocation( debug, source );
         showTimingMessage( "standardLivingLocation ", start );
 
@@ -2330,6 +2333,7 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param rs
      * @param idFieldO
      * @param locationFieldO
@@ -2476,6 +2480,7 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param source
      */
     public void standardRegistrationLocation( boolean debug, String source )
@@ -2496,6 +2501,7 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param source
      */
     public void standardBirthLocation( boolean debug, String source )
@@ -2516,6 +2522,7 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param source
      */
     public void standardMarLocation( boolean debug, String source )
@@ -2535,6 +2542,27 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
+     * @param source
+     */
+    public void standardDivorceLocation( boolean debug, String source )
+    {
+        String selectQuery = "SELECT id_person , divorce_location FROM person_o WHERE id_source = " + source + " AND divorce_location <> ''";
+        if( debug ) { showMessage( "standardDivorceLocation: " + selectQuery, false, true ); }
+
+        try {
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            standardLocation( debug, rs, "id_person", "divorce_location", "divorce_location", source, TableType.PERSON );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // standardDivorceLocation
+
+
+    /**
+     * @param debug
      * @param source
      */
     public void standardLivingLocation( boolean debug, String source )
@@ -2554,6 +2582,7 @@ public class LinksCleanedThread extends Thread
 
 
     /**
+     * @param debug
      * @param source
      */
     public void standardDeathLocation( boolean debug, String source )
