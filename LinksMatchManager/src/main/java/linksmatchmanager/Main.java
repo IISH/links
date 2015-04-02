@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-16-Mar-2015 Latest change
+ * FL-02-Apr-2015 Latest change
  */
 
 public class Main
@@ -85,7 +85,7 @@ public class Main
             String url                 = args[ 0 ];
             String user                = args[ 1 ];
             String pass                = args[ 2 ];
-            String threads             = args[ 3 ];
+            String threads_str         = args[ 3 ];
             String max_heap_table_size = args[ 4 ];
             String debug_str           = args[ 5 ];
 
@@ -93,14 +93,15 @@ public class Main
             else { debug = false; }
 
             String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, debug: %s",
-                url, user, pass, threads, max_heap_table_size, debug );
+                url, user, pass, threads_str, max_heap_table_size, debug );
             System.out.println( msg );
             plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
             plog.show( "Matching process started." );
-            ProcessManager pm = new ProcessManager( Integer.parseInt( threads ) );
+            int num_threads = Integer.parseInt( threads_str );
+            ProcessManager pm = new ProcessManager( num_threads );
 
             int ncores = Runtime.getRuntime().availableProcessors();
             msg = String.format( "Available cores: %d", ncores );
@@ -162,9 +163,10 @@ public class Main
             if( ls_tables_mem )     // use memory tables
             {
                 // levenshtein methods should not change; check before we go
-                for( int i = 0; i < isSize; i++ )
+                for( int n_mp = 0; n_mp < isSize; n_mp++ )
                 {
-                    QueryGroupSet qgs = inputSet.get( i );
+                    QueryGroupSet qgs = inputSet.get( n_mp );
+
                     for( int j = 0; j < qgs.getSize(); j++ )
                     {
                         QuerySet qs = qgs.get( 0 );
@@ -214,7 +216,7 @@ public class Main
             elapsedShowMessage( msg, matchStart, System.currentTimeMillis() );
 
             // Loop through the records from the match_process table
-            for( int i = 0; i < isSize; i++ )
+            for( int n_mp = 0; n_mp < isSize; n_mp++ )
             {
                 // The VariantLoader is broken.
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
@@ -253,47 +255,70 @@ public class Main
                 }
                 */
 
-
-                plog.show( "Record " + (i + 1) + " of " + isSize );     // Show user the active record and total
+                msg = "Record " + (n_mp + 1) + " of " + isSize;
+                System.out.println( msg );
+                plog.show( msg );     // Show user the active record and total
 
                 // The inputSet contains an ArrayList< QueryGroupSet >
                 // Each QueryGroupSet contains an ArrayList< QuerySet >
                 // A QuerySet contains a row of the match_process table, plus the generated s1 & s2 queries.
-                QueryGroupSet qgs = inputSet.get( i );
+                QueryGroupSet qgs = inputSet.get( n_mp );
 
                 // The qgs QueryGroupSet is an ArrayList< QuerySet >
                 // Loop through ranges/subqueries
-                for( int j = 0; j < qgs.getSize(); j++ )
+                for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
                     QuerySet qs = qgs.get( 0 );
 
-                    deleteMatches( qs.id ); // delete previous matches before creating new ones
+                    deleteMatches( qs.id );     // delete previous matches of qs.id before creating new ones
                     showQuerySet( qs );
 
-                    // Wait until process manager gives permission
-                    while( !pm.allowProcess() ) {
-                        plog.show( "No permission for new thread: Waiting 60 seconds" );
-                        Thread.sleep( 60000 );
+                    // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
+                    // Its input is a QuerySet and a database connection object.
+                    int threadId = 0;       // bogus
+                    ql = new QueryLoader( threadId, qs, dbconPrematch );
+
+                    int s1_size = ql.s1_id_base.size();
+                    System.out.println( "s1_size: " + s1_size );
+                    int s1_chunksize = s1_size / num_threads;      // how many records from sample 1
+                    int s1_length;                                  // number of s1 records for individual thread
+
+                    for( int npart = 0; npart < num_threads; npart++ )
+                    {
+                        int s1_offset = npart * s1_chunksize;       // which record to start in sample 1
+
+                        if( npart == num_threads -1 ) { s1_length = s1_size - s1_offset; }
+                        else { s1_length = s1_chunksize;  }
+
+                        System.out.printf( "part: %2d-of-%2d, offset: %d, length: %d\n", npart, num_threads, s1_offset, s1_length );
+
+                        // Wait until process manager gives permission
+                        while( !pm.allowProcess() ) {
+                            plog.show( "No permission for new thread: Waiting 60 seconds" );
+                            Thread.sleep( 60000 );
+                        }
+
+                        // Add process to process list
+                        pm.addProcess();
+
+                        MatchAsync ma;
+                        // Here begins threading
+                        if( qgs.get( 0 ).method == 1 )
+                        {
+                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_length, dbconPrematch, dbconMatch, dbconTemp,
+                                    lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
+                        }
+                        else          // method == 0
+                        {
+                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_length, dbconPrematch, dbconMatch, dbconTemp,
+                                    lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
+                        }
+
+                        plog.show( "Add to thread list: Range " + (n_qs + 1) + " of " + qgs.getSize() );
+
+                        ma.start();
+                        //ma.join();        // blocks parent thread?
                     }
-
-                    // Add process to process list
-                    pm.addProcess();
-
-                    MatchAsync ma;
-                    // Here begins threading
-                    if( qgs.get( 0 ).method == 1 ) {
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, inputSet, dbconPrematch, dbconMatch, dbconTemp,
-                                lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
-                    }
-                    else { // 0
-                        ma = new MatchAsync( debug, pm, i, j, ql, plog, qgs, inputSet, dbconPrematch, dbconMatch, dbconTemp,
-                                lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
-                    }
-
-                    plog.show( "Add to thread list: Range " + (j + 1) + " of " + qgs.getSize() );
-
-                    ma.start();
-                    //ma.join();        // blocks parent thread?
                 }
 
                 // the tables should only be dropped after all threads have finished.
@@ -301,7 +326,7 @@ public class Main
 
             }
         }
-        catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exeption: " + ex.getMessage() ); }
+        catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
     } // main
 
 

@@ -32,14 +32,17 @@ public class MatchAsync extends Thread
 
     ProcessManager pm;
 
-    int i;
-    int j;
+    int n_mp;       // match_process 'y' records: 0...
+    int n_qs;       // query sets: 0...
 
     QueryLoader ql;
     PrintLogger plog;
 
     QueryGroupSet qgs;
     InputSet inputSet;
+
+    int s1_offset;      // which record to start in sample 1
+    int s1_length;      // how many records from sample 1
 
     Connection dbconPrematch;
     Connection dbconMatch;
@@ -62,14 +65,17 @@ public class MatchAsync extends Thread
 
         ProcessManager pm,
 
-        int i,
-        int j,
+        int n_mp,
+        int n_qs,
 
         QueryLoader ql,
         PrintLogger plog,
 
         QueryGroupSet qgs,
         InputSet inputSet,
+
+        int s1_offset,
+        int s1_length,
 
         Connection dbconPrematch,
         Connection dbconMatch,
@@ -86,14 +92,17 @@ public class MatchAsync extends Thread
 
         this.pm = pm;
 
-        this.i = i;
-        this.j = j;
+        this.n_mp = n_mp;
+        this.n_qs = n_qs;
 
         this.ql = ql;
         this.plog = plog;
 
         this.qgs = qgs;
         this.inputSet = inputSet;
+
+        this.s1_offset = s1_offset;
+        this.s1_length = s1_length;
 
         this.dbconPrematch = dbconPrematch;
         this.dbconMatch    = dbconMatch;
@@ -115,14 +124,17 @@ public class MatchAsync extends Thread
 
         ProcessManager pm,
 
-        int i,
-        int j,
+        int n_mp,
+        int n_qs,
 
         QueryLoader ql,
         PrintLogger plog,
 
         QueryGroupSet qgs,
         InputSet inputSet,
+
+        int s1_offset,
+        int s1_length,
 
         Connection dbconPrematch,
         Connection dbconMatch,
@@ -141,14 +153,17 @@ public class MatchAsync extends Thread
 
         this.pm = pm;
 
-        this.i = i;
-        this.j = j;
+        this.n_mp = n_mp;
+        this.n_qs = n_qs;
 
         this.ql = ql;
         this.plog = plog;
 
         this.qgs = qgs;
         this.inputSet = inputSet;
+
+        this.s1_offset = s1_offset;
+        this.s1_length = s1_length;
 
         this.dbconPrematch = dbconPrematch;
         this.dbconMatch    = dbconMatch;
@@ -203,11 +218,11 @@ public class MatchAsync extends Thread
             msg = String.format( "Thread id %2d; process id: %d", threadId, qgs.get( 0 ).id );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d; Range %d of %d", threadId, (j + 1), qgs.getSize() );
+            msg = String.format( "Thread id %2d; Range %d of %d", threadId, (n_qs + 1), qgs.getSize() );
             System.out.println( msg ); plog.show( msg );
 
             // Get a QuerySet object. This object will contains all data about a certain query/subquery
-            QuerySet qs = qgs.get( j );
+            QuerySet qs = qgs.get( n_qs );
 
             // Levenshtein distances to use to get the variant names
             int lvs_dist_firstname  = qs.prematch_firstname_value;
@@ -225,7 +240,8 @@ public class MatchAsync extends Thread
 
             // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
             // Its input is a QuerySet and a database connection object.
-            ql = new QueryLoader( threadId, qs, dbconPrematch );
+            // do this now in main()
+            //ql = new QueryLoader( threadId, qs, dbconPrematch );
 
             // Previous familyname, initial is 0. Because the familynames are ordered, the calculation of the potential
             // matches is done once, only the first time.
@@ -260,7 +276,9 @@ public class MatchAsync extends Thread
             int s1_size  = ql.s1_id_base.size();
             int s1_chunk = s1_size / 20;
 
-            for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
+            // individual threads get a portion of s1
+            //for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
+            for( int s1_idx = s1_offset; s1_idx < (s1_offset + s1_length); s1_idx++ )
             {
                 /*
                 // debug false 'null' duplicate
@@ -654,7 +672,7 @@ public class MatchAsync extends Thread
                     {
                         n_match++;
 
-                        int id_match_process = inputSet.get( i ).get( 0 ).id;
+                        int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
 
                         int id_s1 = ql.s1_id_base.get( s1_idx );
                         int id_s2 = ql.s2_id_base.get( lv_idx );
@@ -778,7 +796,7 @@ public class MatchAsync extends Thread
             }
 
 
-            msg = String.format( "Thread id %2d; Done: Range %d of %d", threadId, (j + 1), qgs.getSize() );
+            msg = String.format( "Thread id %2d; Done: Range %d of %d", threadId, (n_qs + 1), qgs.getSize() );
             System.out.println( msg );
             plog.show( msg );
 

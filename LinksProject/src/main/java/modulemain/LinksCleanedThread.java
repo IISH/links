@@ -2299,26 +2299,32 @@ public class LinksCleanedThread extends Thread
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
         start = System.currentTimeMillis();
+        showMessage( "standardRegistrationLocation...", false, true );
         standardRegistrationLocation( debug, source );
         showTimingMessage( "standardRegistrationLocation ", start );
 
         start = System.currentTimeMillis();
+        showMessage( "standardBirthLocation...", false, true );
         standardBirthLocation( debug, source );
         showTimingMessage( "standardBirthLocation ", start );
 
         start = System.currentTimeMillis();
-        standardMarLocation( debug, source );
-        showTimingMessage( "standardMarLocation ", start );
+        showMessage( "standardMarriageLocation...", false, true );
+        standardMarriageLocation( debug, source );
+        showTimingMessage( "standardMarriageLocation ", start );
 
         start = System.currentTimeMillis();
+        showMessage( "standardDivorceLocation...", false, true );
         standardDivorceLocation( debug, source );
         showTimingMessage( "standardDivorceLocation ", start );
 
         start = System.currentTimeMillis();
+        showMessage( "standardLivingLocation...", false, true );
         standardLivingLocation( debug, source );
         showTimingMessage( "standardLivingLocation ", start );
 
         start = System.currentTimeMillis();
+        showMessage( "standardDeathLocation...", false, true );
         standardDeathLocation( debug, source );
         showTimingMessage( "standardDeathLocation ", start );
 
@@ -2525,7 +2531,7 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @param source
      */
-    public void standardMarLocation( boolean debug, String source )
+    public void standardMarriageLocation( boolean debug, String source )
     {
         String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
         if( debug ) { showMessage( "standardMarLocation: " + selectQuery, false, true ); }
@@ -2538,7 +2544,7 @@ public class LinksCleanedThread extends Thread
             showMessage( ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // standardMarLocation
+    } // standardMarriageLocation
 
 
     /**
@@ -6148,21 +6154,21 @@ public class LinksCleanedThread extends Thread
                 // loop over members of a GROUP_CONCAT
                 for( int rid1 = 0 ; rid1 < registrationIds.length; rid1++ )
                 {
-                    /*
+
                     // TODO: double loop for GROUP_CONCATs > 2
                     for( int rid2 = rid1 + 1 ; rid2 < registrationIds.length; rid2++ )
                     {
-                        boolean duplicate = compareRegistrations( debug, rid1, rid2, registrationIds, registration_maintype );
+                        boolean isDuplicate = compareRegistrations( debug, rid1, rid2, registrationIds, registration_maintype );
 
-                        if( duplicate ) {
+                        if( isDuplicate ) {
                             showMessage_nl();
                             showMessage( "Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
 
                         }
                     }
-                    */
 
 
+                    /*
                     boolean isDuplicate = false;
 
                     int id_registration = Integer.parseInt( registrationIds[ rid1 ] );
@@ -6390,9 +6396,10 @@ public class LinksCleanedThread extends Thread
                         String msg = "keep id: " + id_registration1 + ", delete: " + id_registration2;
                         System.out.println( msg ); showMessage( msg, false, true );
 
-                        msg = "TEST RUN; NOT DELETING";
-                        System.out.println( msg ); showMessage( msg, false, true );
-                        /*
+                        //msg = "TEST RUN; NOT DELETING";
+                        //System.out.println( msg ); showMessage( msg, false, true );
+
+
                         //String warn = "Duplicate registration: keep id: " + id_registration1 + ", delete id: " + id_registration2;
                         //addToReportRegistration( int id, String id_source, int errorCode, String value )
                         if( id_source2.isEmpty() ) { id_source2 = "0"; }    // it must be a valid integer string for the log table
@@ -6408,9 +6415,9 @@ public class LinksCleanedThread extends Thread
 
                         dbconCleaned.runQuery( deleteRegist );
                         dbconCleaned.runQuery( deletePerson );
-                        */
-                    }
 
+                    }
+                    */
                 }
             }
 
