@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-23-Mar-2015 Latest change
+ * FL-07-Apr-2015 Latest change
  */
 public class QueryLoader
 {
@@ -162,7 +162,7 @@ public class QueryLoader
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
         set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
 
-        // get set 1 from links_base
+        // get set 2 from links_base
         System.out.println( "Thread id " + threadId + "; Retrieving set 2 from links_base..." );
         set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !

@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-02-Apr-2015 Latest change
+ * FL-07-Apr-2015 Latest change
  */
 
 public class Main
@@ -85,7 +85,7 @@ public class Main
             String url                 = args[ 0 ];
             String user                = args[ 1 ];
             String pass                = args[ 2 ];
-            String threads_str         = args[ 3 ];
+            String max_threads_str     = args[ 3 ];
             String max_heap_table_size = args[ 4 ];
             String debug_str           = args[ 5 ];
 
@@ -93,23 +93,23 @@ public class Main
             else { debug = false; }
 
             String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, debug: %s",
-                url, user, pass, threads_str, max_heap_table_size, debug );
+                url, user, pass, max_threads_str, max_heap_table_size, debug );
             System.out.println( msg );
             plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
             plog.show( "Matching process started." );
-            int num_threads = Integer.parseInt( threads_str );
-            ProcessManager pm = new ProcessManager( num_threads );
+            int max_threads = Integer.parseInt( max_threads_str );
+            ProcessManager pm = new ProcessManager( max_threads );
 
             int ncores = Runtime.getRuntime().availableProcessors();
             msg = String.format( "Available cores: %d", ncores );
             System.out.println( msg );
             plog.show( msg );
 
-            int nthreads = java.lang.Thread.activeCount();
-            msg = String.format( "Active threads: %d", nthreads );
+            int nthreads_active = java.lang.Thread.activeCount();
+            msg = String.format( "Active threads: %d", nthreads_active );
             System.out.println( msg );
             plog.show( msg );
 
@@ -145,10 +145,9 @@ public class Main
                 plog.show( "Nothing to do; Stop." );
             }
 
-            // TODO Remember the first ls_firstname and ls_familyname, they go to a memory copy
-            // If the ls_firstname and ls_familyname do not change, we keep on providing the
-            // memory tables to matchAsync, otherwise they have to use the original tables.
-
+            // The first ls_firstname and ls_familyname, they are copied to a MEMORY database table
+            // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
+            // otherwise we might have to copy 6 ls_ tables to memory, which easily becomes too much
             boolean ls_tables_mem = true;
 
             String lvs_table_familyname_use = "";
@@ -266,6 +265,21 @@ public class Main
 
                 // The qgs QueryGroupSet is an ArrayList< QuerySet >
                 // Loop through ranges/subqueries
+
+                int num_parts = 0;
+                if( isSize == 1 ) {
+                    // process single process id with multiple threads
+                    msg = String.format( "Single match process split into %d threads", max_threads );
+                    System.out.println( msg); plog.show( msg );
+                    num_parts = max_threads;
+                }
+                else {
+                    // process each process id with its own thread
+                    msg = String.format( "%d match processes for %d threads", isSize, max_threads );
+                    System.out.println( msg); plog.show( msg );
+                    num_parts = 1;
+                }
+
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
                     QuerySet qs = qgs.get( 0 );
@@ -275,22 +289,25 @@ public class Main
 
                     // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
-                    int threadId = 0;       // bogus
-                    ql = new QueryLoader( threadId, qs, dbconPrematch );
+                    ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
 
                     int s1_size = ql.s1_id_base.size();
-                    System.out.println( "s1_size: " + s1_size );
-                    int s1_chunksize = s1_size / num_threads;      // how many records from sample 1
-                    int s1_length;                                  // number of s1 records for individual thread
+                    msg = String.format( "s1_size: " + s1_size  );
+                    System.out.println( msg); plog.show( msg );
 
-                    for( int npart = 0; npart < num_threads; npart++ )
+                    int s1_chunksize = s1_size / num_parts;      // how many records from sample 1
+                    int s1_piece;                                  // number of s1 records for individual thread
+
+                    int nthreads_started = 0;
+                    for( int npart = 0; npart < num_parts; npart++ )
                     {
                         int s1_offset = npart * s1_chunksize;       // which record to start in sample 1
 
-                        if( npart == num_threads -1 ) { s1_length = s1_size - s1_offset; }
-                        else { s1_length = s1_chunksize;  }
+                        if( npart == max_threads -1 ) { s1_piece = s1_size - s1_offset; }
+                        else { s1_piece = s1_chunksize;  }
 
-                        System.out.printf( "part: %2d-of-%2d, offset: %d, length: %d\n", npart, num_threads, s1_offset, s1_length );
+                        msg = String.format( "part: %d-of-%d, offset: %d, piece: %d", npart, max_threads, s1_offset, s1_piece );
+                        System.out.println( msg ); plog.show( msg );
 
                         // Wait until process manager gives permission
                         while( !pm.allowProcess() ) {
@@ -305,19 +322,21 @@ public class Main
                         // Here begins threading
                         if( qgs.get( 0 ).method == 1 )
                         {
-                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_length, dbconPrematch, dbconMatch, dbconTemp,
-                                    lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
+                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                                lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
                         }
                         else          // method == 0
                         {
-                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_length, dbconPrematch, dbconMatch, dbconTemp,
-                                    lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
+                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                                lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
                         }
 
-                        plog.show( "Add to thread list: Range " + (n_qs + 1) + " of " + qgs.getSize() );
+                        plog.show( "Starting matching thread # " + nthreads_started );
 
                         ma.start();
                         //ma.join();        // blocks parent thread?
+
+                        nthreads_started++;
                     }
                 }
 
@@ -551,7 +570,7 @@ public class Main
     {
         try
         {
-            plog.show( "match_process values:" );
+            plog.show( "match_process settings:" );
             plog.show( String.format( "id = %d", qs.id ) );
             plog.show( String.format( "query1 = %s", qs.query1 ) );
             plog.show( String.format( "query2 = %s", qs.query2 ) );
