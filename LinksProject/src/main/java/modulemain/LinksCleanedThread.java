@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-08-Apr-2015 Latest change
+ * FL-09-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -298,8 +298,11 @@ public class LinksCleanedThread extends Thread
 
                 doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
+                //showMessage( "SKIPPING doAge", false, true );
                 doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
+                //showMessage( "SKIPPING doRole", false, true );
                 doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
+
                 doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
                 doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
@@ -310,13 +313,13 @@ public class LinksCleanedThread extends Thread
 
                 doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source );                     // GUI cb: Post Tasks
 
-                doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs() );   // GUI cb: Remove Empty Role Reg's
+                doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source );   // GUI cb: Remove Empty Role Reg's
 
-                doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs() );   // GUI cb: Remove Empty Role Reg's
+                doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source );   // GUI cb: Remove Empty Role Reg's
 
                 doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source );   // GUI cb: Remove Duplicate Reg's
 
-                doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks());                       // GUI cb: Scan Remarks
+                doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
 
                 String msg = "Cleaning sourceId " + sourceId + " is done";
                 elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
@@ -1988,26 +1991,36 @@ public class LinksCleanedThread extends Thread
 
         String new_name = "";
         Iterable< String > rawparts = Splitter.on( ' ' ).split( name );
-        for ( String part : rawparts ) {
+        for ( String part : rawparts )
+        {
+            // forward slash ?
             if( part.contains( "/" ) ) {
-                System.out.println( "firstname contains '/': " + name );
+                System.out.println( "firstname part contains '/': " + name );
                 part = part.replace( "/", " ");
             }
 
+            // <br/> ?
             if( part.contains( "<br/>" ) ) {
-                System.out.println( "firstname contains '<br/>': " + name );
+                System.out.println( "firstname part contains '<br/>': " + name );
                 part = part.replace( "<br/>", " ");
+            }
+
+            // intermediate uppercase letter ? -> insert space
+            // check for uppercase letters beyond the second char; notice: IJ should be an exception (IJsbrand)
+            // there are many garbage characters
+            if( part.length() > 2 ) {
+                for( int i = 2; i < part.length(); i++) {
+                    char ch = part.charAt( i );
+                    if( Character.isUpperCase( ch ) )
+                    {
+                        System.out.println( "firstname part contains uppercase letter: " + name );
+                        part =  part.substring( 0, i-1 ) + " " + part.substring( i );
+                    }
+                }
             }
 
             if(! new_name.isEmpty() ) { new_name += " "; }
             new_name += part;
-
-
-            // check for uppercase letters beyond the first char; notice: IJ should be an exception (IJsbrand)
-            // there are many garbage characters
-            //String subpart  = part.substring( 1 );
-            //String sublower = subpart.toLowerCase();
-            //if( ! subpart.equals( sublower ) ) { System.out.println( "firstname contains inside uppercase letter: " + name ); }
         }
 
         if( ! name.equals( new_name ) ) { System.out.println( " -> " + new_name ); }
@@ -5858,7 +5871,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyDateRegs( boolean debug, boolean go ) throws Exception
+    private void doRemoveEmptyDateRegs( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doRemoveEmptyDateRegs";
         if( !go ) {
@@ -5869,7 +5882,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( "Removing Registrations without dates...", false, true );
 
-        removeEmptyDateRegs( debug );      // needs only registration_c, so do this one first
+        removeEmptyDateRegs( debug, source );      // needs only registration_c, so do this one first
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5883,12 +5896,12 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyDateRegs( boolean debug )
+    private void removeEmptyDateRegs( boolean debug, String source )
             throws Exception
     {
         showMessage( "removeEmptyDateRegs()", false, true );
 
-        String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c ";
+        String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c  WHERE id_source = " + source;
 
         if( debug ) { showMessage( query_r, false, true ); }
 
@@ -5951,7 +5964,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyRoleRegs( boolean debug, boolean go ) throws Exception
+    private void doRemoveEmptyRoleRegs( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doRemoveEmptyRoleRegs";
         if( !go ) {
@@ -5962,7 +5975,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( "Removing Registrations without roles...", false, true );
 
-        removeEmptyRoleRegs( debug );    // needs registration_c plus person_c
+        removeEmptyRoleRegs( debug, source );    // needs registration_c plus person_c
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5975,12 +5988,12 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyRoleRegs( boolean debug )
+    private void removeEmptyRoleRegs( boolean debug, String source )
             throws Exception
     {
         showMessage( "removeEmptyRoleRegs()", false, true );
 
-        String query_r = "SELECT id_registration, id_source, registration_maintype FROM registration_c ";
+        String query_r = "SELECT id_registration, id_source, registration_maintype FROM registration_c WHERE id_source = " + source;
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRole = 0;
@@ -6113,8 +6126,19 @@ public class LinksCleanedThread extends Thread
             while( rs_r.next() )        // process all groups
             {
                 row++;
+
                 String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
-                int registration_maintype  = rs_r.getInt( "registration_maintype" );
+                String registration_date   = rs_r.getString( "registration_date" );
+                String registration_seq    = rs_r.getString( "registration_seq" );
+
+                int registration_maintype    = rs_r.getInt( "registration_maintype" );
+                int registration_location_no = rs_r.getInt( "registration_location_no" );
+
+                if( debug ) {
+                    String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
+                        registration_maintype, registration_location_no, registration_date, registration_location_no );
+                    System.out.println( msg );
+                }
 
                 String registrationIds[] = registrationIds_str.split( "," );
 
@@ -6520,20 +6544,19 @@ public class LinksCleanedThread extends Thread
                 if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
 
                 id_source2 = newborn_id_source2;
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
             }
 
             if( newborn_firstname1.equals( newborn_firstname2 ) && newborn_familyname1.equals( newborn_familyname2 ) )
             {
-                showMessage_nl();
-                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                    rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                showMessage( msg, false, true );
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
 
-                showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
-                showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+                    showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
+                    showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+                }
 
                 removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 return true;
@@ -6638,17 +6661,18 @@ public class LinksCleanedThread extends Thread
             if( bride_firstname1.equals( bride_firstname2 ) && bride_familyname1.equals( bride_familyname2 ) &&
                 groom_firstname1.equals( groom_firstname2 ) && groom_familyname1.equals( groom_familyname2 ) )
             {
-                showMessage_nl();
-                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                    rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                showMessage( msg, false, true );
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
 
-                showMessage( "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1, false, true );
-                showMessage( "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2, false, true );
+                    showMessage( "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1, false, true );
+                    showMessage( "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2, false, true );
 
-                showMessage( "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1, false, true );
-                showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
+                    showMessage( "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1, false, true );
+                    showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
+                }
 
                 removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 return true;
@@ -6683,8 +6707,6 @@ public class LinksCleanedThread extends Thread
                 if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
 
                 id_source1 = deceased_id_source1;
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
             }
 
             String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
@@ -6711,20 +6733,19 @@ public class LinksCleanedThread extends Thread
                 if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
 
                 id_source2 = deceased_id_source2;
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
             }
 
             if( deceased_firstname1.equals( deceased_firstname2 ) && deceased_familyname1.equals( deceased_familyname2 ) )
             {
-                showMessage_nl();
-                //if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                    rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                showMessage( msg, false, true );
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
 
-                showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
-                showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
+                    showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
+                    showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
+                }
 
                 removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 return true;
@@ -6766,28 +6787,29 @@ public class LinksCleanedThread extends Thread
         }
 
         String msg = "keep id: " + id_reg_keep + ", delete: " + id_reg_remove + " (registration_maintype: " + registration_maintype + ")";
-        System.out.println( msg ); showMessage( msg, false, true );
+        //System.out.println( msg );
+        showMessage( msg, false, true );
 
-        msg = "TEST RUN; NOT DELETING";
-        System.out.println( msg ); showMessage( msg, false, true );
+        //String msg = "TEST RUN; NOT DELETING";
+        //System.out.println( msg ); showMessage( msg, false, true );
 
-        /*
         // write error msg with EC=1
         if( id_source_remove.isEmpty() ) { id_source_remove = "0"; }    // it must be a valid integer string for the log table
-        String value = "";
+        String value = "";      // nothing to add
         addToReportRegistration( id_reg_remove, id_source_remove, 1, value );       // warning 1
 
         // remove second member of duplicates from registration_c and person_c
         String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_remove;
         String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_remove;
 
-        showMessage( "Deleting duplicate registration: " + id_reg_remove, false, true );
-        showMessage( deleteRegist, false, true );
-        showMessage( deletePerson, false, true );
+        if( debug ) {
+            showMessage( "Deleting duplicate registration: " + id_reg_remove, false, true );
+            showMessage( deleteRegist, false, true );
+            showMessage( deletePerson, false, true );
+        }
 
         dbconCleaned.runQuery( deleteRegist );
         dbconCleaned.runQuery( deletePerson );
-        */
     } // removeDuplicate
 
 
@@ -6796,7 +6818,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doScanRemarks( boolean debug, boolean go ) throws Exception
+    private void doScanRemarks( boolean debug, boolean go, String source ) throws Exception
     {
         String funcname = "doScanRemarks";
         if( !go ) {
@@ -6807,7 +6829,7 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( "Scanning Remarks...", false, true );
 
-        scanRemarks( debug );
+        scanRemarks( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -6818,7 +6840,7 @@ public class LinksCleanedThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void scanRemarks( boolean debug ) throws Exception
+    private void scanRemarks( boolean debug, String source ) throws Exception
     {
         // Do we want to add "WHERE id_source = ..." to the first query?
 
@@ -6889,7 +6911,7 @@ public class LinksCleanedThread extends Thread
 
 
         // loop through the registration remarks
-        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o ORDER BY id_registration";
+        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o WHERE id_source = " + source + " ORDER BY id_registration";
         if( debug ) {
             System.out.printf( "%s\n\n", selectQuery_o );
             showMessage( selectQuery_o, false, true );

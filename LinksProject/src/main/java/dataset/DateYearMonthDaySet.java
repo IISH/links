@@ -4,7 +4,7 @@ package dataset;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-05-Sep-2014 Latest change
+ * FL-09-Apr-2015 Latest change
  */
 public final class DateYearMonthDaySet
 {
@@ -133,8 +133,10 @@ public final class DateYearMonthDaySet
      * @return
      */
     public String getReports( ) {
-        if( reportsDate.isEmpty() ) { return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]"; }
-        else { return "[ Date: " + reportsDate + " ]"; }
+        if( reportsDate == null || reportsDate.isEmpty() )
+        { return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]"; }
+        else
+        { return "[ Date: " + reportsDate + " ]"; }
     }
 
 
