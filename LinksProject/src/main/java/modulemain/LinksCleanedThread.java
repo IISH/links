@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-09-Apr-2015 Latest change
+ * FL-10-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -641,6 +641,10 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
+        // to prevent: Data truncation: Data too long for column 'sequence'
+        if( sequence != null && sequence.length() > 20 )
+        { sequence = sequence.substring( 0, 20 ); }
+
         // save to links_logs
         /*
         String insertQuery = ""
@@ -769,6 +773,10 @@ public class LinksCleanedThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
+
+        // to prevent: Data truncation: Data too long for column 'sequence'
+        if( sequence != null && sequence.length() > 20 )
+        { sequence = sequence.substring( 0, 20 ); }
 
         // save to links_logs
         String insertQuery = ""
@@ -1995,13 +2003,15 @@ public class LinksCleanedThread extends Thread
         {
             // forward slash ?
             if( part.contains( "/" ) ) {
-                System.out.println( "firstname part contains '/': " + name );
+                if( debug ) { System.out.println( "cleanFirstame() id_person: " + id_person + ", part contains '/': " + part ); }
+                addToReportPerson(id_person, id_source, 1113, part);
                 part = part.replace( "/", " ");
             }
 
             // <br/> ?
             if( part.contains( "<br/>" ) ) {
-                System.out.println( "firstname part contains '<br/>': " + name );
+                if( debug ) { System.out.println( "cleanFirstame() id_person: " + id_person + ", part contains '<br/>': " + part ); }
+                addToReportPerson(id_person, id_source, 1114, part);
                 part = part.replace( "<br/>", " ");
             }
 
@@ -2013,7 +2023,8 @@ public class LinksCleanedThread extends Thread
                     char ch = part.charAt( i );
                     if( Character.isUpperCase( ch ) )
                     {
-                        System.out.println( "firstname part contains uppercase letter: " + name );
+                        if( debug ) { System.out.println( "cleanFirstname() id_person: " + id_person + ", part contains uppercase letter: " + part ); }
+                        addToReportPerson( id_person, id_source, 1112, part );
                         part =  part.substring( 0, i-1 ) + " " + part.substring( i );
                     }
                 }
@@ -2034,14 +2045,14 @@ public class LinksCleanedThread extends Thread
             Iterable< String > cleanparts = Splitter.on( ' ' ).split( clean );
             for ( String part : cleanparts ) {
                 if( part.length() > 18 ) {
-                    if( debug ) { System.out.println( "cleanName() long firstname: " + part + " in: " + part ); }
+                    if( debug ) { System.out.println( "cleanFirstname() id_person: " + id_person + ", long firstname: " + part + " in: " + clean ); }
                     addToReportPerson( id_person, id_source, 1121, part );
                 }
             }
         }
         else {
             if( clean.length() > 18 ) {
-                if( debug ) { System.out.println( "cleanName() long firstname: " + clean ); }
+                if( debug ) { System.out.println( "cleanFirstname() id_person: " + id_person + ", long firstname: " + clean ); }
                 addToReportPerson( id_person, id_source, 1121, clean );
             }
         }
@@ -3717,10 +3728,11 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        //doAge(  debug, go, source );        // required for dates, again separate call
-        //doRole( debug, go, source );        // required for dates, again separate call
+        //doAge(  debug, go, source );        // required for dates, again separate call (see above)
+        //doRole( debug, go, source );        // required for dates, again separate call (see above)
 
         long ts = System.currentTimeMillis();
+
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
         standardRegistrationDate( debug, source );
 
@@ -5103,30 +5115,17 @@ public class LinksCleanedThread extends Thread
      * @param timeAmount
      * @return
      */
-    private String addTimeToDate(
-            int year,
-            int month,
-            int day,
-            TimeType tt,
-            int timeAmount)
+    private String addTimeToDate( int year, int month, int day, TimeType tt, int timeAmount )
     {
         Calendar c1 = Calendar.getInstance();       // new calendar instance
 
         c1.set( year, month, day );                 // set(int year, int month, int date)
 
         // Check of time type
-        if( tt == tt.DAY ) {
-            c1.add( Calendar.DAY_OF_MONTH, timeAmount );
-        }
-        else if( tt == tt.WEEK ) {
-            c1.add( Calendar.WEEK_OF_MONTH, timeAmount );
-        }
-        else if( tt == tt.MONTH ) {
-            c1.add( Calendar.MONTH, timeAmount );
-        }
-        else if( tt == tt.YEAR ) {
-            c1.add( Calendar.YEAR, timeAmount );
-        }
+             if( tt == tt.DAY )   { c1.add( Calendar.DAY_OF_MONTH,  timeAmount ); }
+        else if( tt == tt.WEEK )  { c1.add( Calendar.WEEK_OF_MONTH, timeAmount ); }
+        else if( tt == tt.MONTH ) { c1.add( Calendar.MONTH,         timeAmount ); }
+        else if( tt == tt.YEAR )  { c1.add( Calendar.YEAR,          timeAmount ); }
 
         // return new date
         String am = "" + c1.get( Calendar.DATE ) + "-" + c1.get( Calendar.MONTH ) + "-" + c1.get( Calendar.YEAR );
@@ -5654,15 +5653,15 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        showMessage( "processing partsToDate for source: " + source + "...", false, true );
-        partsToDate( source );
+        showMessage( "processing partsToFullDate for source: " + source + "...", false, true );
+        partsToFullDate(source);
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doPartsToFullDate
 
 
-    private void partsToDate( String source )
+    private void partsToFullDate( String source )
     {
         String query = "UPDATE links_cleaned.person_c SET "
                 + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
@@ -5673,14 +5672,12 @@ public class LinksCleanedThread extends Thread
                 + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) "
                 + "WHERE id_source = " + source;
 
-        try {
-            dbconCleaned.runQuery( query );
-        }
+        try { dbconCleaned.runQuery( query ); }
         catch( Exception ex ) {
             showMessage( "Exception while Creating full dates from parts: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // partsToDate
+    } // partsToFullDate
 
 
     /*---< Days Since Begin >-------------------------------------------------*/
@@ -5727,7 +5724,7 @@ public class LinksCleanedThread extends Thread
 
         String queryReg = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
-            + "WHERE registration_date  NOT LIKE '0-%' AND registration_date   NOT LIKE '%-0-%' "
+            + "WHERE registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%'AND registration_date <> '0000-00-00' "
             + "AND id_source = " + source;
 
         try
@@ -6842,9 +6839,18 @@ public class LinksCleanedThread extends Thread
      */
     private void scanRemarks( boolean debug, String source ) throws Exception
     {
-        // Do we want to add "WHERE id_source = ..." to the first query?
-
         showMessage( "scanRemarks()", false, true );
+
+        // Clear previous values
+        String clearQuery_r = "UPDATE registration_c SET extract = NULL";
+        dbconCleaned.runQuery( clearQuery_r );
+
+        String clearQuery_p1 = "UPDATE person_c SET status_mother = NULL";
+        dbconCleaned.runQuery( clearQuery_p1 );
+
+        String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r'";
+        dbconCleaned.runQuery( clearQuery_p2 );
+
 
         // load the table data from links_general.scan_remarks
         String selectQuery_r = "SELECT * FROM scan_remarks ORDER BY id_scan";
