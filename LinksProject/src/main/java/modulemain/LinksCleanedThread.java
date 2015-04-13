@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-10-Apr-2015 Latest change
+ * FL-13-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -298,10 +298,10 @@ public class LinksCleanedThread extends Thread
 
                 doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
-                //showMessage( "SKIPPING doAge", false, true );
-                doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
-                //showMessage( "SKIPPING doRole", false, true );
-                doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
+                showMessage( "SKIPPING doAge", false, true );
+                //doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
+                showMessage( "SKIPPING doRole", false, true );
+                //doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
 
                 doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
@@ -482,10 +482,10 @@ public class LinksCleanedThread extends Thread
                 + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
                 + " `id_source`    INT UNSIGNED NULL ,"
                 + " `archive`      VARCHAR(30)  NULL ,"
-                + " `location`     VARCHAR(50)  NULL ,"
-                + " `reg_type`     VARCHAR(30)  NULL ,"
+                + " `location`     VARCHAR(60)  NULL ,"
+                + " `reg_type`     VARCHAR(50)  NULL ,"
                 + " `date`         VARCHAR(20)  NULL ,"
-                + " `sequence`     VARCHAR(20)  NULL ,"
+                + " `sequence`     VARCHAR(30)  NULL ,"
                 + " `role`         VARCHAR(30)  NULL ,"
                 + " `guid`         VARCHAR(80)  NULL ,"
                 + " `reg_key`      INT UNSIGNED NULL ,"
@@ -497,7 +497,6 @@ public class LinksCleanedThread extends Thread
                 + " PRIMARY KEY (`id_log`) );";
 
         dbconLog.runQuery( query );
-
     } // createLogTable
 
 
@@ -641,10 +640,6 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        // to prevent: Data truncation: Data too long for column 'sequence'
-        if( sequence != null && sequence.length() > 20 )
-        { sequence = sequence.substring( 0, 20 ); }
-
         // save to links_logs
         /*
         String insertQuery = ""
@@ -679,8 +674,8 @@ public class LinksCleanedThread extends Thread
             insertQuery = String.format ( s,
                 id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, guid );
         }
-        catch( Exception ex ) {
-
+        catch( Exception ex )
+        {
             System.out.println( "reg_key     : " + id );
             System.out.println( "id_source   : " + id_source );
             System.out.println( "report_class: " + cla.toUpperCase() );
@@ -3732,7 +3727,8 @@ public class LinksCleanedThread extends Thread
         //doRole( debug, go, source );        // required for dates, again separate call (see above)
 
         long ts = System.currentTimeMillis();
-
+        showMessage( "SKIPPING until minMaxDateMain", false, true );
+        /*
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
         standardRegistrationDate( debug, source );
 
@@ -3761,6 +3757,7 @@ public class LinksCleanedThread extends Thread
         showMessage( "Processing minMaxValidDate for source: " + source + "...", false, true );
         minMaxValidDate( debug, source );
         elapsedShowMessage( "Processing minMaxValidDate", ts, System.currentTimeMillis() );
+        */
 
         ts = System.currentTimeMillis();
         showMessage( "Processing minMaxDateMain for source: " + source + "...", false, true );
