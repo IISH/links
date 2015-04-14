@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-13-Apr-2015 Latest change
+ * FL-14-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -298,10 +298,10 @@ public class LinksCleanedThread extends Thread
 
                 doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
 
-                showMessage( "SKIPPING doAge", false, true );
-                //doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
-                showMessage( "SKIPPING doRole", false, true );
-                //doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
+                //showMessage( "SKIPPING doAge", false, true );
+                doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
+                //showMessage( "SKIPPING doRole", false, true );
+                doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
 
                 doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
 
@@ -3727,8 +3727,8 @@ public class LinksCleanedThread extends Thread
         //doRole( debug, go, source );        // required for dates, again separate call (see above)
 
         long ts = System.currentTimeMillis();
-        showMessage( "SKIPPING until minMaxDateMain", false, true );
-        /*
+        //showMessage( "SKIPPING until minMaxDateMain", false, true );
+
         showMessage( "Processing standardRegistrationDate for source: " + source + "...", false, true );
         standardRegistrationDate( debug, source );
 
@@ -3757,7 +3757,7 @@ public class LinksCleanedThread extends Thread
         showMessage( "Processing minMaxValidDate for source: " + source + "...", false, true );
         minMaxValidDate( debug, source );
         elapsedShowMessage( "Processing minMaxValidDate", ts, System.currentTimeMillis() );
-        */
+
 
         ts = System.currentTimeMillis();
         showMessage( "Processing minMaxDateMain for source: " + source + "...", false, true );
@@ -5705,54 +5705,61 @@ public class LinksCleanedThread extends Thread
 
     private void daysSinceBegin( boolean debug, String source )
     {
-        String query1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
-        String query2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
-        String query3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min    NOT LIKE '0-%' AND mar_date_min     NOT LIKE '%-0-%'";
-        String query4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max    NOT LIKE '0-%' AND mar_date_max     NOT LIKE '%-0-%'";
-        String query5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
-        String query6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
+        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
+        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
+        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min    NOT LIKE '0-%' AND mar_date_min     NOT LIKE '%-0-%'";
+        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max    NOT LIKE '0-%' AND mar_date_max     NOT LIKE '%-0-%'";
+        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
+        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
 
-        query1 += "AND id_source = " + source;
-        query2 += "AND id_source = " + source;
-        query3 += "AND id_source = " + source;
-        query4 += "AND id_source = " + source;
-        query5 += "AND id_source = " + source;
-        query6 += "AND id_source = " + source;
+        queryP1 += "AND id_source = " + source;
+        queryP2 += "AND id_source = " + source;
+        queryP3 += "AND id_source = " + source;
+        queryP4 += "AND id_source = " + source;
+        queryP5 += "AND id_source = " + source;
+        queryP6 += "AND id_source = " + source;
 
-        String queryReg = "UPDATE registration_c SET "
+        /*
+        String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%'AND registration_date <> '0000-00-00' "
+            + "AND id_source = " + source;
+        */
+        String queryR = "UPDATE registration_c SET "
+            + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
+            + "WHERE registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%' "
             + "AND id_source = " + source;
 
         try
         {
-            if( debug ) { showMessage( query1, false, true ); }
+            /*
+            if( debug ) { showMessage( queryP1, false, true ); }
             else { showMessage( "1-of-7: birth_date_min", false, true ); }
-            dbconCleaned.runQuery( query1 );
+            dbconCleaned.runQuery( queryP1 );
 
-            if( debug ) { showMessage( query2, false, true ); }
+            if( debug ) { showMessage( queryP2, false, true ); }
             else { showMessage( "2-of-7: birth_date_max", false, true ); }
-            dbconCleaned.runQuery( query2 );
+            dbconCleaned.runQuery( queryP2 );
 
-            if( debug ) { showMessage( query3, false, true ); }
+            if( debug ) { showMessage( queryP3, false, true ); }
             else { showMessage( "3-of-7: mar_date_min", false, true ); }
-            dbconCleaned.runQuery( query3 );
+            dbconCleaned.runQuery( queryP3 );
 
-            if( debug ) { showMessage( query4, false, true ); }
+            if( debug ) { showMessage( queryP4, false, true ); }
             else { showMessage( "4-of-7: mar_date_max", false, true ); }
-            dbconCleaned.runQuery( query4 );
+            dbconCleaned.runQuery( queryP4 );
 
-            if( debug ) { showMessage( query5, false, true ); }
+            if( debug ) { showMessage( queryP5, false, true ); }
             else { showMessage( "5-of-7: death_date_min", false, true ); }
-            dbconCleaned.runQuery( query5 );
+            dbconCleaned.runQuery( queryP5 );
 
-            if( debug ) { showMessage( query6, false, true ); }
+            if( debug ) { showMessage( queryP6, false, true ); }
             else { showMessage( "6-of-7: death_date_max", false, true ); }
-            dbconCleaned.runQuery( query6 );
-
-            if( debug ) { showMessage( queryReg, false, true ); }
+            dbconCleaned.runQuery( queryP6 );
+            */
+            if( debug ) { showMessage( queryR, false, true ); }
             else { showMessage( "7-of-7: registration_days", false, true ); }
-            dbconCleaned.runQuery( queryReg );
+            dbconCleaned.runQuery( queryR );
         }
         catch( Exception ex ) {
             showMessage( "Exception while computing days since 1-1-1: " + ex.getMessage(), false, true );
@@ -6451,13 +6458,11 @@ public class LinksCleanedThread extends Thread
                 */
             }
 
-            showMessage( "Number of duplicates removed: " + nDuplicates, false, true );
+            showMessage( "Number of duplicates removed from duplicate pairs: " + nDuplicates, false, true );
         }
         catch( Exception ex ) {
-            if( ex.getMessage() != "After end of result set" ) {
-                System.out.printf("'%s'\n", ex.getMessage());
-                ex.printStackTrace( new PrintStream( System.out ) );
-            }
+            System.out.printf("'%s'\n", ex.getMessage());
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // removeDuplicateRegs
 
@@ -6603,6 +6608,8 @@ public class LinksCleanedThread extends Thread
                     if( groom_firstname1  == null ) { groom_firstname1  = ""; }
                     if( groom_prefix1     == null ) { groom_prefix1     = ""; }
                     if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+                    id_source1 = groom_id_source1;
                 }
             }
 
@@ -6638,7 +6645,7 @@ public class LinksCleanedThread extends Thread
 
                     id_source2 = bride_id_source2;
                 }
-                else
+                else    // role == 7
                 {
                     groom_id_source2  = rs_p2.getString( "id_source" );
                     groom_firstname2  = rs_p2.getString( "firstname" );
@@ -6649,6 +6656,8 @@ public class LinksCleanedThread extends Thread
                     if( groom_firstname2  == null ) { groom_firstname2  = ""; }
                     if( groom_prefix2     == null ) { groom_prefix2     = ""; }
                     if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+                    id_source2 = groom_id_source2;
                 }
             }
 
@@ -6671,7 +6680,6 @@ public class LinksCleanedThread extends Thread
                 removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 return true;
             }
-
         }
 
         else if( registration_maintype == 3 )   // death
@@ -6761,8 +6769,10 @@ public class LinksCleanedThread extends Thread
     {
         String registrationIds[] = registrationIds_str.split( "," );
 
-        showMessage_nl();
-        showMessage( "Duplicate in Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
+        if( debug ) {
+            showMessage_nl();
+            showMessage( "Duplicate in Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
+        }
 
         int id_reg_keep = 0;
         int id_reg_remove = 0;
@@ -6780,12 +6790,14 @@ public class LinksCleanedThread extends Thread
             id_source_remove = id_source1;
         }
 
-        String msg = "keep id: " + id_reg_keep + ", delete: " + id_reg_remove + " (registration_maintype: " + registration_maintype + ")";
-        //System.out.println( msg );
-        showMessage( msg, false, true );
+        //String msgt = "TEST RUN; NOT DELETING";
+        //System.out.println( msgt ); showMessage( msgt, false, true );
 
-        //String msg = "TEST RUN; NOT DELETING";
-        //System.out.println( msg ); showMessage( msg, false, true );
+        if( debug ) {
+            String msg = "keep id: " + id_reg_keep + ", delete: " + id_reg_remove + " (registration_maintype: " + registration_maintype + ")";
+            //System.out.println( msg );
+            showMessage( msg, false, true );
+        }
 
         // write error msg with EC=1
         if( id_source_remove.isEmpty() ) { id_source_remove = "0"; }    // it must be a valid integer string for the log table
@@ -6804,6 +6816,7 @@ public class LinksCleanedThread extends Thread
 
         dbconCleaned.runQuery( deleteRegist );
         dbconCleaned.runQuery( deletePerson );
+
     } // removeDuplicate
 
 
