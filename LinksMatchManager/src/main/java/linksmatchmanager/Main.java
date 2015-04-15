@@ -292,8 +292,18 @@ public class Main
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
 
                     int s1_size = ql.s1_id_base.size();
-                    msg = String.format( "s1_size: " + s1_size  );
-                    System.out.println( msg); plog.show( msg );
+                    msg = String.format( "s1_size: " + s1_size );
+                    System.out.println( msg ); plog.show( msg );
+
+                    int s2_size = ql.s2_id_base.size();
+                    msg = String.format( "s2_size: " + s2_size );
+                    System.out.println( msg ); plog.show( msg );
+
+                    if( s1_size == 0 || s2_size == 0 ) {
+                        msg = "ZERO SAMPLE SIZE, skipping this query set\n";
+                        System.out.println( msg ); plog.show( msg );
+                        continue;
+                    }
 
                     int s1_chunksize = s1_size / num_parts;      // how many records from sample 1
                     int s1_piece;                                  // number of s1 records for individual thread

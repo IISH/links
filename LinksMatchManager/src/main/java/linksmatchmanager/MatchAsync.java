@@ -294,7 +294,8 @@ public class MatchAsync extends Thread
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
-                //if( 1 == 1 ) { continue; }       // DUMMY RUN
+                //if( s1_idx > s1_offset ) { continue; }                    // DUMMY RUN
+                //if( s1_idx > (s1_offset + 10) ) { System.exit( 0 ); }         // DUMMY RUN
 
                 if( debug ) {
                     msg = String.format( "\ns1 idx: %d-of-%d", s1_idx + 1, s1_size );

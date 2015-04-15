@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-14-Apr-2015 Latest change
+ * FL-15-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -2018,9 +2018,12 @@ public class LinksCleanedThread extends Thread
                     char ch = part.charAt( i );
                     if( Character.isUpperCase( ch ) )
                     {
-                        if( debug ) { System.out.println( "cleanFirstname() id_person: " + id_person + ", part contains uppercase letter: " + part ); }
-                        addToReportPerson( id_person, id_source, 1112, part );
-                        part =  part.substring( 0, i-1 ) + " " + part.substring( i );
+                        // only insert a space before the uppercase char if it is not preceded by a '-'
+                        if( part.charAt( i-1 ) != '-' ) {
+                            if( debug ) { System.out.println( "cleanFirstname() id_person: " + id_person + ", part contains uppercase letter: " + part ); }
+                            addToReportPerson( id_person, id_source, 1112, part );
+                            part =  part.substring( 0, i-1 ) + " " + part.substring( i );
+                        }
                     }
                 }
             }
@@ -5808,35 +5811,35 @@ public class LinksCleanedThread extends Thread
 
         String[] queries =
         {
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 2 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 2 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 4 AND id_source = " + source,
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 5 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 4 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 5 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + source,
-            "UPDATE links_cleaned.person_c SET sex = 'v' WHERE role = 8 AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 8 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
 
-            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'v' AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'f' AND id_source = " + source,
 
 
-            "CREATE TABLE links_match.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_temp.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "CREATE TABLE links_match.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE links_temp.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "INSERT INTO links_match.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+            "INSERT INTO links_temp.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
 
-            "INSERT INTO links_match.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'v';",
+            "INSERT INTO links_temp.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'f';",
 
-            "UPDATE links_cleaned.person_c, links_match.male SET sex = 'v' WHERE links_match.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+            "UPDATE links_cleaned.person_c, links_temp.male SET sex = 'f' WHERE links_temp.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
                     + " AND id_source = " + source,
 
-            "UPDATE links_cleaned.person_c, links_match.female SET sex = 'm' WHERE links_match.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+            "UPDATE links_cleaned.person_c, links_temp.female SET sex = 'm' WHERE links_temp.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
                     + " AND id_source = " + source,
 
-            "DROP TABLE links_match.male;",
+            "DROP TABLE links_temp.male;",
 
-            "DROP TABLE links_match.female;"
+            "DROP TABLE links_temp.female;"
         };
 
         // suppressed queries
@@ -6155,307 +6158,6 @@ public class LinksCleanedThread extends Thread
                         if( isDuplicate ) { nDuplicates++; }
                     }
                 }
-
-
-                /*
-                String id_source                = rs_r.getString( "id_source" );
-                String registration_location_no = rs_r.getString( "registration_location_no" );
-                String registration_date        = rs_r.getString( "registration_date" );
-                String registration_seq         = rs_r.getString( "registration_seq" );
-                int cnt                         = rs_r.getInt(    "cnt" );
-
-                // System.out.printf( "row: %3d, reg_maintype: %d, cnt: %d, reg_loc_no: %s, reg_date: %s, reg_seq: %4s, regIds: %s\n",
-                //     row, registration_maintype, cnt, registration_location_no, registration_date, registration_seq, registrationIds_str );
-
-                int id_registration1 = 0;
-                int id_registration2 = 0;
-
-                String id_source1  = "";
-                String id_source2  = "";
-
-                String newborn_firstname1  = "";
-                String newborn_prefix1     = "";
-                String newborn_familyname1 = "";
-
-                String newborn_firstname2  = "";
-                String newborn_prefix2     = "";
-                String newborn_familyname2 = "";
-
-                String bride_firstname1  = "";
-                String bride_prefix1     = "";
-                String bride_familyname1 = "";
-
-                String bride_firstname2  = "";
-                String bride_prefix2     = "";
-                String bride_familyname2 = "";
-
-                String groom_firstname1  = "";
-                String groom_prefix1     = "";
-                String groom_familyname1 = "";
-
-                String groom_firstname2  = "";
-                String groom_prefix2     = "";
-                String groom_familyname2 = "";
-
-                String deceased_firstname1  = "";
-                String deceased_prefix1     = "";
-                String deceased_familyname1 = "";
-
-                String deceased_firstname2  = "";
-                String deceased_prefix2     = "";
-                String deceased_familyname2 = "";
-
-                for( int rid1 = 0 ; rid1 < registrationIds.length; rid1++ )
-                {
-                    boolean isDuplicate = false;
-
-                    int id_registration = Integer.parseInt( registrationIds[ rid1 ] );
-
-                    if( debug ) {
-                        if( rid1 == 0 ) { System.out.printf("\nids: %s\n", registrationIds_str); }
-                        System.out.printf( "rid1: %d-of-%d, reg_id: %d\n", rid1 + 1, registrationIds.length, id_registration );
-                    }
-
-                    if( registration_maintype == 1 )    // birth
-                    {
-                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 1";
-
-                        if( debug ) { System.out.println( query_p ); }
-
-                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-
-                        while( rs_p.next() )
-                        {
-                            int role = rs_p.getInt( "role" );
-
-                            String id_source  = rs_p.getString( "id_source" );
-                            String firstname  = rs_p.getString( "firstname" );
-                            String prefix     = rs_p.getString( "prefix" );
-                            String familyname = rs_p.getString( "familyname" );
-
-                            if( firstname  == null ) { firstname  = ""; }
-                            if( prefix     == null ) { prefix     = ""; }
-                            if( familyname == null ) { familyname = ""; }
-
-                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-
-                            if( rid1 == 0 ) {
-                                id_registration1 = id_registration;
-                                id_source1       = id_source;
-
-                                newborn_firstname1  = firstname;
-                                newborn_prefix1     = prefix;
-                                newborn_familyname1 = familyname;
-                            }
-                            else {
-                                id_registration2 = id_registration;
-                                id_source2       = id_source;
-
-                                newborn_firstname2  = firstname;
-                                newborn_prefix2     = prefix;
-                                newborn_familyname2 = familyname;
-                            }
-                        }
-
-                        if( newborn_firstname1.equals(  newborn_firstname2 )  &&
-                            newborn_familyname1.equals( newborn_familyname2 )
-                        ) {
-                            showMessage_nl();
-                            if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                            showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
-
-                            showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
-                            showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
-
-                            isDuplicate = true;
-                            nDuplicates++;
-                        }
-                    }
-
-                    else if( registration_maintype == 2 )    // marriage
-                    {
-                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND (role = 4 OR role = 7)";
-
-                        if( debug ) { System.out.println( query_p ); }
-
-                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-
-                        while( rs_p.next() )
-                        {
-                            int role = rs_p.getInt( "role" );
-
-                            String id_source  = rs_p.getString( "id_source" );
-                            String firstname  = rs_p.getString( "firstname" );
-                            String prefix     = rs_p.getString( "prefix" );
-                            String familyname = rs_p.getString( "familyname" );
-
-                            if( firstname  == null ) { firstname  = ""; }
-                            if( prefix     == null ) { prefix     = ""; }
-                            if( familyname == null ) { familyname = ""; }
-
-                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-
-                            if( rid1 == 0 ) {
-                                id_registration1 = id_registration;
-
-                                if( role == 4 ) {
-                                    id_source1  = id_source;
-
-                                    bride_firstname1  = firstname;
-                                    bride_prefix1     = prefix;
-                                    bride_familyname1 = familyname;
-                                }
-                                else {
-                                    id_source1  = id_source;
-
-                                    groom_firstname1  = firstname;
-                                    groom_prefix1     = prefix;
-                                    groom_familyname1 = familyname;
-                                }
-                            }
-                            else {
-                                id_registration2 = id_registration;
-
-                                if( role == 4 ) {
-                                    id_source2  = id_source;
-
-                                    bride_firstname2  = firstname;
-                                    bride_prefix2     = prefix;
-                                    bride_familyname2 = familyname;
-                                }
-                                else {
-                                    id_source2  = id_source;
-
-                                    groom_firstname2  = firstname;
-                                    groom_prefix2     = prefix;
-                                    groom_familyname2 = familyname;
-                                }
-                            }
-                        }
-
-                        if( bride_firstname1.equals(  bride_firstname2 )  &&
-                            bride_familyname1.equals( bride_familyname2 ) &&
-
-                            groom_firstname1.equals(  groom_firstname2 )  &&
-                            groom_familyname1.equals( groom_familyname2 )
-                        ) {
-                            showMessage_nl();
-                            if( registrationIds.length > 2 ) {
-                                String msg = "In id group: " + registrationIds_str;
-                                System.out.println( msg );
-                                showMessage( msg, false, true );
-                            }
-
-                            String msg = "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2;
-                            System.out.println( msg );
-                            showMessage( msg, false, true );
-
-                            msg = "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1;
-                            System.out.println( msg );
-                            showMessage( msg, false, true );
-
-                            msg = "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2;
-                            System.out.println( msg );
-                            showMessage( msg, false, true );
-
-                            msg = "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1;
-                            System.out.println( msg );
-                            showMessage( msg, false, true );
-
-                            msg = "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2;
-                            System.out.println( msg );
-                            showMessage( msg, false, true );
-
-                            isDuplicate = true;
-                            nDuplicates++;
-                        }
-                    }
-
-                    else if( registration_maintype == 3 )   // death
-                    {
-                        String query_p = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration + " AND role = 10";
-
-                        if( debug ) { System.out.println( query_p ); }
-
-                        ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
-
-                        while( rs_p.next() )
-                        {
-                            int role = rs_p.getInt( "role" );
-
-                            String id_source  = rs_p.getString( "id_source" );
-                            String firstname  = rs_p.getString( "firstname" );
-                            String prefix     = rs_p.getString( "prefix" );
-                            String familyname = rs_p.getString( "familyname" );
-
-                            if( firstname  == null ) { firstname  = ""; }
-                            if( prefix     == null ) { prefix     = ""; }
-                            if( familyname == null ) { familyname = ""; }
-
-                            if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-
-                            if( rid1 == 0 ) {
-                                id_registration1 = id_registration;
-                                id_source1       = id_source;
-
-                                deceased_firstname1  = firstname;
-                                deceased_prefix1     = prefix;
-                                deceased_familyname1 = familyname;
-                            }
-                            else {
-                                id_registration2 = id_registration;
-                                id_source2       = id_source;
-
-                                deceased_firstname2  = firstname;
-                                deceased_prefix2     = prefix;
-                                deceased_familyname2 = familyname;
-                            }
-                        }
-
-                        if( deceased_firstname1.equals(  deceased_firstname2 )  &&
-                            deceased_familyname1.equals( deceased_familyname2 )
-                        ) {
-                            showMessage_nl();
-                            if( registrationIds.length > 2 ) { showMessage( "In id group: " + registrationIds_str, false, true ); }
-                            showMessage( "Duplicate registrations, ids: " + id_registration1 + ", " + id_registration2, false, true );
-
-                            showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
-                            showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
-
-                            isDuplicate = true;
-                            nDuplicates++;
-                        }
-                    }
-
-                    if( isDuplicate )
-                    {
-                        // write error msg with EC=1
-                        // remove second member of duplicates from registration_c and person_c
-                        String msg = "keep id: " + id_registration1 + ", delete: " + id_registration2;
-                        System.out.println( msg ); showMessage( msg, false, true );
-
-                        //msg = "TEST RUN; NOT DELETING";
-                        //System.out.println( msg ); showMessage( msg, false, true );
-
-
-                        //String warn = "Duplicate registration: keep id: " + id_registration1 + ", delete id: " + id_registration2;
-                        //addToReportRegistration( int id, String id_source, int errorCode, String value )
-                        if( id_source2.isEmpty() ) { id_source2 = "0"; }    // it must be a valid integer string for the log table
-                        addToReportRegistration( id_registration2, id_source2, 1, "" );       // warning 1
-
-                        // Deleting duplicate registration
-                        String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration2;
-                        String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration2;
-
-                        showMessage( "Deleting duplicate registration: " + id_registration2, false, true );
-                        showMessage( deleteRegist, false, true );
-                        showMessage( deletePerson, false, true );
-
-                        dbconCleaned.runQuery( deleteRegist );
-                        dbconCleaned.runQuery( deletePerson );
-                    }
-                }
-                */
             }
 
             showMessage( "Number of duplicates removed from duplicate pairs: " + nDuplicates, false, true );
