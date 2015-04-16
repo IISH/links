@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-12-Mar-2015 Latest change
+ * FL-16-Apr-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -96,7 +96,9 @@ public class Lv extends Thread
 
         try
         {
-            String query = "SELECT id, name_str, name_int FROM " + db_name + "." + db_table;
+            //String query = "SELECT id, name_str, name_int FROM " + db_name + "." + db_table;
+            // column name_int was always identical to column id
+            String query = "SELECT id, name_str FROM " + db_name + "." + db_table;
             if( debug ) { showMessage( query, false, true ); }
 
             ResultSet rs = null;
@@ -112,12 +114,13 @@ public class Lv extends Thread
 
             ArrayList< Integer > id       = new ArrayList< Integer >();
             ArrayList< String > name_str  = new ArrayList< String >();
-            ArrayList< Integer > name_int = new ArrayList< Integer >();
+            //ArrayList< Integer > name_int = new ArrayList< Integer >();   // deleted from freq_ table
 
-            while( rs.next() ) {
+            while( rs.next() )
+            {
                       id.add( rs.getInt(    "id" ) );
                 name_str.add( rs.getString( "name_str" ) );
-                name_int.add( rs.getInt(    "name_int" ) );
+                //name_int.add( rs.getInt(    "name_int" ) );               // deleted from freq_ table
             }
 
             int size = id.size();
@@ -135,14 +138,15 @@ public class Lv extends Thread
             // process all names
             for( int i = 0; i < size ; i++ )
             {
-                int id1 = id.get(i);
-                int id2 = 0;
+                //int id1 = id.get( i );
+                //int id2 = 0;
 
                 String name_str_1 = name_str.get( i );
-                   int name_int_1 = name_int.get( i );
+                 //int name_int_1 = name_int.get( i );      // name_int deleted from freq_ table
+                   int name_int_1 = id.get( i );
 
-                String name_str_2 = "";
-                   int name_int_2 = 0;
+                //String name_str_2 = "";
+                   //int name_int_2 = 0;
 
                 //int begin = i+1;                          // Omar
                 int begin = i;                              // starting at i: also gives Levenshtein 0 values
@@ -150,9 +154,10 @@ public class Lv extends Thread
 
                 for( int j = begin; j < name_str.size() ; j++ )
                 {
-                    id2        = id.get( j );
-                    name_str_2 = name_str.get( j );
-                    name_int_2 = name_int.get( j );
+                                //id2 = id.get( j );
+                    String name_str_2 = name_str.get( j );
+                     //int name_int_2 = name_int.get( j );
+                       int name_int_2 = id.get( j );
 
                     int len_1 = name_str_1.length();
                     int len_2 = name_str_2.length();
