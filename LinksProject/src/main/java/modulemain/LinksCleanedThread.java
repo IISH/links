@@ -5820,7 +5820,7 @@ public class LinksCleanedThread extends Thread
             "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 8 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
 
-            "UPDATE links_cleaned.person_c SET sex = '' WHERE sex <> 'm' AND sex <> 'f' AND id_source = " + source,
+            "UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
 
 
             "CREATE TABLE links_temp.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
