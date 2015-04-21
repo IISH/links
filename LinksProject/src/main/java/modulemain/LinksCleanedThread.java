@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-15-Apr-2015 Latest change
+ * FL-21-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -2032,7 +2032,7 @@ public class LinksCleanedThread extends Thread
             new_name += part;
         }
 
-        if( ! name.equals( new_name ) ) { System.out.println( " -> " + new_name ); }
+        if( debug && ! name.equals( new_name ) ) { System.out.println( " -> " + new_name ); }
         name = new_name;
 
         String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
