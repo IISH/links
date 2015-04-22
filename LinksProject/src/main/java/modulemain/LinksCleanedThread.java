@@ -981,10 +981,10 @@ public class LinksCleanedThread extends Thread
         almmFirstname.free();
 
         writerFirstname.close();
-        loadFirstnameToTable(     dbconTemp, source );
+        loadFirstnameCsvToTableT( dbconTemp, source );
         updateFirstnameToPersonC( dbconTemp, source );
-        removeFirstnameFile(      source );
-        removeFirstnameTable(     dbconTemp, source );
+        //removeFirstnameFile(      source );
+        //removeFirstnameTable(     dbconTemp, source );
         showTimingMessage( "remains Firstname", start );
 
         // Firstnames to lowercase
@@ -1073,7 +1073,7 @@ public class LinksCleanedThread extends Thread
         almmFamilyname.free();
 
         writerFamilyname.close();
-        loadFamilynameToTable(     dbconTemp, source );
+        loadFamilynameCsvToTableT(     dbconTemp, source );
         updateFamilynameToPersonC( dbconTemp, source );
         removeFamilynameFile(      source );
         removeFamilynameTable(     dbconTemp, source );
@@ -1116,6 +1116,7 @@ public class LinksCleanedThread extends Thread
             con.setReadOnly(true);
 
             String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source;
+            //String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source + " ORDER BY id_person";
 
             ResultSet rsFirstName = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
@@ -1133,15 +1134,31 @@ public class LinksCleanedThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person     = rsFirstName.getInt( "id_person" );
-                String firstname  = rsFirstName.getString( "firstname" );
-                String stillbirth = rsFirstName.getString( "stillbirth" );
+                int id_person    = rsFirstName.getInt( "id_person" );
+                String firstname = rsFirstName.getString( "firstname" );
+
+                // currently never filled in person_o, but flagged by having a firstname 'Levenloos'
+                //String stillbirth = rsFirstName.getString( "stillbirth" );
+                String stillbirth = "";
+
+                /*
+                if( id_person == 2338 ) {
+                    debug = true;
+                    System.out.println( "id_person: " + id_person );
+                }
+                else {
+                    debug = false;
+                    continue;
+                }
+                */
 
                 // Is firstname empty?
                 if( firstname != null && !firstname.isEmpty() )
                 {
+                    if( debug ) { System.out.println( "firstname: " + firstname ); }
                     firstname = cleanFirstname( debug, source, id_person, firstname );
                     firstname = firstname.toLowerCase();
+                    if( debug ) { System.out.println( "firstname: " + firstname ); }
 
                     // Check name on aliases
                     String nameNoAlias = standardAlias( debug, id_person, source, firstname, 1107 );
@@ -1154,38 +1171,42 @@ public class LinksCleanedThread extends Thread
                     ArrayList< String > postList = new ArrayList< String >();
 
                     for( String n : names ) {
-                        if( n.isEmpty() ) {
-                            spaces = true;
-                        } else { // add to list
-                            preList.add( n );
-                        }
+                        if( n.isEmpty() ) { spaces = true; }
+                        else {  preList.add( n ); }     // add to list
                     }
 
-                    if( spaces ) {
-                        addToReportPerson( id_person, source, 1103, "" );      // EC 1103
-                    }
+                    if( spaces ) { addToReportPerson( id_person, source, 1103, "" ); }  // EC 1103
 
                     // loop through the pieces of the name
                     for( int i = 0; i < preList.size(); i++ )
                     {
                         String prename = preList.get( i );       // does this name part exist in ref_firstname?
+                        if( debug ) { System.out.println( "prename: " + prename ); }
+                        stillbirth = "";
 
                         if( almmFirstname.contains( prename ) )
                         {
                             // Check the standard code
                             String standard_code = almmFirstname.code( prename );
+                            if( standard_code == null ) { standard_code = ""; }
+                            if( debug ) { System.out.println( "standard_code: " + standard_code ); }
 
                             if( standard_code.equals( SC_Y ) )
                             {
-                                postList.add( almmFirstname.standard( prename ) );
-
-                                // stillbirth involves an extra query here.
-                                // it should be written to the csv file, and then via the temp table to person_c
-                                if( stillbirth == null && 1 == 0 ) {
-                                    String updateQuery = PersonC.updateQuery( "stillbirth", stillbirth, id_person );
-                                    dbconCleaned.runQuery( updateQuery );
-                                    if( stillbirth.equals( "y" ) ) { count_still++; }
+                                // if the firstname equals 'Levenloos' the stillbirth column contains 'y'
+                                stillbirth = almmFirstname.value( "stillbirth", prename );
+                                if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
+                                if( stillbirth == null ) { stillbirth = ""; }
+                                else if( stillbirth.equals( "y" ) ) {
+                                    if( debug ) {
+                                        String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
+                                            count_still, id_person, firstname, prename );
+                                        System.out.println( msg );
+                                    }
+                                    count_still++;
                                 }
+
+                                postList.add( almmFirstname.standard( prename ) );
                             }
                             else if( standard_code.equals( SC_U ) )
                             {
@@ -1372,11 +1393,7 @@ public class LinksCleanedThread extends Thread
                     for( int i = 0; i < postList.size(); i++ )
                     {
                         vn += postList.get( i );
-
-                        // posible space
-                        if( i != ( postList.size() - 1) ) {
-                            vn += " ";
-                        }
+                        if( i != ( postList.size() - 1) ) { vn += " "; }    // add space
                     }
 
                     // if vn not empty write to vn
@@ -1384,8 +1401,7 @@ public class LinksCleanedThread extends Thread
                         //String query = PersonC.updateQuery("firstname", vn, id_person);
                         //dbconCleaned.runQuery(query);
 
-                        writerFirstname.write( id_person + "," + vn.trim().toLowerCase() + "\n" );
-
+                        writerFirstname.write( id_person + "," + vn.trim().toLowerCase() + "," + stillbirth + "\n" );
                     }
 
                     preList.clear();
@@ -2113,7 +2129,7 @@ public class LinksCleanedThread extends Thread
     /**
      * @throws Exception
      */
-    private void loadFamilynameToTable( MySqlConnector dbconTemp, String source ) throws Exception
+    private void loadFamilynameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Loading CSV data into temp table", false, true );
 
@@ -2126,7 +2142,7 @@ public class LinksCleanedThread extends Thread
 
         dbconTemp.runQuery( query );
 
-    } // loadFamilynameToTable
+    } // loadFamilynameCsvToTableT
 
 
     /**
@@ -2206,7 +2222,7 @@ public class LinksCleanedThread extends Thread
     /**
      * @throws Exception
      */
-    private void loadFirstnameToTable( MySqlConnector dbconTemp, String source ) throws Exception
+    private void loadFirstnameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
         showMessage( "Loading CSV data into temp table", false, true );
 
@@ -2215,10 +2231,10 @@ public class LinksCleanedThread extends Thread
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE " + tablename
-            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname );";
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname , stillbirth );";
 
         dbconTemp.runQuery( query );
-    } // loadFirstnameToTable
+    } // loadFirstnameCsvToTableT
 
 
     /**
@@ -2230,8 +2246,9 @@ public class LinksCleanedThread extends Thread
 
         String tablename = "firstname_t_" + source;
 
-        String query = "UPDATE links_cleaned.person_c, links_temp."   + tablename
-            + " SET links_cleaned.person_c.firstname = links_temp."   + tablename + ".firstname"
+        String query   = "UPDATE links_cleaned.person_c, links_temp." + tablename
+            +   " SET links_cleaned.person_c.firstname = links_temp." + tablename + ".firstname"
+            +    " , links_cleaned.person_c.stillbirth = links_temp." + tablename + ".stillbirth"
             + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
         dbconTemp.runQuery(query);
@@ -6747,8 +6764,8 @@ public class LinksCleanedThread extends Thread
             System.out.printf("%s\n", query_u);
         }
 
-        System.out.printf( "NOT YET UPDATING\n\n" );
-        //dbconCleaned.runQuery( query_u );
+        //System.out.printf( "NOT YET UPDATING\n\n" );
+        dbconCleaned.runQuery( query_u );
     }
 
 
