@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-05-Feb-2015 Latest change
+ * FL-23-Apr-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -44,6 +44,7 @@ public class TableToArrayListMultimap
     ArrayList< String > valueNames;
 
     private int numColumns;
+    private int numValues;      // excluding index column
     private int numRows;
 
     int keyColOff;              // offset for key column (mostly "original") in column name list
@@ -130,6 +131,8 @@ public class TableToArrayListMultimap
 
         ResultSetMetaData rs_md = rs.getMetaData();
         numColumns = rs_md.getColumnCount();
+        numValues  = numColumns - 1;
+        if( debug ) { System.out.println( "numColumns: " + numColumns ); }
         columnNames = new ArrayList();              // excluding the key column !
         int skip1 = 0;
 
@@ -422,11 +425,26 @@ public class TableToArrayListMultimap
 
         if( oldMap.containsKey( key ) ) {
             Collection< String > collection = oldMap.get( key );
+            if( collection.size() != numValues ) {
+                System.out.println( String.format( "TableToArrayListMultimap: collection size %d does not match numValues %d ?", collection.size(), numValues ) );
+            }
+
             String[] values = collection.toArray( new String[ collection.size() ] );
 
             standard = values [ standardValOff ];
+
+            /*
+            if( standard == null ) {
+                System.out.println( "length: " + values.length );
+                System.out.println( "key: " + key );
+                System.out.println( "standard: " + standard );
+                for( String val : values ) { System.out.printf("'%s' ", val); }
+                System.out.println( "" );
+            }
+            */
         }
         //System.out.println( "standard: " + standard );
+
         return standard;
     } // standard
 
@@ -441,6 +459,10 @@ public class TableToArrayListMultimap
 
         if( oldMap.containsKey( key ) ) {
             Collection< String > collection = oldMap.get( key );
+            if( collection.size() != numValues ) {
+                System.out.println( String.format( "TableToArrayListMultimap: collection size %d does not match numValues %d ?", collection.size(), numValues ) );
+            }
+
             String[] values = collection.toArray( new String[ collection.size() ] );
 
             for( int i = 0; i < valueNames.size(); i++ ) {
@@ -469,6 +491,10 @@ public class TableToArrayListMultimap
 
         if( oldMap.containsKey( key ) ) {
             Collection< String > collection = oldMap.get( key );
+            if( collection.size() != numValues ) {
+                System.out.println( String.format( "TableToArrayListMultimap: collection size %d does not match numValues %d ?", collection.size(), numValues ) );
+            }
+
             String[] values = collection.toArray( new String[ collection.size() ] );
 
             location_no = values [ standardValOff ];

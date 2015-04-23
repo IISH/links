@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-23-Mar-2015 Latest change
+ * FL-23-Apr-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -55,7 +55,7 @@ public class QueryGenerator
         this.plog = plog;
 
         // Get all records and fields from the match_process table
-        rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process" );
+        rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process ORDER BY id" );
 
         is = new InputSet();
 

@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-21-Apr-2015 Latest change
+ * FL-23-Apr-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -81,6 +81,7 @@ public class LinksCleanedThread extends Thread
     private JTextField outputLine;
     private JTextArea  outputArea;
 
+    private boolean dbconref_single = true;     // true: same ref for reading and writing
     private MySqlConnector dbconRefWrite;       // [remote] reference db for writing new occurrences
     private MySqlConnector dbconRefRead;        // [local]  reference db for reading
     private MySqlConnector dbconLog;            // logging  of errors/warnings
@@ -131,10 +132,10 @@ public class LinksCleanedThread extends Thread
      */
     public LinksCleanedThread
     (
-            Options opts,
-            JTextField outputLine,
-            JTextArea  outputArea,
-            ManagerGui mg
+        Options opts,
+        JTextField outputLine,
+        JTextArea  outputArea,
+        ManagerGui mg
     )
     {
         this.opts = opts;
@@ -174,8 +175,9 @@ public class LinksCleanedThread extends Thread
      */
     public void run()
     {
-
+        boolean using_threads = false;
         /*
+        boolean using_threads = true;
         class CleaningThread extends Thread
         {
             String source;
@@ -244,6 +246,11 @@ public class LinksCleanedThread extends Thread
             plog.show( "LinksCleanedThread/run()" );
             //int ncores = Runtime.getRuntime().availableProcessors();
             //plog.show( "Available cores: " + ncores );
+
+            String msg = "";
+            if( dbconref_single ) { msg = "Using the same reference db for reading and writing"; }
+            else { msg = "Reference db: reading locally, writing to remote db"; }
+            plog.show(msg );  showMessage( msg, false, true );
 
             logTableName = LinksSpecific.getLogTableName();
 
@@ -321,27 +328,26 @@ public class LinksCleanedThread extends Thread
 
                 doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
 
-                String msg = "Cleaning sourceId " + sourceId + " is done";
+                msg = "Cleaning sourceId " + sourceId + " is done";
                 elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
                 System.out.println( msg );
             }
 
-            /*
-            // we need to open/close the connections in the threads
             // Close db connections
-            dbconRefWrite.close();
-            dbconRefRead.close();
-            dbconLog.close();
-            dbconOriginal.close();
-            dbconCleaned.close();
-            */
+            if( ! using_threads ) {
+                dbconRefWrite.close();
+                if( ! dbconref_single ) { dbconRefRead.close(); }
+                dbconLog.close();
+                dbconOriginal.close();
+                dbconCleaned.close();
+            }
 
             for( int sourceId : sourceList ) {
                 String source = Integer.toString( sourceId );
                 doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
             }
 
-            String msg = "Cleaning is done";
+            msg = "Cleaning is done";
             elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
             System.out.println( msg );
 
@@ -439,7 +445,8 @@ public class LinksCleanedThread extends Thread
         dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
         if( debug ) { showMessage( "links_general", false, true ); }
-        dbconRefRead = new MySqlConnector( url, "links_general", user, pass );
+        if( dbconref_single ) { dbconRefRead = dbconRefWrite; } // same ref for reading and writing
+        else {  dbconRefRead = new MySqlConnector( url, "links_general", user, pass ); }
 
         if( debug ) { showMessage( "links_original", false, true ); }
         dbconOriginal = new MySqlConnector( url, "links_original", user, pass );
@@ -983,8 +990,8 @@ public class LinksCleanedThread extends Thread
         writerFirstname.close();
         loadFirstnameCsvToTableT( dbconTemp, source );
         updateFirstnameToPersonC( dbconTemp, source );
-        //removeFirstnameFile(      source );
-        //removeFirstnameTable(     dbconTemp, source );
+        removeFirstnameFile(      source );
+        removeFirstnameTable(     dbconTemp, source );
         showTimingMessage( "remains Firstname", start );
 
         // Firstnames to lowercase
@@ -1139,9 +1146,9 @@ public class LinksCleanedThread extends Thread
 
                 // currently never filled in person_o, but flagged by having a firstname 'Levenloos'
                 //String stillbirth = rsFirstName.getString( "stillbirth" );
-                String stillbirth = "";
 
                 /*
+                // check levenloos
                 if( id_person == 2338 ) {
                     debug = true;
                     System.out.println( "id_person: " + id_person );
@@ -1177,12 +1184,12 @@ public class LinksCleanedThread extends Thread
 
                     if( spaces ) { addToReportPerson( id_person, source, 1103, "" ); }  // EC 1103
 
+                    String stillbirth = "";
                     // loop through the pieces of the name
                     for( int i = 0; i < preList.size(); i++ )
                     {
                         String prename = preList.get( i );       // does this name part exist in ref_firstname?
                         if( debug ) { System.out.println( "prename: " + prename ); }
-                        stillbirth = "";
 
                         if( almmFirstname.contains( prename ) )
                         {
@@ -1193,20 +1200,28 @@ public class LinksCleanedThread extends Thread
 
                             if( standard_code.equals( SC_Y ) )
                             {
-                                // if the firstname equals 'Levenloos' the stillbirth column contains 'y'
-                                stillbirth = almmFirstname.value( "stillbirth", prename );
-                                if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
-                                if( stillbirth == null ) { stillbirth = ""; }
-                                else if( stillbirth.equals( "y" ) ) {
-                                    if( debug ) {
-                                        String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
-                                            count_still, id_person, firstname, prename );
-                                        System.out.println( msg );
-                                    }
-                                    count_still++;
-                                }
+                                almmFirstname.standard( "Levenloos" );
+                                String standard = almmFirstname.standard( prename );
+                                if( debug ) { System.out.println( "standard: " + standard ); }
+                                postList.add( standard );
 
-                                postList.add( almmFirstname.standard( prename ) );
+                                // if stillbirth has been set to 'y' for this firstname we keep it,
+                                // and do not let it be overwritten to '' by another prename of the same firstname
+                                if( stillbirth.isEmpty() )
+                                {
+                                    // if the firstname equals or contains 'Levenloos' the stillbirth column contains 'y'
+                                    stillbirth = almmFirstname.value( "stillbirth", prename );
+                                    if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
+                                    if( stillbirth == null ) { stillbirth = ""; }
+                                    else if( stillbirth.equals( "y" ) ) {
+                                        if( debug ) {
+                                            String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
+                                                count_still, id_person, firstname, prename );
+                                            System.out.println( msg );
+                                        }
+                                        count_still++;
+                                    }
+                                }
                             }
                             else if( standard_code.equals( SC_U ) )
                             {
@@ -6746,16 +6761,16 @@ public class LinksCleanedThread extends Thread
      * @throws Exception
      */
     private void scanRemarksUpdate( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
-    throws Exception
+    //throws Exception
     {
         String query_u = "";
 
         if( name_table.equals( "registration_c" ) ) {
-            query_u = String.format( "UPDATE links_cleaned.registration_c SET %s = %s WHERE id_registration = %d",
+            query_u = String.format( "UPDATE links_cleaned.registration_c SET %s = '%s' WHERE id_registration = %d",
                 name_field, value, id_registration );
         }
         else if( name_table.equals( "person_c" ) ) {
-            query_u = String.format( "UPDATE links_cleaned.person_c SET %s = %s WHERE id_registration = %d AND role = %d",
+            query_u = String.format( "UPDATE links_cleaned.person_c SET %s = '%s' WHERE id_registration = %d AND role = %d",
                 name_field, value, id_registration, role );
         }
 
@@ -6764,8 +6779,12 @@ public class LinksCleanedThread extends Thread
             System.out.printf("%s\n", query_u);
         }
 
-        //System.out.printf( "NOT YET UPDATING\n\n" );
-        dbconCleaned.runQuery( query_u );
+        try {  dbconCleaned.runQuery( query_u ); }
+            catch( Exception ex ) {
+            showMessage( "Query: " + query_u, false, true );
+            showMessage( "Error: " + ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
     }
 
 
