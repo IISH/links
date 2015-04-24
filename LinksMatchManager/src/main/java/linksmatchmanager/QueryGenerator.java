@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-23-Apr-2015 Latest change
+ * FL-24-Apr-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -120,8 +120,7 @@ public class QueryGenerator
 
             // get all the fields from the table match_process
             int id = rs.getInt( "id" );
-
-            if( debug ) { System.out.println( "id: " + id ); }
+            if( debug ) { System.out.println( "match_process id: " + id ); }
 
             int s1_maintype = rs.getInt( "s1_maintype" );
             int s2_maintype = rs.getInt( "s2_maintype" );
@@ -472,15 +471,17 @@ public class QueryGenerator
                 // start years
                 if( s1_startyear != 0 ) {
                     int s1_low = daysSinceBegin( s1_startyear + (counter * s1_range), 1, 1 );
-                    int s2_low = daysSinceBegin( s2_startyear + (counter * s2_range), 1, 1 );
+                    int s2_low = daysSinceBegin( s2_startyear + (counter * s1_range), 1, 1 );
 
-                    if( debug ) {
-                        System.out.println( "s1_low: " + s1_low );
-                        System.out.println( "s2_low: " + s2_low );
+                    if( s1_low > 0 ) {
+                        qs.query1 += "registration_days >= " + s1_low + " AND ";
+                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days >= %d", counter, s1_low ) ); }
                     }
 
-                    if( s1_low > 0 ) { qs.query1 += "registration_days >= " + s1_low + " AND "; }
-                    if( s2_low > 0 ) { qs.query2 += "registration_days >= " + s2_low + " AND "; }
+                    if( s2_low > 0 ) {
+                        qs.query2 += "registration_days >= " + s2_low + " AND ";
+                        if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days >= %d", counter, s2_low ) ); }
+                    }
                 }
 
                 // end years
@@ -501,7 +502,10 @@ public class QueryGenerator
                         loop = false;
                     }
 
-                    if( s1_days > 0 ) { qs.query1 += "registration_days <= " + s1_days + " AND "; }
+                    if( s1_days > 0 ) {
+                        qs.query1 += "registration_days <= " + s1_days + " AND ";
+                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days <= %d", counter, s1_days ) ); }
+                    }
 
                     if( s2_range > 0 ) {
                         if( once ) {
@@ -510,7 +514,10 @@ public class QueryGenerator
                             s2_days = daysSinceBegin( s2_startyear + s2_range + ( counter * s1_range ), 1, 1 );
                         }
 
-                        if( s2_days > 0 ) { qs.query2 += "registration_days <= " + s2_days + " AND "; }
+                        if( s2_days > 0 ) {
+                            qs.query2 += "registration_days <= " + s2_days + " AND ";
+                            if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days <= %d", counter, s2_days ) ); }
+                        }
                     }
                 }
 

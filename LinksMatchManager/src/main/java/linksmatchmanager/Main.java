@@ -305,8 +305,8 @@ public class Main
                         continue;
                     }
 
-                    int s1_chunksize = s1_size / num_parts;      // how many records from sample 1
-                    int s1_piece;                                  // number of s1 records for individual thread
+                    int s1_chunksize = s1_size / num_parts;     // how many records from sample 1
+                    int s1_piece;                               // number of s1 records for individual thread
 
                     int nthreads_started = 0;
                     for( int npart = 0; npart < num_parts; npart++ )
