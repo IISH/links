@@ -138,6 +138,14 @@ public class Main
             // The InputSet 'is', is the only accessible object from queryGen
             InputSet inputSet = queryGen.is;
 
+            checkInputSet( inputSet );
+            /*
+            if( 1 == 1 ) {
+                System.out.println( "EXIT" );
+                System.exit( 0 );
+            }
+            */
+
             int isSize = inputSet.getSize();
             plog.show( String.format( "Number of matching records from links_match.match_process: %d\n", isSize ) );
             if( isSize == 0 ) {
@@ -168,7 +176,7 @@ public class Main
 
                     for( int j = 0; j < qgs.getSize(); j++ )
                     {
-                        QuerySet qs = qgs.get( 0 );
+                        QuerySet qs = qgs.get( 0 );     // checking the first is enough
                         String lvs_table_familyname_ij = qs.prematch_familyname;
                         String lvs_table_firstname_ij  = qs.prematch_firstname;
 
@@ -258,9 +266,13 @@ public class Main
                 System.out.println( msg );
                 plog.show( msg );     // Show user the active record and total
 
-                // The inputSet contains an ArrayList< QueryGroupSet >
-                // Each QueryGroupSet contains an ArrayList< QuerySet >
-                // A QuerySet contains a row of the match_process table, plus the generated s1 & s2 queries.
+                // The inputSet contains an ArrayList< QueryGroupSet >, 1 QueryGroupSet per 'y' record from the match_process table.
+                // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
+
+                // A QuerySet contains a row of the match_process table (although not all variables), plus the generated s1 & s2 queries.
+                // In case the QueryGroupSet contains more than 1 QuerySet, the s1 & s2 queries are different:
+                // they differ in the lower and upper limit of registration_days.
+
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
                 // The qgs QueryGroupSet is an ArrayList< QuerySet >
@@ -280,11 +292,15 @@ public class Main
                     num_parts = 1;
                 }
 
+                // delete the previous matches for this QueryGroupSet;
+                // get its match_proces table id from its first QuerySet.
+                // (the QuerySets only differ in registration_days low and high limits)
+                int match_process_id = qgs.get( 0 ).id;
+                deleteMatches( match_process_id );
+
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
-                    QuerySet qs = qgs.get( 0 );
-
-                    deleteMatches( qs.id );     // delete previous matches of qs.id before creating new ones
+                    QuerySet qs = qgs.get( n_qs );
                     showQuerySet( qs );
 
                     // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
@@ -330,7 +346,7 @@ public class Main
 
                         MatchAsync ma;
                         // Here begins threading
-                        if( qgs.get( 0 ).method == 1 )
+                        if( qgs.get( n_qs ).method == 1 )
                         {
                             ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
                                 lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
@@ -357,6 +373,44 @@ public class Main
         }
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
     } // main
+
+
+    /**
+     *
+     * @param inputSet
+     */
+    public static void checkInputSet( InputSet inputSet )
+    {
+        System.out.println( "checkInputSet()" );
+
+        // The inputSet contains an ArrayList< QueryGroupSet >, 1 QueryGroupSet per 'y' record from the match_process table
+        // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
+
+        // A QuerySet contains a row of the match_process table (although not all variables), plus the generated s1 & s2 queries.
+        // In case the QueryGroupSet contains more than 1 QuerySet, the s1 & s2 queries are different:
+        // they differ in the lower and upper limit of registration_days.
+
+        int isSize = inputSet.getSize();
+        System.out.println( String.format( "Number of matching records from links_match.match_process: %d", isSize ) );
+
+        // Loop through the records from the match_process table
+        for( int n_mp = 0; n_mp < isSize; n_mp++ )
+        {
+
+            QueryGroupSet qgs = inputSet.get( n_mp );
+
+            int qgsSize = qgs.getSize();
+            System.out.println( String.format( "Number of QuerySets in QueryGroupSet: %d\n", qgsSize ) );
+
+            for( int n_qs = 0; n_qs < qgsSize; n_qs++ )
+            {
+                QuerySet qs = qgs.get( n_qs );
+                String msg = String.format( "QuerySet :%2d, s1_days_low: %d, 1_days_high: %d, s2_days_low: %d, s2_days_high: %d",
+                    n_qs, qs.s1_days_low, qs.s1_days_high, qs.s2_days_low, qs.s2_days_high );
+                System.out.println( msg );
+            }
+        }
+    }
 
 
     /**
@@ -584,6 +638,11 @@ public class Main
             plog.show( String.format( "id = %d", qs.id ) );
             plog.show( String.format( "query1 = %s", qs.query1 ) );
             plog.show( String.format( "query2 = %s", qs.query2 ) );
+
+            plog.show( String.format( "s1_days_low ............. = %s", qs.s1_days_low ) );
+            plog.show( String.format( "s1_days_high ............ = %s", qs.s1_days_high ) );
+            plog.show( String.format( "s2_days_low ............. = %s", qs.s2_days_low ) );
+            plog.show( String.format( "s2_days_high ............ = %s", qs.s2_days_high ) );
 
             plog.show( String.format( "use_mother .............. = %s", qs.use_mother ) );
             plog.show( String.format( "use_father .............. = %s", qs.use_father ) );

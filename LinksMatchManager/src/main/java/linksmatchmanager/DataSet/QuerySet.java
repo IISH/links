@@ -18,16 +18,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 package linksmatchmanager.DataSet;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * FL-28-Apr-2015 Latest change
  */
 public class QuerySet
 {
     public String  query1;              // query to get s1 data set from links_base
     public String  query2;              // query to get s1 data set from links_base
 
-    public int     id;                  // id from match_process table
-    
+    public int s1_days_low  = 0;
+    public int s2_days_low  = 0;
+    public int s1_days_high = 0;
+    public int s2_days_high = 0;
+
+    public int id;                      // id from match_process table
+
     public boolean use_mother  = false;
     public boolean use_father  = false;
     public boolean use_partner = false;

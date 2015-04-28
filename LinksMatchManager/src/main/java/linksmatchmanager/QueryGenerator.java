@@ -468,55 +468,59 @@ public class QueryGenerator
                     qs.query2 += s2_source_where + " AND ";
                 }
 
-                // start years
+                // begin registration days
                 if( s1_startyear != 0 ) {
-                    int s1_low = daysSinceBegin( s1_startyear + (counter * s1_range), 1, 1 );
-                    int s2_low = daysSinceBegin( s2_startyear + (counter * s1_range), 1, 1 );
+                    int s1_days_low = daysSinceBegin( s1_startyear + (counter * s1_range), 1, 1 );
+                    int s2_days_low = daysSinceBegin( s2_startyear + (counter * s1_range), 1, 1 );
 
-                    if( s1_low > 0 ) {
-                        qs.query1 += "registration_days >= " + s1_low + " AND ";
-                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days >= %d", counter, s1_low ) ); }
+                    if( s1_days_low > 0 ) {
+                        qs.query1 += "registration_days >= " + s1_days_low + " AND ";
+                        qs.s1_days_low = s1_days_low;
+                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days >= %d", counter, s1_days_low ) ); }
                     }
 
-                    if( s2_low > 0 ) {
-                        qs.query2 += "registration_days >= " + s2_low + " AND ";
-                        if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days >= %d", counter, s2_low ) ); }
+                    if( s2_days_low > 0 ) {
+                        qs.query2 += "registration_days >= " + s2_days_low + " AND ";
+                        qs.s2_days_low = s2_days_low;
+                        if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days >= %d", counter, s2_days_low ) ); }
                     }
                 }
 
-                // end years
-                int s1_days = 0;
-                int s2_days = 0;
+                // end registration days
+                int s1_days_high = 0;
+                int s2_days_high = 0;
 
                 if( s1_startyear > 0 )
                 {
                     if( once ) {
-                        s1_days = daysSinceBegin( s1_endyear, 12, 31 );
+                        s1_days_high = daysSinceBegin( s1_endyear, 12, 31 );
                     } else {
-                        s1_days = daysSinceBegin( s1_startyear + ( (counter + 1) * s1_range ), 1, 1 ) - 1;
+                        s1_days_high = daysSinceBegin( s1_startyear + ( (counter + 1) * s1_range ), 1, 1 ) - 1;
                     }
 
-                    if( s1_days >= daysSinceBegin( s1_endyear, 12, 31 ) ) {
-                         s1_days = daysSinceBegin( s1_endyear, 12, 31 );
+                    if( s1_days_high >= daysSinceBegin( s1_endyear, 12, 31 ) ) {
+                         s1_days_high = daysSinceBegin( s1_endyear, 12, 31 );
 
                         loop = false;
                     }
 
-                    if( s1_days > 0 ) {
-                        qs.query1 += "registration_days <= " + s1_days + " AND ";
-                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days <= %d", counter, s1_days ) ); }
+                    if( s1_days_high > 0 ) {
+                        qs.query1 += "registration_days <= " + s1_days_high + " AND ";
+                        qs.s1_days_high = s1_days_high;
+                        if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days <= %d", counter, s1_days_high ) ); }
                     }
 
                     if( s2_range > 0 ) {
                         if( once ) {
-                            s2_days = daysSinceBegin( s2_startyear + s2_range + s1_range, 1, 1 );
+                            s2_days_high = daysSinceBegin( s2_startyear + s2_range + s1_range, 1, 1 );
                         } else {
-                            s2_days = daysSinceBegin( s2_startyear + s2_range + ( counter * s1_range ), 1, 1 );
+                            s2_days_high = daysSinceBegin( s2_startyear + s2_range + ( counter * s1_range ), 1, 1 );
                         }
 
-                        if( s2_days > 0 ) {
-                            qs.query2 += "registration_days <= " + s2_days + " AND ";
-                            if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days <= %d", counter, s2_days ) ); }
+                        if( s2_days_high > 0 ) {
+                            qs.query2 += "registration_days <= " + s2_days_high + " AND ";
+                            qs.s2_days_high = s2_days_high;
+                            if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days <= %d", counter, s2_days_high ) ); }
                         }
                     }
                 }
