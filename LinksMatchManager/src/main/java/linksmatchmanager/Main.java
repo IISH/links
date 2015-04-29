@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-07-Apr-2015 Latest change
+ * FL-29-Apr-2015 Latest change
  */
 
 public class Main
@@ -109,7 +109,7 @@ public class Main
             plog.show( msg );
 
             int nthreads_active = java.lang.Thread.activeCount();
-            msg = String.format( "Active threads: %d", nthreads_active );
+            msg = String.format( "Max simultaneous active matching threads: %d", nthreads_active );
             System.out.println( msg );
             plog.show( msg );
 
@@ -146,8 +146,9 @@ public class Main
             }
             */
 
+            // The inputSet contains an ArrayList< QueryGroupSet >, 1 QueryGroupSet per 'y' record from the match_process table
             int isSize = inputSet.getSize();
-            plog.show( String.format( "Number of matching records from links_match.match_process: %d\n", isSize ) );
+            plog.show( String.format( "Number of active records from links_match.match_process: %d\n", isSize ) );
             if( isSize == 0 ) {
                 System.out.println( "Nothing to do; Stop." );
                 plog.show( "Nothing to do; Stop." );
@@ -222,6 +223,7 @@ public class Main
             msg = "Before threading";
             elapsedShowMessage( msg, matchStart, System.currentTimeMillis() );
 
+
             // Loop through the records from the match_process table
             for( int n_mp = 0; n_mp < isSize; n_mp++ )
             {
@@ -262,7 +264,7 @@ public class Main
                 }
                 */
 
-                msg = "Record " + (n_mp + 1) + " of " + isSize;
+                msg = "Match process record " + (n_mp + 1) + " of " + isSize;
                 System.out.println( msg );
                 plog.show( msg );     // Show user the active record and total
 
@@ -273,37 +275,44 @@ public class Main
                 // In case the QueryGroupSet contains more than 1 QuerySet, the s1 & s2 queries are different:
                 // they differ in the lower and upper limit of registration_days.
 
+                int num_s1_parts = 0;   // the number of parts into which s1 will be split
+                if( isSize == 1 )       // only 1 match process record for matching
+                {
+                    // process each process id with its own thread
+                    msg = String.format( "sample s1 not split", isSize, max_threads );
+                    System.out.println( msg); plog.show( msg );
+                    num_s1_parts = 1;   // do not split s1 into separate threads
+                }
+                else
+                {
+                    // process single match process id with multiple threads
+                    msg = String.format( "sample s1 split into %d parts", max_threads );
+                    System.out.println( msg); plog.show( msg );
+                    num_s1_parts = max_threads;
+                }
+
+                // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
-                // The qgs QueryGroupSet is an ArrayList< QuerySet >
-                // Loop through ranges/subqueries
-
-                int num_parts = 0;
-                if( isSize == 1 ) {
-                    // process single process id with multiple threads
-                    msg = String.format( "Single match process split into %d threads", max_threads );
-                    System.out.println( msg); plog.show( msg );
-                    num_parts = max_threads;
-                }
-                else {
-                    // process each process id with its own thread
-                    msg = String.format( "%d match processes for %d threads", isSize, max_threads );
-                    System.out.println( msg); plog.show( msg );
-                    num_parts = 1;
-                }
+                int total_match_threads = qgs.getSize() * num_s1_parts;
+                msg = String.format( "number of matching threads to be used: %d", total_match_threads );
+                System.out.println( msg ); plog.show( msg );
 
                 // delete the previous matches for this QueryGroupSet;
-                // get its match_proces table id from its first QuerySet.
+                // get its match_process table id from its first QuerySet.
                 // (the QuerySets only differ in registration_days low and high limits)
                 int match_process_id = qgs.get( 0 ).id;
                 deleteMatches( match_process_id );
 
+                // Loop through the ranges/subqueries
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
+                    msg = String.format( "\nRange %d-of-%d", n_qs+1, qgs.getSize() );
+
                     QuerySet qs = qgs.get( n_qs );
                     showQuerySet( qs );
 
-                    // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
+                    // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
 
@@ -316,23 +325,25 @@ public class Main
                     System.out.println( msg ); plog.show( msg );
 
                     if( s1_size == 0 || s2_size == 0 ) {
-                        msg = "ZERO SAMPLE SIZE, skipping this query set\n";
+                        msg = "ZERO SAMPLE SIZE for s1 and/or s2, skipping this query set\n";
                         System.out.println( msg ); plog.show( msg );
                         continue;
                     }
 
-                    int s1_chunksize = s1_size / num_parts;     // how many records from sample 1
+                    int s1_chunksize = s1_size / num_s1_parts;  // how many records from sample 1 to use in 1 thread
                     int s1_piece;                               // number of s1 records for individual thread
+                    int nthreads_started = 0;                   // number of matching threads started
 
-                    int nthreads_started = 0;
-                    for( int npart = 0; npart < num_parts; npart++ )
+                    for( int s1_ipart = 0; s1_ipart < num_s1_parts; s1_ipart++ )
                     {
-                        int s1_offset = npart * s1_chunksize;       // which record to start in sample 1
+                        int s1_npart = s1_ipart + 1;
+                        int s1_offset = s1_ipart * s1_chunksize;       // where to start in sample 1
 
-                        if( npart == max_threads -1 ) { s1_piece = s1_size - s1_offset; }
+                        if( s1_npart == max_threads ) { s1_piece = s1_size - s1_offset; }
                         else { s1_piece = s1_chunksize;  }
 
-                        msg = String.format( "part: %d-of-%d, offset: %d, piece: %d", npart, max_threads, s1_offset, s1_piece );
+                        msg = String.format( "range: %d, s1 part: %d-of-%d, offset: %d, s1 piece size: %d",
+                            n_qs+1, s1_npart, max_threads, s1_offset, s1_piece );
                         System.out.println( msg ); plog.show( msg );
 
                         // Wait until process manager gives permission
@@ -341,11 +352,10 @@ public class Main
                             Thread.sleep( 60000 );
                         }
 
-                        // Add process to process list
-                        pm.addProcess();
+                        pm.addProcess();        // Add a process to process list
 
-                        MatchAsync ma;
-                        // Here begins threading
+                        MatchAsync ma;          // Here begins threading
+
                         if( qgs.get( n_qs ).method == 1 )
                         {
                             ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
@@ -357,12 +367,11 @@ public class Main
                                 lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
                         }
 
-                        plog.show( "Starting matching thread # " + nthreads_started );
-
                         ma.start();
                         //ma.join();        // blocks parent thread?
 
                         nthreads_started++;
+                        plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, max_threads ) );
                     }
                 }
 
@@ -400,11 +409,15 @@ public class Main
             QueryGroupSet qgs = inputSet.get( n_mp );
 
             int qgsSize = qgs.getSize();
-            System.out.println( String.format( "Number of QuerySets in QueryGroupSet: %d\n", qgsSize ) );
-
             for( int n_qs = 0; n_qs < qgsSize; n_qs++ )
             {
                 QuerySet qs = qgs.get( n_qs );
+
+                if( n_qs == 0 ) {
+                    System.out.println( String.format( "\nmatch process id: %d", qs.id ) );
+                    System.out.println( String.format( "Number of QuerySets in QueryGroupSet: %d", qgsSize ) );
+                }
+
                 String msg = String.format( "QuerySet :%2d, s1_days_low: %d, 1_days_high: %d, s2_days_low: %d, s2_days_high: %d",
                     n_qs, qs.s1_days_low, qs.s1_days_high, qs.s2_days_low, qs.s2_days_high );
                 System.out.println( msg );
