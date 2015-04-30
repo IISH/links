@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-23-Apr-2015 Latest change
+ * FL-30-Apr-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -221,7 +221,7 @@ public class TableToArrayListMultimap
                 }
                 else if( ct == 1 || ct == 12 ) {
                     strValue = rs.getString( c );
-                    if( strValue != null ) { strValue.toLowerCase(); }
+                    if( strValue != null ) { strValue = strValue.toLowerCase(); }
                 }
                 else { throw new Exception( "TableToArrayListMultimap: unhandled column type: " + ct ); }
 
@@ -316,11 +316,12 @@ public class TableToArrayListMultimap
         1111    OTHER
         */
 
+        int nskipped = 0;
         numRows = 0;
 
         while( rs.next() )          // process each index value
         {
-            numRows++;
+            String id = "";
             String key = "";
             String original = "";
             ArrayList< String > values = new ArrayList();
@@ -339,10 +340,11 @@ public class TableToArrayListMultimap
                 }
                 else if( ct == 1 || ct ==12 ) {
                     strValue = rs.getString(c);
-                    if( strValue != null ) { strValue.toLowerCase(); }
+                    if( strValue != null ) { strValue = strValue.toLowerCase(); }
                 }
                 else { throw new Exception( "TableToArrayListMultimap: unhandled column type: " + ct ); }
 
+                if( i == 0 ) { id = strValue; }
                 String columnName = columnNames.get( i );
 
                 if( columnName.equals( keyColumn ) )
@@ -356,10 +358,22 @@ public class TableToArrayListMultimap
                 else { values.add( strValue ); }
             }
 
-            for( String value : values ) { oldMap.put ( key, value ); }
+            //System.out.println( String.format( "%d %s %s", numRows, id, key ) );
+
+            // does key already exist?
+            if( contains( key ) ) {
+                nskipped++;
+                System.out.println( String.format( "TableToArrayListMultimap/store: in ref table: %s, id: %s, key already exists: %s (but case may be different)",
+                tableName, id, key ) );
+            }
+            else { for( String value : values ) { oldMap.put ( key, value ); } }
 
             values = null;
+
+            numRows++;
         }
+
+        if( nskipped != 0 ) { System.out.println( String.format( "Skipped %d duplicates in table %s", nskipped, tableName ) ); }
     } // store
 
 

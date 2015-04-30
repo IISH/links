@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-07-Apr-2015 Latest change
+ * FL-30-Apr-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -29,6 +29,7 @@ import linksmatchmanager.DataSet.QuerySet;
 public class MatchAsync extends Thread
 {
     boolean debug;
+    boolean free_vecs;
 
     ProcessManager pm;
 
@@ -62,6 +63,7 @@ public class MatchAsync extends Thread
     public MatchAsync
     (
         boolean debug,
+        boolean free_vecs,
 
         ProcessManager pm,
 
@@ -89,6 +91,7 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
+        this.free_vecs = free_vecs;
 
         this.pm = pm;
 
@@ -121,6 +124,7 @@ public class MatchAsync extends Thread
     public MatchAsync   // variant has no root parameter
     (
         boolean debug,
+        boolean free_vecs,
 
         ProcessManager pm,
 
@@ -150,6 +154,7 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
+        this.free_vecs = free_vecs;
 
         this.pm = pm;
 
@@ -183,6 +188,11 @@ public class MatchAsync extends Thread
     @Override
     public void run()
     {
+        // If you want the actual CPU time of the current thread (or indeed, any arbitrary thread) rather than
+        // the wall clock time then you can get this via ThreadMXBean. Basically, do this at the start:
+        ThreadMXBean thx = ManagementFactory.getThreadMXBean();
+        thx.setThreadCpuTimeEnabled( true );
+
         boolean debugfail = false;
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
@@ -290,7 +300,7 @@ public class MatchAsync extends Thread
 
                 s1_idx_cpy = s1_idx;   // copy for display if exception occurs
 
-                if( ( s1_idx + s1_chunk ) % s1_chunk == 0 )
+                if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
@@ -708,12 +718,10 @@ public class MatchAsync extends Thread
             pm.removeProcess();
 
             msg = String.format( "Thread id %2d; s1 records processed: %d", threadId, n_recs );
-            System.out.println( msg );
-            plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
 
             msg = String.format( "Thread id %2d; Number of matches: %d", threadId, n_match );
             System.out.println( msg ); plog.show( msg );
-
 
             long n_fail = 0;
 
@@ -796,13 +804,25 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
+            if( free_vecs ) {
+                msg = String.format( "Thread id %2d; freeing s1 and s2 vectors", threadId );
+                System.out.println( msg ); plog.show( msg );
+                ql.freeVectors();
+                ql = null;
+                qs = null;
+            }
+
             msg = "thread";
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
 
-            long nanoseconds_end = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
-            long milliseconds_end = TimeUnit.SECONDS.convert( nanoseconds_end, TimeUnit.MILLISECONDS );
-            msg = "thread timing";
-            elapsedShowMessage( msg, milliseconds_begin, milliseconds_end );
+            long cpuTimeNsec  = thx.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
+            long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
+
+            long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
+            long userTimeMsec = TimeUnit.NANOSECONDS.toMillis( userTimeNsec );
+
+            elapsedShowMessage( "thread time elapsed", 0, cpuTimeMsec );
+            elapsedShowMessage( "clock  time elapsed", 0, userTimeMsec );
         }
         catch( Exception ex1 )
         {

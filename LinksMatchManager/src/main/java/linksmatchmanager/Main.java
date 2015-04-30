@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-29-Apr-2015 Latest change
+ * FL-30-Apr-2015 Latest change
  */
 
 public class Main
@@ -64,6 +64,8 @@ public class Main
      */
     public static void main( String[] args )
     {
+        int s1_split_limit = 4;
+
         try {
             plog = new PrintLogger( "LMM-" );
 
@@ -275,26 +277,28 @@ public class Main
                 // In case the QueryGroupSet contains more than 1 QuerySet, the s1 & s2 queries are different:
                 // they differ in the lower and upper limit of registration_days.
 
+                // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
+                QueryGroupSet qgs = inputSet.get( n_mp );
+
                 int num_s1_parts = 0;   // the number of parts into which s1 will be split
-                if( isSize == 1 )       // only 1 match process record for matching
+                // split s1 if we have have few threads
+                if( isSize * qgs.getSize() > s1_split_limit )
                 {
-                    // process each process id with its own thread
                     msg = String.format( "sample s1 not split", isSize, max_threads );
                     System.out.println( msg); plog.show( msg );
-                    num_s1_parts = 1;   // do not split s1 into separate threads
+                    num_s1_parts = 1;   // do not split s1 into separate pieces
                 }
                 else
                 {
-                    // process single match process id with multiple threads
                     msg = String.format( "sample s1 split into %d parts", max_threads );
                     System.out.println( msg); plog.show( msg );
                     num_s1_parts = max_threads;
                 }
 
-                // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
-                QueryGroupSet qgs = inputSet.get( n_mp );
+                boolean free_vecs = false;
+                if( num_s1_parts == 1 ) { free_vecs = true; }
 
-                int total_match_threads = qgs.getSize() * num_s1_parts;
+                int total_match_threads = isSize * qgs.getSize() * num_s1_parts;
                 msg = String.format( "number of matching threads to be used: %d", total_match_threads );
                 System.out.println( msg ); plog.show( msg );
 
@@ -358,12 +362,12 @@ public class Main
 
                         if( qgs.get( n_qs ).method == 1 )
                         {
-                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
                                 lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
                         }
                         else          // method == 0
                         {
-                            ma = new MatchAsync( debug, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
                                 lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
                         }
 

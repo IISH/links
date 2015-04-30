@@ -13,7 +13,8 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
- * FL-07-Apr-2015 Latest change
+ * FL-30-Apr-2015 Free vectors
+ * FL-30-Apr-2015 Latest change
  */
 public class QueryLoader
 {
@@ -163,7 +164,7 @@ public class QueryLoader
         set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
 
         // get set 2 from links_base
-        System.out.println( "Thread id " + threadId + "; Retrieving set 2 from links_base..." );
+        System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
         set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !
 
@@ -805,4 +806,120 @@ public class QueryLoader
         set2 = null;
     }
 
+
+    public void freeVectors() throws Exception
+    {
+        s1_id_base              .clear(); s1_id_base = null;
+        s1_registration_days    .clear(); s1_registration_days    = null;
+
+        s1_ego_familyname_str   .clear(); s1_ego_familyname_str   = null;
+        s1_ego_firstname1_str   .clear(); s1_ego_firstname1_str   = null;
+
+        s1_ego_familyname       .clear(); s1_ego_familyname       = null;
+        s1_ego_firstname1       .clear(); s1_ego_firstname1       = null;
+        s1_ego_firstname2       .clear(); s1_ego_firstname2       = null;
+        s1_ego_firstname3       .clear(); s1_ego_firstname3       = null;
+        s1_ego_firstname4       .clear(); s1_ego_firstname4       = null;
+        s1_ego_birth_min        .clear(); s1_ego_birth_min        = null;
+        s1_ego_birth_max        .clear(); s1_ego_birth_max        = null;
+        s1_ego_marriage_min     .clear(); s1_ego_marriage_min     = null;
+        s1_ego_marriage_max     .clear(); s1_ego_marriage_max     = null;
+        s1_ego_death_min        .clear(); s1_ego_death_min        = null;
+        s1_ego_death_max        .clear(); s1_ego_death_max        = null;
+
+        s1_sex                  .clear(); s1_sex                  = null;
+
+        s1_mother_familyname    .clear(); s1_mother_familyname    = null;
+        s1_mother_firstname1    .clear(); s1_mother_firstname1    = null;
+        s1_mother_firstname2    .clear(); s1_mother_firstname2    = null;
+        s1_mother_firstname3    .clear(); s1_mother_firstname3    = null;
+        s1_mother_firstname4    .clear(); s1_mother_firstname4    = null;
+        s1_mother_birth_min     .clear(); s1_mother_birth_min     = null;
+        s1_mother_birth_max     .clear(); s1_mother_birth_max     = null;
+        s1_mother_marriage_min  .clear(); s1_mother_marriage_min  = null;
+        s1_mother_marriage_max  .clear(); s1_mother_marriage_max  = null;
+        s1_mother_death_min     .clear(); s1_mother_death_min     = null;
+        s1_mother_death_max     .clear(); s1_mother_death_max     = null;
+
+        s1_father_familyname    .clear(); s1_father_familyname    = null;
+        s1_father_firstname1    .clear(); s1_father_firstname1    = null;
+        s1_father_firstname2    .clear(); s1_father_firstname2    = null;
+        s1_father_firstname3    .clear(); s1_father_firstname3    = null;
+        s1_father_firstname4    .clear(); s1_father_firstname4    = null;
+        s1_father_birth_min     .clear(); s1_father_birth_min     = null;
+        s1_father_birth_max     .clear(); s1_father_birth_max     = null;
+        s1_father_marriage_min  .clear(); s1_father_marriage_min  = null;
+        s1_father_marriage_max  .clear(); s1_father_marriage_max  = null;
+        s1_father_death_min     .clear(); s1_father_death_min     = null;
+        s1_father_death_max     .clear(); s1_father_death_max     = null;
+
+        s1_partner_familyname   .clear(); s1_partner_familyname   = null;
+        s1_partner_firstname1   .clear(); s1_partner_firstname1   = null;
+        s1_partner_firstname2   .clear(); s1_partner_firstname2   = null;
+        s1_partner_firstname3   .clear(); s1_partner_firstname3   = null;
+        s1_partner_firstname4   .clear(); s1_partner_firstname4   = null;
+        s1_partner_birth_min    .clear(); s1_partner_birth_min    = null;
+        s1_partner_birth_max    .clear(); s1_partner_birth_max    = null;
+        s1_partner_marriage_min .clear(); s1_partner_marriage_min = null;
+        s1_partner_marriage_max .clear(); s1_partner_marriage_max = null;
+        s1_partner_death_min    .clear(); s1_partner_death_min    = null;
+        s1_partner_death_max    .clear(); s1_partner_death_max    = null;
+
+
+        s2_id_base              .clear(); s2_id_base = null;
+        s2_registration_days    .clear(); s2_registration_days    = null;
+
+        s2_ego_familyname_str   .clear(); s2_ego_familyname_str   = null;
+        s2_ego_firstname1_str   .clear(); s2_ego_firstname1_str   = null;
+
+        s2_ego_familyname       .clear(); s2_ego_familyname       = null;
+        s2_ego_firstname1       .clear(); s2_ego_firstname1       = null;
+        s2_ego_firstname2       .clear(); s2_ego_firstname2       = null;
+        s2_ego_firstname3       .clear(); s2_ego_firstname3       = null;
+        s2_ego_firstname4       .clear(); s2_ego_firstname4       = null;
+        s2_ego_birth_min        .clear(); s2_ego_birth_min        = null;
+        s2_ego_birth_max        .clear(); s2_ego_birth_max        = null;
+        s2_ego_marriage_min     .clear(); s2_ego_marriage_min     = null;
+        s2_ego_marriage_max     .clear(); s2_ego_marriage_max     = null;
+        s2_ego_death_min        .clear(); s2_ego_death_min        = null;
+        s2_ego_death_max        .clear(); s2_ego_death_max        = null;
+
+        s2_sex                  .clear(); s2_sex                  = null;
+
+        s2_mother_familyname    .clear(); s2_mother_familyname    = null;
+        s2_mother_firstname1    .clear(); s2_mother_firstname1    = null;
+        s2_mother_firstname2    .clear(); s2_mother_firstname2    = null;
+        s2_mother_firstname3    .clear(); s2_mother_firstname3    = null;
+        s2_mother_firstname4    .clear(); s2_mother_firstname4    = null;
+        s2_mother_birth_min     .clear(); s2_mother_birth_min     = null;
+        s2_mother_birth_max     .clear(); s2_mother_birth_max     = null;
+        s2_mother_marriage_min  .clear(); s2_mother_marriage_min  = null;
+        s2_mother_marriage_max  .clear(); s2_mother_marriage_max  = null;
+        s2_mother_death_min     .clear(); s2_mother_death_min     = null;
+        s2_mother_death_max     .clear(); s2_mother_death_max     = null;
+
+        s2_father_familyname    .clear(); s2_father_familyname    = null;
+        s2_father_firstname1    .clear(); s2_father_firstname1    = null;
+        s2_father_firstname2    .clear(); s2_father_firstname2    = null;
+        s2_father_firstname3    .clear(); s2_father_firstname3    = null;
+        s2_father_firstname4    .clear(); s2_father_firstname4    = null;
+        s2_father_birth_min     .clear(); s2_father_birth_min     = null;
+        s2_father_birth_max     .clear(); s2_father_birth_max     = null;
+        s2_father_marriage_min  .clear(); s2_father_marriage_min  = null;
+        s2_father_marriage_max  .clear(); s2_father_marriage_max  = null;
+        s2_father_death_min     .clear(); s2_father_death_min     = null;
+        s2_father_death_max     .clear(); s2_father_death_max     = null;
+
+        s2_partner_familyname   .clear(); s2_partner_familyname   = null;
+        s2_partner_firstname1   .clear(); s2_partner_firstname1   = null;
+        s2_partner_firstname2   .clear(); s2_partner_firstname2   = null;
+        s2_partner_firstname3   .clear(); s2_partner_firstname3   = null;
+        s2_partner_firstname4   .clear(); s2_partner_firstname4   = null;
+        s2_partner_birth_min    .clear(); s2_partner_birth_min    = null;
+        s2_partner_birth_max    .clear(); s2_partner_birth_max    = null;
+        s2_partner_marriage_min .clear(); s2_partner_marriage_min = null;
+        s2_partner_marriage_max .clear(); s2_partner_marriage_max = null;
+        s2_partner_death_min    .clear(); s2_partner_death_min    = null;
+        s2_partner_death_max    .clear(); s2_partner_death_max    = null;
+    }
 }
