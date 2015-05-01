@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-30-Apr-2015 Latest change
+ * FL-01-May-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -190,8 +190,8 @@ public class MatchAsync extends Thread
     {
         // If you want the actual CPU time of the current thread (or indeed, any arbitrary thread) rather than
         // the wall clock time then you can get this via ThreadMXBean. Basically, do this at the start:
-        ThreadMXBean thx = ManagementFactory.getThreadMXBean();
-        thx.setThreadCpuTimeEnabled( true );
+        ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
+        threadMXB.setThreadCpuTimeEnabled( true );
 
         boolean debugfail = false;
 
@@ -812,17 +812,15 @@ public class MatchAsync extends Thread
                 qs = null;
             }
 
-            msg = "thread";
-            elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
+            elapsedShowMessage( "clock time", threadStart, System.currentTimeMillis() );
 
-            long cpuTimeNsec  = thx.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
-            long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
-
+            long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
             long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
-            long userTimeMsec = TimeUnit.NANOSECONDS.toMillis( userTimeNsec );
+            elapsedShowMessage( "thread time", 0, cpuTimeMsec );
 
-            elapsedShowMessage( "thread time elapsed", 0, cpuTimeMsec );
-            elapsedShowMessage( "clock  time elapsed", 0, userTimeMsec );
+            //long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
+            //long userTimeMsec = TimeUnit.NANOSECONDS.toMillis( userTimeNsec );
+            //elapsedShowMessage( "user m time elapsed", 0, userTimeMsec );   // user mode part of thread time
         }
         catch( Exception ex1 )
         {

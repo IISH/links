@@ -34,7 +34,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-30-Apr-2015 Latest change
+ * FL-01-Apr-2015 Latest change
  */
 
 public class Main
@@ -102,18 +102,19 @@ public class Main
             //Properties properties = Functions.getProperties();  // Read properties file
 
             plog.show( "Matching process started." );
-            int max_threads = Integer.parseInt( max_threads_str );
-            ProcessManager pm = new ProcessManager( max_threads );
+            int max_threads_simul = Integer.parseInt( max_threads_str );
+
+            ProcessManager pm = new ProcessManager( max_threads_simul );
+            msg = String.format( "Max simultaneous active matching threads: %d", max_threads_simul );
+            System.out.println( msg ); plog.show( msg );
 
             int ncores = Runtime.getRuntime().availableProcessors();
             msg = String.format( "Available cores: %d", ncores );
-            System.out.println( msg );
-            plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
 
             int nthreads_active = java.lang.Thread.activeCount();
-            msg = String.format( "Max simultaneous active matching threads: %d", nthreads_active );
-            System.out.println( msg );
-            plog.show( msg );
+            msg = String.format( "Currently active threads: %d", nthreads_active );
+            System.out.println( msg ); plog.show( msg );
 
             /* Create database connections*/
             dbconMatch    = General.getConnection( url, "links_match", user, pass );
@@ -284,15 +285,15 @@ public class Main
                 // split s1 if we have have few threads
                 if( isSize * qgs.getSize() > s1_split_limit )
                 {
-                    msg = String.format( "sample s1 not split", isSize, max_threads );
+                    msg = String.format( "sample s1 not split" );
                     System.out.println( msg); plog.show( msg );
                     num_s1_parts = 1;   // do not split s1 into separate pieces
                 }
                 else
                 {
-                    msg = String.format( "sample s1 split into %d parts", max_threads );
+                    num_s1_parts = max_threads_simul;
+                    msg = String.format( "sample s1 split into %d parts", num_s1_parts );
                     System.out.println( msg); plog.show( msg );
-                    num_s1_parts = max_threads;
                 }
 
                 boolean free_vecs = false;
@@ -311,14 +312,18 @@ public class Main
                 // Loop through the ranges/subqueries
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
-                    msg = String.format( "\nRange %d-of-%d", n_qs+1, qgs.getSize() );
+                    msg = String.format( "Range %d-of-%d", n_qs+1, qgs.getSize() );
+                    System.out.println( msg ); plog.show( msg );
 
                     QuerySet qs = qgs.get( n_qs );
                     showQuerySet( qs );
 
+                    long qlStart = System.currentTimeMillis();
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
+                    msg = String.format( "Range %d-of-%d; query loader time", n_qs+1, qgs.getSize() );
+                    elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
                     int s1_size = ql.s1_id_base.size();
                     msg = String.format( "s1_size: " + s1_size );
@@ -343,11 +348,11 @@ public class Main
                         int s1_npart = s1_ipart + 1;
                         int s1_offset = s1_ipart * s1_chunksize;       // where to start in sample 1
 
-                        if( s1_npart == max_threads ) { s1_piece = s1_size - s1_offset; }
+                        if( s1_npart == max_threads_simul ) { s1_piece = s1_size - s1_offset; }
                         else { s1_piece = s1_chunksize;  }
 
                         msg = String.format( "range: %d, s1 part: %d-of-%d, offset: %d, s1 piece size: %d",
-                            n_qs+1, s1_npart, max_threads, s1_offset, s1_piece );
+                            n_qs+1, s1_npart, max_threads_simul, s1_offset, s1_piece );
                         System.out.println( msg ); plog.show( msg );
 
                         // Wait until process manager gives permission
@@ -375,7 +380,7 @@ public class Main
                         //ma.join();        // blocks parent thread?
 
                         nthreads_started++;
-                        plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, max_threads ) );
+                        plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, max_threads_simul ) );
                     }
                 }
 
@@ -491,8 +496,9 @@ public class Main
             String table_familyname_dst = table_familyname_src + name_postfix;
 
             memtable_ls_name( table_firstname_src, table_firstname_dst );
-
             memtable_ls_name( table_familyname_src, table_familyname_dst );
+
+            memtable_freq_name( "freq_familyname", "freq_familyname_mem" );
         }
         catch( Exception ex ) {
             String err = "Exception in memtables_create(): " + ex.getMessage();
@@ -543,6 +549,65 @@ public class Main
 
         return exists;
     }
+
+
+    private static void memtable_freq_name( String src_table, String dst_table )
+    {
+            if( memtable_ls_exists( dst_table ) ) {
+            String msg = "memtable_freq_name() deleting previous " + dst_table;
+            System.out.println( msg );
+            try { plog.show( msg ); } catch( Exception ex ) { ; }
+
+            memtable_drop( dst_table );
+        }
+
+        String msg = "memtable_freq_name() copying " + src_table + " -> " + dst_table;
+        System.out.println( msg );
+        try { plog.show( msg ); } catch( Exception ex ) { ; }
+
+        try
+        {
+            String[] name_queries =
+            {
+                "CREATE TABLE " + dst_table
+                    + " ( "
+                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                    + " `name_str` varchar(100) DEFAULT NULL,"
+                    + " `frequency` int(10) unsigned DEFAULT NULL,"
+                    + " PRIMARY KEY (`id`),"
+                    + " KEY `name_str` (`name_str`)"
+                    + " )"
+                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+                "TRUNCATE TABLE " + dst_table,
+
+                "ALTER TABLE " + dst_table + " DISABLE KEYS",
+
+                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
+
+                "ALTER TABLE " + dst_table + " ENABLE KEYS"
+            };
+
+            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
+        }
+        catch( Exception ex ) {
+            String err = ex.getMessage();
+            msg = "Exception in memtable_freq_name(): " + err;
+            System.out.println( msg );
+
+            try {
+                plog.show( msg );
+                if( err.equals( "The table '" + dst_table + "' is full" ) ) {
+                    System.out.println( "EXIT" ); plog.show( "EXIT" );
+                    System.exit( 1 );       // should not continue; would give wrong matching results.
+                }
+            }
+            catch( Exception ex1 ) {
+                System.out.println( "EXIT" );
+                System.exit( 1 );
+            }
+        }
+    } // memtable_freq_name
 
 
     private static void memtable_ls_name( String src_table, String dst_table )

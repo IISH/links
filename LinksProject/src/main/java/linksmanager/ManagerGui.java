@@ -72,7 +72,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-23-Apr-2015 Latest change
+ * FL-01-May-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame

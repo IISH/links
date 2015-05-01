@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-23-Apr-2015 Latest change
+ * FL-01-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -175,82 +175,139 @@ public class LinksCleanedThread extends Thread
      */
     public void run()
     {
+        //boolean using_threads = false;
         boolean using_threads = false;
-        /*
-        boolean using_threads = true;
+
+
         class CleaningThread extends Thread
         {
             String source;
 
-            CleaningThread( String source ) {
+            CleaningThread
+            (
+                String source
+            )
+            {
                 this.source = source;
             }
 
             public void run()
             {
-                long begintime = System.currentTimeMillis();
-
-                int ncores = Runtime.getRuntime().availableProcessors();
-                showMessage( "Available cores: " + ncores, false, true );
-                int nthreads = java.lang.Thread.activeCount();
-                showMessage( "Active threads: " + nthreads, false, true );
-
-                String msg = "CleaningThread, source: " + source;
-                System.out.println(msg);
-                showMessage(msg, false, true);
+                long threadStart = System.currentTimeMillis();
 
                 try
                 {
-                    doRenewData( debug, opts.isDoRenewData(), source );                 // GUI cb: Remove previous data
+                    plog.show( "CleaningThread/run()" );
 
-                    doPrepieceSuffix( debug, opts.isDoNames(), source );                // GUI cb: Prepiece, Suufix
+                    String msg = "Cleaning source: " + source;
+                    plog.show( msg ); showMessage( msg, false, true );
 
-                    doNames( debug, opts.isDoNames(), source );                         // GUI cb: Names
+                    if( 1 == 1 ) { return; }
 
-                    doLocations( debug, opts.isDoLocations(), source );                 // GUI cb: Locations
 
-                    doStatusSex( debug, opts.isDoStatusSex(), source );                 // GUI cb: Status and Sex
+                    /*
+                    String msg = "";
+                    if( dbconref_single ) { msg = "Using the same reference db for reading and writing"; }
+                    else { msg = "Reference db: reading locally, writing to remote db"; }
+                    plog.show(msg );  showMessage( msg, false, true );
 
-                    doRegistrationType( debug, opts.isDoRegType(), source );            // GUI cb: Registration Type
+                    logTableName = LinksSpecific.getLogTableName();
 
-                    doOccupation( debug, opts.isDoOccupation(), source );               // GUI cb: Occupation
+                    outputLine.setText( "" );
+                    outputArea.setText( "" );
 
-                    doDates( debug, opts.isDoDates(), source );                         // GUI cb: Dates
+                    connectToDatabases();                                       // Create databases connectors
+                    createLogTable();                                           // Create log table with timestamp
 
-                    doMinMaxMarriage( debug, opts.isDoMinMaxMarriage(), source );       // GUI cb: Min Max Marriage
 
-                    doPartsToFullDate( debug, opts.isDoPartsToFullDate(), source );     // GUI cb: Parts to Full Date
 
-                    doDaysSinceBegin( debug, opts.isDoDaysSinceBegin(), source );       // GUI cb: Days since begin
+                    int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
+                    sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
-                    doPostTasks( debug, opts.isDoPostTasks(), source );                 // GUI cb: Post Tasks
+                    String s = "";
+                    if( sourceList.length == 1 ) { s = "Processing source: "; }
+                    else { s = "Processing sources: "; }
+                    for( int i : sourceList ) { s = s + i + " "; }
+                    showMessage( s, false, true );
 
-                    doRemoveDuplicates( debug, opts.isDoRemoveDuplicates() );           // GUI cb: Dup & Bad Regs
+
+                    // links_general.ref_report contains about 75 error definitions,
+                    // to be used when the normalization encounters errors
+                    showMessage( "Loading report table...", false, true );
+                    almmReport = new TableToArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
+                    //almmReport.contentsOld();
+
+
+                    int ncores = Runtime.getRuntime().availableProcessors();
+                    showMessage( "Available cores: " + ncores, false, true );
+                    int nthreads = java.lang.Thread.activeCount();
+                    showMessage( "Active threads: " + nthreads, false, true );
+
+                    msg = "CleaningThread, source: " + source;
+                    System.out.println(msg);
+                    showMessage(msg, false, true);
+                    */
+
+
+                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
+
+                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source );      // GUI cb: Prepiece, Suffix
+
+                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source );                  // GUI cb: Firstnames
+
+                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source );               // GUI cb: Familynames
+
+                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source );                     // GUI cb: Locations
+
+                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source );                     // GUI cb: Status and Sex
+
+                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source );                  // GUI cb: Registration Type
+
+                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
+
+                    doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age, Role,Dates
+
+                    doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Age, Role, Dates
+
+                    doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Age, Role, Dates
+
+                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
+
+                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source );   // GUI cb: Parts to Full Date
+
+                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source );      // GUI cb: Days since begin
+
+                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source );                     // GUI cb: Post Tasks
+
+                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source );   // GUI cb: Remove Empty Role Reg's
+
+                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source );   // GUI cb: Remove Empty Role Reg's
+
+                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source );   // GUI cb: Remove Duplicate Reg's
+
+                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
                 }
                 catch( Exception ex ) {
                     showMessage( "Error: " + ex.getMessage(), false, true );
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
 
-                msg = "Cleaning sourceId " + source + " is done";
-                showTimingMessage( msg, begintime );
+                String msg = "Cleaning sourceId " + source + " is done";
+                showTimingMessage( msg, threadStart );
                 System.out.println( msg );
             }
-        }
-        */
+        } // CleaningThread inner class
 
-        try {
-            long cleanStart = System.currentTimeMillis();
 
-            //plog.show( "Links Match Manager 2.0" );
+        try
+        {
             plog.show( "LinksCleanedThread/run()" );
-            //int ncores = Runtime.getRuntime().availableProcessors();
-            //plog.show( "Available cores: " + ncores );
 
             String msg = "";
             if( dbconref_single ) { msg = "Using the same reference db for reading and writing"; }
             else { msg = "Reference db: reading locally, writing to remote db"; }
-            plog.show(msg );  showMessage( msg, false, true );
+            plog.show( msg );
+            showMessage( msg, false, true );
 
             logTableName = LinksSpecific.getLogTableName();
 
@@ -260,16 +317,14 @@ public class LinksCleanedThread extends Thread
             connectToDatabases();                                       // Create databases connectors
             createLogTable();                                           // Create log table with timestamp
 
-
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
             sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
             if( sourceList.length == 1 ) { s = "Processing source: "; }
             else { s = "Processing sources: "; }
-            for( int i : sourceList ) { s = s + i + " "; }
-            showMessage( s, false, true );
-
+            for (int i : sourceList) { s = s + i + " "; }
+            showMessage(s, false, true);
 
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
@@ -277,82 +332,97 @@ public class LinksCleanedThread extends Thread
             almmReport = new TableToArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
             //almmReport.contentsOld();
 
-            for( int sourceId : sourceList )
+
+            if( using_threads )
             {
-                long sourceStart = System.currentTimeMillis();
+                msg = "Multi-threaded cleaning";
+                plog.show( msg ); showMessage( msg, false, true );
 
-                String source = Integer.toString( sourceId );
-
-                //CleaningThread ct = new CleaningThread( source );
-                //ct.start();
-
-                showMessage_nl();
-                showMessage( "Processing sourceId: " + source, false, true );
-
-                doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
-
-                doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source );      // GUI cb: Prepiece, Suufix
-
-                doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source );                  // GUI cb: Names
-
-                doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source );               // GUI cb: Names
-
-                doLocations( opts.isDbgLocations(), opts.isDoLocations(), source );                     // GUI cb: Locations
-
-                doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source );                     // GUI cb: Status and Sex
-
-                doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source );                  // GUI cb: Registration Type
-
-                doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
-
-                //showMessage( "SKIPPING doAge", false, true );
-                doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age
-                //showMessage( "SKIPPING doRole", false, true );
-                doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Role
-
-                doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Dates
-
-                doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
-
-                doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source );   // GUI cb: Parts to Full Date
-
-                doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source );      // GUI cb: Days since begin
-
-                doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source );                     // GUI cb: Post Tasks
-
-                doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source );   // GUI cb: Remove Empty Role Reg's
-
-                doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source );   // GUI cb: Remove Empty Role Reg's
-
-                doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source );   // GUI cb: Remove Duplicate Reg's
-
-                doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
-
-                msg = "Cleaning sourceId " + sourceId + " is done";
-                elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
-                System.out.println( msg );
+                for ( int sourceId : sourceList )
+                {
+                    String source = Integer.toString( sourceId );
+                    CleaningThread ct = new CleaningThread( source );
+                    ct.start();
+                }
             }
 
-            // Close db connections
-            if( ! using_threads ) {
+            else    // single-threaded cleaning
+            {
+                long cleanStart = System.currentTimeMillis();
+                msg = "Single-threaded cleaning";
+                plog.show( msg ); showMessage( msg, false, true );
+
+                for ( int sourceId : sourceList )
+                {
+                    long sourceStart = System.currentTimeMillis();
+
+                    String source = Integer.toString( sourceId );
+
+                    showMessage_nl();
+                    showMessage( "Processing sourceId: " + source, false, true );
+
+                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source);                     // GUI cb: Remove previous data
+
+                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source);      // GUI cb: Prepiece, Suffix
+
+                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source);                  // GUI cb: Firstnames
+
+                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source);               // GUI cb: Familynames
+
+                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source);                     // GUI cb: Locations
+
+                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source);                     // GUI cb: Status and Sex
+
+                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source);                  // GUI cb: Registration Type
+
+                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source);                  // GUI cb: Occupation
+
+                    //showMessage( "SKIPPING doAge", false, true );
+                    doAge( opts.isDbgAge(), opts.isDoDates(), source);                                 // GUI cb: Age
+                    //showMessage( "SKIPPING doRole", false, true );
+                    doRole( opts.isDbgRole(), opts.isDoDates(), source);                                 // GUI cb: Role
+
+                    doDates( opts.isDbgDates(), opts.isDoDates(), source);                                 // GUI cb: Dates
+
+                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source);      // GUI cb: Min Max Marriage
+
+                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source);   // GUI cb: Parts to Full Date
+
+                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source);      // GUI cb: Days since begin
+
+                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source);                     // GUI cb: Post Tasks
+
+                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source);   // GUI cb: Remove Empty Role Reg's
+
+                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source);   // GUI cb: Remove Empty Role Reg's
+
+                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source);   // GUI cb: Remove Duplicate Reg's
+
+                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source);                           // GUI cb: Scan Remarks
+
+                    msg = "Cleaning sourceId " + sourceId + " is done";
+                    elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
+                    System.out.println( msg );
+                }
+
+                // Close db connections
                 dbconRefWrite.close();
-                if( ! dbconref_single ) { dbconRefRead.close(); }
+                if( !dbconref_single ) { dbconRefRead.close(); }
                 dbconLog.close();
                 dbconOriginal.close();
                 dbconCleaned.close();
+
+                for( int sourceId : sourceList ) {
+                    String source = Integer.toString( sourceId );
+                    doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
+                }
+
+                msg = "Cleaning is done";
+                elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
+                System.out.println( msg );
             }
-
-            for( int sourceId : sourceList ) {
-                String source = Integer.toString( sourceId );
-                doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
-            }
-
-            msg = "Cleaning is done";
-            elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
-            System.out.println( msg );
-
         }
-        catch (Exception ex) {
+        catch( Exception ex ) {
             showMessage( "Error: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }

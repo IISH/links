@@ -159,6 +159,7 @@ public class QueryLoader
         this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
+
         // get set 1 from links_base
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
         set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
