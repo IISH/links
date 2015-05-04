@@ -52,7 +52,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-01-May-2015 Latest change
+ * FL-04-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -62,21 +62,23 @@ import linksmanager.ManagerGui;
 
 public class LinksCleanedThread extends Thread
 {
+    boolean multithreaded = false;
+
     // Table -> ArrayListMultiMap
-    private TableToArrayListMultimap almmPrepiece;      // Names
-    private TableToArrayListMultimap almmSuffix;        // Names
-    private TableToArrayListMultimap almmAlias;         // Names
-    private TableToArrayListMultimap almmFirstname;     // Names
-    private TableToArrayListMultimap almmFamilyname;    // Names
-    private TableToArrayListMultimap almmLocation;      // Location
-    //private TableToArrayListMultimap almmRegisType;     // Registration Type
-    private TableToArrayListMultimap almmOccupation;    // Occupation
-    private TableToArrayListMultimap almmReport;        // Report warnings
-    private TableToArrayListMultimap almmRole;          // Role
-    private TableToArrayListMultimap almmCivilstatus;   // Civilstatus & Gender
-    private TableToArrayListMultimap almmSex;           // Civilstatus & Gender
-    private TableToArrayListMultimap almmMarriageYear;  // min/max marriage year
-    private TableToArrayListMultimap almmLitAge;        // age_literal
+    private TableToArrayListMultimap almmPrepiece     = null;   // Names
+    private TableToArrayListMultimap almmSuffix       = null;   // Names
+    private TableToArrayListMultimap almmAlias        = null;   // Names
+    private TableToArrayListMultimap almmFirstname    = null;   // Names
+    private TableToArrayListMultimap almmFamilyname   = null;   // Names
+    private TableToArrayListMultimap almmLocation     = null;   // Location
+    //private TableToArrayListMultimap almmRegisType   = null;  // Registration Type
+    private TableToArrayListMultimap almmOccupation   = null;   // Occupation
+    private TableToArrayListMultimap almmReport       = null;   // Report warnings
+    private TableToArrayListMultimap almmRole         = null;   // Role
+    private TableToArrayListMultimap almmCivilstatus  = null;   // Civilstatus & Gender
+    private TableToArrayListMultimap almmSex          = null;   // Civilstatus & Gender
+    private TableToArrayListMultimap almmMarriageYear = null;   // min/max marriage year
+    private TableToArrayListMultimap almmLitAge       = null;   // age_literal
 
     private JTextField outputLine;
     private JTextArea  outputArea;
@@ -175,10 +177,11 @@ public class LinksCleanedThread extends Thread
      */
     public void run()
     {
-        //boolean using_threads = false;
-        boolean using_threads = false;
+        //multithreaded = false;
+        multithreaded = true;
 
 
+        // inner class for cleaning a single id_source
         class CleaningThread extends Thread
         {
             String source;
@@ -197,57 +200,9 @@ public class LinksCleanedThread extends Thread
 
                 try
                 {
-                    plog.show( "CleaningThread/run()" );
-
-                    String msg = "Cleaning source: " + source;
+                    long threadId = Thread.currentThread().getId();
+                    String msg = String.format( "CleaningThread/run(): thread id %2d running for source %s", threadId, source ) ;
                     plog.show( msg ); showMessage( msg, false, true );
-
-                    if( 1 == 1 ) { return; }
-
-
-                    /*
-                    String msg = "";
-                    if( dbconref_single ) { msg = "Using the same reference db for reading and writing"; }
-                    else { msg = "Reference db: reading locally, writing to remote db"; }
-                    plog.show(msg );  showMessage( msg, false, true );
-
-                    logTableName = LinksSpecific.getLogTableName();
-
-                    outputLine.setText( "" );
-                    outputArea.setText( "" );
-
-                    connectToDatabases();                                       // Create databases connectors
-                    createLogTable();                                           // Create log table with timestamp
-
-
-
-                    int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
-                    sourceList = createSourceList( sourceIdsGui, sourceListAvail );
-
-                    String s = "";
-                    if( sourceList.length == 1 ) { s = "Processing source: "; }
-                    else { s = "Processing sources: "; }
-                    for( int i : sourceList ) { s = s + i + " "; }
-                    showMessage( s, false, true );
-
-
-                    // links_general.ref_report contains about 75 error definitions,
-                    // to be used when the normalization encounters errors
-                    showMessage( "Loading report table...", false, true );
-                    almmReport = new TableToArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
-                    //almmReport.contentsOld();
-
-
-                    int ncores = Runtime.getRuntime().availableProcessors();
-                    showMessage( "Available cores: " + ncores, false, true );
-                    int nthreads = java.lang.Thread.activeCount();
-                    showMessage( "Active threads: " + nthreads, false, true );
-
-                    msg = "CleaningThread, source: " + source;
-                    System.out.println(msg);
-                    showMessage(msg, false, true);
-                    */
-
 
                     doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
 
@@ -333,10 +288,28 @@ public class LinksCleanedThread extends Thread
             //almmReport.contentsOld();
 
 
-            if( using_threads )
+            if( multithreaded )
             {
                 msg = "Multi-threaded cleaning";
                 plog.show( msg ); showMessage( msg, false, true );
+
+                msg = "Pre-loading all reference tables";   // with multithreaded they are not explicitly freed
+                plog.show( msg ); showMessage( msg, false, true );
+
+                almmPrepiece     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
+                almmSuffix       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
+                almmAlias        = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+                almmFirstname    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
+                almmFamilyname   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
+                almmLocation     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
+                //almmRegisType    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
+                almmOccupation   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
+                // almmReport  : see above, also loaded for single-threaded
+                almmRole         = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
+                almmCivilstatus  = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
+                almmSex          = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
+                almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
+                almmLitAge       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
 
                 for ( int sourceId : sourceList )
                 {
@@ -346,7 +319,7 @@ public class LinksCleanedThread extends Thread
                 }
             }
 
-            else    // single-threaded cleaning
+            else    // single-threaded cleaning for multiple sources
             {
                 long cleanStart = System.currentTimeMillis();
                 msg = "Single-threaded cleaning";
@@ -970,9 +943,9 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        //almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        if( ! multithreaded ) { almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" ); }
+        if( ! multithreaded ) { almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" ); }
+        //if( ! multithreaded ) { almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null ); }
 
         showMessage( "standardPrepiece", false, true );
         standardPrepiece( debug, source );
@@ -986,9 +959,9 @@ public class LinksCleanedThread extends Thread
         almmSuffix.updateTable();
         // almmAlias.updateTable();     // almmAlias.add() never called; nothing added to almmAlias
 
-        almmPrepiece.free();
-        almmSuffix.free();
-        //almmAlias.free();
+        if( ! multithreaded ) { almmPrepiece.free(); }
+        if( ! multithreaded ) { almmSuffix.free(); }
+        //if( ! multithreaded )  { almmAlias.free(); }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -1022,9 +995,9 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        if( ! multithreaded ) { almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" ); }
+        if( ! multithreaded ) { almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" ); }
+        if( ! multithreaded ) { almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null ); }
         showTimingMessage( msg, start );
 
         // Firstnames
@@ -1040,7 +1013,7 @@ public class LinksCleanedThread extends Thread
         msg = "Loading reference table: ref_firstname";
         showMessage( msg + "...", false, true );
 
-        almmFirstname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
+        if( ! multithreaded ) { almmFirstname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" ); }
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
         showMessage( "Number of rows in reference table: " + numrows, false, true );
@@ -1055,7 +1028,7 @@ public class LinksCleanedThread extends Thread
 
         start = System.currentTimeMillis();
         almmFirstname.updateTable();
-        almmFirstname.free();
+        if( ! multithreaded ) { almmFirstname.free(); }
 
         writerFirstname.close();
         loadFirstnameCsvToTableT( dbconTemp, source );
@@ -1072,9 +1045,9 @@ public class LinksCleanedThread extends Thread
         dbconCleaned.runQuery( qLower );
         showTimingMessage( msg, start );
 
-        almmPrepiece.free();
-        almmSuffix.free();
-        almmAlias.free();
+        if( ! multithreaded ) { almmPrepiece.free(); }
+        if( ! multithreaded ) { almmSuffix.free(); }
+        if( ! multithreaded ) { almmAlias.free(); }
 
         dbconTemp.close();
 
@@ -1110,9 +1083,9 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-        almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-        almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-        almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
+        if( ! multithreaded ) { almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" ); }
+        if( ! multithreaded ) { almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" ); }
+        if( ! multithreaded ) { almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null ); }
         showTimingMessage( msg, start );
 
         // Familynames
@@ -1129,7 +1102,7 @@ public class LinksCleanedThread extends Thread
         msg = "Loading reference table: ref_familyname";
         showMessage( msg + "...", false, true );
 
-        almmFamilyname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
+        if( ! multithreaded ) { almmFamilyname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" ); }
         int numrows = almmFamilyname.numrows();
         int numkeys = almmFamilyname.numkeys();
         showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
@@ -1147,7 +1120,7 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         almmFamilyname.updateTable();
-        almmFamilyname.free();
+        if( ! multithreaded ) { almmFamilyname.free(); }
 
         writerFamilyname.close();
         loadFamilynameCsvToTableT(     dbconTemp, source );
@@ -1164,9 +1137,9 @@ public class LinksCleanedThread extends Thread
         dbconCleaned.runQuery( qLower );
         showTimingMessage( msg, start );
 
-        almmPrepiece.free();
-        almmSuffix.free();
-        almmAlias.free();
+        if( ! multithreaded ) { almmPrepiece.free(); }
+        if( ! multithreaded ) { almmSuffix.free(); }
+        if( ! multithreaded ) { almmAlias.free(); }
 
         dbconTemp.close();
 
@@ -2430,7 +2403,7 @@ public class LinksCleanedThread extends Thread
         String msg = "Loading reference table: location";
         showMessage( msg + "...", false, true );
         long start = System.currentTimeMillis();
-        almmLocation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
+        if( ! multithreaded ) { almmLocation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" ); }
         showTimingMessage( msg, start );
         int numrows = almmLocation.numrows();
         int numkeys = almmLocation.numkeys();
@@ -2472,6 +2445,8 @@ public class LinksCleanedThread extends Thread
         showMessage( "Updating reference table: location...", false, true );
         almmLocation.updateTable();
         showTimingMessage( "Updating reference table: location", start );
+
+        if( ! multithreaded ) { almmLocation.free(); }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -2766,10 +2741,10 @@ public class LinksCleanedThread extends Thread
         showMessage( funcname + "...", false, true );
 
         showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
-        almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
+        if( ! multithreaded ) { almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" ); }
 
         showMessage("Loading reference table: status_sex (civil status as key)...", false, true);
-        almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
+        if( ! multithreaded ) { almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" ); }
 
         int numrows = almmCivilstatus.numrows();
         int numkeys = almmCivilstatus.numkeys();
@@ -2783,8 +2758,8 @@ public class LinksCleanedThread extends Thread
         showMessage("Updating reference table: ref_status_sex", false, true);
         almmCivilstatus.updateTable();
 
-        almmSex.free();
-        almmCivilstatus.free();
+        if( ! multithreaded ) { almmSex.free(); }
+        if( ! multithreaded ) { almmCivilstatus.free(); }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3032,7 +3007,7 @@ public class LinksCleanedThread extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_registration";
         showMessage( msg + "...", false, true );
-        almmRegisType = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
+        if( ! multithreaded ) { almmRegisType = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" ); }
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
         */
 
@@ -3041,7 +3016,7 @@ public class LinksCleanedThread extends Thread
         /*
         showMessage( "Updating reference table: ref_registration", false, true );
         almmRegisType.updateTable();
-        almmRegisType.free();
+        if( ! multithreaded ) { almmRegisType.free(); }
         */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
@@ -3163,7 +3138,7 @@ public class LinksCleanedThread extends Thread
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_occupation";
         showMessage( msg + "...", false, true );
-        almmOccupation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
+        if( ! multithreaded ) { almmOccupation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" ); }
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         int numrows = almmOccupation.numrows();
@@ -3177,7 +3152,7 @@ public class LinksCleanedThread extends Thread
 
         showMessage( "Updating reference table: ref_occupation", false, true );
         almmOccupation.updateTable();
-        almmOccupation.free();
+        if( ! multithreaded ) { almmOccupation.free(); }
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3339,7 +3314,7 @@ public class LinksCleanedThread extends Thread
 
         showMessage( funcname + "...", false, true );
 
-        almmLitAge = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
+        if( ! multithreaded ) { almmLitAge = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" ); }
         int size = almmLitAge.numkeys();
         showMessage( "Reference table: ref_age [" + size + " records]", false, true );
 
@@ -3355,7 +3330,7 @@ public class LinksCleanedThread extends Thread
         standardAge( debug, source );
         elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
 
-        almmLitAge.free();
+        if( ! multithreaded ) { almmLitAge.free(); }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3632,7 +3607,7 @@ public class LinksCleanedThread extends Thread
         String msg = "Loading reference table: ref_role";
         showMessage( msg + "...", false, true );
 
-        almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
+        if( ! multithreaded ) { almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" ); }
         int size = almmRole.numkeys();
         showMessage( "Reference table: ref_role [" + size + " records]", false, true );
 
@@ -3640,7 +3615,7 @@ public class LinksCleanedThread extends Thread
         standardRole( debug, source );
 
         almmRole.updateTable();
-        almmRole.free();
+        if( ! multithreaded ) { almmRole.free(); }
 
         showMessage( "Processing standardAlive for source: " + source + "...", false, true );
         standardAlive( debug, source );
@@ -4021,7 +3996,7 @@ public class LinksCleanedThread extends Thread
 
                 String type_date = "";
 
-                if( mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
+                if( debug && mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
 
                 if( birth_date_valid != 1 )                 // invalid birth date
                 {
@@ -4125,7 +4100,7 @@ public class LinksCleanedThread extends Thread
     private DivideMinMaxDatumSet minMaxDate( boolean debug, MinMaxDateSet inputInfo )
     throws Exception
     {
-        if( inputInfo.getPersonRole() == 0 ) { showMessage( "minMaxDate() role = 0", false, true ); }
+        if( debug && inputInfo.getPersonRole() == 0 ) { showMessage( "minMaxDate() role = 0", false, true ); }
 
         if( debug ) { showMessage( "minMaxDate()", false, true ); }
 
@@ -5494,12 +5469,12 @@ public class LinksCleanedThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
+        if( ! multithreaded ) { almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" ); }
         //almmMarriageYear.contentsOld();
 
         minMaxMarriageYear( debug, source );
 
-        almmMarriageYear.free();
+        if( ! multithreaded ) { almmMarriageYear.free(); }
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
