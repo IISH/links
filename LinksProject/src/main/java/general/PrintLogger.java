@@ -28,7 +28,7 @@ import modulemain.LinksSpecific;
  * This Class contains logging procedures
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-04-Feb-2015 Latest Change
+ * FL-06-May-2015 Latest Change
  */
 public class PrintLogger
 {
@@ -90,7 +90,10 @@ public class PrintLogger
             fileIsLocked = false;
             
         }
-        catch( Exception ex ) { throw new Exception( "Could not write to file " + pathName, ex ); }
+        catch( Exception ex ) {
+            String msg = String.format( "Could not write to file: %s,\n%s", pathName, intext );
+            throw new Exception( "Could not write to file " + pathName, ex );
+        }
 
         intextPrevious = intext;
     }
