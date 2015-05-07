@@ -31,6 +31,7 @@ import dataset.PersonC;
 import dataset.RegistrationC;
 import dataset.Remarks;
 import dataset.TableToArrayListMultimap;
+import dataset.ThreadManager;
 
 import connectors.MySqlConnector;
 import enumdefinitions.TableType;
@@ -52,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-06-May-2015 Latest change
+ * FL-07-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -98,9 +99,6 @@ public class LinksCleanedThread extends Thread
     private final static String SC_X = "x"; //    X    Standard yet to be assigned
     private final static String SC_N = "n"; //    No   standard value assigned (original value is not valid)
     private final static String SC_Y = "y"; //    Yes  Standard value assigned (original value is valid)
-
-    private FileWriter writerFirstname;
-    private FileWriter writerFamilyname;
 
     private ManagerGui mg;
 
@@ -184,13 +182,16 @@ public class LinksCleanedThread extends Thread
         // inner class for cleaning a single id_source
         class CleaningThread extends Thread
         {
+            ThreadManager tm;
             String source;
 
             CleaningThread
             (
+                ThreadManager tm,
                 String source
             )
             {
+                this.tm = tm;
                 this.source = source;
             }
 
@@ -250,13 +251,21 @@ public class LinksCleanedThread extends Thread
                 String msg = "Cleaning sourceId " + source + " is done";
                 showTimingMessage( msg, threadStart );
                 System.out.println( msg );
+
+                int count = tm.removeThread();
+                msg = String.format( "Remaining cleaning threads: %d", count );
+                showMessage( msg, false, true );
+                System.out.println( msg );
             }
         } // CleaningThread inner class
 
 
         try
         {
-            plog.show( "LinksCleanedThread/run()" );
+            long cleanStart = System.currentTimeMillis();
+
+            long mainThreadId = Thread.currentThread().getId();
+            plog.show( String.format( "Main thread (id %d); LinksCleanedThread/run()", mainThreadId ) );
 
             String msg = "";
             if( dbconref_single ) { msg = "Using the same reference db for reading and writing"; }
@@ -290,9 +299,11 @@ public class LinksCleanedThread extends Thread
 
             if( multithreaded )
             {
-                msg = "Multi-threaded cleaning";
-                plog.show( msg ); showMessage( msg, false, true );
+                int max_threads_simul = 100;
+                ThreadManager tm = new ThreadManager( max_threads_simul );
+                msg = String.format( "Multi-threaded cleaning with max %d simultaneous cleaning threads", max_threads_simul );
 
+                plog.show( msg ); showMessage( msg, false, true );
 
                 long timeStart = System.currentTimeMillis();
                 msg = "Pre-loading all reference tables...";   // with multithreaded they are not explicitly freed
@@ -314,17 +325,33 @@ public class LinksCleanedThread extends Thread
                 almmLitAge       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
                 elapsedShowMessage( "Pre-loading all reference tables", timeStart, System.currentTimeMillis() );
 
+                ArrayList< CleaningThread > threads = new ArrayList();
+
                 for ( int sourceId : sourceList )
                 {
+                    while( ! tm.allowNewThread() )  // Wait until our thread manager gives permission
+                    {
+                        plog.show( "No permission for new thread: Waiting 60 seconds" );
+                        Thread.sleep( 60000 );
+                    }
+                    tm.addThread();        // Add a thread to the thread count
+
                     String source = Integer.toString( sourceId );
-                    CleaningThread ct = new CleaningThread( source );
+                    CleaningThread ct = new CleaningThread( tm, source );
                     ct.start();
+                    threads.add( ct );
                 }
+
+                // join the threads: main thread must wait for children to finish
+                for( CleaningThread ct : threads ) { ct.join(); }
+
+                msg = String.format( "Main thread (id %d); Cleaning Finished.", mainThreadId );
+                elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
+                System.out.println( msg );
             }
 
             else    // single-threaded cleaning for multiple sources
             {
-                long cleanStart = System.currentTimeMillis();
                 msg = "Single-threaded cleaning";
                 plog.show( msg ); showMessage( msg, false, true );
 
@@ -1002,13 +1029,11 @@ public class LinksCleanedThread extends Thread
         MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
 
         String msg = "";
-        long start = 0;
+        long start = System.currentTimeMillis();
 
         if( ! multithreaded )
         {
             // Loading Prepiece/Suffix/Alias reference tables
-            start = System.currentTimeMillis();
-
             msg = "Loading Prepiece/Suffix/Alias reference tables";
             showMessage( msg + "...", false, true );
 
@@ -1027,8 +1052,10 @@ public class LinksCleanedThread extends Thread
             showMessage( msg, false, true );
             dropTable( dbconTemp, "links_temp", tmp_firstname );
         }
+
         createTempFirstnameTable( dbconTemp, source );
-        createTempFirstnameFile(  source );
+
+        FileWriter writerFirstname = createTempFirstnameFile(  source );
 
         if( ! multithreaded ) {
             start = System.currentTimeMillis();
@@ -1040,7 +1067,7 @@ public class LinksCleanedThread extends Thread
 
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
-        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        showMessage( "Number of rows in reference table ref_firstname: " + numrows, false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
@@ -1048,7 +1075,7 @@ public class LinksCleanedThread extends Thread
 
         msg = String.format( "Thread id %2d; standardFirstname...", threadId );
         showMessage( msg, false, true );
-        standardFirstname( debug, source );
+        standardFirstname( debug, writerFirstname, source );
         msg = String.format( "Thread id %2d; standardFirstname ", threadId );
         showTimingMessage( msg, start );
 
@@ -1107,11 +1134,10 @@ public class LinksCleanedThread extends Thread
         MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
 
         String msg = "";
-        long start = 0;
+        long start = System.currentTimeMillis();
 
         if( ! multithreaded ) {
             // Loading Prepiece/Suffix/Alias reference tables
-            start = System.currentTimeMillis();
             msg = String.format( "Loading Prepiece/Suffix/Alias reference tables" );
             showMessage( msg + "...", false, true );
 
@@ -1131,7 +1157,8 @@ public class LinksCleanedThread extends Thread
         }
 
         createTempFamilynameTable( dbconTemp, source );
-        createTempFamilynameFile(  source );
+
+        FileWriter writerFamilyname = createTempFamilynameFile(  source );
 
         if( ! multithreaded ) {
             start = System.currentTimeMillis();
@@ -1143,7 +1170,7 @@ public class LinksCleanedThread extends Thread
 
         int numrows = almmFamilyname.numrows();
         int numkeys = almmFamilyname.numkeys();
-        showMessage( "Number of rows in reference table: " + almmFamilyname.numrows(), false, true );
+        showMessage( "Number of rows in reference table ref_familyname: " + almmFamilyname.numrows(), false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + almmFamilyname.numkeys(), false, true ); }
 
@@ -1151,7 +1178,7 @@ public class LinksCleanedThread extends Thread
 
         msg = "standardFamilyname";
         showMessage( msg + "...", false, true );
-        standardFamilyname( debug, source );
+        standardFamilyname( debug, writerFamilyname, source );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
@@ -1192,7 +1219,7 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardFirstname( boolean debug, String source )
+    public void standardFirstname( boolean debug, FileWriter writerFirstname, String source )
     {
         int count = 0;
         int count_empty = 0;
@@ -1548,7 +1575,7 @@ public class LinksCleanedThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardFamilyname( boolean debug, String source )
+    public void standardFamilyname( boolean debug, FileWriter writerFamilyname, String source )
     {
         int count = 0;
         int count_empty = 0;
@@ -2213,14 +2240,14 @@ public class LinksCleanedThread extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFamilynameFile( String source ) throws Exception
+    private FileWriter createTempFamilynameFile( String source ) throws Exception
     {
         String filename = "familyname_t_" + source + ".csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
         if( f.exists() ) { f.delete(); }
-        writerFamilyname = new FileWriter( filename );
+        return new FileWriter( filename );
     } // createTempFamilynameFile
 
 
@@ -2229,10 +2256,10 @@ public class LinksCleanedThread extends Thread
      */
     private void loadFamilynameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
-        showMessage( "Loading CSV data into temp table", false, true );
-
         String csvname   = "familyname_t_" + source + ".csv";
         String tablename = "familyname_t_" + source;
+
+        showMessage( String.format( "Loading %s into %s table", csvname, tablename ), false, true );
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE " + tablename
@@ -2306,14 +2333,14 @@ public class LinksCleanedThread extends Thread
     /**
      * @throws Exception
      */
-    private void createTempFirstnameFile( String source ) throws Exception
+    private FileWriter createTempFirstnameFile( String source ) throws Exception
     {
         String filename = "firstname_t_" + source + ".csv";
         showMessage( "Creating " + filename, false, true );
 
         File f = new File( filename );
         if( f.exists() ) { f.delete(); }
-        writerFirstname = new FileWriter( filename );
+        return new FileWriter( filename );
     } // createTempFirstnameFile
 
 
@@ -2322,10 +2349,10 @@ public class LinksCleanedThread extends Thread
      */
     private void loadFirstnameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
-        showMessage( "Loading CSV data into temp table", false, true );
-
         String csvname   = "firstname_t_" + source + ".csv";
         String tablename = "firstname_t_" + source;
+
+        showMessage( String.format( "Loading %s into %s table", csvname, tablename ), false, true );
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE " + tablename
@@ -2451,7 +2478,7 @@ public class LinksCleanedThread extends Thread
 
         int numrows = almmLocation.numrows();
         int numkeys = almmLocation.numkeys();
-        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        showMessage( "Number of rows in reference table ref_location: " + numrows, false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
@@ -2810,7 +2837,7 @@ public class LinksCleanedThread extends Thread
 
         int numrows = almmCivilstatus.numrows();
         int numkeys = almmCivilstatus.numkeys();
-        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        showMessage( "Number of rows in reference table ref_status_sex: " + numrows, false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
@@ -3211,7 +3238,7 @@ public class LinksCleanedThread extends Thread
 
         int numrows = almmOccupation.numrows();
         int numkeys = almmOccupation.numkeys();
-        showMessage( "Number of rows in reference table: " + numrows, false, true );
+        showMessage( "Number of rows in reference table ref_occupation: " + numrows, false, true );
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 

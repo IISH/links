@@ -21,7 +21,7 @@ import linksmanager.ManagerGui;
  * @author Fons Laan
  *
  * FL-24-Nov-2014 Created
- * FL-27-Jan-2015
+ * FL-07-May-2015
  */
 public class LinksCleaned extends Thread
 {
@@ -99,7 +99,7 @@ public class LinksCleaned extends Thread
     public void run()
     {
         try {
-            plog.show( "Links Match Manager 2.0" );
+            plog.show( "Links Data Manager 2.0" );
             plog.show( "LinksCleaned/run()" );
             int ncores = Runtime.getRuntime().availableProcessors();
             plog.show( "Available cores: " + ncores );

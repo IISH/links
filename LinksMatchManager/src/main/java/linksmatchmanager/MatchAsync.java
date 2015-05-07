@@ -423,6 +423,20 @@ public class MatchAsync extends Thread
                 int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
                 int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
 
+                int freqEgo     = getFrequency( s1EgoFamName );
+                int freqMother  = getFrequency( s1MotherFamName );
+                int freqFather  = getFrequency( s1FatherFamName );
+                int freqPartner = getFrequency( s1PartnerFamName );
+
+                if( debug ) {
+                    // show only the used familynames
+                    msg = String.format( "Familyname frequencies: Ego: %d", freqEgo );
+                    if( qs.use_mother  && qs.int_familyname_m > 0 ) { msg += String.format( ", Mother: %d",  freqMother ); }
+                    if( qs.use_father  && qs.int_familyname_f > 0 ) { msg += String.format( ", Father: %d",  freqFather ); }
+                    if( qs.use_partner && qs.int_familyname_p > 0 ) { msg += String.format( ", Partner: %d", freqPartner ); }
+                    System.out.println( msg );
+                }
+
                 // firstname 1
                 int s1EgoFirName1     = ql.s1_ego_firstname1    .get( s1_idx );
                 int s1MotherFirName1  = ql.s1_mother_firstname1 .get( s1_idx );
@@ -833,6 +847,42 @@ public class MatchAsync extends Thread
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
     } // run
+
+
+    /**
+     *
+     * @param familyname_int
+     * @return
+     */
+    public int getFrequency( int familyname_int )
+    {
+        int freq = 0;
+
+        try
+        {
+            String query = "SELECT * FROM links_prematch.freq_familyname_mem WHERE id= " + familyname_int + ";";
+            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+
+            String name = "";
+            while( rs.next() ) {
+                freq = rs.getInt( "frequency" );
+
+                /*
+                name = rs.getString( "name_str" );
+                String msg = String.format( "getFrequency() name: %s, freq: %d", name, freq );
+                System.out.println( msg );
+                */
+            }
+        }
+        catch( Exception ex ) {
+            System.out.println( "Exception in getLvsVariants: " + ex.getMessage() );
+            System.out.println( "Abort" );
+            System.exit( 1 );
+        }
+
+        return freq;
+    }
+
 
     /**
      * only write positive numbers to db field, else NULL
