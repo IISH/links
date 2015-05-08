@@ -777,20 +777,34 @@ new FormModel {
 					"title": "PREMATCH"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq l {space :p:34:p, par l:::p {comp scrollPane1::::1057:x, comp btnStartProcessMatch::::1057:x}, space ::30:x}}"
-					"$verticalGroup": "par l {seq l {space :p:26:p, comp scrollPane1:::p:545:p, space s:::p, comp btnStartProcessMatch:::p::p, space ::30:x}}"
+					"$horizontalGroup": "par l {seq l {space :p:34:p, par l {seq {comp btnStartProcessMatch:::p:1057:p, space :0:0:x}, comp scrollPane1::l:::x, seq l {par l {comp matchdir::l:p:132:p, comp matchsh::l:p:132:p}, space :p:31:p, par l {comp matchDirectory:::::x, comp matchScript:::::x}}}, space :p:30:p}}"
+					"$verticalGroup": "par l {seq l {space :p:15:p, par b {comp matchdir::b:p:15:p, comp matchDirectory::b:p::p}, space u:::p, par b {comp matchsh::b:p::p, comp matchScript::b:p::p}, space :p:16:p, comp scrollPane1:::p:483:p, space s:::p, comp btnStartProcessMatch:::p::p, space ::37:x}}"
 				} ) {
 					name: "pMatch"
 					add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
 						name: "scrollPane1"
 						add( new FormComponent( "javax.swing.JTextArea" ) {
-							name: "textArea1"
+							name: "matchTextArea"
 						} )
 					} )
 					add( new FormComponent( "javax.swing.JButton" ) {
 						name: "btnStartProcessMatch"
 						"text": "Start Matching"
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "btnStartProcessMatchActionPerformed", true ) )
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "matchdir"
+						"text": "Match directory: "
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "matchDirectory"
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "matchsh"
+						"text": "Match script: "
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "matchScript"
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "MATCH"

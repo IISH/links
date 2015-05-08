@@ -20,6 +20,7 @@ package linksmatchmanager;
 
 import java.text.SimpleDateFormat;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 
 import java.sql.Connection;
@@ -34,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-01-Apr-2015 Latest change
+ * FL-08-May-2015 Latest change
  */
 
 public class Main
@@ -65,8 +66,11 @@ public class Main
     public static void main( String[] args )
     {
         int s1_split_limit = 4;
+        long mainThreadId = Thread.currentThread().getId();
+        ArrayList< MatchAsync > threads = new ArrayList();
 
-        try {
+        try
+        {
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
@@ -377,18 +381,24 @@ public class Main
                         }
 
                         ma.start();
-                        //ma.join();        // blocks parent thread?
+                        threads.add( ma );
 
                         nthreads_started++;
                         plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, max_threads_simul ) );
-                    }
-                }
+                    } // for s1 parts
+                } // for ranges
+            } // for 'y' records
 
-                // the tables should only be dropped after all threads have finished.
-                //memtables_drop( table_firstname_src, table_familyname_src, name_postfix );
+            // join the threads: main thread must wait for children to finish
+            for( MatchAsync ma : threads ) { ma.join(); }
 
-            }
-        }
+            // the tables should only be dropped after all threads have finished.
+            //memtables_drop( table_firstname_src, table_familyname_src, name_postfix );
+
+
+            msg = String.format( "Main thread (id %d); Matching Finished.", mainThreadId );
+            System.out.println( msg ); plog.show( msg );
+        } // try
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
     } // main
 

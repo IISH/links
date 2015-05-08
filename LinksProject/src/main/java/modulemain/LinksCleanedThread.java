@@ -287,8 +287,8 @@ public class LinksCleanedThread extends Thread
             String s = "";
             if( sourceList.length == 1 ) { s = "Processing source: "; }
             else { s = "Processing sources: "; }
-            for (int i : sourceList) { s = s + i + " "; }
-            showMessage(s, false, true);
+            for( int i : sourceList ) { s = s + i + " "; }
+            showMessage( s, false, true );
 
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
@@ -454,7 +454,7 @@ public class LinksCleanedThread extends Thread
                     ids.add(id);
                 }
             }
-            if( count == 0 ) { showMessage( "Empty links_original ?", false , true); }
+            if( count == 0 ) { showMessage( "Empty links_original ?", false , true ); }
 
         }
         catch( Exception ex ) {
@@ -716,7 +716,7 @@ public class LinksCleanedThread extends Thread
             guid     = rs.getString( "id_persist_registration" );
         }
         catch( Exception ex ) {
-            showMessage(ex.getMessage(), false, true);
+            showMessage( ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -769,7 +769,7 @@ public class LinksCleanedThread extends Thread
             System.out.println( "guid        : " + guid );
 
             showMessage( s, false, true );
-            showMessage(insertQuery, false, true);
+            showMessage( insertQuery, false, true );
             showMessage( ex.getMessage(), false, true );
             ex.printStackTrace();
         }
@@ -844,7 +844,7 @@ public class LinksCleanedThread extends Thread
                 guid     = rs.getString( "id_persist_registration" );
             }
             catch( Exception ex ) {
-                showMessage(ex.getMessage(), false, true);
+                showMessage( ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -995,8 +995,13 @@ public class LinksCleanedThread extends Thread
 
         // Update reference
         showMessage( String.format( "Thread id %2d; Updating reference tables: Prepiece/Suffix", threadId ), false, true );
-        almmPrepiece.updateTable();
-        almmSuffix.updateTable();
+
+        if( ! almmPrepiece.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_prepiece FAILED, was busy", threadId ), false, true ); }
+
+        if( ! almmSuffix.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_suffix FAILED, was busy", threadId ), false, true ); }
+
         // almmAlias.updateTable();     // almmAlias.add() never called; nothing added to almmAlias
 
         if( ! multithreaded ) { almmPrepiece.free(); }
@@ -1080,7 +1085,10 @@ public class LinksCleanedThread extends Thread
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        almmFirstname.updateTable();
+
+        if( ! almmFirstname.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_firstname FAILED, was busy", threadId ), false, true ); }
+
         if( ! multithreaded ) { almmFirstname.free(); }
 
         writerFirstname.close();
@@ -1185,7 +1193,9 @@ public class LinksCleanedThread extends Thread
         msg = "remains Familyname";
         showMessage( msg + "...", false, true );
 
-        almmFamilyname.updateTable();
+        if( ! almmFamilyname.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_familyname FAILED, was busy", threadId ), false, true ); }
+
         if( ! multithreaded ) { almmFamilyname.free(); }
 
         writerFamilyname.close();
@@ -1230,7 +1240,7 @@ public class LinksCleanedThread extends Thread
         {
             // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
-            con.setReadOnly(true);
+            con.setReadOnly( true );
 
             String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source;
             //String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source + " ORDER BY id_person";
@@ -1586,7 +1596,7 @@ public class LinksCleanedThread extends Thread
 
             // WHY IS A LOCAL CONNECTION USED?
             Connection con = getConnection( "links_original" );
-            con.setReadOnly(true);
+            con.setReadOnly( true );
 
             // Read family names from table
             ResultSet rsFamilyname = con.createStatement().executeQuery( selectQuery );
@@ -1608,7 +1618,7 @@ public class LinksCleanedThread extends Thread
                 // Get family name
                 String familyname = rsFamilyname.getString( "familyname" );
                 int id_person = rsFamilyname.getInt( "id_person" );
-                if( debug ) { showMessage("count: " + count + ", id_person: " + id_person + ", familyname: " + familyname, false, true); }
+                if( debug ) { showMessage( "count: " + count + ", id_person: " + id_person + ", familyname: " + familyname, false, true ); }
 
                 // Check is Familyname is not empty or null
                 if( familyname != null && !familyname.isEmpty() )
@@ -2527,7 +2537,10 @@ public class LinksCleanedThread extends Thread
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
         showMessage( msg, false, true );
-        almmLocation.updateTable();
+
+        if( ! almmLocation.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
+
         msg = String.format( "Thread id %2d; Updating reference table: location ", threadId );
         showTimingMessage( msg, start );
 
@@ -2831,7 +2844,7 @@ public class LinksCleanedThread extends Thread
             showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
             almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
 
-            showMessage("Loading reference table: status_sex (civil status as key)...", false, true);
+            showMessage( "Loading reference table: status_sex (civil status as key)...", false, true );
             almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
         }
 
@@ -2845,8 +2858,10 @@ public class LinksCleanedThread extends Thread
         standardCivilstatus( debug, source );
 
         String msg =String.format( "Thread id %2d; Updating reference table: ref_status_sex", threadId );
-        showMessage( msg, false, true);
-        almmCivilstatus.updateTable();
+        showMessage( msg, false, true );
+
+        if( ! almmCivilstatus.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_status_sex FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmSex.free(); }
         if( ! multithreaded ) { almmCivilstatus.free(); }
@@ -2891,7 +2906,7 @@ public class LinksCleanedThread extends Thread
                     if( almmSex.contains( sex ) )                   // check presence in original
 
                     {
-                        String refSCode = almmSex.code(sex);
+                        String refSCode = almmSex.code( sex );
                         if( debug ) { showMessage( "refSCode: " + refSCode , false, true ); }
 
                         if( refSCode.equals( SC_X ) ) {
@@ -2993,10 +3008,10 @@ public class LinksCleanedThread extends Thread
 
                 if( civil_status != null && !civil_status.isEmpty() )       // check presence of civil status
                 {
-                    if( almmCivilstatus.contains(civil_status) )          // check presence in original
+                    if( almmCivilstatus.contains( civil_status ) )          // check presence in original
 
                     {
-                        String refSCode = almmCivilstatus.code(civil_status);
+                        String refSCode = almmCivilstatus.code( civil_status );
                         //showMessage( "code: " + refSCode, false, true );
 
                         if( refSCode.equals( SC_X ) ) {
@@ -3043,16 +3058,16 @@ public class LinksCleanedThread extends Thread
                             dbconCleaned.runQuery( sexQuery );
                         }
                         else {          // Invalid SC
-                            addToReportPerson( id_person, source, 69, civil_status );            // warning 68
+                            addToReportPerson( id_person, source, 69, civil_status );               // warning 68
                         }
                     }
                     else {      // add to ref
                         if( debug ) { showMessage( "standardCivilstatus: not present in original", false, true ); }
                         if( debug ) { showMessage( "Warning 31: id_person: " + id_person + ", sex: " + sex, false, true ); }
 
-                        addToReportPerson( id_person, source, 61, civil_status );                // warning 61
+                        addToReportPerson( id_person, source, 61, civil_status );                   // warning 61
 
-                        almmCivilstatus.add(civil_status);                                        // Add new civil_status
+                        almmCivilstatus.add( civil_status );                                        // Add new civil_status
 
                         String query = PersonC.updateQuery( "civil_status", civil_status, id_person );  // Write to Person
                         dbconCleaned.runQuery( query );
@@ -3248,7 +3263,9 @@ public class LinksCleanedThread extends Thread
 
         msg = String.format( "Thread id %2d; Updating reference table: ref_occupation", threadId );
         showMessage( msg, false, true );
-        almmOccupation.updateTable();
+
+        if( ! almmOccupation.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_occupation FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmOccupation.free(); }
 
@@ -3328,7 +3345,7 @@ public class LinksCleanedThread extends Thread
                 if( exists )
                 {
                     //showMessage( "old: " + occupation, false, true );
-                    if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true); }
+                    if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true ); }
 
                     String refSCode = almmOccupation.code(occupation);
 
@@ -3386,7 +3403,7 @@ public class LinksCleanedThread extends Thread
             }
         }
         catch( Exception ex3 ) {
-            showMessage( "count: " + count + " Exception while cleaning Occupation: " + ex3.getMessage(), false, true);
+            showMessage( "count: " + count + " Exception while cleaning Occupation: " + ex3.getMessage(), false, true );
             ex3.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardOccupationRecord
@@ -3432,6 +3449,12 @@ public class LinksCleanedThread extends Thread
         standardAge( debug, source );
         msg = String.format( "Thread id %2d; Processing standardAge for source: %s ", threadId, source );
         elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
+
+        msg =String.format( "Thread id %2d; Updating reference table: ref_age", threadId );
+        showMessage( msg, false, true );
+
+        if( ! almmLitAge.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_age FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmLitAge.free(); }
 
@@ -3542,7 +3565,7 @@ public class LinksCleanedThread extends Thread
                     {
                         check4 = true;      // below
 
-                        if (debug) { showMessage("Warning 255: id_person: " + id_person + ", age_literal: " + age_literal, false, true); }
+                        if (debug) { showMessage("Warning 255: id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
                         addToReportPerson(id_person, source, 255, age_literal);      // warning 255
 
                         String standard_year_str = almmLitAge.value( "standard_year", age_literal );
@@ -3556,7 +3579,7 @@ public class LinksCleanedThread extends Thread
                     }
                     else      // Invalid standard code
                     {
-                        if( debug ) { showMessage("Warning 259: id_person: " + id_person + ", age_literal: " + age_literal, false, true); }
+                        if( debug ) { showMessage("Warning 259: id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
                         addToReportPerson( id_person, source, 259, age_literal );      // warning 259
                     }
 
@@ -3574,7 +3597,7 @@ public class LinksCleanedThread extends Thread
 
                         if( debug ) {
                             showMessage( "age_literal: " + age_literal + ", year: " + standard_year + ", month: "
-                                + standard_month + ", week: " + standard_week + ", day: " + standard_day, false, true);
+                                + standard_month + ", week: " + standard_week + ", day: " + standard_day, false, true );
                         }
 
                         String query = PersonC.updateQuery( "age_literal", age_literal, id_person );
@@ -3726,7 +3749,9 @@ public class LinksCleanedThread extends Thread
 
         standardRole( debug, source );
 
-        almmRole.updateTable();
+        if( ! almmRole.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updating ref_role FAILED, was busy", threadId ), false, true ); }
+
         if( ! multithreaded ) { almmRole.free(); }
 
         msg = String.format( "Thread id %2d; Processing standardAlive for source: %s...", threadId, source );
@@ -6160,7 +6185,7 @@ public class LinksCleanedThread extends Thread
 
                     showMessage( "Deleting id_registration without date: " + id_registration, false, true );
                     showMessage( deleteRegist, false, true );
-                    showMessage(deletePerson, false, true);
+                    showMessage( deletePerson, false, true );
 
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 2, "" );       // warning 2
@@ -6275,7 +6300,7 @@ public class LinksCleanedThread extends Thread
 
                     showMessage( "Deleting id_registration without role: " + id_registration, false, true );
                     showMessage( deleteRegist, false, true );
-                    showMessage(deletePerson, false, true);
+                    showMessage( deletePerson, false, true );
 
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 3, "" );       // warning 3
@@ -6850,7 +6875,7 @@ public class LinksCleanedThread extends Thread
             if( debug ) { System.out.println( "" ); }
         }
         catch( Exception ex ) {
-            showMessage(ex.getMessage(), false, true);
+            showMessage( ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -6945,7 +6970,7 @@ public class LinksCleanedThread extends Thread
             System.out.printf( "Number of updates: %d\n", nupdates );
         }
         catch( Exception ex ) {
-            showMessage(ex.getMessage(), false, true);
+            showMessage( ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // scanRemarks

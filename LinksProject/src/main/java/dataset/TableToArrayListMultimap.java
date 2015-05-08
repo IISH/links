@@ -21,11 +21,13 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-30-Apr-2015 Latest change
+ * FL-08-May-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
     private boolean debug = false;
+
+    private boolean update_busy = false;
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
@@ -605,10 +607,19 @@ public class TableToArrayListMultimap
 
     /**
      * Insert the new set entries into the reference table
+     *
+     * Multi-threaded consideration:
+     * Do not call this function when the flag update_busy is false.
+     * We ignore the update request is another thread already has the update in progress.
+     * Beware of: java.util.ConcurrentModificationException
      */
-    public void updateTable()
+    public boolean updateTable()
     throws Exception
     {
+        if( update_busy ) { return false; } // prevent: java.util.ConcurrentModificationException
+
+        update_busy = true;
+
         //System.out.println( "updateTable" );
 
         int num = 0;
@@ -622,7 +633,17 @@ public class TableToArrayListMultimap
             //conn_write.insertIntoTable( tableName, fields, values );
             conn_write.insertIntoTableIgnore( tableName, fields, values );  // ignore duplicates for UNIQUE keys
         }
+
+        update_busy = false;
+
+        return true;
     } // updateTable
+
+
+    public boolean getBusy()
+    {
+        return update_busy;
+    }
 
 
     /**
