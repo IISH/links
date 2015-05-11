@@ -53,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-07-May-2015 Latest change
+ * FL-11-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -996,9 +996,18 @@ public class LinksCleanedThread extends Thread
         // Update reference
         showMessage( String.format( "Thread id %2d; Updating reference tables: Prepiece/Suffix", threadId ), false, true );
 
+        // Wait until we can update
+        while( almmPrepiece.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmPrepiece.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_prepiece FAILED, was busy", threadId ), false, true ); }
 
+        while( almmSuffix.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmSuffix.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_suffix FAILED, was busy", threadId ), false, true ); }
 
@@ -1086,6 +1095,10 @@ public class LinksCleanedThread extends Thread
 
         start = System.currentTimeMillis();
 
+        while( almmFirstname.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmFirstname.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_firstname FAILED, was busy", threadId ), false, true ); }
 
@@ -1193,6 +1206,10 @@ public class LinksCleanedThread extends Thread
         msg = "remains Familyname";
         showMessage( msg + "...", false, true );
 
+        while( almmFamilyname.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmFamilyname.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_familyname FAILED, was busy", threadId ), false, true ); }
 
@@ -2538,6 +2555,10 @@ public class LinksCleanedThread extends Thread
         msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
         showMessage( msg, false, true );
 
+        while( almmLocation.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmLocation.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
 
@@ -2860,6 +2881,10 @@ public class LinksCleanedThread extends Thread
         String msg =String.format( "Thread id %2d; Updating reference table: ref_status_sex", threadId );
         showMessage( msg, false, true );
 
+        while( almmCivilstatus.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmCivilstatus.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_status_sex FAILED, was busy", threadId ), false, true ); }
 
@@ -3264,6 +3289,10 @@ public class LinksCleanedThread extends Thread
         msg = String.format( "Thread id %2d; Updating reference table: ref_occupation", threadId );
         showMessage( msg, false, true );
 
+        while( almmOccupation.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmOccupation.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_occupation FAILED, was busy", threadId ), false, true ); }
 
@@ -3453,6 +3482,10 @@ public class LinksCleanedThread extends Thread
         msg =String.format( "Thread id %2d; Updating reference table: ref_age", threadId );
         showMessage( msg, false, true );
 
+        while( almmLitAge.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmLitAge.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_age FAILED, was busy", threadId ), false, true ); }
 
@@ -3749,6 +3782,10 @@ public class LinksCleanedThread extends Thread
 
         standardRole( debug, source );
 
+        while( almmRole.isBusy() ) {
+            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            Thread.sleep( 60000 );
+        }
         if( ! almmRole.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updating ref_role FAILED, was busy", threadId ), false, true ); }
 
@@ -6079,7 +6116,10 @@ public class LinksCleanedThread extends Thread
 
             "DROP TABLE links_temp.male;",
 
-            "DROP TABLE links_temp.female;"
+            "DROP TABLE links_temp.female;",
+
+
+            "UPDATE links_cleaned.registration_c SET registration_date = NULL WHERE registration_date = '00-00-0000' AND id_source = " + source
         };
 
         // suppressed queries

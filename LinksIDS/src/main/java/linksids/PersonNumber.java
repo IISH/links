@@ -134,68 +134,121 @@ public class PersonNumber implements Runnable
 
         for( int i = 0; i < 100 * 1000 * 1000; i += pageSize )
         {
-            try
-            {
-                Statement statement = connection.createStatement();
+            try {
+                java.sql.Statement statement = connection.createStatement();
+                //String select = "select X.ego_id, X.mother_id, X.father_id, Y.ego_id, Y.mother_id, Y.father_id" +
+                //              " from links_match.matches, links_base.links_base as X,  links_base.links_base as Y " +
+                //              " where X.id_base = id_linksbase_1 and " +
+                //              "       Y.id_base = id_linksbase_2" +
+                //              " limit " + i + ","  +  pageSize;
+                String select = "select M.id_matches, " +
+                        "M.value_firstname_ego,  M.value_familyname_ego, X.ego_id,     Y.ego_id,    " +
+                        "M.value_firstname_mo ,  M.value_familyname_mo,  X.mother_id,  Y.mother_id, " +
+                        "M.value_firstname_fa ,  M.value_familyname_fa,  X.father_id,  Y.father_id, " +
+                        "M.value_firstname_pa ,  M.value_familyname_pa,  X.partner_id, Y.partner_id  " +
+                        " from "
+                        + " links_match.matches as M, "
+                        + " links_match.match_process as MP, "
+                        + " links_prematch.links_base as X, "
+                        + " links_prematch.links_base as Y " +
+                        " where " +
+                        " (M.id_match_process = 339 or "
+                        + "M.id_match_process = 340 or "
+                        + "M.id_match_process = 341 or "
+                        + "M.id_match_process = 342 or "
+                        + " M.id_match_process = 343) and " +
+                        //" (M.id_match_process = 339) and " +
+                        " M.id_match_process = MP.id and " +
+                        " X.id_base = id_linksbase_1 and " +
+                        " Y.id_base = id_linksbase_2 and " +
+                        " M.id_matches >= " + i + "  and " +
+                        " M.id_matches <  " + (i + pageSize) ;
 
-                /*
-                String select = "SELECT X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
-                    " FROM links_match.matches AS M, links_prematch.links_base AS X,  links_prematch.links_base AS Y " +
-                    " WHERE X.id_base = id_linksbase_1 AND " +
-                    "       Y.id_base = id_linksbase_2 AND " +
-                    "      (M.id_match_process = 330 OR M.id_match_process = 334) AND " +
-                    "       M.id_matches >= " + i + " AND " +
-                    "       M.id_matches < " + (i + pageSize) ;
-                */
+                System.out.println(select);
 
-                String select = "SELECT X.ego_id, X.mother_id, X.father_id, X.partner_id, Y.ego_id, Y.mother_id, Y.father_id, Y.partner_id" +
-                    " FROM "
-                    + " links_match.matches AS M, "
-                    + " links_match.match_process AS MP, "
-                    + " links_prematch.links_base AS X, "
-                    + " links_prematch.links_base AS Y " +
-                    " WHERE " +
-                    " M.id_match_process = MP.id AND " +
-                    " MP.ids = 'y'               AND " +
-                    " X.id_base = id_linksbase_1 AND " +
-                    " Y.id_base = id_linksbase_2 AND " +
-                    " M.id_matches >= " + i + "  AND " +
-                    " M.id_matches <  " + (i + pageSize) ;
-
-                //System.out.println( select );
-
-                ResultSet r = statement.executeQuery( select );
+                ResultSet r = statement.executeQuery(select);
                 int count = 0;
-                
-                while( r.next() )
-                {
-                    int x = r.getInt( "X.ego_id" );
-                    int y = r.getInt( "Y.ego_id" );
 
-                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
 
-                    x = r.getInt( "X.mother_id" );
-                    y = r.getInt( "Y.mother_id" );
+                while (r.next()) {
 
-                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
+                    //System.out.println("match = "+ r.getInt("M.id_matches")) ;
 
-                    x = r.getInt( "X.father_id" );
-                    y = r.getInt( "Y.father_id" );
+                    String fies = r.getString("M.value_firstname_ego");
+                    int    fie  = r.getInt   ("M.value_firstname_ego");
+                    String faes = r.getString("M.value_familyname_ego");
+                    int    fae  = r.getInt   ("M.value_familyname_ego");
 
-                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
 
-                    x = r.getInt( "X.partner_id" );
-                    y = r.getInt( "Y.partner_id" );
+                    if(fies != null && faes != null && fie <= accepted_Levenshtein && fae <= accepted_Levenshtein){
 
-                    if( x != 0 && y != 0 ) { effectiveCount += add( x, y ); }
+                        int x = r.getInt("X.ego_id");
+                        int y = r.getInt("Y.ego_id");
+                        if(x != 0 && y != 0)
+                            effectiveCount += add(x, y);
+                    }
 
-                    count++;          
-                    //System.out.println("Read " + count + " matches");
+
+
+                    String fims = r.getString("M.value_firstname_mo");
+                    int    fim  = r.getInt   ("M.value_firstname_mo");
+                    String fams = r.getString("M.value_familyname_mo");
+                    int    fam  = r.getInt   ("M.value_familyname_mo");
+
+
+
+                    if(fims != null && fams != null && fim <= accepted_Levenshtein && fam <= accepted_Levenshtein){
+
+
+                        int x = r.getInt("X.mother_id");
+                        int y = r.getInt("Y.mother_id");
+
+                        if(x != 0 && y != 0)
+                            effectiveCount += add(x, y);
+                    }
+
+                    String fifs = r.getString("M.value_firstname_fa");
+                    int    fif  = r.getInt   ("M.value_firstname_fa");
+                    String fafs = r.getString("M.value_familyname_fa");
+                    int    faf  = r.getInt   ("M.value_familyname_fa");
+
+
+                    if(fifs != null && fafs != null && fif <= accepted_Levenshtein && faf <= accepted_Levenshtein){
+
+                        int x = r.getInt("X.father_id");
+                        int y = r.getInt("Y.father_id");
+
+                        if(x != 0 && y != 0)
+                            effectiveCount += add(x, y);
+
+                    }
+
+                    String fips = r.getString("M.value_firstname_pa");
+                    int    fip  = r.getInt   ("M.value_firstname_pa");
+                    String faps = r.getString("M.value_familyname_pa");
+                    int    fap  = r.getInt   ("M.value_familyname_pa");
+
+
+
+                    if(fips != null && faps != null && fip <= accepted_Levenshtein && fap <= accepted_Levenshtein){
+
+                        int x = r.getInt("X.partner_id");
+                        int y = r.getInt("Y.partner_id");
+
+                        if(x != 0 && y != 0)
+                            effectiveCount += add(x, y);
+
+                    }
+
+                    count++;
+                    if(count % 1000 == 0)
+                        System.out.println("Read " + count + " matches");
+
                 }
 
                 totalCount += count;
+                System.out.println("Read total " + totalCount + " matches");
 
-                if( debug ) { System.out.println( "Read " + totalCount + " matches" ); }
 
             }
             catch( SQLException ex )

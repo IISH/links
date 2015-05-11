@@ -194,6 +194,7 @@ public class MatchAsync extends Thread
         threadMXB.setThreadCpuTimeEnabled( true );
 
         boolean debugfail = false;
+        boolean debugfreq = false;
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy = 0;
@@ -313,11 +314,35 @@ public class MatchAsync extends Thread
                     plog.show( msg );
                 }
 
+
+                // TODO: improve performance: process from lowest to highest frequency of familyname
+                // familyname
+                int s1EgoFamName     = ql.s1_ego_familyname    .get( s1_idx );
+                int s1MotherFamName  = ql.s1_mother_familyname .get( s1_idx );
+                int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
+                int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
+
+                int freqEgo     = getFrequency( s1EgoFamName );
+                int freqMother  = getFrequency( s1MotherFamName );
+                int freqFather  = getFrequency( s1FatherFamName );
+                int freqPartner = getFrequency( s1PartnerFamName );
+
+                if( debugfreq ) {
+                    // show only the used familynames
+                    msg = String.format( "Familyname frequencies: Ego: %d", freqEgo );  // Ego always processed
+                    if( qs.use_mother  && qs.int_familyname_m > 0 ) { msg += String.format( ", Mother: %d",  freqMother ); }
+                    if( qs.use_father  && qs.int_familyname_f > 0 ) { msg += String.format( ", Father: %d",  freqFather ); }
+                    if( qs.use_partner && qs.int_familyname_p > 0 ) { msg += String.format( ", Partner: %d", freqPartner ); }
+                    System.out.println( msg );
+                }
+                // TODO: frequency of familyname NOT FINISHED
+
+
                 // Get familyname of Set 1
-                int    s1EgoFamName    = ql.s1_ego_familyname    .get( s1_idx );
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                 String s1EgoFirNameStr = ql.s1_ego_firstname1_str.get( s1_idx );
                 if( debug ) { System.out.printf( "s1 ego familyname: %s,  s1 ego firstname1: %s\n", s1EgoFamNameStr, s1EgoFirNameStr ); }
+
 
                 // If the s1 ego familyname changes, create a new variant names list, otherwise go on
                 // to check the other s1 entries with the same ego familyname against this set.
@@ -413,28 +438,6 @@ public class MatchAsync extends Thread
                     msg = String.format( "Thread id %2d; potential matches: %d", threadId, s2_idx_variants_ego.size() );
                     System.out.println( msg );
                     plog.show( msg );
-                }
-
-                // TODO: improve performance: process from lowest to highest frequency
-
-                // familyname
-                //  s1EgoFamName -> from s1_idx above
-                int s1MotherFamName  = ql.s1_mother_familyname .get( s1_idx );
-                int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
-                int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
-
-                int freqEgo     = getFrequency( s1EgoFamName );
-                int freqMother  = getFrequency( s1MotherFamName );
-                int freqFather  = getFrequency( s1FatherFamName );
-                int freqPartner = getFrequency( s1PartnerFamName );
-
-                if( debug ) {
-                    // show only the used familynames
-                    msg = String.format( "Familyname frequencies: Ego: %d", freqEgo );
-                    if( qs.use_mother  && qs.int_familyname_m > 0 ) { msg += String.format( ", Mother: %d",  freqMother ); }
-                    if( qs.use_father  && qs.int_familyname_f > 0 ) { msg += String.format( ", Father: %d",  freqFather ); }
-                    if( qs.use_partner && qs.int_familyname_p > 0 ) { msg += String.format( ", Partner: %d", freqPartner ); }
-                    System.out.println( msg );
                 }
 
                 // firstname 1

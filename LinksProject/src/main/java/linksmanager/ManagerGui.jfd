@@ -777,7 +777,7 @@ new FormModel {
 					"title": "PREMATCH"
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
-					"$horizontalGroup": "par l {seq l {space :p:34:p, par l {seq {comp btnStartProcessMatch:::p:1057:p, space :0:0:x}, comp scrollPane1::l:::x, seq l {par l {comp matchdir::l:p:132:p, comp matchsh::l:p:132:p}, space :p:31:p, par l {comp matchDirectory:::::x, comp matchScript:::::x}}}, space :p:30:p}}"
+					"$horizontalGroup": "par l {seq l {space :p:30:p, par l {seq {comp btnStartProcessMatch:::p:1057:p, space :0:0:x}, comp scrollPane1::l:::x, seq l {par l {comp matchdir::l:p:132:p, comp matchsh::l:p:132:p}, space :p:31:p, par l {comp matchDirectory:::::x, comp matchScript:::::x}}}, space :p:30:p}}"
 					"$verticalGroup": "par l {seq l {space :p:15:p, par b {comp matchdir::b:p:15:p, comp matchDirectory::b:p::p}, space u:::p, par b {comp matchsh::b:p::p, comp matchScript::b:p::p}, space :p:16:p, comp scrollPane1:::p:483:p, space s:::p, comp btnStartProcessMatch:::p::p, space ::37:x}}"
 				} ) {
 					name: "pMatch"
@@ -808,6 +808,39 @@ new FormModel {
 					} )
 				}, new FormLayoutConstraints( null ) {
 					"title": "MATCH"
+				} )
+				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+					"$horizontalGroup": "par l {seq l {space :p:30:p, par l {seq {comp btnStartProcessIds:::p:1057:p, space :0:0:x}, comp scrollPane2::l:::x, seq l {par l {comp idsdir::l:p:132:p, comp idssh::l:p:132:p}, space :p:31:p, par l {comp idsDirectory:::::x, comp idsScript:::::x}}}, space :p:30:p}}"
+					"$verticalGroup": "par l {seq l {space :p:15:p, par b {comp idsdir::b:p:15:p, comp idsDirectory::b:p::p}, space u:::p, par b {comp idssh::b:p::p, comp idsScript::b:p::p}, space :p:16:p, comp scrollPane2:::p:483:p, space s:::p, comp btnStartProcessIds:::p::p, space ::37:x}}"
+				} ) {
+					name: "pIDS"
+					add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+						name: "scrollPane2"
+						add( new FormComponent( "javax.swing.JTextArea" ) {
+							name: "idsTextArea"
+						} )
+					} )
+					add( new FormComponent( "javax.swing.JButton" ) {
+						name: "btnStartProcessIds"
+						"text": "Start Creating IDS"
+						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "btnStartProcessIdsActionPerformed", true ) )
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "idsdir"
+						"text": "IDS directory: "
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "idsDirectory"
+					} )
+					add( new FormComponent( "javax.swing.JLabel" ) {
+						name: "idssh"
+						"text": "IDS script: "
+					} )
+					add( new FormComponent( "javax.swing.JTextField" ) {
+						name: "idsScript"
+					} )
+				}, new FormLayoutConstraints( null ) {
+					"title": "IDS"
 				} )
 			} )
 			menuBar: new FormContainer( "javax.swing.JMenuBar", new FormLayoutManager( class javax.swing.JMenuBar ) ) {

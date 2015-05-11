@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-08-May-2015 Latest change
+ * FL-11-May-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -640,7 +640,7 @@ public class TableToArrayListMultimap
     } // updateTable
 
 
-    public boolean getBusy()
+    public boolean isBusy()
     {
         return update_busy;
     }
