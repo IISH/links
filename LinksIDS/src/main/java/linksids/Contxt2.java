@@ -17,7 +17,7 @@ import com.google.common.base.Strings;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-04-Feb-2015 Latest change
+ * FL-12-May-2015 Latest change
  */
 public class Contxt2
 {
@@ -121,22 +121,22 @@ public class Contxt2
 
     }
 
-    public static int addCertificate(Connection connection, ArrayList<String> cL, ArrayList<String> ccL, String source, int Id_C_registration_location, int yearCertificate, String sequenceNumberCertificate){
 
+    public static int addCertificate(Connection connection, ArrayList<String> cL, ArrayList<String> ccL, String source, int Id_C_registration_location,
+        int yearCertificate, int month, int day, String sequenceNumberCertificate)
+    {
+        int Id_C_1 = getNewContextID();
 
-            int Id_C_1 = getNewContextID();
+        addContext(cL, connection, Id_C_1, source, "LEVEL", "Source", "Event", "Exact", day, month, yearCertificate);
+        addContext(cL, connection, Id_C_1, source, "NAME", source, "Event", "Exact", day, month, yearCertificate);
+        addContext(cL, connection, Id_C_1, source, "PERIOD", "" + yearCertificate, "Event", "Exact", day, month, yearCertificate);
+        addContext(cL, connection, Id_C_1, source, "SEQUENCE_NUMBER", sequenceNumberCertificate, "Event", "Exact", day, month, yearCertificate);
 
-            addContext(cL, connection, Id_C_1, source, "LEVEL", "Source", null, null, 0, 0, 0);
-            addContext(cL, connection, Id_C_1, source, "NAME", source, null, null, 0, 0, 0);
-            addContext(cL, connection, Id_C_1, source, "PERIOD", "" + yearCertificate, null, null, 0, 0, 0);
-            addContext(cL, connection, Id_C_1, source, "SEQUENCE_NUMBER", sequenceNumberCertificate, null, null, 0, 0, 0);
+        addContextContext(ccL, connection, Id_C_1, Id_C_registration_location, source, "Source and Municipality",  null, null,  yearCertificate, month, day);
 
-            addContextContext(ccL, connection, Id_C_1, Id_C_registration_location, source, "Source and Municipality",  null, null, 0, 0, 0);
-
-            return Id_C_1;
-
-
+        return Id_C_1;
     }
+
 
     public static void addContext(ArrayList<String> cL, Connection connection, int Id_C, String source, String type, String value,
             String dateType, String estimation, int day, int month, int year){

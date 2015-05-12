@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  * <p/>
  * FL-21-Jan-2014 Imported from CM
  * FL-03-Feb-2015 Also use partner in personNumber (from KM + CM)
- * FL-18-Mar-2015 Latest change
+ * FL-12-May-2015 Latest change
  *
  */
 public class PersonNumber implements Runnable
@@ -42,7 +42,8 @@ public class PersonNumber implements Runnable
     static BlockingQueue< ArrayList< Integer > > queue                = new LinkedBlockingQueue< ArrayList< Integer > >( 1024 );
     static Integer                               personNumbersWritten = new Integer( 0 );
     private static ArrayList<Integer>            pLStop               = new ArrayList<Integer>();
-    static final int                             numberOfThreads      =  5;
+    static final int                             numberOfThreads      = 5;
+    static final int                             accepted_Levenshtein = 0;
 
     /*
     private static String sp01                         = "%s";                
@@ -142,23 +143,16 @@ public class PersonNumber implements Runnable
                 //              "       Y.id_base = id_linksbase_2" +
                 //              " limit " + i + ","  +  pageSize;
                 String select = "select M.id_matches, " +
-                        "M.value_firstname_ego,  M.value_familyname_ego, X.ego_id,     Y.ego_id,    " +
-                        "M.value_firstname_mo ,  M.value_familyname_mo,  X.mother_id,  Y.mother_id, " +
-                        "M.value_firstname_fa ,  M.value_familyname_fa,  X.father_id,  Y.father_id, " +
-                        "M.value_firstname_pa ,  M.value_familyname_pa,  X.partner_id, Y.partner_id  " +
+                        " X.ego_id,     Y.ego_id,    " +
+                        " X.mother_id,  Y.mother_id,  M.value_familyname_mo," +
+                        " X.father_id,  Y.father_id,  M.value_familyname_fa," +
+                        " X.partner_id, Y.partner_id, M.value_familyname_pa" +
                         " from "
                         + " links_match.matches as M, "
-                        + " links_match.match_process as MP, "
                         + " links_prematch.links_base as X, "
                         + " links_prematch.links_base as Y " +
                         " where " +
-                        " (M.id_match_process = 339 or "
-                        + "M.id_match_process = 340 or "
-                        + "M.id_match_process = 341 or "
-                        + "M.id_match_process = 342 or "
-                        + " M.id_match_process = 343) and " +
-                        //" (M.id_match_process = 339) and " +
-                        " M.id_match_process = MP.id and " +
+                        " M.ids = 'y' and " +
                         " X.id_base = id_linksbase_1 and " +
                         " Y.id_base = id_linksbase_2 and " +
                         " M.id_matches >= " + i + "  and " +

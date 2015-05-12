@@ -72,7 +72,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-11-May-2015 Latest change
+ * FL-12-May-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -151,8 +151,11 @@ public class ManagerGui extends javax.swing.JFrame
             System.out.println( msg );
             matchTextArea.setText( msg );
 
+            System.out.println( "Before Process start" );
             Process ps = Runtime.getRuntime().exec( cmdline );
+            System.out.println( "Before Process waitFor" );
             ps.waitFor();
+            System.out.println( "After Process waitFor" );
 
             InputStream inp = ps.getInputStream();
             InputStream err = ps.getErrorStream();
@@ -166,7 +169,69 @@ public class ManagerGui extends javax.swing.JFrame
             System.out.println( new String( b_err ) );
         }
         catch( Exception ex ) { System.out.println(ex.getMessage()); }
-    }
+    } // btnStartProcessMatchActionPerformed
+
+
+    private void btnStartProcessIdsActionPerformed( ActionEvent ev )
+    {
+        System.out.println( "ManagerGui/btnStartProcessIdsActionPerformed()" );
+
+        String jarName = "LinksIDS-2.0.jar";
+
+        String cwd = System.getProperty( "user.dir" );
+        System.out.println( cwd );
+        String jarPath = new File( cwd, jarName ).toString();
+        System.out.println( jarPath );
+
+        //String db_url  = tbLOLCurl.getText();      // from Tab Clean
+        //String db_user = tbLOLCuser.getText();     // from Tab Clean
+        //String db_pass = tbLOLCpass.getText();     // from Tab Clean
+        //String max_threads = "1";
+
+        try
+        {
+            // java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>
+            //String cmdline[] = new String[] { "java", "-jar", jarPath, db_url, db_user, db_pass, max_threads };
+
+            String idsdir    = idsDirectory.getText();
+            String idsscript = idsScript.getText();
+
+            String idsPath =  idsdir + '/' + idsscript;
+            String cmdline[] = new String[] { "sh", idsPath };
+
+            // show what we do
+            //System.out.println( Arrays.toString( cmdline ) );     // comma separated substrings
+            String vizline = "";
+            for( String s : cmdline ) {
+                if( vizline.isEmpty() ) { vizline = s; }
+                else{ vizline = vizline + " " + s; }
+            }
+
+            String msg = "Executing: \n" + vizline + "\n\n";
+            msg += "For progress in IDS creation, see the console output. ";
+            System.out.println( msg );
+            idsTextArea.setText( msg );
+
+            System.out.println( "Before Process start" );
+            Process ps = Runtime.getRuntime().exec( cmdline );
+            System.out.println( "Before Process waitFor" );
+            ps.waitFor();
+            System.out.println( "After Process waitFor" );
+
+            InputStream inp = ps.getInputStream();
+            InputStream err = ps.getErrorStream();
+
+            byte b_inp[] = new byte[ inp.available() ];
+            inp.read( b_inp, 0, b_inp.length );
+            System.out.println( new String( b_inp ) );
+
+            byte b_err[] = new byte[ err.available() ];
+            err.read( b_err, 0, b_err.length );
+            System.out.println( new String( b_err ) );
+        }
+        catch( Exception ex ) { System.out.println(ex.getMessage()); }
+    } // btnStartProcessIdsActionPerformed
+
 
     public ManagerGui()
     {
@@ -334,7 +399,7 @@ public class ManagerGui extends javax.swing.JFrame
 		jLabel51 = new JLabel();
 		cbCdoFamilynames = new JCheckBox();
 		cbCdoStatusSex = new JCheckBox();
-		cbCdoDates = new JCheckBox();
+		cbCdoAge = new JCheckBox();
 		cbCdoRefreshData = new JCheckBox();
 		cbCdoRegType = new JCheckBox();
 		cbCdoLocations = new JCheckBox();
@@ -357,6 +422,8 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoRemoveEmptyDateRegs = new JCheckBox();
 		cbCdoRemoveDuplicateRegs = new JCheckBox();
 		cbCdoScanRemarks = new JCheckBox();
+		cbCdoRole = new JCheckBox();
+		cbCdoDates = new JCheckBox();
 		pPrematch = new JPanel();
 		cbPdoFrequencyTables = new JCheckBox();
 		cbPdoLevenshtein = new JCheckBox();
@@ -1456,9 +1523,9 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoStatusSex.setText("Civil Status and Sex");
 				cbCdoStatusSex.setName("cbCdoStaatSex");
 
-				//---- cbCdoDates ----
-				cbCdoDates.setText("Age, Role, Dates");
-				cbCdoDates.setName("cbCdoDates");
+				//---- cbCdoAge ----
+				cbCdoAge.setText("Age, ARD-1");
+				cbCdoAge.setName("cbCdoDates");
 
 				//---- cbCdoRefreshData ----
 				cbCdoRefreshData.setSelected(true);
@@ -1545,6 +1612,14 @@ public class ManagerGui extends javax.swing.JFrame
 				cbCdoScanRemarks.setText("Scan Remarks");
 				cbCdoScanRemarks.setName("cbCdoScanRemarks");
 
+				//---- cbCdoRole ----
+				cbCdoRole.setText("Role, ARD-2");
+				cbCdoRole.setName("cbCdoRole");
+
+				//---- cbCdoDates ----
+				cbCdoDates.setText("Dates, ARD-3");
+				cbCdoDates.setName("cbCdoDates");
+
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
 				pLOLCLayout.setHorizontalGroup(
@@ -1590,25 +1665,28 @@ public class ManagerGui extends javax.swing.JFrame
 								.addComponent(jLabel51, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addGroup(pLOLCLayout.createSequentialGroup()
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-										.addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbCdoDaysSinceBegin, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
 										.addComponent(cbCdoFamilynames, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addComponent(cbCdoLocations, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoDates, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoMinMaxMarriage, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										.addComponent(cbCdoAge, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addComponent(cbCdoOccupation, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoPartsToFullDate, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
 										.addComponent(cbCdoPrepieceSuffix)
 										.addComponent(cbCdoRefreshData, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-										.addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
+										.addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+										.addComponent(cbCdoRole, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+										.addComponent(cbCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										.addComponent(cbCdoDates, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
 									.addGap(29, 29, 29)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-										.addComponent(cbCdoRemoveDuplicateRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
-										.addComponent(cbCdoRemoveEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
-										.addComponent(cbCdoRemoveEmptyDateRegs, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
-										.addComponent(cbCdoScanRemarks, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addComponent(cbCdoPartsToFullDate, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoDaysSinceBegin, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+											.addComponent(cbCdoRemoveDuplicateRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+											.addComponent(cbCdoRemoveEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+											.addComponent(cbCdoRemoveEmptyDateRegs, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE)
+											.addComponent(cbCdoScanRemarks, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+										.addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE))
 									.addGap(0, 0, Short.MAX_VALUE)))
 							.addGroup(pLOLCLayout.createParallelGroup()
 								.addGroup(pLOLCLayout.createSequentialGroup()
@@ -1683,30 +1761,34 @@ public class ManagerGui extends javax.swing.JFrame
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addComponent(cbCdoLocations)
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoStatusSex)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoRegType)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoOccupation)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoStatusSex)
+										.addComponent(cbCdoPartsToFullDate))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoDates)
+										.addComponent(cbCdoRegType)
+										.addComponent(cbCdoDaysSinceBegin))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoOccupation)
+										.addComponent(cbCdoPostTasks))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoAge)
 										.addComponent(cbCdoRemoveEmptyDateRegs))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoMinMaxMarriage)
-										.addComponent(cbCdoRemoveEmptyRoleRegs))
+										.addComponent(cbCdoRemoveEmptyRoleRegs)
+										.addComponent(cbCdoRole))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoPartsToFullDate)
-										.addComponent(cbCdoRemoveDuplicateRegs))
+										.addComponent(cbCdoRemoveDuplicateRegs)
+										.addComponent(cbCdoDates))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoDaysSinceBegin)
-										.addComponent(cbCdoScanRemarks))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoPostTasks)
-									.addGap(8, 8, 8)
+										.addComponent(cbCdoScanRemarks)
+										.addComponent(cbCdoMinMaxMarriage))
+									.addGap(35, 35, 35)
 									.addComponent(btnStartProcessClean)))
 							.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 				);
@@ -2116,7 +2198,7 @@ public class ManagerGui extends javax.swing.JFrame
             else { cbCdoStatusSex.setSelected( false ); }
         }
 
-        // Type
+        // RegType
         String doRegType = properties.getProperty( "doRegType" );
         if( doRegType != null ) {
             if( doRegType.equals( "true" ) ) { cbCdoRegType.setSelected( true ); }
@@ -2132,29 +2214,25 @@ public class ManagerGui extends javax.swing.JFrame
         }
         */
 
-        // Age
-        /*
-        String doAge = properties.getProperty( "doAge" );
-        if( doAge != null ) {
-            if( doAge.equals( "true" ) ) { cbCdoAge.setSelected( true ); }
-            else { cbCdoAge.setSelected( false ); }
-        }
-        */
-
-        // Role
-        /*
-        String doRole = properties.getProperty( "doRole" );
-        if( doRole != null ) {
-            if( doRole.equals( "true" ) ) { cbLOLCdoRole.setSelected( true ); }
-            else { cbLOLCdoRole.setSelected( false ); }
-        }
-        */
-
         // Occupation
         String doOccupation = properties.getProperty( "doOccupation" );
         if( doOccupation != null ) {
             if( doOccupation.equals( "true" ) ) { cbCdoOccupation.setSelected( true ); }
             else { cbCdoOccupation.setSelected( false ); }
+        }
+
+        // Age
+        String doAge = properties.getProperty( "doAge" );
+        if( doAge != null ) {
+            if( doAge.equals( "true" ) ) { cbCdoAge.setSelected( true ); }
+            else { cbCdoAge.setSelected( false ); }
+        }
+
+        // Role
+        String doRole = properties.getProperty( "doRole" );
+        if( doRole != null ) {
+            if( doRole.equals( "true" ) ) { cbCdoRole.setSelected( true ); }
+            else { cbCdoRole.setSelected( false ); }
         }
 
         // Dates
@@ -2607,6 +2685,12 @@ public class ManagerGui extends javax.swing.JFrame
         if( cbCdoOccupation.isSelected() ) { opts.setDoOccupation( true ); }
         else { opts.setDoOccupation( false ); }
 
+        if( cbCdoAge.isSelected() ) { opts.setDoAge( true ); }
+        else { opts.setDoAge( false ); }
+
+        if( cbCdoRole.isSelected() ) { opts.setDoRole( true ); }
+        else { opts.setDoRole( false ); }
+
         if( cbCdoDates.isSelected() ) { opts.setDoDates( true ); }
         else { opts.setDoDates( false ); }
 
@@ -2787,64 +2871,6 @@ public class ManagerGui extends javax.swing.JFrame
     }//GEN-LAST:event_tfBILODeleteSourceKeyReleased
 
 
-    private void btnStartProcessIdsActionPerformed( ActionEvent ev )
-    {
-        System.out.println( "ManagerGui/btnStartProcessIdsActionPerformed()" );
-
-        String jarName = "LinksIDS-2.0.jar";
-
-        String cwd = System.getProperty( "user.dir" );
-        System.out.println( cwd );
-        String jarPath = new File( cwd, jarName ).toString();
-        System.out.println( jarPath );
-
-        //String db_url  = tbLOLCurl.getText();      // from Tab Clean
-        //String db_user = tbLOLCuser.getText();     // from Tab Clean
-        //String db_pass = tbLOLCpass.getText();     // from Tab Clean
-        //String max_threads = "1";
-
-        try
-        {
-            // java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads>
-            //String cmdline[] = new String[] { "java", "-jar", jarPath, db_url, db_user, db_pass, max_threads };
-
-            String idsdir    = idsDirectory.getText();
-            String idsscript = idsScript.getText();
-
-            String idsPath =  idsdir + '/' + idsscript;
-            String cmdline[] = new String[] { "sh", idsPath };
-
-            // show what we do
-            //System.out.println( Arrays.toString( cmdline ) );     // comma separated substrings
-            String vizline = "";
-            for( String s : cmdline ) {
-                if( vizline.isEmpty() ) { vizline = s; }
-                else{ vizline = vizline + " " + s; }
-            }
-
-            String msg = "Executing: \n" + vizline + "\n\n";
-            msg += "For progress in IDS creation, see the console output. ";
-            System.out.println( msg );
-            idsTextArea.setText( msg );
-
-            Process ps = Runtime.getRuntime().exec( cmdline );
-            ps.waitFor();
-
-            InputStream inp = ps.getInputStream();
-            InputStream err = ps.getErrorStream();
-
-            byte b_inp[] = new byte[ inp.available() ];
-            inp.read( b_inp, 0, b_inp.length );
-            System.out.println( new String( b_inp ) );
-
-            byte b_err[] = new byte[ err.available() ];
-            err.read( b_err, 0, b_err.length );
-            System.out.println( new String( b_err ) );
-        }
-        catch( Exception ex ) { System.out.println(ex.getMessage()); }
-    }
-
-
     public void firePrematch() {
         bnPstartProcessActionPerformed( null );
     }
@@ -2956,7 +2982,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "11-May-2015 13:01";
+                String timestamp1 = "12-May-2015 13:48";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {
@@ -3104,7 +3130,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JLabel jLabel51;
 	private JCheckBox cbCdoFamilynames;
 	private JCheckBox cbCdoStatusSex;
-	private JCheckBox cbCdoDates;
+	private JCheckBox cbCdoAge;
 	private JCheckBox cbCdoRefreshData;
 	private JCheckBox cbCdoRegType;
 	private JCheckBox cbCdoLocations;
@@ -3127,6 +3153,8 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoRemoveEmptyDateRegs;
 	private JCheckBox cbCdoRemoveDuplicateRegs;
 	private JCheckBox cbCdoScanRemarks;
+	private JCheckBox cbCdoRole;
+	private JCheckBox cbCdoDates;
 	private JPanel pPrematch;
 	private JCheckBox cbPdoFrequencyTables;
 	private JCheckBox cbPdoLevenshtein;

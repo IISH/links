@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
  *
  * <p/>
  * FL-21-Jan-2014 Imported from CM
- * FL-18-Mar-2015 Latest change, changes by CM
+ * FL-12-May-2015 Latest change, changes by CM
  */
 public class LinksIDS
 {
@@ -492,13 +492,22 @@ public class LinksIDS
                         if(registration_maintype < certType.length)
                             regType = certType[registration_maintype];
 
-                        if(resultSet.getInt("registration_location_no") != 0)
-                                Id_C = Contxt2.addCertificate(connection, cList, ccList, 
-                                regType,
-                                locNo2Id_C.get(resultSet.getInt("registration_location_no")), 
-                                resultSet.getInt("registration_year"), 
-                                resultSet.getString("registration_seq"));
+                        System.out.println("registration_location_no = " + resultSet.getInt("registration_location_no"));
 
+                        if(resultSet.getInt("registration_location_no") != 0)
+                        {
+                            System.out.println("locNo2Id_C = " +  locNo2Id_C.get(resultSet.getInt("registration_location_no")));
+
+                            Id_C = Contxt2.addCertificate(connection, cList, ccList,
+                            regType,
+                            locNo2Id_C.get(resultSet.getInt("registration_location_no")),
+                            resultSet.getInt("registration_year"),
+                            resultSet.getInt("registration_month"),
+                            resultSet.getInt("registration_day"),
+                            resultSet.getString("registration_seq"));
+                        }
+
+                        // Add context elements for
                         
                         previousRegistrationNumber = resultSet.getInt("id_registration");
 
