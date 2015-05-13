@@ -79,6 +79,10 @@ public class Main
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
 
+            //String dbg = String.format( "Main thread (id %d); Matching EXIT." );
+            //System.out.println( dbg ); plog.show( dbg );
+            //System.exit( 0 );
+
             // Load arguments; check length
             if( args.length != 6 ) {
                 plog.show( "Invalid argument length, it should be 6" );

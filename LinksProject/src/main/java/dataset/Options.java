@@ -32,11 +32,13 @@ import general.PrintLogger;
  * FL-12-Nov-2014 dbg
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
- * FL-25-Mar-2015 Latest change
+ * FL-13-May-2015 Latest change
  */
 public class Options
 {
     PrintLogger plog;
+
+    private int max_threads_simul = 1;
 
     private String sourceIds;
 
@@ -114,6 +116,10 @@ public class Options
 
     private boolean doMatch;
     private boolean dbgMatch;
+
+
+    public void setMaxThreadsSimul( int max_threads_simul ) { this.max_threads_simul = max_threads_simul; }
+    public int getMaxThreadsSimul() { return max_threads_simul; }
 
 
     public void setLogger( PrintLogger plog ) { this.plog = plog; }

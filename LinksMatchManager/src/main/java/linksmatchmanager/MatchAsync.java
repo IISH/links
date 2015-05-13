@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-01-May-2015 Latest change
+ * FL-13-May-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -464,12 +464,6 @@ public class MatchAsync extends Thread
                 int s1FatherFirName4  = ql.s1_father_firstname4 .get( s1_idx );
                 int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
-                /*
-                if( s1MotherFirName1 == 22823 ) {
-                    System.out.println( "null s1MotherFirName1: 22823" );
-                    plog.show( "null s1MotherFirName1: 22823" );
-                }
-                */
 
                 // loop through the familynames of s2; exact + variants
                 for( int lv_idx = 0; lv_idx < s2_idx_variants_cpy.size(); lv_idx++ )
@@ -483,30 +477,6 @@ public class MatchAsync extends Thread
                         msg = String.format( "s2 idx: %d %s\n", s2_idx, s2_ego_familyname_str );
                         System.out.println( msg );
                         plog.show( msg );
-                    }
-
-                    // Check min max; use new min max
-                    if( ! qs.ignore_minmax ) {
-                        if( ! CheckMinMax( qs, s1_idx, s2_idx ) ) {
-                            s2_idx_variants_cpy.set( lv_idx, -1 );           // no match
-                            n_minmax++;
-                            if( debugfail ) { System.out.println( "failed ignore_minmax" ); }
-                            continue;
-                        }
-                    }
-
-                    // Check sex
-                    if( ! qs.ignore_sex ) {
-                        int s1s = ql.s1_sex.get( s1_idx );
-                        int s2s = ql.s2_sex.get( s2_idx );
-
-                        // Empty sex is denied
-                        if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
-                            s2_idx_variants_cpy.set( lv_idx, -1 );           // no match
-                            n_sex++;
-                            if( debugfail ) { System.out.println( "failed ignore_sex" ); }
-                            continue;
-                        }
                     }
 
                     // familyname
@@ -539,13 +509,51 @@ public class MatchAsync extends Thread
                     int s2FatherFirName4  = ql.s2_father_firstname4 .get( s2_idx );
                     int s2PartnerFirName4 = ql.s2_partner_firstname4.get( s2_idx );
 
-                    // Check the firstnames of ego
+
+                    // 2-of-10 Mother familyname
+                    if( qs.use_mother && qs.int_familyname_m > 0 )
+                    {
+                        int lv_dist = isVariant( s1MotherFamName, s2MotherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
+                            s2_idx_familyname_mo_lvs.set( lv_idx, lv_dist );         // for match table
+                        }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_familyname_m++;
+                            if( debugfail ) { System.out.println( "failed int_familyname_m" ); }
+                            continue;
+                        }
+                    }
+
+                    // 3-of-10 Partner familyname
+                    if( qs.use_partner && qs.int_familyname_p > 0 )
+                    {
+                        int lv_dist = isVariant( s1PartnerFamName, s2PartnerFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_familyname_p" ); }
+                            s2_idx_familyname_pa_lvs.set( lv_idx, lv_dist );         // for match table
+                        }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_familyname_p++;
+                            if( debugfail ) { System.out.println( "failed int_familyname_p" ); }
+                            continue;
+                        }
+                    }
+
+                    // 4-of-10 Ego firstname
                     if( qs.int_firstname_e > 0 ) {
                         int lv_dist = checkFirstName( qs.firstname,
                             s1EgoFirName1, s1EgoFirName2, s1EgoFirName3, s1EgoFirName4,
                             s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
                             qs.method, lvs_table_firstname, lvs_dist_firstname );
-                        if( debugfail ) { System.out.println( "int_firstname_e: lv_dist = " + lv_dist ); }
 
                         if( lv_dist >= 0 )  // match
                         {
@@ -561,120 +569,112 @@ public class MatchAsync extends Thread
                         }
                     }
 
-                    if( qs.use_mother ) {
-                        if( qs.int_familyname_m > 0 ) {
-                            int lv_dist = isVariant( s1MotherFamName, s2MotherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+                    // 5-of-10 Mother firstname
+                    if( qs.use_mother && qs.int_firstname_m > 0 )
+                    {
+                        int lv_dist = checkFirstName( qs.firstname,
+                            s1MotherFirName1, s1MotherFirName2, s1MotherFirName3, s1MotherFirName4,
+                            s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
+                            qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
-                                s2_idx_familyname_mo_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_familyname_m++;
-                                if( debugfail ) { System.out.println( "failed int_familyname_m" ); }
-                                continue;
-                            }
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
+                            s2_idx_firstname_mo_lvs.set( lv_idx, lv_dist );         // for match table
                         }
-
-                        if( qs.int_firstname_m > 0 ) {
-                            int lv_dist = checkFirstName( qs.firstname,
-                                s1MotherFirName1, s1MotherFirName2, s1MotherFirName3, s1MotherFirName4,
-                                s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
-                                qs.method, lvs_table_firstname, lvs_dist_firstname );
-
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
-                                s2_idx_firstname_mo_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_firstname_m++;
-                                if( debugfail ) { System.out.println( "failed int_firstname_m" ); }
-                                continue;
-                            }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_firstname_m++;
+                            if( debugfail ) { System.out.println( "failed int_firstname_m" ); }
+                            continue;
                         }
                     }
 
-                    if( qs.use_father ) {
-                        if( qs.int_familyname_f > 0 ) {
-                            int lv_dist = isVariant( s1FatherFamName, s2FatherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+                    // 6-of-10
+                    if( qs.use_father && qs.int_firstname_f > 0 )
+                    {
+                        int lv_dist = checkFirstName( qs.firstname,
+                            s1FatherFirName1, s1FatherFirName2, s1FatherFirName3, s1FatherFirName4,
+                            s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
+                            qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_familyname_f" ); }
-                                s2_idx_familyname_fa_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_familyname_f++;
-                                if( debugfail ) { System.out.println( "failed int_familyname_f" ); }
-                                continue;
-                            }
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_firstname_f" ); }
+                            s2_idx_firstname_fa_lvs.set( lv_idx, lv_dist );         // for match table
                         }
-
-                        if( qs.int_firstname_f > 0 ) {
-                            int lv_dist = checkFirstName( qs.firstname,
-                                s1FatherFirName1, s1FatherFirName2, s1FatherFirName3, s1FatherFirName4,
-                                s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
-                                qs.method, lvs_table_firstname, lvs_dist_firstname );
-
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_firstname_f" ); }
-                                s2_idx_firstname_fa_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_firstname_f++;
-                                if( debugfail ) { System.out.println( "failed int_firstname_f" ); }
-                                continue;
-                            }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_firstname_f++;
+                            if( debugfail ) { System.out.println( "failed int_firstname_f" ); }
+                            continue;
                         }
                     }
 
-                    if( qs.use_partner ) {
-                        if( qs.int_familyname_p > 0 ) {
-                            int lv_dist = isVariant( s1PartnerFamName, s2PartnerFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+                    // 7-of-10 Partner firstname
+                    if( qs.use_partner && qs.int_firstname_p > 0 )
+                    {
+                        int lv_dist = checkFirstName( qs.firstname,
+                            s1PartnerFirName1, s1PartnerFirName2, s1PartnerFirName3, s1PartnerFirName4,
+                            s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
+                            qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_familyname_p" ); }
-                                s2_idx_familyname_pa_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_familyname_p++;
-                                if( debugfail ) { System.out.println( "failed int_familyname_p" ); }
-                                continue;
-                            }
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_firstname_p" ); }
+                            s2_idx_firstname_pa_lvs.set( lv_idx, lv_dist );         // for match table
                         }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_firstname_p++;
+                            if( debugfail ) { System.out.println( "failed int_firstname_p" ); }
+                            continue;
+                        }
+                    }
 
-                        if( qs.int_firstname_p > 0 ) {
-                            int lv_dist = checkFirstName( qs.firstname,
-                                s1PartnerFirName1, s1PartnerFirName2, s1PartnerFirName3, s1PartnerFirName4,
-                                s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
-                                qs.method, lvs_table_firstname, lvs_dist_firstname );
+                    // 8-of-10 Check min max; use new min max
+                    if( ! qs.ignore_minmax ) {
+                        if( ! CheckMinMax( qs, s1_idx, s2_idx ) ) {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );           // no match
+                            n_minmax++;
+                            if( debugfail ) { System.out.println( "failed ignore_minmax" ); }
+                            continue;
+                        }
+                    }
 
-                            if( lv_dist >= 0 )  // match
-                            {
-                                if( debugfail ) { System.out.println( "matched int_firstname_p" ); }
-                                s2_idx_firstname_pa_lvs.set( lv_idx, lv_dist );         // for match table
-                            }
-                            else
-                            {
-                                s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
-                                n_int_firstname_p++;
-                                if( debugfail ) { System.out.println( "failed int_firstname_p" ); }
-                                continue;
-                            }
+                    // 9-of-10 Check sex
+                    if( ! qs.ignore_sex ) {
+                        int s1s = ql.s1_sex.get( s1_idx );
+                        int s2s = ql.s2_sex.get( s2_idx );
+
+                        // Empty sex is denied
+                        if( s1s != 0 && s2s != 0 && ( s1s != s2s ) ) {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );           // no match
+                            n_sex++;
+                            if( debugfail ) { System.out.println( "failed ignore_sex" ); }
+                            continue;
+                        }
+                    }
+
+                    // 10-of-10 Father familyname
+                    if( qs.use_father && qs.int_familyname_f > 0 )
+                    {
+                        int lv_dist = isVariant( s1FatherFamName, s2FatherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
+
+                        if( lv_dist >= 0 )  // match
+                        {
+                            if( debugfail ) { System.out.println( "matched int_familyname_f" ); }
+                            s2_idx_familyname_fa_lvs.set( lv_idx, lv_dist );         // for match table
+                        }
+                        else
+                        {
+                            s2_idx_variants_cpy.set( lv_idx, -1 );       // no match
+                            n_int_familyname_f++;
+                            if( debugfail ) { System.out.println( "failed int_familyname_f" ); }
+                            continue;
                         }
                     }
                 }
@@ -734,75 +734,75 @@ public class MatchAsync extends Thread
 
             pm.removeProcess();
 
-            msg = String.format( "Thread id %2d; s1 records processed: %d", threadId, n_recs );
+            msg = String.format( "Thread id %2d; s1 records processed:         %10d", threadId, n_recs );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d; Number of matches: %d", threadId, n_match );
+            msg = String.format( "Thread id %2d; Number of matches:            %10d", threadId, n_match );
             System.out.println( msg ); plog.show( msg );
 
             long n_fail = 0;
 
-            if( n_minmax != 0 ) {
-                n_fail += n_minmax;
-                msg = String.format( "Thread id %2d; failures n_minmax: %d", threadId, n_minmax );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            if( n_sex != 0 ) {
-                n_fail += n_sex;
-                msg = String.format( "Thread id %2d; failures n_sex: %d", threadId, n_minmax );
-                System.out.println( msg ); plog.show( msg );
-            }
-
             if( n_int_familyname_e != 0 ) {
                 n_fail += n_int_familyname_e;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_e: %d", threadId, n_int_familyname_e );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            if( n_int_firstname_e != 0 ) {
-                n_fail += n_int_firstname_e;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_e: %d", threadId, n_int_firstname_e );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_e:  %10d", threadId, n_int_familyname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_m != 0 ) {
                 n_fail += n_int_familyname_m;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_m: %d", threadId, n_int_familyname_m );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            if( n_int_firstname_m != 0 ) {
-                n_fail += n_int_firstname_m;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_m: %d", threadId, n_int_firstname_m );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            if( n_int_familyname_f != 0 ) {
-                n_fail += n_int_familyname_f;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_f: %d", threadId, n_int_familyname_f );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            if( n_int_firstname_f != 0 ) {
-                n_fail += n_int_firstname_f;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_f: %d", threadId, n_int_firstname_f );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_m:  %10d", threadId, n_int_familyname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_p != 0 ) {
                 n_fail += n_int_familyname_p;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_p: %d", threadId, n_int_familyname_p );
+                msg = String.format( "Thread id %2d; failures n_int_familyname_p:  %10d", threadId, n_int_familyname_p );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            if( n_int_firstname_e != 0 ) {
+                n_fail += n_int_firstname_e;
+                msg = String.format( "Thread id %2d; failures n_int_firstname_e:   %10d", threadId, n_int_firstname_e );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            if( n_int_firstname_m != 0 ) {
+                n_fail += n_int_firstname_m;
+                msg = String.format( "Thread id %2d; failures n_int_firstname_m:   %10d", threadId, n_int_firstname_m );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            if( n_int_firstname_f != 0 ) {
+                n_fail += n_int_firstname_f;
+                msg = String.format( "Thread id %2d; failures n_int_firstname_f:   %10d", threadId, n_int_firstname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_p != 0 ) {
                 n_fail += n_int_firstname_p;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_p: %d", threadId, n_int_firstname_p );
+                msg = String.format( "Thread id %2d; failures n_int_firstname_p:   %10d", threadId, n_int_firstname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
-            msg = String.format( "Thread id %2d; total match attempt failures: %d", threadId, n_fail );
+            if( n_minmax != 0 ) {
+                n_fail += n_minmax;
+                msg = String.format( "Thread id %2d; failures n_minmax:            %10d", threadId, n_minmax );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            if( n_sex != 0 ) {
+                n_fail += n_sex;
+                msg = String.format( "Thread id %2d; failures n_sex:               %10d", threadId, n_minmax );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            if( n_int_familyname_f != 0 ) {
+                n_fail += n_int_familyname_f;
+                msg = String.format( "Thread id %2d; failures n_int_familyname_f:  %10d", threadId, n_int_familyname_f );
+                System.out.println( msg ); plog.show( msg );
+            }
+
+            msg = String.format( "Thread id %2d; total match attempt failures: %10d", threadId, n_fail );
             System.out.println( msg ); plog.show( msg );
 
             long n_mismatch = n_recs - ( n_fail + n_match );

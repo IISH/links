@@ -3,7 +3,6 @@ package linksmanager;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -18,7 +17,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import javax.swing.*;
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
@@ -72,7 +70,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-12-May-2015 Latest change
+ * FL-13-May-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -88,6 +86,8 @@ public class ManagerGui extends javax.swing.JFrame
     private Options opts;
 
     // strings read from property file
+    private String max_threads_simul = "";
+
     private String dbgRenewData           = "";
     private String dbgPrepieceSuffix      = "";
     private String dbgFirstnames          = "";
@@ -2121,6 +2121,9 @@ public class ManagerGui extends javax.swing.JFrame
      */
     public void loadProperties( PrintLogger plog, Properties properties )
     {
+        // max number of simultaneous cleaning threads
+        max_threads_simul = properties.getProperty( "max_threads_simul" );
+
         String sourceId = properties.getProperty( "tbLOLCSourceId" );
         if( sourceId == null ) { sourceId = ""; }
         if( sourceId.isEmpty() ) { System.out.println( "sourceId not specified" ); }
@@ -2660,6 +2663,13 @@ public class ManagerGui extends javax.swing.JFrame
     {
         Options opts = new Options();
 
+        if( max_threads_simul != null ) {
+            int max_threads_simul_int = 1;
+            try { max_threads_simul_int = Integer.parseInt( max_threads_simul );}
+            catch( NumberFormatException ex ) { System.out.println( ex.getMessage() ); }
+
+            opts.setMaxThreadsSimul( max_threads_simul_int );
+        }
 
         if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData( true ); }
         else { opts.setDoRenewData( false ); }
@@ -2982,7 +2992,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "12-May-2015 13:48";
+                String timestamp1 = "13-May-2015 15:46";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {

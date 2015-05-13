@@ -53,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-12-May-2015 Latest change
+ * FL-13-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -175,8 +175,10 @@ public class LinksCleanedThread extends Thread
      */
     public void run()
     {
-        //multithreaded = false;
-        multithreaded = true;
+        int max_threads_simul = opts.getMaxThreadsSimul();
+
+        multithreaded = false;
+        if( max_threads_simul > 1 ) { multithreaded = true; }
 
 
         // inner class for cleaning a single id_source
@@ -199,9 +201,10 @@ public class LinksCleanedThread extends Thread
             {
                 long threadStart = System.currentTimeMillis();
 
+                long threadId = Thread.currentThread().getId();
+
                 try
                 {
-                    long threadId = Thread.currentThread().getId();
                     String msg = String.format( "CleaningThread/run(): thread id %2d running for source %s", threadId, source ) ;
                     plog.show( msg ); showMessage( msg, false, true );
 
@@ -244,7 +247,8 @@ public class LinksCleanedThread extends Thread
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
                 }
                 catch( Exception ex ) {
-                    showMessage( "Error: " + ex.getMessage(), false, true );
+                    String msg = String.format( "Thread id %d; Exception: %s", threadId, ex.getMessage() );
+                    showMessage( msg, false, true );
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
 
@@ -260,11 +264,12 @@ public class LinksCleanedThread extends Thread
         } // CleaningThread inner class
 
 
+        long mainThreadId = Thread.currentThread().getId();
+
         try
         {
             long cleanStart = System.currentTimeMillis();
 
-            long mainThreadId = Thread.currentThread().getId();
             plog.show( String.format( "Main thread (id %d); LinksCleanedThread/run()", mainThreadId ) );
 
             String msg = "";
@@ -299,7 +304,6 @@ public class LinksCleanedThread extends Thread
 
             if( multithreaded )
             {
-                int max_threads_simul = 100;
                 ThreadManager tm = new ThreadManager( max_threads_simul );
                 msg = String.format( "Multi-threaded cleaning with max %d simultaneous cleaning threads", max_threads_simul );
 
@@ -426,7 +430,8 @@ public class LinksCleanedThread extends Thread
             }
         }
         catch( Exception ex ) {
-            showMessage( "Error: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %d; Exception: %s", mainThreadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // run
@@ -7040,9 +7045,11 @@ public class LinksCleanedThread extends Thread
         }
 
         try {  dbconCleaned.runQuery( query_u ); }
-            catch( Exception ex ) {
+        catch( Exception ex ) {
             showMessage( "Query: " + query_u, false, true );
-            showMessage( "Error: " + ex.getMessage(), false, true );
+            long threadId = Thread.currentThread().getId();
+            String msg = String.format( "Thread id %d; Exception: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     }
