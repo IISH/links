@@ -70,7 +70,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-13-May-2015 Latest change
+ * FL-26-May-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -87,6 +87,7 @@ public class ManagerGui extends javax.swing.JFrame
 
     // strings read from property file
     private String max_threads_simul = "";
+    private String rmtype = "";
 
     private String dbgRenewData           = "";
     private String dbgPrepieceSuffix      = "";
@@ -2130,6 +2131,8 @@ public class ManagerGui extends javax.swing.JFrame
         else { System.out.println( "sourceId: " + sourceId ); }
         tbLOLCSourceId.setText( sourceId );
 
+        rmtype = properties.getProperty( "tbRegMaintype " );
+
         String ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
         String ref_user = properties.getProperty( "mysql_hsnref_username" );
         String ref_pass = properties.getProperty( "mysql_hsnref_password" );
@@ -2671,6 +2674,8 @@ public class ManagerGui extends javax.swing.JFrame
             opts.setMaxThreadsSimul( max_threads_simul_int );
         }
 
+
+
         if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData( true ); }
         else { opts.setDoRenewData( false ); }
 
@@ -2992,7 +2997,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "13-May-2015 15:46";
+                String timestamp1 = "26-May-2015 09:37";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {

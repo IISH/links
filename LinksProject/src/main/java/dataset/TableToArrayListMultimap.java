@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-11-May-2015 Latest change
+ * FL-26-May-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -326,6 +326,7 @@ public class TableToArrayListMultimap
             String id = "";
             String key = "";
             String original = "";
+            String standard_code = "";
             ArrayList< String > values = new ArrayList();
 
             for( int i = 0; i < numColumns; i++ )     // process each column
@@ -341,8 +342,9 @@ public class TableToArrayListMultimap
                     strValue = Integer.toString( intValue );
                 }
                 else if( ct == 1 || ct ==12 ) {
-                    strValue = rs.getString(c);
-                    if( strValue != null ) { strValue = strValue.toLowerCase(); }
+                    strValue = rs.getString( c );
+                    if( strValue != null )
+                    { strValue = strValue.toLowerCase(); }
                 }
                 else { throw new Exception( "TableToArrayListMultimap: unhandled column type: " + ct ); }
 
@@ -357,10 +359,19 @@ public class TableToArrayListMultimap
                     if( original == null ) { key = original; }
                     else { key = original.toLowerCase(); }
                 }
-                else { values.add( strValue ); }
+                else {
+                    if( columnName.equals( "standard_code" ) ) { standard_code = strValue; }
+
+                    values.add( strValue );
+                }
             }
 
             //System.out.println( String.format( "%d %s %s", numRows, id, key ) );
+
+            if( standard_code == null ) {
+                System.out.println( String.format( "TableToArrayListMultimap/store: Warning: Standard code is null in table %s for key: %s", tableName, key ) );
+                for( String value : values ) { System.out.printf( "%s, ", value); } System.out.println( "" );
+            }
 
             // does key already exist?
             if( contains( key ) ) {
@@ -541,11 +552,20 @@ public class TableToArrayListMultimap
             Collection< String > collection = oldMap.get( key );
             String[] values = collection.toArray( new String[ collection.size() ] );
 
+            /*
+            System.out.println( "code() contains: " + key );
+            System.out.println( "standardCodeValOff: " + standardCodeValOff + ", len: " + values.length );
+            for( String value : values ) {
+                System.out.println( value + " " );
+            }
+            */
+
             sc = values[ standardCodeValOff ];
         }
         else if( newSet.contains( key ) ) {
             sc = "x";
         }
+
         return sc;
     } // code
 

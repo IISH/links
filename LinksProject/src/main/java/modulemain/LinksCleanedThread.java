@@ -53,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-13-May-2015 Latest change
+ * FL-19-May-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -180,21 +180,26 @@ public class LinksCleanedThread extends Thread
         multithreaded = false;
         if( max_threads_simul > 1 ) { multithreaded = true; }
 
+        String rmtype = "";
+
 
         // inner class for cleaning a single id_source
         class CleaningThread extends Thread
         {
             ThreadManager tm;
             String source;
+            String rmtype;
 
             CleaningThread
             (
                 ThreadManager tm,
-                String source
+                String source,
+                String rmtype
             )
             {
                 this.tm = tm;
                 this.source = source;
+                this.rmtype = rmtype;
             }
 
             public void run()
@@ -208,43 +213,43 @@ public class LinksCleanedThread extends Thread
                     String msg = String.format( "CleaningThread/run(): thread id %2d running for source %s", threadId, source ) ;
                     plog.show( msg ); showMessage( msg, false, true );
 
-                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source );                     // GUI cb: Remove previous data
+                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
 
-                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source );      // GUI cb: Prepiece, Suffix
+                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype );      // GUI cb: Prepiece, Suffix
 
-                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source );                  // GUI cb: Firstnames
+                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype );                  // GUI cb: Firstnames
 
-                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source );               // GUI cb: Familynames
+                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype );               // GUI cb: Familynames
 
-                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source );                     // GUI cb: Locations
+                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source, rmtype );                     // GUI cb: Locations
 
-                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source );                     // GUI cb: Status and Sex
+                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype );                     // GUI cb: Status and Sex
 
-                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source );                  // GUI cb: Registration Type
+                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source, rmtype );                  // GUI cb: Registration Type
 
-                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source );                  // GUI cb: Occupation
+                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
 
-                    doAge(   opts.isDbgAge(),   opts.isDoDates(), source );                                 // GUI cb: Age, Role,Dates
+                    doAge(   opts.isDbgAge(),   opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role,Dates
 
-                    doRole(  opts.isDbgRole(),  opts.isDoDates(), source );                                 // GUI cb: Age, Role, Dates
+                    doRole(  opts.isDbgRole(),  opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
 
-                    doDates( opts.isDbgDates(), opts.isDoDates(), source );                                 // GUI cb: Age, Role, Dates
+                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
 
-                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source );      // GUI cb: Min Max Marriage
+                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
 
-                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source );   // GUI cb: Parts to Full Date
+                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );   // GUI cb: Parts to Full Date
 
-                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source );      // GUI cb: Days since begin
+                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );      // GUI cb: Days since begin
 
-                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source );                     // GUI cb: Post Tasks
+                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source );   // GUI cb: Remove Empty Role Reg's
+                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source );   // GUI cb: Remove Empty Role Reg's
+                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source );   // GUI cb: Remove Duplicate Reg's
+                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
-                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source );                           // GUI cb: Scan Remarks
+                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
                 }
                 catch( Exception ex ) {
                     String msg = String.format( "Thread id %d; Exception: %s", threadId, ex.getMessage() );
@@ -341,7 +346,7 @@ public class LinksCleanedThread extends Thread
                     tm.addThread();        // Add a thread to the thread count
 
                     String source = Integer.toString( sourceId );
-                    CleaningThread ct = new CleaningThread( tm, source );
+                    CleaningThread ct = new CleaningThread( tm, source, rmtype );
                     ct.start();
                     threads.add( ct );
                 }
@@ -368,44 +373,43 @@ public class LinksCleanedThread extends Thread
                     showMessage_nl();
                     showMessage( "Processing sourceId: " + source, false, true );
 
-                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source);                     // GUI cb: Remove previous data
+                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
 
-                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source);      // GUI cb: Prepiece, Suffix
+                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype );      // GUI cb: Prepiece, Suffix
 
-                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source);                  // GUI cb: Firstnames
+                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype );                  // GUI cb: Firstnames
 
-                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source);               // GUI cb: Familynames
+                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype );               // GUI cb: Familynames
 
-                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source);                     // GUI cb: Locations
+                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source, rmtype );                     // GUI cb: Locations
 
-                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source);                     // GUI cb: Status and Sex
+                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype );                     // GUI cb: Status and Sex
 
-                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source);                  // GUI cb: Registration Type
+                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source, rmtype );                  // GUI cb: Registration Type
 
-                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source);                  // GUI cb: Occupation
+                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
 
-                    //showMessage( "SKIPPING doAge", false, true );
-                    doAge( opts.isDbgAge(), opts.isDoDates(), source);                                 // GUI cb: Age
-                    //showMessage( "SKIPPING doRole", false, true );
-                    doRole( opts.isDbgRole(), opts.isDoDates(), source);                                 // GUI cb: Role
+                    doAge( opts.isDbgAge(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age
 
-                    doDates( opts.isDbgDates(), opts.isDoDates(), source);                                 // GUI cb: Dates
+                    doRole( opts.isDbgRole(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Role
 
-                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source);      // GUI cb: Min Max Marriage
+                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Dates
 
-                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source);   // GUI cb: Parts to Full Date
+                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
 
-                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source);      // GUI cb: Days since begin
+                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );   // GUI cb: Parts to Full Date
 
-                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source);                     // GUI cb: Post Tasks
+                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );      // GUI cb: Days since begin
 
-                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source);   // GUI cb: Remove Empty Role Reg's
+                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source);   // GUI cb: Remove Empty Role Reg's
+                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source);   // GUI cb: Remove Duplicate Reg's
+                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source);                           // GUI cb: Scan Remarks
+                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+
+                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
 
                     msg = "Cleaning sourceId " + sourceId + " is done";
                     elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
@@ -419,10 +423,7 @@ public class LinksCleanedThread extends Thread
                 dbconOriginal.close();
                 dbconCleaned.close();
 
-                for( int sourceId : sourceList ) {
-                    String source = Integer.toString( sourceId );
-                    doPrematch( opts.isDoPrematch(), source );                   // GUI cb: Run PreMatch
-                }
+                //doPrematch( opts.isDoPrematch() );            // Prematch now has its own GUI tab
 
                 msg = "Cleaning is done";
                 elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
@@ -887,7 +888,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRenewData( boolean debug, boolean go, String source )
+    private void doRenewData( boolean debug, boolean go, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -903,10 +904,19 @@ public class LinksCleanedThread extends Thread
 
 
         // Delete cleaned data for given source
-        String deleteRegist = "DELETE FROM registration_c WHERE id_source = " + source;
-        String deletePerson = "DELETE FROM person_c WHERE id_source = " + source;
+        String deleteRegist = String.format( "DELETE FROM registration_c WHERE id_source = %s", source );
+        String deletePerson = String.format( "DELETE FROM person_c WHERE id_source = %s", source );
 
-        String msg = String.format( "Thread id %2d; Deleting previous data for source: %s", threadId, source );
+        String msg = "";
+        if( rmtype.isEmpty() )
+        { msg = String.format( "Thread id %2d; Deleting previous data for source: %s", threadId, source ); }
+        else {
+            deleteRegist += String.format( " AND registration_maintype = %s", rmtype );
+            deletePerson += String.format( " AND registration_maintype = %s", rmtype );
+
+            msg = String.format( "Thread id %2d; Deleting previous data for source: %s and rmtype: %d", threadId, source, rmtype );
+        }
+
         showMessage( msg, false, true );
         if( debug ) {
             showMessage( deleteRegist, false, true );
@@ -946,6 +956,9 @@ public class LinksCleanedThread extends Thread
             + " FROM links_original.registration_o"
             + " WHERE registration_o.id_source = " + source;
 
+        if( ! rmtype.isEmpty() )
+        { keysRegistration += String.format( " AND registration_maintype = %s", rmtype ); }
+
         msg = String.format( "Thread id %2d; Copying links_original registration keys to links_cleaned", threadId );
         showMessage( msg, false, true );
         if( debug ) { showMessage( keysRegistration, false, true ); }
@@ -957,6 +970,9 @@ public class LinksCleanedThread extends Thread
             + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
             + " FROM links_original.person_o"
             + " WHERE person_o.id_source = " + source;
+
+        if( ! rmtype.isEmpty() )
+        { keysPerson += String.format( " AND registration_maintype = %s", rmtype ); }
 
         msg = String.format( "Thread id %2d; Copying links_original person keys to links_cleaned", threadId );
         showMessage( msg, false, true );
@@ -975,7 +991,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPrepieceSuffix( boolean debug, boolean go, String source ) throws Exception
+    private void doPrepieceSuffix( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doPrepieceSuffix", threadId );
@@ -998,22 +1014,23 @@ public class LinksCleanedThread extends Thread
         showMessage( String.format( "Thread id %2d; standardSuffix", threadId ), false, true );
         standardSuffix( debug, source );
 
-        // Update reference
-        showMessage( String.format( "Thread id %2d; Updating reference tables: Prepiece/Suffix", threadId ), false, true );
-
         // Wait until we can update
         while( almmPrepiece.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_prepiece: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmPrepiece.updateTable() )
+        if( almmPrepiece.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_prepiece", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_prepiece FAILED, was busy", threadId ), false, true ); }
 
         while( almmSuffix.isBusy() ) {
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmSuffix.updateTable() )
+        if( almmSuffix.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_suffix", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_suffix FAILED, was busy", threadId ), false, true ); }
 
         // almmAlias.updateTable();     // almmAlias.add() never called; nothing added to almmAlias
@@ -1032,7 +1049,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doFirstnames( boolean debug, boolean go, String source ) throws Exception
+    private void doFirstnames( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doFirstnames", threadId );
@@ -1101,10 +1118,12 @@ public class LinksCleanedThread extends Thread
         start = System.currentTimeMillis();
 
         while( almmFirstname.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_firstname: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmFirstname.updateTable() )
+        if( almmFirstname.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_firstname", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_firstname FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmFirstname.free(); }
@@ -1144,7 +1163,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doFamilynames( boolean debug, boolean go, String source ) throws Exception
+    private void doFamilynames( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doFamilynames", threadId );
@@ -1212,10 +1231,12 @@ public class LinksCleanedThread extends Thread
         showMessage( msg + "...", false, true );
 
         while( almmFamilyname.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_familyname: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmFamilyname.updateTable() )
+        if( almmFamilyname.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_familyname", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_familyname FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmFamilyname.free(); }
@@ -2486,7 +2507,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doLocations( boolean debug, boolean go, String source ) throws Exception
+    private void doLocations( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doLocations", threadId );
@@ -2561,10 +2582,12 @@ public class LinksCleanedThread extends Thread
         showMessage( msg, false, true );
 
         while( almmLocation.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_location: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
         if( ! almmLocation.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_location", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
 
         msg = String.format( "Thread id %2d; Updating reference table: location ", threadId );
@@ -2611,10 +2634,9 @@ public class LinksCleanedThread extends Thread
                     location = location.toLowerCase();
                     if( debug ) { System.out.println( "id_person: " + id + ", original: " + locationFieldO + ", location: " + location ); }
                     if( almmLocation.contains( location ) )
-
                     {
                         String refSCode = almmLocation.code( location );
-                        if( debug ) { System.out.println( "refSCode: " + refSCode );  }
+                        if( debug ) { System.out.println( "refSCode: " + refSCode ); }
 
                         if( refSCode.equals( SC_X ) )             // EC 91
                         {
@@ -2853,7 +2875,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doStatusSex( boolean debug, boolean go, String source ) throws Exception
+    private void doStatusSex( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doStatusSex", threadId );
@@ -2883,14 +2905,13 @@ public class LinksCleanedThread extends Thread
         standardSex( debug, source );
         standardCivilstatus( debug, source );
 
-        String msg =String.format( "Thread id %2d; Updating reference table: ref_status_sex", threadId );
-        showMessage( msg, false, true );
-
         while( almmCivilstatus.isBusy() ) {
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmCivilstatus.updateTable() )
+        if( almmCivilstatus.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_status_sex", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_status_sex FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmSex.free(); }
@@ -3127,7 +3148,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRegistrationType( boolean debug, boolean go, String source ) throws Exception
+    private void doRegistrationType( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doRegistrationType", threadId );
@@ -3260,7 +3281,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doOccupation( boolean debug, boolean go, String source ) throws Exception
+    private void doOccupation( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doOccupation", threadId );
@@ -3291,14 +3312,16 @@ public class LinksCleanedThread extends Thread
         showMessage( msg, false, true );
         standardOccupation( debug, source );
 
-        msg = String.format( "Thread id %2d; Updating reference table: ref_occupation", threadId );
+        msg = String.format( "Thread id %2d; Updating ref_occupation", threadId );
         showMessage( msg, false, true );
 
         while( almmOccupation.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_occupation: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmOccupation.updateTable() )
+        if( almmOccupation.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated ref_occupation", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_occupation FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmOccupation.free(); }
@@ -3451,7 +3474,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doAge( boolean debug, boolean go, String source ) throws Exception
+    private void doAge( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doAge", threadId );
@@ -3484,14 +3507,16 @@ public class LinksCleanedThread extends Thread
         msg = String.format( "Thread id %2d; Processing standardAge for source: %s ", threadId, source );
         elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
 
-        msg =String.format( "Thread id %2d; Updating reference table: ref_age", threadId );
+        msg =String.format( "Thread id %2d; Updating ref_age: ref_age", threadId );
         showMessage( msg, false, true );
 
         while( almmLitAge.isBusy() ) {
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmLitAge.updateTable() )
+        if( almmLitAge.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_age", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_age FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmLitAge.free(); }
@@ -3757,7 +3782,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRole( boolean debug, boolean go, String source ) throws Exception
+    private void doRole( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doRole", threadId );
@@ -3788,10 +3813,12 @@ public class LinksCleanedThread extends Thread
         standardRole( debug, source );
 
         while( almmRole.isBusy() ) {
-            plog.show( "No permission to update ref table: Waiting 60 seconds" );
+            plog.show( "No permission to update ref_role: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmRole.updateTable() )
+        if( almmRole.updateTable() )
+        { showMessage( String.format( "Thread id %2d; Updated reference table ref_role", threadId ), false, true ); }
+        else
         { showMessage( String.format( "Thread id %2d; Updating ref_role FAILED, was busy", threadId ), false, true ); }
 
         if( ! multithreaded ) { almmRole.free(); }
@@ -3972,7 +3999,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDates( boolean debug, boolean go, String source ) throws Exception
+    private void doDates( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doDates", threadId );
@@ -5652,7 +5679,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doMinMaxMarriage( boolean debug, boolean go, String source ) throws Exception
+    private void doMinMaxMarriage( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doMinMaxMarriage", threadId );
@@ -5915,7 +5942,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPartsToFullDate( boolean debug, boolean go, String source ) throws Exception
+    private void doPartsToFullDate( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doPartsToFullDate", threadId );
@@ -5963,7 +5990,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doDaysSinceBegin( boolean debug, boolean go, String source ) throws Exception
+    private void doDaysSinceBegin( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doDaysSinceBegin", threadId );
@@ -6057,7 +6084,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPostTasks( boolean debug, boolean go, String source ) throws Exception
+    private void doPostTasks( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doPostTasks", threadId );
@@ -6160,7 +6187,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyDateRegs( boolean debug, boolean go, String source ) throws Exception
+    private void doRemoveEmptyDateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doRemoveEmptyDateRegs", threadId );
@@ -6256,7 +6283,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyRoleRegs( boolean debug, boolean go, String source ) throws Exception
+    private void doRemoveEmptyRoleRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doRemoveEmptyRoleRegs", threadId );
@@ -6370,7 +6397,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveDuplicateRegs( boolean debug, boolean go, String source ) throws Exception
+    private void doRemoveDuplicateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doRemoveDuplicateRegs", threadId );
@@ -6821,7 +6848,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doScanRemarks( boolean debug, boolean go, String source ) throws Exception
+    private void doScanRemarks( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
         String funcname = String.format( "Thread id %2d; doScanRemarks", threadId );
@@ -7062,7 +7089,7 @@ public class LinksCleanedThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doPrematch( boolean go, String source ) throws Exception
+    private void doPrematch( boolean go) throws Exception
     {
         String funcname = "doPrematch";
         if( !go ) {
