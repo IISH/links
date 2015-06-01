@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-13-May-2015 Latest change
+ * FL-01-Jun-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe. ArrayList,
  * on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -829,11 +829,13 @@ public class MatchAsync extends Thread
                 qs = null;
             }
 
-            elapsedShowMessage( "clock time", threadStart, System.currentTimeMillis() );
+            msg = String.format( "Thread id %2d; clock time", threadId );
+            elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
 
             long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
             long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
-            elapsedShowMessage( "thread time", 0, cpuTimeMsec );
+            msg = String.format( "Thread id %2d; thread time", threadId );
+            elapsedShowMessage( msg, 0, cpuTimeMsec );
 
             //long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
             //long userTimeMsec = TimeUnit.NANOSECONDS.toMillis( userTimeNsec );
