@@ -439,6 +439,7 @@ public class TableToArrayListMultimap
             catch( Exception ex ) { System.out.println(ex.getMessage()); }
         }
 
+        //System.out.println( "contains: " + entry + ", " + tf );
         return tf;
     } // contains
 
@@ -632,13 +633,15 @@ public class TableToArrayListMultimap
      * Do not call this function when the flag update_busy is false.
      * We ignore the update request is another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
+     *
+     * This flagging did sometimes fail;
+     * TODO make it thread-save
      */
     public boolean updateTable()
     throws Exception
     {
-        if( update_busy ) { return false; } // prevent: java.util.ConcurrentModificationException
-
-        update_busy = true;
+        //if( update_busy ) { return false; } // prevent: java.util.ConcurrentModificationException
+        //update_busy = true;
 
         //System.out.println( "updateTable" );
 
@@ -654,16 +657,14 @@ public class TableToArrayListMultimap
             conn_write.insertIntoTableIgnore( tableName, fields, values );  // ignore duplicates for UNIQUE keys
         }
 
-        update_busy = false;
+        //update_busy = false;
 
         return true;
     } // updateTable
 
 
-    public boolean isBusy()
-    {
-        return update_busy;
-    }
+    //public boolean isBusy() { return update_busy; }
+    public boolean isBusy() { return false; }
 
 
     /**

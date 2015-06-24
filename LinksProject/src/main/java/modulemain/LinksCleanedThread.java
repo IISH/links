@@ -53,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-19-May-2015 Latest change
+ * FL-24-Jun-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -229,9 +229,9 @@ public class LinksCleanedThread extends Thread
 
                     doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
 
-                    doAge(   opts.isDbgAge(),   opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role,Dates
+                    doAge(   opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                     // GUI cb: Age, Role,Dates
 
-                    doRole(  opts.isDbgRole(),  opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
+                    doRole(  opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                   // GUI cb: Age, Role, Dates
 
                     doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
 
@@ -389,9 +389,9 @@ public class LinksCleanedThread extends Thread
 
                     doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
 
-                    doAge( opts.isDbgAge(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age
+                    doAge( opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                       // GUI cb: Age
 
-                    doRole( opts.isDbgRole(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Role
+                    doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                    // GUI cb: Role
 
                     doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Dates
 
@@ -745,10 +745,22 @@ public class LinksCleanedThread extends Thread
                         + guid     + "' ) ; ";
         */
 
-        String s = "INSERT INTO links_logs.`" + logTableName + "`"
-            + " ( reg_key , id_source , report_class , report_type , content ,"
-            + " date_time , location , reg_type , date , sequence , guid )"
-            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+        // not robust, for the time being it works
+        String s = "";
+        if( location != null && location.contains( "\"") )      // also in content; e.g. ss "Maasdam"
+        {
+            s = "INSERT INTO links_logs.`" + logTableName + "`"
+                + " ( reg_key , id_source , report_class , report_type , content ,"
+                + " date_time , location , reg_type , date , sequence , guid )"
+                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \'%s\' , NOW() , \'%s\' , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+        }
+        else
+        {
+            s = "INSERT INTO links_logs.`" + logTableName + "`"
+                + " ( reg_key , id_source , report_class , report_type , content ,"
+                + " date_time , location , reg_type , date , sequence , guid )"
+                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+        }
 
         if( debug ) {
             System.out.println( s );
@@ -759,6 +771,10 @@ public class LinksCleanedThread extends Thread
         try {
             insertQuery = String.format ( s,
                 id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, guid );
+            if( debug ) {
+                System.out.println( insertQuery );
+                showMessage( insertQuery, false, true );
+            }
         }
         catch( Exception ex )
         {
@@ -909,7 +925,7 @@ public class LinksCleanedThread extends Thread
 
         String msg = "";
         if( rmtype.isEmpty() )
-        { msg = String.format( "Thread id %2d; Deleting previous data for source: %s", threadId, source ); }
+        { msg = String.format( "Thread id %2d; Deleting previous cleaned data for source: %s", threadId, source ); }
         else {
             deleteRegist += String.format( " AND registration_maintype = %s", rmtype );
             deletePerson += String.format( " AND registration_maintype = %s", rmtype );
@@ -2581,6 +2597,7 @@ public class LinksCleanedThread extends Thread
         msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
         showMessage( msg, false, true );
 
+        /*
         while( almmLocation.isBusy() ) {
             plog.show( "No permission to update ref_location: Waiting 60 seconds" );
             Thread.sleep( 60000 );
@@ -2589,8 +2606,10 @@ public class LinksCleanedThread extends Thread
         { showMessage( String.format( "Thread id %2d; Updated reference table ref_location", threadId ), false, true ); }
         else
         { showMessage( String.format( "Thread id %2d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
+        */
+        almmLocation.updateTable();
+        msg = String.format( "Thread id %2d; Updating reference table ref_location ", threadId );
 
-        msg = String.format( "Thread id %2d; Updating reference table: location ", threadId );
         showTimingMessage( msg, start );
 
         if( ! multithreaded ) { almmLocation.free(); }
@@ -2626,7 +2645,7 @@ public class LinksCleanedThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id = rs.getInt( idFieldO );
+                int id = rs.getInt(idFieldO);
                 String location = rs.getString( locationFieldO );
 
                 if( location != null && !location.isEmpty() )
@@ -3801,6 +3820,7 @@ public class LinksCleanedThread extends Thread
             showMessage( msg + "...", false, true );
 
             almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
+            almmRole.contentsOld();
         }
 
         int size = almmRole.numkeys();
@@ -3881,34 +3901,65 @@ public class LinksCleanedThread extends Thread
                 if( role.isEmpty() ) { count_empty++; }
                 else
                 {
-                    if( almmRole.contains( role ) )             // present in ref_role.original
+                    if( almmRole.contains( role ) )             // present in ref_role
                     {
                         String refSCode = almmRole.code( role );
                         if( debug ) { System.out.println( "refSCode: " + refSCode ); }
 
-                        if( refSCode.equals( SC_Y ) ) {
+                        if( refSCode.equals( SC_X ) )
+                        {
+                            if( debug ) { showMessage( "Warning 141 (via SC_X): id_person: " + id_person + ", role: " + role, false, true ); }
+                            addToReportPerson( id_person, source, 141, role );      // warning 141
+
+                            String role_nr = "999";
+                            String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
+                            if( debug ) { showMessage( updateQuery, false, true ); }
+                            dbconCleaned.runQuery( updateQuery );
+                        }
+                        else if( refSCode.equals( SC_N ) )
+                        {
+                            if( debug ) { showMessage( "Warning 143: id_person: " + id_person + ", role: " + role, false, true ); }
+                            addToReportPerson( id_person, source, 143, role );      // warning 143
+                        }
+                        else if( refSCode.equals( SC_U ) )
+                        {
+                            if( debug ) { showMessage( "Warning 145: id_person: " + id_person + ", role: " + role, false, true ); }
+                            addToReportPerson( id_person, source, 145, role );      // warning 145
+
+                            String role_nr = almmRole.value( "role_nr", role );
+                            String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
+                            if( debug ) { showMessage( updateQuery, false, true ); }
+                            dbconCleaned.runQuery( updateQuery );
+                        }
+                        else if( refSCode.equals( SC_Y ) )
+                        {
                             if( debug ) { showMessage( "Standard Role: id_person: " + id_person + ", role: " + role, false, true ); }
                             String role_nr = almmRole.value( "role_nr", role );
-                            if( debug ) { showMessage( "role_nr: " + role_nr, false, true ); }
+
                             String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
                             if( debug ) { showMessage( updateQuery, false, true ); }
                             dbconCleaned.runQuery( updateQuery );
                         }
                         else
                         {
-                            if( debug ) { showMessage( "Warning 101: id_person: " + id_person + ", role: " + role, false, true ); }
+                            if( debug ) { showMessage( "Warning 149: id_person: " + id_person + ", role: " + role, false, true ); }
 
-                            addToReportPerson( id_person, source, 101, role );      // report warning 101
+                            addToReportPerson( id_person, source, 149, role );      // report warning 149
                             almmRole.add( role );                                   // add new role
                         }
                     }
-                    else
+                    else    // not in ref_role
                     {
                         count_noref++;
-                        if( debug ) { showMessage( "Warning 101: id_person: " + id_person + ", role: " + role, false, true ); }
+                        if( debug ) { showMessage( "Warning 141 (not in ref_): id_person: " + id_person + ", role: " + role, false, true ); }
 
-                        addToReportPerson( id_person, source, 101, role );      // report warning 101
+                        addToReportPerson( id_person, source, 141, role );      // report warning 141
                         almmRole.add( role );                                   // add new role
+
+                        String role_nr = "999";
+                        String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
+                        if( debug ) { showMessage( updateQuery, false, true ); }
+                        dbconCleaned.runQuery( updateQuery );
                     }
                 }
             }
@@ -5031,17 +5082,23 @@ public class LinksCleanedThread extends Thread
                         mmmas.setMainRole( main_role );
                     }
 
-                    if( countPc == 0 ) {
-                        //showMessage( "minMaxMainAge: zero person_c count, with query:", false, true );
-                        //showMessage( queryPc, false, true );
-                             if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // EC 271
-                        else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // EC 272
-                        else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // EC 273
-                        else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 274, "" ); }   // EC 274
+                    if( countPc == 0 )
+                    {
+                        if( debug ) { showMessage( "minMaxMainAge: person_c count = 0, with query:", false, true ); }
+                        if( debug ) { showMessage( queryPc, false, true ); }
+                             if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // WA 271
+                        else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // WA 272
+                        else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // WA 273
+                        else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 274, "" ); }   // WA 274
                     }
-                    else if( countPc > 1 ) {
-                        showMessage( queryPc, false, true );
-                        throw new Exception( "minMaxMainAge: person_c count = " + countPc );
+                    else if( countPc > 1 )
+                    {
+                        if( debug ) { showMessage( "minMaxMainAge: person_c count > 1, with query:", false, true ); }
+                        if( debug ) { showMessage( queryPc, false, true ); }
+                             if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 281, "" ); }   // WA 281
+                        else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 282, "" ); }   // WA 282
+                        else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 283, "" ); }   // WA 283
+                        else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 284, "" ); }   // WA 284
                     }
 
                     if( debug ) { showMessage( "minMaxMainAge() age_day: " + age_day + ", age_week: " + age_week + ", age_month: " + age_month + ", age_year: " + age_year + ", main_role: " + main_role, false, true ); }
@@ -5813,8 +5870,9 @@ public class LinksCleanedThread extends Thread
                     continue;
                 }
                 else if( countB != 1 ) {
-                    showMessage( "standardMinMaxMarriageYear() id_person: " + id_personA + "has multiple roleB matches", false, true );
+                    if( debug ) { showMessage( "standardMinMaxMarriageYear() id_person: " + id_personA + " has multiple roleB matches", false, true ); }
                     addToReportPerson( id_personA, source + "", 107, "" );
+                    continue;
                 }
 
                 String minB = "";
@@ -6014,12 +6072,29 @@ public class LinksCleanedThread extends Thread
 
     private void daysSinceBegin( boolean debug, String source )
     {
-        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min  NOT LIKE '0-%' AND birth_date_min   NOT LIKE '%-0-%'";
-        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max  NOT LIKE '0-%' AND birth_date_max   NOT LIKE '%-0-%'";
-        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min    NOT LIKE '0-%' AND mar_date_min     NOT LIKE '%-0-%'";
-        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max    NOT LIKE '0-%' AND mar_date_max     NOT LIKE '%-0-%'";
-        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min  NOT LIKE '0-%' AND death_date_min   NOT LIKE '%-0-%'";
-        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max  NOT LIKE '0-%' AND death_date_max   NOT LIKE '%-0-%'";
+        // no occurrences found in the min/max dates
+        //String qP1 = "UPDATE links_cleaned.person_c SET birth_date_min = NULL WHERE birth_date_min = '00-00-0000' AND id_source = " + source;
+        //String qP1 = "UPDATE links_cleaned.person_c SET birth_date_max = NULL WHERE birth_date_max = '00-00-0000' AND id_source = " + source;
+        //String qP1 = "UPDATE links_cleaned.person_c SET mar_date_min   = NULL WHERE mar_date_min   = '00-00-0000' AND id_source = " + source;
+        //String qP1 = "UPDATE links_cleaned.person_c SET mar_date_max   = NULL WHERE mar_date_max   = '00-00-0000' AND id_source = " + source;
+        //String qP1 = "UPDATE links_cleaned.person_c SET death_date_min = NULL WHERE death_date_min = '00-00-0000' AND id_source = " + source;
+        //String qP1 = "UPDATE links_cleaned.person_c SET death_date_max = NULL WHERE death_date_max = '00-00-0000' AND id_source = " + source;
+
+        String qRclean  = "UPDATE links_cleaned.registration_c SET registration_date = NULL WHERE registration_date = '00-00-0000' AND id_source = " + source;
+        if( debug ) { showMessage( qRclean, false, true ); }
+        else { showMessage( "reg dates '00-00-0000' -> NULL", false, true ); }
+        try { dbconCleaned.runQuery( qRclean ); }
+        catch( Exception ex ) {
+            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%'";
+        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%'";
+        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%'";
+        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%'";
+        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%'";
+        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%'";
 
         queryP1 += "AND id_source = " + source;
         queryP2 += "AND id_source = " + source;
@@ -6028,20 +6103,13 @@ public class LinksCleanedThread extends Thread
         queryP5 += "AND id_source = " + source;
         queryP6 += "AND id_source = " + source;
 
-        /*
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
-            + "WHERE registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%'AND registration_date <> '0000-00-00' "
-            + "AND id_source = " + source;
-        */
-        String queryR = "UPDATE registration_c SET "
-            + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
-            + "WHERE registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%' "
+            + "WHERE registration_date IS NOT NULL AND registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%' "
             + "AND id_source = " + source;
 
         try
         {
-            /*
             if( debug ) { showMessage( queryP1, false, true ); }
             else { showMessage( "1-of-7: birth_date_min", false, true ); }
             dbconCleaned.runQuery( queryP1 );
@@ -6065,13 +6133,13 @@ public class LinksCleanedThread extends Thread
             if( debug ) { showMessage( queryP6, false, true ); }
             else { showMessage( "6-of-7: death_date_max", false, true ); }
             dbconCleaned.runQuery( queryP6 );
-            */
+
             if( debug ) { showMessage( queryR, false, true ); }
             else { showMessage( "7-of-7: registration_days", false, true ); }
             dbconCleaned.runQuery( queryR );
         }
         catch( Exception ex ) {
-            showMessage( "Exception while computing days since 1-1-1: " + ex.getMessage(), false, true );
+            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // daysSinceBegin
@@ -6149,9 +6217,6 @@ public class LinksCleanedThread extends Thread
             "DROP TABLE links_temp.male;",
 
             "DROP TABLE links_temp.female;",
-
-
-            "UPDATE links_cleaned.registration_c SET registration_date = NULL WHERE registration_date = '00-00-0000' AND id_source = " + source
         };
 
         // suppressed queries
@@ -6255,9 +6320,11 @@ public class LinksCleanedThread extends Thread
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
 
-                    showMessage( "Deleting id_registration without date: " + id_registration, false, true );
-                    showMessage( deleteRegist, false, true );
-                    showMessage( deletePerson, false, true );
+                    if( debug ) {
+                        showMessage( "Deleting id_registration without date: " + id_registration, false, true );
+                        showMessage( deleteRegist, false, true );
+                        showMessage( deletePerson, false, true );
+                    }
 
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 2, "" );       // warning 2
@@ -6370,9 +6437,11 @@ public class LinksCleanedThread extends Thread
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
 
-                    showMessage( "Deleting id_registration without role: " + id_registration, false, true );
-                    showMessage( deleteRegist, false, true );
-                    showMessage( deletePerson, false, true );
+                    if( debug ) {
+                        showMessage( "Deleting id_registration without role: " + id_registration, false, true );
+                        showMessage( deleteRegist, false, true );
+                        showMessage( deletePerson, false, true );
+                    }
 
                     String id_source_str = Integer.toString( id_source );
                     addToReportRegistration( id_registration, id_source_str, 3, "" );       // warning 3
