@@ -53,7 +53,7 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-24-Jun-2015 Latest change
+ * FL-25-Jun-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3820,7 +3820,6 @@ public class LinksCleanedThread extends Thread
             showMessage( msg + "...", false, true );
 
             almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
-            almmRole.contentsOld();
         }
 
         int size = almmRole.numkeys();
@@ -6199,6 +6198,10 @@ public class LinksCleanedThread extends Thread
 
             "UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
 
+
+            "DROP TABLE IF EXISTS links_temp.male;",
+
+            "DROP TABLE IF EXISTS links_temp.female;",
 
             "CREATE TABLE links_temp.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
