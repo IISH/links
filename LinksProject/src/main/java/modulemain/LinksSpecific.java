@@ -39,7 +39,8 @@ import dataset.DateYearMonthDaySet;
  *
  * <p/>
  * FL-30-Jul-2014 Cleanup
- * FL-16-Mar-2015 Latest change
+ * FL-28-Jul-2015 handle negative date components
+ * FL-28-Jul-2015 Latest change
  */
 public class LinksSpecific
 {
@@ -345,15 +346,24 @@ public class LinksSpecific
 
         if( date == null || date.isEmpty() )
         {
-            dymd.setYear( 0 ) ;
+            dymd.setYear(  0 ) ;
             dymd.setMonth( 0 ) ;
-            dymd.setDay( 0 ) ;
-            dymd.setReportYear( "ERROR" ) ;
-            dymd.setReportMonth( "ERROR" ) ;
-            dymd.setReportDay( "ERROR" ) ;
+            dymd.setDay(   0 ) ;
+            dymd.setReportYear(  "ERROR" );
+            dymd.setReportMonth( "ERROR" );
+            dymd.setReportDay(   "ERROR" );
 
             return dymd;
         }
+
+        //                    0123456789
+        // Valid date string: dd-mm-yyyy
+        // Exactly 2 hyphens should occur, but substrings like '-1', '-2', '-3', and '-4' are used to flag
+        // e.g. unreadable date string components in HSN dates
+        // The extraction of day/month/year below does not see these negative values, and such dates were not marked as invalid.
+        if( date.charAt( 0 ) == '-' ) { dymd.setReportDay(   "ERROR" ); }
+        if( date.charAt( 3 ) == '-' ) { dymd.setReportMonth( "ERROR" ); }
+        if( date.charAt( 6 ) == '-' ) { dymd.setReportYear(  "ERROR" ); }
 
         // eerst de data er uit met regex
         Pattern regex = Pattern.compile( "[0-9]+" );

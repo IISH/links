@@ -53,7 +53,8 @@ import linksmanager.ManagerGui;
  * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
- * FL-25-Jun-2015 Latest change
+ * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
+ * FL-28-Jul-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5186,6 +5187,7 @@ public class LinksCleanedThread extends Thread
         int count = 0;
         int stepstate = count_step;
         int nEmptyRegDates = 0;
+        int nTooManyHyphens = 0;
 
         try
         {
@@ -5201,17 +5203,28 @@ public class LinksCleanedThread extends Thread
                     stepstate += count_step;
                 }
 
-                // Get Opmerking
                 int id_registration      = rs_r.getInt( "id_registration" );
                 String registration_date = rs_r.getString( "registration_date" );
 
-                boolean reg_date = true;
-                if( registration_date == null || registration_date.isEmpty() )
+                // valid date string: dd-mm-yyyy
+                // exactly 2 hyphens should occur, but substrings like '-1', '-2', '-3', and '-4' are used to flag
+                // e.g. unreadable date strings
+                int nhyphens = 0;
+                for( int i = 0; i < registration_date.length(); i++ ) {
+                    if( registration_date.charAt(i) == '-' ) { nhyphens++; }
+                }
+                if( nhyphens > 2 ) { nTooManyHyphens++; debug = true; }
+                else { debug = false; }
+
+                boolean reg_date_isvalid = true;
+                int registration_maintype = 0;
+                if( registration_date == null || registration_date.isEmpty() || nhyphens > 2 )
                 {
-                    reg_date = false;
+                    reg_date_isvalid = false;
                     nEmptyRegDates++;
 
-                    if( debug ) { System.out.println( "No registration date for id_registration: " + id_registration ); }
+                    if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
+                    if( debug ) { System.out.println( "No (valid) registration date for id_registration: " + id_registration + ", registration_date: " + registration_date ); }
 
                     addToReportRegistration( id_registration, source, 202, "" );   // EC 202
 
@@ -5221,7 +5234,7 @@ public class LinksCleanedThread extends Thread
 
                     while( rs_p.next() )
                     {
-                        int registration_maintype = rs_p.getInt( "registration_maintype" );
+                        registration_maintype = rs_p.getInt( "registration_maintype" );
 
                         // try to use the event date
                         String event_date = "";
@@ -5239,9 +5252,10 @@ public class LinksCleanedThread extends Thread
                 // check the date string
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
 
+                // Notice: dymd may contain negative components if registration_date contains those
                 if( ! dymd.isValidDate() )
                 {
-                    if( debug ) { showMessage( "registration_date: " + registration_date, false, true ); }
+                    if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
 
                     addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
 
@@ -5280,11 +5294,47 @@ public class LinksCleanedThread extends Thread
                         dymd.setMonth( month );
                     }
 
+                    // HSN data (id_source = 10) may contain negative data components, that have special meaning,
+                    // but we do not want invalid date strings in links_cleaned
+                    if( day < 1 ) {
+                        day = 1;
+                        dymd.setDay( day );
+                    }
+                    if( month < 1 ) {
+                        month = 1;
+                        dymd.setMonth( month );
+                    }
+
+                    // KM: for HSN data with negative date components in day and/or month:
+                    // birth    -> registration_date = 01-01-yyyy
+                    // marriage -> registration_date = 01-07-yyyy
+                    // death    -> registration_date = 31-12-yyyy
+                    if( nhyphens > 2 )
+                    {
+                        if( registration_maintype == 1 ) {
+                            day   = 1;
+                            month = 1;
+                        }
+                        else if( registration_maintype == 2 ) {
+                            day   = 1;
+                            month = 7;
+                        }
+                        else if( registration_maintype == 3 ) {
+                            day   = 31;
+                            month = 12;
+                        }
+                        dymd.setDay( day );
+                        dymd.setMonth( month );
+                    }
+
                     registration_date = String.format( "%02d-%02d-%04d", day, month, year );
+                    if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
                 }
+                else
+                { if( debug ) { System.out.println( "valid registration_date: " + registration_date ); } }
 
                 String query = "";
-                if( reg_date )
+                if( reg_date_isvalid )
                 {
                     query = "UPDATE registration_c "
                         + "SET registration_c.registration_date = '" + registration_date + "' , "
@@ -5295,6 +5345,7 @@ public class LinksCleanedThread extends Thread
                 }
                 else
                 {
+                    // set registration_flag to 1
                     query = "UPDATE registration_c "
                         + "SET registration_c.registration_date = '" + registration_date + "' , "
                         + "registration_c.registration_day = "       + dymd.getDay()     + " , "
@@ -5304,10 +5355,12 @@ public class LinksCleanedThread extends Thread
                         + "WHERE registration_c.id_registration = "  + id_registration;
                 }
 
+                if( debug ) { System.out.println( "query: " + query ); }
                 dbconCleaned.runQuery( query );
             }
 
-            if( nEmptyRegDates > 0 ) { showMessage( "Number of registrations without a reg date: " + nEmptyRegDates, false, true ); }
+            if( nEmptyRegDates > 0 )  { showMessage( "Number of registrations without a (valid) reg date: " + nEmptyRegDates, false, true ); }
+            if( nTooManyHyphens > 0 ) { showMessage( "Number of registrations with too many hyphens in reg date: " + nTooManyHyphens, false, true ); }
         }
         catch( Exception ex ) {
             showMessage( "count: " + count + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
@@ -6088,12 +6141,12 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( date_format( str_to_date( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%'";
-        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( date_format( str_to_date( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%'";
-        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( date_format( str_to_date( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%'";
-        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( date_format( str_to_date( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%'";
-        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( date_format( str_to_date( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%'";
-        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( date_format( str_to_date( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%'";
+        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%'";
+        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%'";
+        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%'";
+        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%'";
+        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%'";
+        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%'";
 
         queryP1 += "AND id_source = " + source;
         queryP2 += "AND id_source = " + source;
@@ -6102,9 +6155,12 @@ public class LinksCleanedThread extends Thread
         queryP5 += "AND id_source = " + source;
         queryP6 += "AND id_source = " + source;
 
+        // + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) IS NOT NULL "    // bad dates should not occur in registration_c
         String queryR = "UPDATE registration_c SET "
-            + "registration_days = DATEDIFF( date_format( str_to_date( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
-            + "WHERE registration_date IS NOT NULL AND registration_date NOT LIKE '0-%' AND registration_date NOT LIKE '%-0-%' "
+            + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
+            + "WHERE registration_date IS NOT NULL "
+            + "AND registration_date NOT LIKE '0-%' "
+            + "AND registration_date NOT LIKE '%-0-%' "
             + "AND id_source = " + source;
 
         try
