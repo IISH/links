@@ -5213,8 +5213,7 @@ public class LinksCleanedThread extends Thread
                 for( int i = 0; i < registration_date.length(); i++ ) {
                     if( registration_date.charAt(i) == '-' ) { nhyphens++; }
                 }
-                if( nhyphens > 2 ) { nTooManyHyphens++; debug = true; }
-                else { debug = false; }
+                if( nhyphens > 2 ) { nTooManyHyphens++; }
 
                 boolean reg_date_isvalid = true;
                 int registration_maintype = 0;
