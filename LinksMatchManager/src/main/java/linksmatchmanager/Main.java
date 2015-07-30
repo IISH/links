@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-08-May-2015 Latest change
+ * FL-30-Jul-2015 Latest change
  */
 
 public class Main
@@ -99,8 +99,11 @@ public class Main
             String max_heap_table_size = args[ 4 ];
             String debug_str           = args[ 5 ];
 
+            //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
             else { debug = false; }
+            //System.out.println( "debug: '" + debug + "'" );
+
 
             String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, debug: %s",
                 url, user, pass, max_threads_str, max_heap_table_size, debug );
@@ -611,10 +614,8 @@ public class Main
 
             try {
                 plog.show( msg );
-                if( err.equals( "The table '" + dst_table + "' is full" ) ) {
-                    System.out.println( "EXIT" ); plog.show( "EXIT" );
-                    System.exit( 1 );       // should not continue; would give wrong matching results.
-                }
+                System.out.println( "EXIT" ); plog.show( "EXIT" );
+                System.exit( 1 );       // should not continue; would give wrong matching results.
             }
             catch( Exception ex1 ) {
                 System.out.println( "EXIT" );
@@ -688,10 +689,8 @@ public class Main
 
             try {
                 plog.show( msg );
-                if( err.equals( "The table '" + dst_table + "' is full" ) ) {
-                    System.out.println( "EXIT" ); plog.show( "EXIT" );
-                    System.exit( 1 );       // should not continue; would give wrong matching results.
-                }
+                System.out.println( "EXIT" ); plog.show( "EXIT" );
+                System.exit( 1 );       // should not continue; would give wrong matching results.
             }
             catch( Exception ex1 ) {
                 System.out.println( "EXIT" );
