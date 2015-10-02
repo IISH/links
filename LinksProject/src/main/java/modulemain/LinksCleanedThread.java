@@ -54,7 +54,8 @@ import linksmanager.ManagerGui;
  * FL-01-Apr-2015 DivorceLocation
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
- * FL-28-Jul-2015 Latest change
+ * FL-17-Sep-2015 Bad registration dates: db NULLs
+ * FL-02-Oct-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5186,12 +5187,13 @@ public class LinksCleanedThread extends Thread
     {
         int count = 0;
         int stepstate = count_step;
-        int nEmptyRegDates = 0;
+        int nInvalidRegDates = 0;
         int nTooManyHyphens = 0;
 
         try
         {
-            String query_r = "SELECT id_registration , registration_date FROM registration_o WHERE id_source = " + source;
+            String query_r = "SELECT id_registration , registration_date, registration_day, registration_month, registration_year ";
+            query_r += "FROM registration_o WHERE id_source = " + source;
 
             ResultSet rs_r = dbconOriginal.runQueryWithResult( query_r );
 
@@ -5210,17 +5212,60 @@ public class LinksCleanedThread extends Thread
                 // exactly 2 hyphens should occur, but substrings like '-1', '-2', '-3', and '-4' are used to flag
                 // e.g. unreadable date strings
                 int nhyphens = 0;
-                for( int i = 0; i < registration_date.length(); i++ ) {
-                    if( registration_date.charAt(i) == '-' ) { nhyphens++; }
+                if( registration_date != null  ) {
+                    for( int i = 0; i < registration_date.length(); i++ ) {
+                        if( registration_date.charAt(i) == '-' ) { nhyphens++; }
+                    }
+                    if( nhyphens > 2 ) { nTooManyHyphens++; }
                 }
-                if( nhyphens > 2 ) { nTooManyHyphens++; }
+
+                // The initial registration_date is copied from the a2a field source.literaldate, which sometimes is NULL.
+                // Then we will try to use the source fields day-month-year
+                // all 3 data components must be numeric and > 0.
+                // Otherwise we try to replace the date by the event date.
+                boolean replace_regdate = false;
+
+                // check registration_date from links_original
+                DateYearMonthDaySet dymd0 = LinksSpecific.divideCheckDate( registration_date );
+                if( dymd0.isValidDate() ) { replace_regdate = false; }
+                else { replace_regdate = true;  }
+
+                String registration_date_comps = "";
+                if( replace_regdate )   // check date components from  links_original
+                {
+                    String registration_day   = rs_r.getString( "registration_day" );
+                    String registration_month = rs_r.getString( "registration_month" );
+                    String registration_year  = rs_r.getString( "registration_year" );
+
+                    boolean use_comps = true;   // start optimistic
+
+                    if( registration_day == null || registration_day.isEmpty() ) { use_comps = false; }
+                    else { if( Integer.parseInt( registration_day ) <= 0 ) { use_comps = false; } }
+
+                    if( registration_month  == null || registration_month .isEmpty() ) { use_comps = false; }
+                    else { if( Integer.parseInt( registration_month  ) <= 0 ) { use_comps = false; } }
+
+                    if( registration_year == null || registration_year.isEmpty() ) { use_comps = false; }
+                    else { if( Integer.parseInt( registration_year ) <= 0 ) { use_comps = false; } }
+
+                    if( use_comps )
+                    { registration_date_comps = registration_day + "-"  + registration_month + "-" + registration_year; }
+
+                    DateYearMonthDaySet dymd1 = LinksSpecific.divideCheckDate( registration_date );
+                    if( dymd1.isValidDate() ) {
+                        replace_regdate = false;
+                        registration_date = registration_date_comps;    // use the validated components
+                    }
+                    else { replace_regdate = true;  }
+                }
 
                 boolean reg_date_isvalid = true;
                 int registration_maintype = 0;
-                if( registration_date == null || registration_date.isEmpty() || nhyphens > 2 )
+                if( replace_regdate )
                 {
+                    // try to replace invalid regdate with birth-/marriage-/death- date
                     reg_date_isvalid = false;
-                    nEmptyRegDates++;
+                    nInvalidRegDates++;
 
                     if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
                     if( debug ) { System.out.println( "No (valid) registration date for id_registration: " + id_registration + ", registration_date: " + registration_date ); }
@@ -5358,7 +5403,7 @@ public class LinksCleanedThread extends Thread
                 dbconCleaned.runQuery( query );
             }
 
-            if( nEmptyRegDates > 0 )  { showMessage( "Number of registrations without a (valid) reg date: " + nEmptyRegDates, false, true ); }
+            if( nInvalidRegDates > 0 )  { showMessage( "Number of registrations without a (valid) reg date: " + nInvalidRegDates, false, true ); }
             if( nTooManyHyphens > 0 ) { showMessage( "Number of registrations with too many hyphens in reg date: " + nTooManyHyphens, false, true ); }
         }
         catch( Exception ex ) {
