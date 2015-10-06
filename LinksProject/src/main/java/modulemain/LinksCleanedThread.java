@@ -55,7 +55,7 @@ import linksmanager.ManagerGui;
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
  * FL-17-Sep-2015 Bad registration dates: db NULLs
- * FL-02-Oct-2015 Latest change
+ * FL-06-Oct-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6199,12 +6199,15 @@ public class LinksCleanedThread extends Thread
         queryP5 += "AND id_source = " + source;
         queryP6 += "AND id_source = " + source;
 
-        // + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) IS NOT NULL "    // bad dates should not occur in registration_c
+        // registration_date strings '01-01-0000' give a negative DATEDIFF, which gives an exception
+        // because the column links_cleaned.registration_days is defines as unsigned.
+        // We skip such negative results
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date IS NOT NULL "
             + "AND registration_date NOT LIKE '0-%' "
             + "AND registration_date NOT LIKE '%-0-%' "
+            + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
 
         try
@@ -6242,6 +6245,7 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // daysSinceBegin
+
 
 
     /*---< Post Tasks >-------------------------------------------------------*/
