@@ -55,7 +55,7 @@ import linksmanager.ManagerGui;
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
  * FL-17-Sep-2015 Bad registration dates: db NULLs
- * FL-06-Oct-2015 Latest change
+ * FL-15-Oct-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4068,9 +4068,10 @@ public class LinksCleanedThread extends Thread
         //doRole( debug, go, source );        // required for dates, again separate call (see above)
 
         long ts = System.currentTimeMillis();
+        String msg = "";
         //showMessage( "SKIPPING until minMaxDateMain", false, true );
 
-        String msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
+        msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
 
@@ -4164,6 +4165,9 @@ public class LinksCleanedThread extends Thread
             //showMessage( startQuery, false, true );
         }
 
+        int id_registration = -1;   // want to show it when exception occurs
+        int id_person = -1;         // want to show it when exception occurs
+
         try
         {
             ResultSet rsPersons = dbconCleaned.runQueryWithResult( startQuery );            // Run person query
@@ -4185,11 +4189,11 @@ public class LinksCleanedThread extends Thread
                 }
 
                 // Get
-                int    id_registration      = rsPersons.getInt(    "id_registration" );
+                id_registration             = rsPersons.getInt(    "id_registration" );
                 int    id_source            = rsPersons.getInt(    "id_source" );
                 String registrationDate     = rsPersons.getString( "registration_date" );
                 int    registrationMaintype = rsPersons.getInt(    "registration_maintype" );
-                int    id_person            = rsPersons.getInt(    "id_person" );
+                id_person                   = rsPersons.getInt(    "id_person" );
                 int    role                 = rsPersons.getInt(    "role" );
                 int    age_year             = rsPersons.getInt(    "age_year" );
                 int    age_month            = rsPersons.getInt(    "age_month" );
@@ -4204,9 +4208,10 @@ public class LinksCleanedThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
-                //if( role == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
+                //if( id_person != 14618100 ) { continue; }
 
-                if( debug ) {
+                if( debug )
+                {
                     showMessage_nl();
                     showMessage( "id_registration: "      + id_registration,      false, true );
                     showMessage( "id_person: "            + id_person,            false, true );
@@ -4358,6 +4363,7 @@ public class LinksCleanedThread extends Thread
         }
         catch( Exception ex ) {
             showMessage( "count: " + count + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
+            showMessage( "id_registration: " + id_registration + ", id_person: " + id_person, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // minMaxDateMain
@@ -4378,8 +4384,8 @@ public class LinksCleanedThread extends Thread
         if( debug ) { showMessage( "minMaxDate()", false, true ); }
 
         // registration date
-        DateYearMonthDaySet inputregistrationYearMonthDday =
-                LinksSpecific.divideCheckDate( inputInfo.getRegistrationDate() );
+        if( debug ) { System.out.println( "inputInfo.getRegistrationDate()" ); }
+        DateYearMonthDaySet inputregistrationYearMonthDday = LinksSpecific.divideCheckDate( inputInfo.getRegistrationDate() );
 
         // Check: age in years given?
         if( inputInfo.getPersonAgeYear() > 0 )                              // age given in years ?
@@ -4390,7 +4396,8 @@ public class LinksCleanedThread extends Thread
 
             if( inputInfo.getPersonRole() == 10 )   // it is the deceased
             {
-                // registration date
+                // death date
+                if( debug ) { System.out.println( "inputInfo.getDeathDate()" ); }
                 DateYearMonthDaySet inputDeathDate = LinksSpecific.divideCheckDate( inputInfo.getDeathDate() );
 
                 // check death date
@@ -4540,7 +4547,8 @@ public class LinksCleanedThread extends Thread
             return returnSet;
         }
 
-        // TODO: added
+        // added
+        if( debug ) { System.out.println( "inputInfo.getDeathDate()" ); }
         DateYearMonthDaySet inputDeathDate = LinksSpecific.divideCheckDate( inputInfo.getDeathDate() );
 
         int useYear;
@@ -4590,7 +4598,9 @@ public class LinksCleanedThread extends Thread
                 maxdays );
 
             // New date return return values
+            if( debug ) { System.out.println( "at least 2 given minDate" ); }
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            if( debug ) { System.out.println( "at least 2 given maxDate" ); }
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // Checken if max date not later than actdate
@@ -4644,7 +4654,9 @@ public class LinksCleanedThread extends Thread
                 maxdagen );
 
             // New date to return values
+            if( debug ) { System.out.println( "age in months given minDate" ); }
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            if( debug ) { System.out.println( "age in months given maxDate" ); }
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // returnen
@@ -4690,7 +4702,9 @@ public class LinksCleanedThread extends Thread
                 maxdays );
 
             // date to return values
+            if( debug ) { System.out.println( "age in weeks given minDate" ); }
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            if( debug ) { System.out.println( "age in weeks given maxDate" ); }
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
             // return
@@ -4726,9 +4740,10 @@ public class LinksCleanedThread extends Thread
 
             String maxDate = inputInfo.getRegistrationDate();
 
-
             // New date to return value
+            if( debug ) { System.out.println( "age in days given minDate" ); }
             DateYearMonthDaySet computedMinDate = LinksSpecific.divideCheckDate( minDate );
+            if( debug ) { System.out.println( "age in days given maxDate" ); }
             DateYearMonthDaySet computedMaxDate = LinksSpecific.divideCheckDate( maxDate );
 
 
@@ -5578,8 +5593,9 @@ public class LinksCleanedThread extends Thread
         else if( tt == tt.MONTH ) { c1.add( Calendar.MONTH,         timeAmount ); }
         else if( tt == tt.YEAR )  { c1.add( Calendar.YEAR,          timeAmount ); }
 
-        // return new date
-        String am = "" + c1.get( Calendar.DATE ) + "-" + c1.get( Calendar.MONTH ) + "-" + c1.get( Calendar.YEAR );
+        //String am = "" + c1.get( Calendar.DATE ) + "-" + c1.get( Calendar.MONTH ) + "-" + c1.get( Calendar.YEAR );
+        // our standard date string: dd-mm-yyyy
+        String am = String.format( "%02d-%02d-%04d", c1.get( Calendar.DATE ), c1.get( Calendar.MONTH ), c1.get( Calendar.YEAR ) );
 
         return am;
     } // addTimeToDate

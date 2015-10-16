@@ -28,9 +28,9 @@ public final class DivideMinMaxDatumSet
         if( this.MaxDay   < 0 ) { this.MaxDay   = 0; }
     }
 
-    public String getMinDate()  { return String.format ( "%04d.%02d.%02d", this.MinYear, this.MinMonth, this.MinDay ); }
+    public String getMinDate()  { return String.format ( "%02d.%02d.%04d", this.MinDay, this.MinMonth, this.MinYear ); }
 
-    public String getMaxDate()  { return String.format ( "%04d.%02d.%02d", this.MaxYear, this.MaxMonth, this.MaxDay ); }
+    public String getMaxDate()  { return String.format ( "%02d.%02d.%04d", this.MaxDay, this.MaxMonth, this.MaxYear ); }
 
     public String getMinMaxDate()  { return "min/max date: " + getMinDate() + "-" + getMaxDate(); }
 
