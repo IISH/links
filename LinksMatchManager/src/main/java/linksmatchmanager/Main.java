@@ -171,10 +171,13 @@ public class Main
             // The first ls_firstname and ls_familyname, they are copied to a MEMORY database table
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
             // otherwise we might have to copy 6 ls_ tables to memory, which easily becomes too much
-            boolean ls_tables_mem = true;
+            boolean use_memory_tables = true;
 
             String lvs_table_familyname_use = "";
             String lvs_table_firstname_use  = "";
+
+            String freq_table_familyname_use = "";
+            String freq_table_firstname_use  = "";
 
             QueryGroupSet qgs0 = inputSet.get( 0 );
             QuerySet qs0 = qgs0.get( 0 );
@@ -182,9 +185,19 @@ public class Main
             String lvs_table_familyname = qs0.prematch_familyname;
             String lvs_table_firstname  = qs0.prematch_firstname;
 
-            if( ls_tables_mem )     // use memory tables
+            String freq_table_familyname = "freq_familyname";
+            String freq_table_firstname  = "freq_firstname";
+           //String freq_table_firstname  = "freq_firstname_sx";    // NOT in match_process table?
+
+            System.out.println( "lvs familyname table: " + lvs_table_familyname );
+            System.out.println( "lvs firstname  table: " + lvs_table_firstname );
+
+            System.out.println( "freq familyname table: " + freq_table_familyname );
+            System.out.println( "freq firstname  table: " + freq_table_firstname );
+
+            if( use_memory_tables )     // use memory tables
             {
-                // levenshtein methods should not change; check before we go
+                // levenshtein methods should not change during matching run; check before we go
                 for( int n_mp = 0; n_mp < isSize; n_mp++ )
                 {
                     QueryGroupSet qgs = inputSet.get( n_mp );
@@ -204,34 +217,36 @@ public class Main
                     }
                 }
 
-                System.out.println( "Using lvs memory tables" );
-                System.out.println( "lvs familyname table: " + lvs_table_familyname );
-                System.out.println( "lvs firstname  table: " + lvs_table_firstname );
+                System.out.println( "Using Levenshtein memory tables" );
 
-                int lvs_dist_familyname = qs0.prematch_familyname_value;
-                int lvs_dist_firstname  = qs0.prematch_firstname_value;
-
-                // not relevant here
+                // not used  here
+                //int lvs_dist_familyname = qs0.prematch_familyname_value;
+                //int lvs_dist_firstname  = qs0.prematch_firstname_value;
                 //System.out.println( "lvs familyname distance: " + lvs_dist_familyname );
                 //System.out.println( "lvs firstname  distance: " + lvs_dist_firstname );
 
-                // Create memory tables to hold the ls_* tables
-                String table_familyname_src = lvs_table_familyname;
-                String table_firstname_src  = lvs_table_firstname;
+                // Create memory tables to with copies of the normal tables
                 String name_postfix = "_mem";
 
-                // creates table_firstname_mem & table_familyname_mem
-                memtables_create( table_firstname_src, table_familyname_src, name_postfix );
+                // create ls_memory tables
+                memtables_ls_create( lvs_table_firstname, lvs_table_familyname, name_postfix );
+                // create freq__memory tables
+                memtables_freq_create( freq_table_firstname, freq_table_familyname, name_postfix );
 
                 // and now change the names to the actual table names used !
                 lvs_table_familyname_use = lvs_table_familyname + name_postfix;
                 lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
+
+                freq_table_familyname_use = freq_table_familyname + name_postfix;
+                freq_table_firstname_use  = freq_table_firstname  + name_postfix;
             }
             else            // do not use memory tables
             {
-                System.out.println( "Not using lvs memory tables" );
-                lvs_table_familyname_use = lvs_table_familyname;
-                lvs_table_firstname_use  = lvs_table_firstname;
+                System.out.println( "Not using memory tables" );
+                lvs_table_familyname_use  = lvs_table_familyname;
+                lvs_table_firstname_use   = lvs_table_firstname;
+                freq_table_familyname_use = freq_table_familyname;
+                freq_table_firstname_use  = freq_table_firstname;
             }
 
             msg = "Before threading";
@@ -379,12 +394,12 @@ public class Main
                         if( qgs.get( n_qs ).method == 1 )
                         {
                             ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
-                                lvs_table_firstname_use, lvs_table_familyname_use, rootFirstName, rootFamilyName, true );
+                                lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, rootFirstName, rootFamilyName, true );
                         }
                         else          // method == 0
                         {
                             ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
-                                lvs_table_firstname_use, lvs_table_familyname_use, variantFirstName, variantFamilyName );
+                                lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, variantFirstName, variantFamilyName );
                         }
 
                         ma.start();
@@ -501,28 +516,48 @@ public class Main
     } // elapsedShowMessage
 
 
-    private static void memtables_create( String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_ls_create( String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         try
         {
-            String msg = "memtables_create()";
+            String msg = "memtables_ls_create()";
             System.out.println( msg ); plog.show( msg );
 
             // without backticks
             String table_firstname_dst  = table_firstname_src  + name_postfix;
             String table_familyname_dst = table_familyname_src + name_postfix;
 
-            memtable_ls_name( table_firstname_src, table_firstname_dst );
+            memtable_ls_name( table_firstname_src,  table_firstname_dst );
             memtable_ls_name( table_familyname_src, table_familyname_dst );
-
-            memtable_freq_name( "freq_familyname", "freq_familyname_mem" );
         }
         catch( Exception ex ) {
-            String err = "Exception in memtables_create(): " + ex.getMessage();
+            String err = "Exception in memtables_ls_create(): " + ex.getMessage();
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
-    } // memtables_create
+    } // memtables_ls_create
+
+
+    private static void memtables_freq_create( String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        try
+        {
+            String msg = "memtables_freq_create()";
+            System.out.println( msg ); plog.show( msg );
+
+            // without backticks
+            String table_firstname_dst  = table_firstname_src  + name_postfix;
+            String table_familyname_dst = table_familyname_src + name_postfix;
+
+            memtable_freq_name( table_firstname_src,  table_firstname_dst );
+            memtable_freq_name( table_familyname_src, table_familyname_dst );
+        }
+        catch( Exception ex ) {
+            String err = "Exception in memtables_freq_create(): " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+    } // memtables_freq_create
 
 
     private static void memtable_drop( String table_name )
