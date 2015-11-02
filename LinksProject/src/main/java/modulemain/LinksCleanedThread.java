@@ -55,7 +55,8 @@ import linksmanager.ManagerGui;
  * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
  * FL-17-Sep-2015 Bad registration dates: db NULLs
- * FL-15-Oct-2015 Latest change
+ * FL-30-Oct-2015 minMaxCalculation() function C omission
+ * FL-02-Nov-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3985,7 +3986,7 @@ public class LinksCleanedThread extends Thread
         try
         {
             //String selectQuery = "SELECT id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
-            String selectQuery = "SELECT id_registration , id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
+            String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year FROM links_cleaned.person_c WHERE id_source = " + source;
             if( debug ) { showMessage( "standardAlive() " + selectQuery, false, true ); }
 
             ResultSet rs = dbconCleaned.runQueryWithResult( selectQuery );
@@ -4003,15 +4004,20 @@ public class LinksCleanedThread extends Thread
                 int role            = rs.getInt( "role" );
                 String death        = rs.getString( "death" );
                 String occupation   = rs.getString( "occupation" );
+                int age_year        = rs.getInt( "age_year" );      // read as int: NULL -> 0
 
-                if( debug && id_registration == 668084 ) {
+                if( debug ) {
                     showMessage( "count: " + count + ", id_person: " + id_person + ", role: " + role + ", death: " + death + ", occupation: " + occupation, false, true ); }
 
                 if( death != null ) { death = death.toLowerCase(); }
                 if( death == null || death.isEmpty() ) { count_empty++; }
 
+                if( ( ( role > 1 && role < 10 ) || role == 11 ) && ( age_year != 0 && age_year < 14 ) )  {
+                    addToReportPerson( id_person, source, 265, Integer.toString( role ) );      // report warning 265
+                }
+
                 if( role == 1 || role == 4 || role == 7 || role == 10 ) {
-                    if( debug && id_registration == 668084 ) { showMessage( "role: " + role + ", death -> 'a'", false, true ); }
+                    if( debug ) { showMessage( "role: " + role + ", death -> 'a'", false, true ); }
 
                     String updateQuery = PersonC.updateQuery( "death", "a", id_person );        // set death to a[live]
                     dbconCleaned.runQuery( updateQuery );
@@ -4019,7 +4025,7 @@ public class LinksCleanedThread extends Thread
                 else
                 {
                     if( occupation != null ) {
-                        if( debug && id_registration == 668084 ) { showMessage( "occupation: " + occupation + ", death -> 'a'", false, true ); }
+                        if( debug ) { showMessage( "occupation: " + occupation + ", death -> 'a'", false, true ); }
 
                         String updateQuery = PersonC.updateQuery( "death", "a", id_person );     // set death to a[live]
                         dbconCleaned.runQuery( updateQuery );
@@ -4027,13 +4033,13 @@ public class LinksCleanedThread extends Thread
                     else
                     {
                         if( death == null ) {
-                            if( debug && id_registration == 668084 ) { showMessage( "death: " + death + ", death -> 'n'", false, true ); }
+                            if( debug ) { showMessage( "death: " + death + ", death -> 'n'", false, true ); }
 
                             String updateQuery = PersonC.updateQuery( "death", "n", id_person );     // set death to n[o]
                             dbconCleaned.runQuery( updateQuery );
                         }
                         else
-                        { if( debug && id_registration == 668084 ) { showMessage( "death stays: " + death, false, true ); } }
+                        { if( debug ) { showMessage( "death stays: " + death, false, true ); } }
                     }
                 }
             }
@@ -4488,8 +4494,8 @@ public class LinksCleanedThread extends Thread
         {
             if( debug ) { showMessage( "not the deceased, role: " + inputInfo.getPersonRole() , false, true ); }
 
-            // Days, month, weeks to years, round up
-            int ageinYears = roundUpAge(
+            // Days, month, weeks to 1 additional year ?
+            int ageinYears = roundDownAge(
                 inputInfo.getPersonAgeYear(),
                 inputInfo.getPersonAgeMonth(),
                 inputInfo.getPersonAgeWeek(),
@@ -4497,7 +4503,7 @@ public class LinksCleanedThread extends Thread
 
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();            // New return set
 
-            // day and month is similar to act date
+            // day and month is similar to registration date
             returnSet.setMaxDay(   inputregistrationYearMonthDday.getDay() );
             returnSet.setMaxMonth( inputregistrationYearMonthDday.getMonth() );
             returnSet.setMinDay(   inputregistrationYearMonthDday.getDay() );
@@ -4892,7 +4898,7 @@ public class LinksCleanedThread extends Thread
 
         ResultSet rs = dbconRefRead.runQueryWithResult( query );
 
-        if( !rs.next() )
+        if( ! rs.next() )
         {
             if( debug ) {
                 showMessage( "Not found", false, true );
@@ -4937,7 +4943,7 @@ public class LinksCleanedThread extends Thread
         {
             ;
         }
-        else if( function.equals( "C" ) )                    // function C, check by reg year
+        else if( function.equals( "C" ) )                // function C, check by reg year
         {
             if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
         }
@@ -4957,17 +4963,28 @@ public class LinksCleanedThread extends Thread
         }
         else if( function.equals( "G" ) )               // function F
         {
-            if( minimum_year < reg_year ) { mmj.setMinYear( reg_year ); }
+            if( minimum_year <  reg_year )       { mmj.setMinYear( reg_year ); }
             if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
         }
         else if( function.equals( "H" ) )               // function H
         {
             if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
         }
+        else if( function.equals( "I" ) )               // function I
+        {
+            if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
+            if( minimum_year > mmj.getMaxYear() ) { mmj.setMinYear( mmj.getMaxYear() ); }
+        }
         else
         {
             if( debug ) { showMessage( "minMaxCalculation() function = " + function, false, true ); }
             addToReportPerson( id_person, "0", 104, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
+        }
+
+        if( mmj.getMinYear() > mmj.getMaxYear() )   // 'health' check
+        { showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
+            //error 266 + min & max
+            mmj.setMinYear( mmj.getMaxYear() );
         }
 
         return mmj;
@@ -5161,7 +5178,7 @@ public class LinksCleanedThread extends Thread
      * @param day
      * @return
      */
-    public int roundUpAge( int year, int month, int week, int day )
+    public int roundDownAge( int year, int month, int week, int day )
     {
         int tempYear  = year;
         int tempMonth = month;
@@ -5192,7 +5209,7 @@ public class LinksCleanedThread extends Thread
         }
 
         return tempYear;
-    } // roundUpAge
+    } // roundDownAge
 
 
     /**
@@ -6201,12 +6218,12 @@ public class LinksCleanedThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%'";
-        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%'";
-        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%'";
-        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%'";
-        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%'";
-        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%'";
+        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%' AND birth_date_min NOT LIKE '%-0%'";
+        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%' AND birth_date_max NOT LIKE '%-0%'";
+        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%' AND mar_date_min   NOT LIKE '%-0%'";
+        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%' AND mar_date_max   NOT LIKE '%-0%'";
+        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%' AND death_date_min NOT LIKE '%-0%'";
+        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%' AND death_date_max NOT LIKE '%-0%'";
 
         queryP1 += "AND id_source = " + source;
         queryP2 += "AND id_source = " + source;
@@ -6223,6 +6240,7 @@ public class LinksCleanedThread extends Thread
             + "WHERE registration_date IS NOT NULL "
             + "AND registration_date NOT LIKE '0-%' "
             + "AND registration_date NOT LIKE '%-0-%' "
+            + "AND registration_date NOT LIKE '%-0%' "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
 

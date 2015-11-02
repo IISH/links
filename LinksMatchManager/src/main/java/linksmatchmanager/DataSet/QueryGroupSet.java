@@ -27,15 +27,15 @@ import java.util.ArrayList;
  */
 public class QueryGroupSet
 {
-    // We use an ArrayList because of its posibilities to add new items
+    // We use an ArrayList because of its possibilities to add new items
 
     private ArrayList< QuerySet > al = new ArrayList< QuerySet >();
 
     /**
      * Use this method to get an individual QuerySet object
      * 
-     * @param index index of the Queryset in the ArrayList
-     * @return Queryset object
+     * @param index index of the QuerySet in the ArrayList
+     * @return QuerySet object
      */
     public QuerySet get( int index ) {
         return al.get( index );

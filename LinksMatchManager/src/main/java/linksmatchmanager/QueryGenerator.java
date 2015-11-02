@@ -31,7 +31,8 @@ import linksmatchmanager.DataSet.InputSet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
- * FL-24-Apr-2015 Latest change
+ * FL-02-Nov-2015 Add maintype to QuerySet
+ * FL-02-Nov-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -220,7 +221,7 @@ public class QueryGenerator
             }
 
             // FL-02-Mar-2015
-            // If 'once' is true, the next while loop is executed only once, and the InputSet will contain just
+            // If 'once' is true, the while loop is executed only once, and the InputSet will contain just
             // one QueryGroupSet. With a given s1_range > 0 from the match_process table, multiple QueryGroupSets
             // will be generated. The variables in those QueryGroupSets will be mostly the same; the difference
             // lies in the values for s1_days, s2_days and s1_range.
@@ -229,7 +230,9 @@ public class QueryGenerator
                 // collect the above variables in a QuerySet object
                 QuerySet qs = new QuerySet();
 
-                // new
+                qs.s1_maintype = s1_maintype;
+                qs.s2_maintype = s2_maintype;
+
                 qs.int_familyname_e = int_familyname_e;
                 qs.int_familyname_m = int_familyname_m;
                 qs.int_familyname_f = int_familyname_f;

@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-30-Mar-2015 Latest change
+ * FL-28-Oct-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -74,7 +74,7 @@ public class ViewSummarizer
             plog.show( msg );
 
             if( args.length < 5 ) {
-                System.out.println( "Invalid argument length, it should be 5 or 6" );
+                System.out.println( "Invalid argument length, it should be 5 or more" );
                 System.out.println( "Usage: java -jar ViewSummarizer.jar <db_url> <db_name> <db_user> <db_pass> <hostname> [<id_match_process>]" );
 
                 return;
@@ -92,6 +92,12 @@ public class ViewSummarizer
         String db_pass    = args[ 3 ];
         String hostname   = args[ 4 ];
 
+        String ids_str = "";
+        for( int i = 5; i < args.length; i++ ) {
+            if( ids_str.length() > 0 ) { ids_str += " "; }
+            ids_str += args[ i ];
+        }
+
         if( debug ) { System.out.println( "Hostname: " + hostname ); }
 
         String template = "LVS-template.html";
@@ -107,19 +113,16 @@ public class ViewSummarizer
             return;
         }
 
-        String id_process = "";
-        if( args.length == 6 ) { id_process = args[ 5 ]; }
-        // without a id_process, we process all entries of match_process that have 'match' set to 'y'
-        int[] ids = getIdProcessList( id_process );
-
+        // without ids_str, we process all entries of match_process that have 'match' set to 'y'
+        int[] ids = getIdProcessList( ids_str );
 
         for( int i = 0; i < ids.length; i++ )
         {
-            id_process = "" + ids[ i ];
+            String id_process = "" + ids[ i ];
             if( debug ) { System.out.println( "id_process: " + id_process ); }
 
             try {
-                plog.show( String.format( "cmd line parameters: %s %s %s %s %s",
+                plog.show( String.format( "parameters: %s %s %s %s %s",
                     db_url, db_name, db_user, db_pass, id_process ) );
             }
             catch( Exception ex ) {
@@ -163,13 +166,17 @@ public class ViewSummarizer
      /**
      *
      */
-    private static int[] getIdProcessList( String id_process )
+    private static int[] getIdProcessList( String ids_str )
     {
-        //System.out.println( "getIdProcessList()" );
+        System.out.println( "getIdProcessList(), sources: " + ids_str );
 
-        if( ! id_process.isEmpty() ) {
-            int[] idsInt = new int[ 1 ];
-            idsInt[ 0 ] = Integer.parseInt( id_process );
+        if( ! ids_str.isEmpty() ) {
+            String[] parts = ids_str.split( " " );
+
+            int[] idsInt = new int[ parts.length ];
+            for( int i = 0 ; i < parts.length; i++ ) {
+                idsInt[ i ] = Integer.parseInt( parts[ i ] );
+            }
             return idsInt;
         }
 
