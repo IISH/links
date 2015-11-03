@@ -208,8 +208,8 @@ public class MatchAsync extends Thread
         ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
         threadMXB.setThreadCpuTimeEnabled( true );
 
-        boolean debugfail = true;       // debug match failures
-        boolean debugfreq = true;
+        boolean debugfail = false;       // debug match failures
+        boolean debugfreq = false;
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy = 0;
@@ -380,7 +380,7 @@ public class MatchAsync extends Thread
 
                 // >> TODO: finish this
                 // improve performance: process from lowest to highest frequency of names
-                check_frequencies( debugfreq, qs, s1_idx );
+                if( debugfreq ) { check_frequencies( qs, s1_idx ); }
 
                 // Get ego names of Set 1
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
@@ -933,7 +933,7 @@ public class MatchAsync extends Thread
      * @param s1_idx
      * @return
      */
-    public void check_frequencies( boolean debug, QuerySet qs, int s1_idx )
+    public void check_frequencies( QuerySet qs, int s1_idx )
     {
         System.out.println( "check_frequencies()" );
 

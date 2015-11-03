@@ -56,7 +56,7 @@ import linksmanager.ManagerGui;
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
  * FL-17-Sep-2015 Bad registration dates: db NULLs
  * FL-30-Oct-2015 minMaxCalculation() function C omission
- * FL-02-Nov-2015 Latest change
+ * FL-03-Nov-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4981,10 +4981,12 @@ public class LinksCleanedThread extends Thread
             addToReportPerson( id_person, "0", 104, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
         }
 
-        if( mmj.getMinYear() > mmj.getMaxYear() )   // 'health' check
-        { showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
-            //error 266 + min & max
-            mmj.setMinYear( mmj.getMaxYear() );
+        if( mmj.getMinYear() > mmj.getMaxYear() )   // min/max consistency check
+        {
+            showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
+            String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " +  mmj.getMaxYear();
+            addToReportPerson( id_person, "0", 266, msg_minmax  );       // error 266 + min & max
+            mmj.setMinYear( mmj.getMaxYear() );                 // min = max
         }
 
         return mmj;
