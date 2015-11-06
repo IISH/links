@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-30-Jul-2015 Latest change
+ * FL-05-Nov-2015 Latest change
  */
 
 public class Main
@@ -85,8 +85,11 @@ public class Main
 
             // Load arguments; check length
             if( args.length != 6 ) {
-                plog.show( "Invalid argument length, it should be 6" );
-                plog.show( "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <debug>" );
+                String msg ="Invalid argument length " + args.length + ", it should be 6";
+                plog.show( msg ); System.out.println( msg );
+
+                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <debug>";
+                plog.show( msg ); System.out.println( msg );
 
                 return;
             }
@@ -151,14 +154,7 @@ public class Main
 
             // The InputSet 'is', is the only accessible object from queryGen
             InputSet inputSet = queryGen.is;
-
             checkInputSet( inputSet );
-            /*
-            if( 1 == 1 ) {
-                System.out.println( "EXIT" );
-                System.exit( 0 );
-            }
-            */
 
             // The inputSet contains an ArrayList< QueryGroupSet >, 1 QueryGroupSet per 'y' record from the match_process table
             int isSize = inputSet.getSize();
@@ -308,16 +304,16 @@ public class Main
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
                 int num_s1_parts = 0;   // the number of parts into which s1 will be split
-                // split s1 if we have have few threads
-                if( isSize * qgs.getSize() > s1_split_limit )
-                {
+                if( isSize * qgs.getSize() > s1_split_limit )       // split s1 if we have have few threads (but not 1 )
+                {  num_s1_parts = 1; }   // do not split s1 into separate pieces
+                else
+                { num_s1_parts = max_threads_simul; }
+
+                if( num_s1_parts == 1 ) {
                     msg = String.format( "sample s1 not split" );
                     System.out.println( msg); plog.show( msg );
-                    num_s1_parts = 1;   // do not split s1 into separate pieces
                 }
-                else
-                {
-                    num_s1_parts = max_threads_simul;
+                else {
                     msg = String.format( "sample s1 split into %d parts", num_s1_parts );
                     System.out.println( msg); plog.show( msg );
                 }

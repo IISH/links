@@ -14,7 +14,9 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-30-Apr-2015 Latest change
+ * FL-05-Nov-2015 Latest change
+ *
+ * TODO It would be better to have a SampleLoader, separate for s1 and s2
  */
 public class QueryLoader
 {
@@ -162,10 +164,13 @@ public class QueryLoader
 
         // get set 1 from links_base
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
+        System.out.println( qs.query1 );
         set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
 
         // get set 2 from links_base
         System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
+        System.out.println( qs.query2 );
+
         set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !
 

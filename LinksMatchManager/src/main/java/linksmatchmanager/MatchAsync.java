@@ -1,13 +1,23 @@
 package linksmatchmanager;
 
+import java.io.PrintStream;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Supplier;
+import com.google.common.collect.Lists;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
 
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameType;
@@ -19,7 +29,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-02-Nov-2015 Latest change
+ * FL-06-Nov-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -209,7 +219,7 @@ public class MatchAsync extends Thread
         threadMXB.setThreadCpuTimeEnabled( true );
 
         boolean debugfail = false;       // debug match failures
-        boolean debugfreq = false;
+        boolean debugfreq = true;       // debug name frequencies
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy = 0;
@@ -314,11 +324,13 @@ public class MatchAsync extends Thread
             {
                 n_recs ++;
 
-                s1_idx_cpy = s1_idx;   // copy for display if exception occurs
+                s1_idx_cpy = s1_idx;   // copy value to display if exception occurs
 
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
+
+                if( n_recs == 7 ) { System.exit( 0 ); }
 
                 /*
                 if( debug ) {
@@ -333,6 +345,7 @@ public class MatchAsync extends Thread
                     plog.show( msg );
                 }
                 */
+                /*
                 if( debug ) {
                     int s1_id_base = ql.s1_id_base.get( s1_idx );
                     if( s1_id_base == 1068414 ) {
@@ -346,6 +359,7 @@ public class MatchAsync extends Thread
                     }
                     else { continue; }
                 }
+                */
 
                 // s1 familynames
                 int s1EgoFamName     = ql.s1_ego_familyname    .get( s1_idx );
@@ -933,60 +947,108 @@ public class MatchAsync extends Thread
      * @param s1_idx
      * @return
      */
-    public void check_frequencies( QuerySet qs, int s1_idx )
+  //public ConcurrentHashMap< String, Integer > check_frequencies( QuerySet qs, int s1_idx )
+  //public ConcurrentSkipListMap check_frequencies( QuerySet qs, int s1_idx )
+    public ListMultimap<Integer, String> check_frequencies( QuerySet qs, int s1_idx )
     {
-        System.out.println( "check_frequencies()" );
+        int s1_id_base = ql.s1_id_base.get( s1_idx );
+        String msg = String.format( "\ncheck_frequencies() s1_idx: %d", s1_idx );
+        msg += String.format( ", id_base : %d", s1_id_base );
 
-        // s1 familynames
-        int s1EgoFamName     = ql.s1_ego_familyname    .get( s1_idx );
-        int s1MotherFamName  = ql.s1_mother_familyname .get( s1_idx );
-        int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
-        int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
+        // the Multimaps.synchronizedListMultimap makes the ListMultimap thread-save,
+        // but what about the used TreeMap, List and ArrayList ?
+        // should they be replaced by concurrent alternatives?
+        ListMultimap< Integer, String > nameFreqMap = Multimaps.synchronizedListMultimap
+        (
+            Multimaps.newListMultimap
+            (
+                new TreeMap< Integer, Collection< String > >(),
+                new Supplier< List< String > >()
+                {
+                    public List< String > get() { return Lists.newArrayList(); }
+                }
+            )
+        );
 
-        // s1 firstnames 1
-        int s1EgoFirName1     = ql.s1_ego_firstname1    .get( s1_idx );
-        int s1MotherFirName1  = ql.s1_mother_firstname1 .get( s1_idx );
-        int s1FatherFirName1  = ql.s1_father_firstname1 .get( s1_idx );
-        int s1PartnerFirName1 = ql.s1_partner_firstname1.get( s1_idx );
-
-        // s1 firstnames 2
-        int s1EgoFirName2     = ql.s1_ego_firstname2    .get( s1_idx );
-        int s1MotherFirName2  = ql.s1_mother_firstname2 .get( s1_idx );
-        int s1FatherFirName2  = ql.s1_father_firstname2 .get( s1_idx );
-        int s1PartnerFirName2 = ql.s1_partner_firstname2.get( s1_idx );
-
-        // s1 firstnames 3
-        int s1EgoFirName3     = ql.s1_ego_firstname3    .get( s1_idx );
-        int s1MotherFirName3  = ql.s1_mother_firstname3 .get( s1_idx );
-        int s1FatherFirName3  = ql.s1_father_firstname3 .get( s1_idx );
-        int s1PartnerFirName3 = ql.s1_partner_firstname3.get( s1_idx );
-
-        // s1 firstnames 4
-        int s1EgoFirName4     = ql.s1_ego_firstname4    .get( s1_idx );
-        int s1MotherFirName4  = ql.s1_mother_firstname4 .get( s1_idx );
-        int s1FatherFirName4  = ql.s1_father_firstname4 .get( s1_idx );
-        int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
-
-
-        int freq_s1EgoFamName     = getFrequency( freq_table_familyname, s1EgoFamName );
-        int freq_s1MotherFamName  = getFrequency( freq_table_familyname, s1MotherFamName );
-        int freq_s1FatherFamName  = getFrequency( freq_table_familyname, s1FatherFamName );
-        int freq_s1PartnerFamName = getFrequency( freq_table_familyname, s1PartnerFamName );
-
-
-        if( debug )
-        {
-            // show only the used familynames
-            String msg = String.format( "s1 Familyname frequencies: Ego: %d", freq_s1EgoFamName );  // Ego always processed
-            if( qs.use_mother  && qs.int_familyname_m > 0 ) { msg += String.format( ", Mother: %d",  freq_s1MotherFamName ); }
-            if( qs.use_father  && qs.int_familyname_f > 0 ) { msg += String.format( ", Father: %d",  freq_s1FatherFamName ); }
-            if( qs.use_partner && qs.int_familyname_p > 0 ) { msg += String.format( ", Partner: %d", freq_s1PartnerFamName ); }
-            System.out.println( msg );
+        // Ego (always used)
+        if( qs.int_familyname_e > 0 ) {
+            int s1EgoFamName = ql.s1_ego_familyname.get( s1_idx );
+            int freq_s1EgoFamName = getFrequency( freq_table_familyname, s1EgoFamName );
+            nameFreqMap.put( freq_s1EgoFamName, "ego_familyname" );
+            msg += String.format( "\nEgoFamName: %d", freq_s1EgoFamName );
         }
-    }
+
+        if( qs.int_firstname_e > 0 ) {
+            int s1EgoFirName1 = ql.s1_ego_firstname1.get( s1_idx );
+            int freq_s1EgoFirName1 = getFrequency( freq_table_firstname, s1EgoFirName1 );
+            nameFreqMap.put( freq_s1EgoFirName1, "ego_firstname" );
+            msg += String.format( "\nEgoFirName1: %d", freq_s1EgoFirName1 );
+        }
+
+        // Mother
+        if( qs.use_mother ) {
+            if( qs.int_familyname_m > 0 ) {
+                int s1MotherFamName = ql.s1_mother_familyname.get( s1_idx );
+                int freq_s1MotherFamName = getFrequency( freq_table_familyname, s1MotherFamName );
+                nameFreqMap.put( freq_s1MotherFamName, "mother_familyname"  );
+                msg += String.format( "\nMotherFamName: %d", freq_s1MotherFamName );
+            }
+
+            if( qs.int_firstname_m > 0 ) {
+                int s1MotherFirName1 = ql.s1_mother_firstname1.get( s1_idx );
+                int freq_s1MotherFirName1 = getFrequency( freq_table_firstname, s1MotherFirName1 );
+                nameFreqMap.put( freq_s1MotherFirName1, "mother_firstname" );
+                msg += String.format( "\nMotherFirName1: %d", freq_s1MotherFirName1 );
+            }
+        }
+
+        // Father
+        if( qs.use_father ) {
+            if( qs.int_familyname_f > 0 ) {
+                int s1FatherFamName = ql.s1_father_familyname.get( s1_idx );
+                int freq_s1FatherFamName = getFrequency( freq_table_familyname, s1FatherFamName );
+                nameFreqMap.put( freq_s1FatherFamName, "father_familyname" );
+                msg += String.format( "\nFatherFamName: %d", freq_s1FatherFamName );
+            }
+
+            if( qs.int_firstname_f > 0 ) {
+                int s1FatherFirName1 = ql.s1_father_firstname1.get( s1_idx );
+                int freq_s1FatherFirName1 = getFrequency( freq_table_firstname, s1FatherFirName1 );
+                nameFreqMap.put( freq_s1FatherFirName1, "father_firstname" );
+                msg += String.format( "\nFatherFirName1: %d", freq_s1FatherFirName1 );
+            }
+        }
+
+        // Partner
+        if( qs.use_partner ) {
+            if( qs.int_familyname_p > 0 ) {
+                int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
+                int freq_s1PartnerFamName = getFrequency( freq_table_familyname, s1PartnerFamName );
+                nameFreqMap.put( freq_s1PartnerFamName, "partner_familyname" );
+                msg += String.format( "\nPartnerFamName: %d", freq_s1PartnerFamName );
+            }
+
+            if( qs.int_firstname_p > 0 ) {
+                int s1PartnerFirName1 = ql.s1_partner_firstname1.get( s1_idx );
+                int freq_s1PartnerFirName1 = getFrequency( freq_table_firstname, s1PartnerFirName1 );
+                nameFreqMap.put( freq_s1PartnerFirName1, "partner_firstname" );
+                msg += String.format( "\nPartnerFirName1: %d", freq_s1PartnerFirName1 );
+            }
+        }
+
+        System.out.println( msg );
+
+        System.out.println( "" );
+        System.out.println( "entries: " + nameFreqMap.size() );
+        System.out.println( "values: " + nameFreqMap.values() );
+        System.out.println( nameFreqMap.toString() );
+
+        return nameFreqMap;
+    } // check_frequencies
 
 
     /**
+     *
      * @param freq_tablename
      * @param id
      * @return
@@ -998,28 +1060,52 @@ public class MatchAsync extends Thread
         try
         {
             String query = "SELECT * FROM links_prematch." + freq_tablename + " WHERE id = " + id + ";";
-            System.out.println( query );
             ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
-            String name = "";
+            while( rs.next() ) { freq = rs.getInt( "frequency" ); }
+        }
+        catch( Exception ex ) {
+            System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+
+        return freq;
+    } //
+
+
+    /**
+     * @param freq_tablename
+     * @param id_name
+     * @param id
+     * @return
+     */
+    public int getFrequencyStr( String freq_tablename, String id_name, int id )
+    {
+        int freq = 0;
+
+        try
+        {
+            String query = "SELECT * FROM links_prematch." + freq_tablename + " WHERE id = " + id + ";";
+            //System.out.println( id_name + ", query: " + query );
+            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+
             while( rs.next() ) {
                 freq = rs.getInt( "frequency" );
-
                 /*
-                name = rs.getString( "name_str" );
+                String name = rs.getString( "name_str" );
                 String msg = String.format( "getFrequency() name: %s, freq: %d", name, freq );
                 System.out.println( msg );
                 */
             }
         }
         catch( Exception ex ) {
-            System.out.println( "Exception getFrequency: " + ex.getMessage() );
-            System.out.println( "Abort" );
-            System.exit( 1 );
+            System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
 
         return freq;
-    }
+    } // getFrequencyStr
 
 
     /**
@@ -1036,7 +1122,7 @@ public class MatchAsync extends Thread
         else { value = "null"; }
 
         return value;
-    }
+    } // intOrNull
 
 
     public String millisec2hms( long millisec_start, long millisec_stop ) {
@@ -1060,7 +1146,7 @@ public class MatchAsync extends Thread
         else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
 
         return hms;
-    }
+    } // millisec2hms
 
 
     /**
