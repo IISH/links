@@ -16,7 +16,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Apr-2015 Free vectors
  * FL-05-Nov-2015 Latest change
  *
- * TODO It would be better to have a SampleLoader, separate for s1 and s2
+ * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
 public class QueryLoader
 {

@@ -10,8 +10,8 @@ import java.sql.ResultSet;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Supplier;
@@ -29,7 +29,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-06-Nov-2015 Latest change
+ * FL-09-Nov-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -278,14 +278,9 @@ public class MatchAsync extends Thread
             msg = String.format( "Thread id %2d, based on s2 query:\n%s", threadId_current, qs.query2 );
             System.out.println( msg ); plog.show( msg );
 
-            // Create new instance of queryloader. Queryloader is used to use the queries to load data into the sets.
-            // Its input is a QuerySet and a database connection object.
-            // do this now in main()
-            //ql = new QueryLoader( threadId, qs, dbconPrematch );
-
             // Previous s1EgoFamilyName, initial is 0. Because the familynames are ordered, the calculation of the potential
             // matches is done once, only the first time.
-            int previous_s1EgoFamilyName = 0;
+            int previous_s1Name = 0;
 
             // variant names for s1 ego familyname from ls_ table, plus lvs distance
             Vector< Integer > lvsVariants  = new Vector< Integer >();
@@ -293,6 +288,7 @@ public class MatchAsync extends Thread
 
             // all occurrences in the s2 set of the above variants
             Vector< Integer > s2_idx_variants_ego       = new Vector< Integer >();
+
             Vector< Integer > s2_idx_firstname_ego_lvs  = new Vector< Integer >();
             Vector< Integer > s2_idx_familyname_ego_lvs = new Vector< Integer >();
 
@@ -332,69 +328,85 @@ public class MatchAsync extends Thread
 
                 if( n_recs == 7 ) { System.exit( 0 ); }
 
-                /*
-                if( debug ) {
-                    //if( s1_idx > s1_offset ) { continue; }                       // DUMMY RUN
-                    //if( s1_idx > (s1_offset + 2) ) { System.exit( 0 ); }         // DUMMY RUN
-                }
-                */
-                /*
-                if( debug ) {
-                    msg = String.format( "\ns1 idx: %d-of-%d", s1_idx + 1, s1_size );
-                    System.out.println( msg );
-                    plog.show( msg );
-                }
-                */
-                /*
-                if( debug ) {
-                    int s1_id_base = ql.s1_id_base.get( s1_idx );
-                    if( s1_id_base == 1068414 ) {
-                        msg = String.format( "\ns1 idx: %d-of-%d", s1_idx + 1, s1_size );
-                        System.out.println( msg );
-                        plog.show( msg );
 
-                        msg = String.format( "FOUND s1_id_base: %d", s1_id_base );
-                        System.out.println( msg );
-                        plog.show( msg );
-                    }
-                    else { continue; }
-                }
-                */
+                int s1EgoFamName  = ql.s1_ego_familyname.get( s1_idx );
+                int s1EgoFirName1 = ql.s1_ego_firstname1.get( s1_idx );
+                int s1EgoFirName2 = ql.s1_ego_firstname2.get( s1_idx );
+                int s1EgoFirName3 = ql.s1_ego_firstname3.get( s1_idx );
+                int s1EgoFirName4 = ql.s1_ego_firstname4.get( s1_idx );
 
-                // s1 familynames
-                int s1EgoFamName     = ql.s1_ego_familyname    .get( s1_idx );
-                int s1MotherFamName  = ql.s1_mother_familyname .get( s1_idx );
-                int s1FatherFamName  = ql.s1_father_familyname .get( s1_idx );
-                int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
+                int s1MotherFamName  = ql.s1_mother_familyname.get( s1_idx );
+                int s1MotherFirName1 = ql.s1_mother_firstname1.get( s1_idx );
+                int s1MotherFirName2 = ql.s1_mother_firstname2.get( s1_idx );
+                int s1MotherFirName3 = ql.s1_mother_firstname3.get( s1_idx );
+                int s1MotherFirName4 = ql.s1_mother_firstname4.get( s1_idx );
 
-                // s1 firstnames 1
-                int s1EgoFirName1     = ql.s1_ego_firstname1    .get( s1_idx );
-                int s1MotherFirName1  = ql.s1_mother_firstname1 .get( s1_idx );
-                int s1FatherFirName1  = ql.s1_father_firstname1 .get( s1_idx );
+                int s1FatherFamName  = ql.s1_father_familyname.get( s1_idx );
+                int s1FatherFirName1 = ql.s1_father_firstname1.get( s1_idx );
+                int s1FatherFirName2 = ql.s1_father_firstname2.get( s1_idx );
+                int s1FatherFirName3 = ql.s1_father_firstname3.get( s1_idx );
+                int s1FatherFirName4 = ql.s1_father_firstname4.get( s1_idx );
+
+                int s1PartnerFamName  = ql.s1_partner_familyname.get( s1_idx );
                 int s1PartnerFirName1 = ql.s1_partner_firstname1.get( s1_idx );
-
-                // s1 firstnames 2
-                int s1EgoFirName2     = ql.s1_ego_firstname2    .get( s1_idx );
-                int s1MotherFirName2  = ql.s1_mother_firstname2 .get( s1_idx );
-                int s1FatherFirName2  = ql.s1_father_firstname2 .get( s1_idx );
                 int s1PartnerFirName2 = ql.s1_partner_firstname2.get( s1_idx );
-
-                // s1 firstnames 3
-                int s1EgoFirName3     = ql.s1_ego_firstname3    .get( s1_idx );
-                int s1MotherFirName3  = ql.s1_mother_firstname3 .get( s1_idx );
-                int s1FatherFirName3  = ql.s1_father_firstname3 .get( s1_idx );
                 int s1PartnerFirName3 = ql.s1_partner_firstname3.get( s1_idx );
-
-                // s1 firstnames 4
-                int s1EgoFirName4     = ql.s1_ego_firstname4    .get( s1_idx );
-                int s1MotherFirName4  = ql.s1_mother_firstname4 .get( s1_idx );
-                int s1FatherFirName4  = ql.s1_father_firstname4 .get( s1_idx );
                 int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
 
-                // >> TODO: finish this
-                // improve performance: process from lowest to highest frequency of names
-                if( debugfreq ) { check_frequencies( qs, s1_idx ); }
+                // get frequencies of used names, process from low to high frequency
+                ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
+
+                System.out.println( "" );
+                System.out.println( "entries: " + nameFreqMap.size() );
+                Collection< String > values = nameFreqMap.values();
+
+                String entries = nameFreqMap.values().toString();
+                System.out.println( entries );
+
+                System.out.println( nameFreqMap.keys() );
+
+                for ( String name : values )    // names in frequency order
+                {
+                    System.out.println( name );
+                    if( name == "ego_familyname" ) {
+                        System.out.println( "ego_familyname..." );
+
+                    }
+                    else if( name == "ego_firstname" ) {
+                        System.out.println( "ego_firstname..." );
+
+                    }
+                    else if( name == "mother_familyname" ) {
+                        System.out.println( "mother_familyname..." );
+
+                    }
+                    else if( name == "mother_firstname" ) {
+                        System.out.println( "mother_firstname..." );
+
+                    }
+                    else if( name == "father_familyname" ) {
+                        System.out.println( "father_familyname..." );
+
+                    }
+                    else if( name == "father_firstname" ) {
+                        System.out.println( "father_firstname..." );
+
+                    }
+                    else if( name == "partner_familyname" ) {
+                        System.out.println( "partner_familyname..." );
+
+                    }
+                    else if( name == "partner_firstname" ) {
+                        System.out.println( "partner_firstname..." );
+
+                    }
+                    else {
+                        System.out.println( "name ??" );
+                        System.exit( 1 );
+                    }
+                }
+
 
                 // Get ego names of Set 1
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
@@ -402,10 +414,14 @@ public class MatchAsync extends Thread
                 if( debug ) { System.out.printf( "s1 ego familyname: %s,  s1 ego firstname1: %s\n", s1EgoFamNameStr, s1EgoFirNameStr ); }
 
 
-                // If the s1 ego familyname changes, create a new variant names list, otherwise go on
-                // to check the other s1 entries with the same ego familyname against this set.
+                // If the s1 name or lvs table changes, create a new variant names list, otherwise go on
+                // to check the other s1 entries with the same name against this set.
 
-                if( s1EgoFamName != previous_s1EgoFamilyName )
+                // we used to start with s1EgoFamName
+                int s1Name = s1EgoFamName;
+                String s1LvsTable = "lvs_table_familyname";
+
+                if( s1EgoFamName != previous_s1Name )
                 {
                     if( debug ) {
                         msg = String.format( "s1EgoFamNameStr: %s", s1EgoFamNameStr );
@@ -413,7 +429,7 @@ public class MatchAsync extends Thread
                         plog.show( msg );
                     }
 
-                    previous_s1EgoFamilyName = s1EgoFamName;        // Set previous name
+                    previous_s1Name = s1EgoFamName;        // Set previous name
 
                     // Get the variants of name s1EgoFamName; these are names (as ints) from the ls_ table
                     lvsVariants .clear();                           // Empty the lists
@@ -423,6 +439,7 @@ public class MatchAsync extends Thread
                     getLvsVariants( s1EgoFamName, lvs_table_familyname, lvs_dist_familyname, lvsVariants, lvsDistances );
 
                     s2_idx_variants_ego      .clear();                  // Empty the lists
+
                     s2_idx_firstname_ego_lvs .clear();
                     s2_idx_familyname_ego_lvs.clear();
 
@@ -944,28 +961,35 @@ public class MatchAsync extends Thread
 
 
     /**
+     *
+     * @param debug
+     * @param qs
      * @param s1_idx
      * @return
      */
-  //public ConcurrentHashMap< String, Integer > check_frequencies( QuerySet qs, int s1_idx )
-  //public ConcurrentSkipListMap check_frequencies( QuerySet qs, int s1_idx )
-    public ListMultimap<Integer, String> check_frequencies( QuerySet qs, int s1_idx )
+    public ListMultimap<Integer, String> check_frequencies( boolean debug, QuerySet qs, int s1_idx )
     {
         int s1_id_base = ql.s1_id_base.get( s1_idx );
-        String msg = String.format( "\ncheck_frequencies() s1_idx: %d", s1_idx );
-        msg += String.format( ", id_base : %d", s1_id_base );
+
+        String msg = "";
+        if( debug ) {
+            msg = String.format( "\ncheck_frequencies() s1_idx: %d", s1_idx );
+            msg += String.format( ", id_base : %d", s1_id_base );
+        }
 
         // the Multimaps.synchronizedListMultimap makes the ListMultimap thread-save,
-        // but what about the used TreeMap, List and ArrayList ?
+        // TreeMap and ArrayList are not thread-save, replace with ConcurrentSkipListMap and CopyOnWriteArrayList
         // should they be replaced by concurrent alternatives?
-        ListMultimap< Integer, String > nameFreqMap = Multimaps.synchronizedListMultimap
+        ListMultimap< Integer, String > nameFreqMap = Multimaps.synchronizedListMultimap    // concurrent wrapper call
         (
             Multimaps.newListMultimap
             (
-                new TreeMap< Integer, Collection< String > >(),
+              //new TreeMap< Integer, Collection< String > >(),                             // not thread-save
+                new ConcurrentSkipListMap< Integer, Collection< String > >(),               // concurrent
                 new Supplier< List< String > >()
                 {
-                    public List< String > get() { return Lists.newArrayList(); }
+                  //public List< String > get() { return Lists.newArrayList(); }            // not thread-save
+                    public List< String > get() { return Lists.newCopyOnWriteArrayList(); } // concurrent
                 }
             )
         );
@@ -975,14 +999,14 @@ public class MatchAsync extends Thread
             int s1EgoFamName = ql.s1_ego_familyname.get( s1_idx );
             int freq_s1EgoFamName = getFrequency( freq_table_familyname, s1EgoFamName );
             nameFreqMap.put( freq_s1EgoFamName, "ego_familyname" );
-            msg += String.format( "\nEgoFamName: %d", freq_s1EgoFamName );
+            if( debug ) { msg += String.format( "\nEgoFamName: %d", freq_s1EgoFamName ); }
         }
 
         if( qs.int_firstname_e > 0 ) {
             int s1EgoFirName1 = ql.s1_ego_firstname1.get( s1_idx );
             int freq_s1EgoFirName1 = getFrequency( freq_table_firstname, s1EgoFirName1 );
             nameFreqMap.put( freq_s1EgoFirName1, "ego_firstname" );
-            msg += String.format( "\nEgoFirName1: %d", freq_s1EgoFirName1 );
+            if( debug ) { msg += String.format( "\nEgoFirName1: %d", freq_s1EgoFirName1 ); }
         }
 
         // Mother
@@ -991,14 +1015,14 @@ public class MatchAsync extends Thread
                 int s1MotherFamName = ql.s1_mother_familyname.get( s1_idx );
                 int freq_s1MotherFamName = getFrequency( freq_table_familyname, s1MotherFamName );
                 nameFreqMap.put( freq_s1MotherFamName, "mother_familyname"  );
-                msg += String.format( "\nMotherFamName: %d", freq_s1MotherFamName );
+                if( debug ) { msg += String.format( "\nMotherFamName: %d", freq_s1MotherFamName ); }
             }
 
             if( qs.int_firstname_m > 0 ) {
                 int s1MotherFirName1 = ql.s1_mother_firstname1.get( s1_idx );
                 int freq_s1MotherFirName1 = getFrequency( freq_table_firstname, s1MotherFirName1 );
                 nameFreqMap.put( freq_s1MotherFirName1, "mother_firstname" );
-                msg += String.format( "\nMotherFirName1: %d", freq_s1MotherFirName1 );
+                if( debug ) { msg += String.format( "\nMotherFirName1: %d", freq_s1MotherFirName1 ); }
             }
         }
 
@@ -1008,14 +1032,14 @@ public class MatchAsync extends Thread
                 int s1FatherFamName = ql.s1_father_familyname.get( s1_idx );
                 int freq_s1FatherFamName = getFrequency( freq_table_familyname, s1FatherFamName );
                 nameFreqMap.put( freq_s1FatherFamName, "father_familyname" );
-                msg += String.format( "\nFatherFamName: %d", freq_s1FatherFamName );
+                if( debug ) { msg += String.format( "\nFatherFamName: %d", freq_s1FatherFamName ); }
             }
 
             if( qs.int_firstname_f > 0 ) {
                 int s1FatherFirName1 = ql.s1_father_firstname1.get( s1_idx );
                 int freq_s1FatherFirName1 = getFrequency( freq_table_firstname, s1FatherFirName1 );
                 nameFreqMap.put( freq_s1FatherFirName1, "father_firstname" );
-                msg += String.format( "\nFatherFirName1: %d", freq_s1FatherFirName1 );
+                if( debug ) { msg += String.format( "\nFatherFirName1: %d", freq_s1FatherFirName1 ); }
             }
         }
 
@@ -1025,23 +1049,18 @@ public class MatchAsync extends Thread
                 int s1PartnerFamName = ql.s1_partner_familyname.get( s1_idx );
                 int freq_s1PartnerFamName = getFrequency( freq_table_familyname, s1PartnerFamName );
                 nameFreqMap.put( freq_s1PartnerFamName, "partner_familyname" );
-                msg += String.format( "\nPartnerFamName: %d", freq_s1PartnerFamName );
+                if( debug ) { msg += String.format( "\nPartnerFamName: %d", freq_s1PartnerFamName ); }
             }
 
             if( qs.int_firstname_p > 0 ) {
                 int s1PartnerFirName1 = ql.s1_partner_firstname1.get( s1_idx );
                 int freq_s1PartnerFirName1 = getFrequency( freq_table_firstname, s1PartnerFirName1 );
                 nameFreqMap.put( freq_s1PartnerFirName1, "partner_firstname" );
-                msg += String.format( "\nPartnerFirName1: %d", freq_s1PartnerFirName1 );
+                if( debug ) { msg += String.format( "\nPartnerFirName1: %d", freq_s1PartnerFirName1 ); }
             }
         }
 
         System.out.println( msg );
-
-        System.out.println( "" );
-        System.out.println( "entries: " + nameFreqMap.size() );
-        System.out.println( "values: " + nameFreqMap.values() );
-        System.out.println( nameFreqMap.toString() );
 
         return nameFreqMap;
     } // check_frequencies
