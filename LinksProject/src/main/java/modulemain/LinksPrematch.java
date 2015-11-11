@@ -3,6 +3,8 @@ package modulemain;
 import java.io.File;
 import java.io.PrintStream;
 
+import java.util.ArrayList;
+
 import java.sql.ResultSet;
 
 import javax.swing.JTextArea;
@@ -12,6 +14,7 @@ import connectors.MySqlConnector;
 import dataset.Options;
 import general.Functions;
 import general.PrintLogger;
+import prematch.Lv;
 
 /**
  * @author Omar Azouguagh
@@ -23,7 +26,7 @@ import general.PrintLogger;
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
- * FL-13-Mar-2015 Latest change
+ * FL-11-Nov-2015 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -120,14 +123,14 @@ public class LinksPrematch extends Thread
         outputLine.setText( "" );
         outputArea.setText( "" );
 
+        long timeStart = System.currentTimeMillis();
+
         showMessage( "LinksPrematch/run()", false, true );
         showMessage( "debug: " + debug, false, true );
 
         showMessage( "db_url: "  + db_url,  false, true );
         showMessage( "db_user: " + db_user, false, true );
         showMessage( "db_pass: " + db_pass, false, true );
-
-        long timeStart = System.currentTimeMillis();
 
         try
         {
@@ -141,15 +144,41 @@ public class LinksPrematch extends Thread
 
             doCreateNewBaseTable( debug, bBaseTable );
 
-            doLevenshtein( debug, bLevenshtein, bExactMatches );        // starts 4 threads
+            //doLevenshtein( debug, bLevenshtein, bExactMatches );        // now here in main
+            String funcname = "doLevenshtein";
 
-            String msg = "Prematching is done";
+            if( !bLevenshtein ) {
+                showMessage( "Skipping " + funcname, false, true );
+                return;
+            }
+
+            if( debug ) { System.out.println( funcname ); }
+
+            // prematch.Lv is a separate thread, so timing should be done there internally
+            showMessage( funcname + ", using 4 threads", false, true );
+
+            //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
+            Lv lv1 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
+            Lv lv2 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
+            Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
+            Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
+
+            lv1.start();
+            lv2.start();
+            lv3.start();
+            lv4.start();
+
+            lv1.join();
+            lv2.join();
+            lv3.join();
+            lv4.join();
+
+            String msg = String.format( "\nPrematching Finished." );
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
             System.out.println( msg );
 
         } catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
 
-        this.stop();
     } // run
 
 
@@ -704,11 +733,12 @@ public class LinksPrematch extends Thread
 
 
     /*---< Levenshtein >------------------------------------------------------*/
-
+    // now in main
     /**
      * @param debug
      * @throws Exception
      */
+    /*
     public void doLevenshtein( boolean debug, boolean go, boolean bExactMatches ) throws Exception
     {
         String funcname = "doLevenshtein";
@@ -724,17 +754,17 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
-        prematch.Lv lv1 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
-        prematch.Lv lv2 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
-        prematch.Lv lv3 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
-        prematch.Lv lv4 = new prematch.Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv1 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv2 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
+        prematch.Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
 
         lv1.start();
         lv2.start();
         lv3.start();
         lv4.start();
     } // doLevenshtein
-
+    */
 
     /**
      *

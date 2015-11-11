@@ -21,7 +21,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-16-Apr-2015 Latest change
+ * FL-11-Nov-2015 Latest change
  */
 public class Lv extends Thread
 {
@@ -83,21 +83,22 @@ public class Lv extends Thread
     public void run()
     {
         long start = System.currentTimeMillis();
+        long threadId = Thread.currentThread().getId();
 
-        String msg = "Levenshtein " + db_table + " done, strict = " + strict;
-        showMessage( msg + "..", false, true );
+        String msg = String.format( "thread (id %d); Levenshtein %s done, strict = %s", threadId, db_table, strict );
+        showMessage( msg, false, true );
 
-        showMessage( "Including exact matches: " + also_exact_matches, false, true );
+        msg = String.format( "thread (id %d); Including exact matches: %s", threadId, also_exact_matches );
+        showMessage( msg, false, true );
 
         String csvname = "LS-" + db_table + "-strict=" + strict + ".csv";
-        showMessage( "Output filename: " + csvname, false, true );
+        msg = String.format( "thread (id %d); Output filename: %s", threadId, csvname );
+        showMessage( msg, false, true );
 
         int nline = 0;
 
         try
         {
-            //String query = "SELECT id, name_str, name_int FROM " + db_name + "." + db_table;
-            // column name_int was always identical to column id
             String query = "SELECT id, name_str FROM " + db_name + "." + db_table;
             if( debug ) { showMessage( query, false, true ); }
 
@@ -112,19 +113,19 @@ public class Lv extends Thread
                 return;
             }
 
-            ArrayList< Integer > id       = new ArrayList< Integer >();
-            ArrayList< String > name_str  = new ArrayList< String >();
-            //ArrayList< Integer > name_int = new ArrayList< Integer >();   // deleted from freq_ table
+            ArrayList< Integer > id      = new ArrayList< Integer >();
+            ArrayList< String > name_str = new ArrayList< String >();
 
             while( rs.next() )
             {
                       id.add( rs.getInt(    "id" ) );
                 name_str.add( rs.getString( "name_str" ) );
-                //name_int.add( rs.getInt(    "name_int" ) );               // deleted from freq_ table
             }
 
             int size = id.size();
-            showMessage( "table " + db_table + " loaded, records: " + size, false, true );
+          //showMessage( "table " + db_table + " loaded, records: " + size, false, true );
+            msg = String.format( "thread (id %d); table %s loaded, records: %d", threadId, db_table, size );
+            showMessage( msg, false, true );
 
             FileWriter csvwriter = new FileWriter( csvname );
 
@@ -142,7 +143,6 @@ public class Lv extends Thread
                 //int id2 = 0;
 
                 String name_str_1 = name_str.get( i );
-                 //int name_int_1 = name_int.get( i );      // name_int deleted from freq_ table
                    int name_int_1 = id.get( i );
 
                 //String name_str_2 = "";
@@ -314,12 +314,14 @@ public class Lv extends Thread
         try { createLsFirstTable( debug, db_conn, db_name, ls_table ); }
         catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
 
-        showMessage( "Removing file " + csvname, false, true );
+        msg = String.format( "thread (id %d); Removing file %s", threadId, csvname );
+        showMessage( msg + "...", false, true );
+
         java.io.File f = new java.io.File( csvname );
         f.delete();
 
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
-        showMessage_nl();
+        //showMessage_nl();
     }
 
 
@@ -374,8 +376,10 @@ public class Lv extends Thread
     private void loadCsvLsToTable( boolean debug, MySqlConnector db_conn, String db_name, String csvname, String db_table )
     throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         long start = System.currentTimeMillis();
-        String msg = "Loading CSV LV data into LV table";
+        String msg = String.format( "thread (id %d); Loading CSV LV data into LV table", threadId );
         showMessage( msg + "...", false, true );
 
         String query = "TRUNCATE TABLE `" + db_name + "`.`" + db_table + "`";
@@ -391,7 +395,6 @@ public class Lv extends Thread
         db_conn.runQuery( query );
 
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
-
     } // loadCsvLsToTable
 
 
@@ -409,6 +412,8 @@ public class Lv extends Thread
     private void createLsFirstTable( boolean debug, MySqlConnector db_conn, String db_name, String ls_table )
     throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         // the _first variants are only created from the normal ls tables, not from the _strict ones.
         if( ls_table.equals( "ls_firstname" ) || ls_table.equals( "ls_familyname" ) )
         {
@@ -416,8 +421,8 @@ public class Lv extends Thread
             String ls_table_first = ls_table + "_first";
 
             long start = System.currentTimeMillis();
-            String msg = "Filling table " + ls_table_first;
-            showMessage( msg + "...", false, true );
+            String msg = String.format( "thread (id %d); Filling table %s", threadId, ls_table_first );
+            showMessage( msg, false, true );
 
             String[] queries =
             {
@@ -440,7 +445,8 @@ public class Lv extends Thread
                 ResultSet rs = db_conn.runQueryWithResult( query );
                 while( rs.next() ) {
                     int count = rs.getInt( "count" );
-                    showMessage( count + " records in " + ls_table_first, false , true);
+                    msg = String.format( "thread (id %d); %d records in %s", threadId, count, ls_table_first );
+                    showMessage( msg, false , true );
                 }
             }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
@@ -448,7 +454,9 @@ public class Lv extends Thread
 
         else
         {
-            showMessage( "createLsFirstTable, deleting Lvs 3 and 4: " + ls_table, false, true );
+            String msg = String.format( "thread (id %d); createLsFirstTable, deleting Lvs 3 and 4:  %s", threadId, ls_table );
+            showMessage(msg, false, true );
+
             String query = "DELETE FROM " + ls_table + " WHERE value = 3 OR value = 4;";
             db_conn.runQuery( query );
         }
