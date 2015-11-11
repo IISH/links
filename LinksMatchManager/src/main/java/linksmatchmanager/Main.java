@@ -65,6 +65,10 @@ public class Main
      */
     public static void main( String[] args )
     {
+        boolean debugrange = false;
+        boolean use_memory_tables = true;
+        if( debugrange ) { use_memory_tables = false; }
+
         int s1_split_limit = 4;
         long mainThreadId = Thread.currentThread().getId();
         ArrayList< MatchAsync > threads = new ArrayList();
@@ -164,10 +168,9 @@ public class Main
                 plog.show( "Nothing to do; Stop." );
             }
 
-            // The first ls_firstname and ls_familyname, they are copied to a MEMORY database table
+            // The first ls_firstname and ls_familyname, are copied to a MEMORY database table
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
-            // otherwise we might have to copy 6 ls_ tables to memory, which easily becomes too much
-            boolean use_memory_tables = true;
+            // otherwise we might have to copy 6 ls_ tables to memory, which might becomes too much
 
             String lvs_table_familyname_use = "";
             String lvs_table_firstname_use  = "";
@@ -376,6 +379,8 @@ public class Main
                         msg = String.format( "range: %d, s1 part: %d-of-%d, offset: %d, s1 piece size: %d",
                             n_qs+1, s1_npart, max_threads_simul, s1_offset, s1_piece );
                         System.out.println( msg ); plog.show( msg );
+
+                        if( debugrange ) { continue; }
 
                         // Wait until process manager gives permission
                         while( !pm.allowProcess() ) {
