@@ -318,7 +318,8 @@ public class LinksCleanedThread extends Thread
                 plog.show( msg ); showMessage( msg, false, true );
 
                 long timeStart = System.currentTimeMillis();
-                msg = "Pre-loading all reference tables...";   // with multithreaded they are not explicitly freed
+                /*
+                msg = "Pre-loading all reference tables...";   // with multit-hreaded they are not explicitly freed
                 plog.show( msg ); showMessage( msg, false, true );
 
                 almmPrepiece     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
@@ -327,15 +328,17 @@ public class LinksCleanedThread extends Thread
                 almmFirstname    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
                 almmFamilyname   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
                 almmLocation     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
-                //almmRegisType    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
+              //almmRegisType    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
                 almmOccupation   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
-                // almmReport  : see above, also loaded for single-threaded
+              // almmReport  : see above, also loaded for single-threaded
                 almmRole         = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
                 almmCivilstatus  = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
                 almmSex          = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
                 almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
                 almmLitAge       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
+
                 elapsedShowMessage( "Pre-loading all reference tables", timeStart, System.currentTimeMillis() );
+                */
 
                 ArrayList< CleaningThread > threads = new ArrayList();
 
