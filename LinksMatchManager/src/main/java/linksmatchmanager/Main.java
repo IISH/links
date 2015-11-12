@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-05-Nov-2015 Latest change
+ * FL-12-Nov-2015 Latest change
  */
 
 public class Main
@@ -66,7 +66,10 @@ public class Main
     public static void main( String[] args )
     {
         boolean debugrange = false;
+
         boolean use_memory_tables = true;
+        String name_postfix = "_mem";
+
         if( debugrange ) { use_memory_tables = false; }
 
         int s1_split_limit = 4;
@@ -224,9 +227,7 @@ public class Main
                 //System.out.println( "lvs familyname distance: " + lvs_dist_familyname );
                 //System.out.println( "lvs firstname  distance: " + lvs_dist_firstname );
 
-                // Create memory tables to with copies of the normal tables
-                String name_postfix = "_mem";
-
+                // Create memory tables as copies of the normal tables
                 // create ls_memory tables
                 memtables_ls_create( lvs_table_firstname, lvs_table_familyname, name_postfix );
                 // create freq__memory tables
@@ -415,12 +416,16 @@ public class Main
             // join the threads: main thread must wait for children to finish
             for( MatchAsync ma : threads ) { ma.join(); }
 
-            // the tables should only be dropped after all threads have finished.
-            //memtables_drop( table_firstname_src, table_familyname_src, name_postfix );
-
-
             msg = String.format( "Main thread (id %d); Matching Finished.", mainThreadId );
             System.out.println( msg ); plog.show( msg );
+
+            // the memory tables should only be dropped after all threads have finished.
+            if( use_memory_tables ) {
+                memtables_drop( lvs_table_familyname,  lvs_table_firstname,  name_postfix );
+                memtables_drop( freq_table_familyname, freq_table_firstname, name_postfix );
+            }
+            else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
+
         } // try
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
     } // main
@@ -561,6 +566,34 @@ public class Main
     } // memtables_freq_create
 
 
+    private static void memtables_drop( String table_firstname_src, String table_familyname_src, String name_postfix )
+    {
+        try
+        {
+            String msg = "memtables_drop" ;
+            System.out.println( msg ); plog.show( msg );
+
+            if( name_postfix.isEmpty()  ) {
+                msg = "memtables_drop(): empty name_postfix";
+                System.out.println( msg ); plog.show( msg );
+                return;
+            }
+
+            // without backticks
+            String table_firstname_dst  = table_firstname_src  + name_postfix;
+            String table_familyname_dst = table_familyname_src + name_postfix;
+
+            if( memtable_ls_exists( table_firstname_dst ) )  { memtable_drop( table_firstname_dst ); }
+            if( memtable_ls_exists( table_familyname_dst ) ) { memtable_drop( table_familyname_dst ); }
+        }
+        catch( Exception ex ) {
+            String err = "Exception in memtables__drop(): " + ex.getMessage();
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+    } //memtables_drop
+
+
     private static void memtable_drop( String table_name )
     {
         try {
@@ -595,7 +628,7 @@ public class Main
             }
         }
         catch( Exception ex ) {
-        String err = "Exception in memtables_drop_family(): " + ex.getMessage();
+            String err = "Exception in emtable_ls_exists(): " + ex.getMessage();
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
@@ -606,7 +639,7 @@ public class Main
 
     private static void memtable_freq_name( String src_table, String dst_table )
     {
-            if( memtable_ls_exists( dst_table ) ) {
+        if( memtable_ls_exists( dst_table ) ) {
             String msg = "memtable_freq_name() deleting previous " + dst_table;
             System.out.println( msg );
             try { plog.show( msg ); } catch( Exception ex ) { ; }

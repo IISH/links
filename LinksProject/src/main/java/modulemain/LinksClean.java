@@ -23,7 +23,7 @@ import linksmanager.ManagerGui;
  * FL-24-Nov-2014 Created
  * FL-07-May-2015
  */
-public class LinksCleaned extends Thread
+public class LinksClean extends Thread
 {
     private Options opts;
     private PrintLogger plog;
@@ -55,7 +55,7 @@ public class LinksCleaned extends Thread
      * @param opts
      * @param mg
      */
-    public LinksCleaned
+    public LinksClean
     (
             Options opts,
             JTextField outputLine,
@@ -83,7 +83,7 @@ public class LinksCleaned extends Thread
         this.mg = mg;
 
         String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-        System.out.println( timestamp + "  LinksCleaned()" );
+        System.out.println( timestamp + "  LinksClean()" );
 
         System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
         System.out.println( "mysql_hsnref_username:\t" + ref_user );
@@ -100,7 +100,7 @@ public class LinksCleaned extends Thread
     {
         try {
             plog.show( "Links Data Manager 2.0" );
-            plog.show( "LinksCleaned/run()" );
+            plog.show( "LinksClean/run()" );
             int ncores = Runtime.getRuntime().availableProcessors();
             plog.show( "Available cores: " + ncores );
             plog.show( "sourceIds from GUI: " + sourceIdsGui );
@@ -113,7 +113,7 @@ public class LinksCleaned extends Thread
         int[] sourceListAvail = getOrigSourceIds();               // get source ids from links_original.registration_o
         sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
-        String s = "LinksCleaned: Available source Ids: ";
+        String s = "LinksClean: Available source Ids: ";
         for( int i : sourceListAvail ) { s = s + i + " "; }
         showMessage( s, false, true );
 

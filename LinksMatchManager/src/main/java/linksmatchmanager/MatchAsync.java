@@ -326,9 +326,6 @@ public class MatchAsync extends Thread
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
-                if( n_recs == 7 ) { System.exit( 0 ); }
-
-
                 int s1EgoFamName  = ql.s1_ego_familyname.get( s1_idx );
                 int s1EgoFirName1 = ql.s1_ego_firstname1.get( s1_idx );
                 int s1EgoFirName2 = ql.s1_ego_firstname2.get( s1_idx );
@@ -353,6 +350,8 @@ public class MatchAsync extends Thread
                 int s1PartnerFirName3 = ql.s1_partner_firstname3.get( s1_idx );
                 int s1PartnerFirName4 = ql.s1_partner_firstname4.get( s1_idx );
 
+                /*
+                //if( n_recs == 7 ) { System.exit( 0 ); }
 
                 // get frequencies of used names, process from low to high frequency
                 ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
@@ -406,7 +405,7 @@ public class MatchAsync extends Thread
                         System.exit( 1 );
                     }
                 }
-
+                */
 
                 // Get ego names of Set 1
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
