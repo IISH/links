@@ -2,8 +2,6 @@ package modulemain;
 
 import java.io.PrintStream;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
@@ -117,7 +115,7 @@ public class LinksClean extends Thread
         for( int i : sourceListAvail ) { s = s + i + " "; }
         showMessage( s, false, true );
 
-        LinksCleanedThread linksCleanedThread = new LinksCleanedThread(
+        LinksCleanThread linksCleanedThread = new LinksCleanThread(
              opts,
              outputLine,
              outputArea,

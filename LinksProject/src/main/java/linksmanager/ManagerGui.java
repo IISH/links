@@ -16,7 +16,6 @@ import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -42,9 +41,6 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.jgoodies.forms.factories.*;
-import com.jgoodies.forms.layout.*;
-
 //import org.apache.logging.log4j.LogManager;
 //import org.apache.logging.log4j.Logger;
 //import org.apache.logging.log4j.status.StatusLogger;
@@ -56,8 +52,6 @@ import org.w3c.dom.Element;
 import connectors.CsvConnector;
 import dataset.Options;
 import enumdefinitions.IndexType;
-
-import modulemain.LinksCleanedThread;
 
 import general.Functions;
 import general.PrintLogger;
@@ -71,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-03-Nov-2015 Latest change
+ * FL-12-Nov-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2875,7 +2869,7 @@ public class ManagerGui extends javax.swing.JFrame
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
 
-        LinksCleaned linksCleaned = new LinksCleaned( opts, tbLOLClatestOutput, taLOLCoutput, this );
+        LinksClean linksCleaned = new LinksClean( opts, tbLOLClatestOutput, taLOLCoutput, this );
 
         linksCleaned.start();
     }//GEN-LAST:event_btnStartProcessClean
@@ -2998,7 +2992,7 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "03-Nov-2015 09:33";
+                String timestamp1 = "12-Nov-2015 11:07";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {
