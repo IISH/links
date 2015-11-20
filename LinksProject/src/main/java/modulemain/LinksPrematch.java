@@ -26,7 +26,7 @@ import prematch.Lv;
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
- * FL-11-Nov-2015 Latest change
+ * FL-20-Nov-2015 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -147,31 +147,30 @@ public class LinksPrematch extends Thread
             //doLevenshtein( debug, bLevenshtein, bExactMatches );        // now here in main
             String funcname = "doLevenshtein";
 
-            if( !bLevenshtein ) {
-                showMessage( "Skipping " + funcname, false, true );
-                return;
+            if( ! bLevenshtein ) { showMessage( "Skipping " + funcname, false, true ); }
+            else
+            {
+                if( debug ) { System.out.println( funcname ); }
+
+                // prematch.Lv is a separate thread, so timing should be done there internally
+                showMessage( funcname + ", using 4 threads", false, true );
+
+                //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
+                Lv lv1 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
+                Lv lv2 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
+                Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
+                Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
+
+                lv1.start();
+                lv2.start();
+                lv3.start();
+                lv4.start();
+
+                lv1.join();
+                lv2.join();
+                lv3.join();
+                lv4.join();
             }
-
-            if( debug ) { System.out.println( funcname ); }
-
-            // prematch.Lv is a separate thread, so timing should be done there internally
-            showMessage( funcname + ", using 4 threads", false, true );
-
-            //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
-            Lv lv1 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
-            Lv lv2 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
-            Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
-            Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
-
-            lv1.start();
-            lv2.start();
-            lv3.start();
-            lv4.start();
-
-            lv1.join();
-            lv2.join();
-            lv3.join();
-            lv4.join();
 
             String msg = String.format( "\nPrematching Finished." );
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );

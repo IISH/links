@@ -21,7 +21,7 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-26-May-2015 Latest change
+ * FL-19-Nov-2015 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -376,8 +376,8 @@ public class TableToArrayListMultimap
             // does key already exist?
             if( contains( key ) ) {
                 nskipped++;
-                System.out.println( String.format( "TableToArrayListMultimap/store: in ref table: %s, id: %s, key already exists: %s (but case may be different)",
-                tableName, id, key ) );
+                //System.out.println( String.format( "TableToArrayListMultimap/store: in ref table: %s, id: %s, key already exists: %s (but case may be different)",
+                //tableName, id, key ) );
             }
             else { for( String value : values ) { oldMap.put ( key, value ); } }
 

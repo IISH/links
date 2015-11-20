@@ -56,7 +56,8 @@ import linksmanager.ManagerGui;
  * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
  * FL-17-Sep-2015 Bad registration dates: db NULLs
  * FL-30-Oct-2015 minMaxCalculation() function C omission
- * FL-12-Nov-2015 Latest change
+ * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
+ * FL-20-Nov-2015 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3552,7 +3553,7 @@ public class LinksCleanThread extends Thread
 
 
 
-        /**
+     /**
      * @param source
      */
     public void standardAgeLiteral( boolean debug, String source )
@@ -3767,13 +3768,24 @@ public class LinksCleanThread extends Thread
 
                 boolean update = false;
 
-                if( ( age_year >= 0 ) && ( age_year < 115 ) ) { update = true; }
-                else { addToReportPerson( id_person, source, 244, age_year + "" ); }
+                if( ( age_year >= 0 ) && ( age_year < 115 ) )
+                { update = true; }
+                else
+                {
+                    addToReportPerson( id_person, source, 244, age_year + "" );
+                    System.out.println( "standardAge: " + age_year );
+
+                    String updateQuery = "UPDATE links_cleaned.person_c SET age_year = null"
+                        + " WHERE id_person = " + id_person + " AND id_source = " + source;
+
+                    if( debug ) { showMessage( updateQuery, false, true ); }
+                    dbconCleaned.runQuery( updateQuery );
+                }
 
                 if( ( age_month >= 0 ) && ( age_month < 50 ) ) { update = true; }
                 else { addToReportPerson( id_person, source, 243, age_month + "" ); }
 
-                if( ( age_week >= 0 ) && ( age_week < 50 ) ) { update = true; }
+                if( ( age_week >= 0 ) && ( age_week < 53 ) ) { update = true; }
                 else { addToReportPerson( id_person, source, 242, age_week + "" ); }
 
                 if( ( age_day >= 0 ) && ( age_day < 100 ) ) { update = true; }
@@ -5023,6 +5035,8 @@ public class LinksCleanThread extends Thread
             showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
             String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " +  mmj.getMaxYear();
             addToReportPerson( id_person, "0", 266, msg_minmax  );       // error 266 + min & max
+
+            // KM: day & month both from registration date, so with min_year = max_year date are equal
             mmj.setMinYear( mmj.getMaxYear() );                 // min = max
         }
 
@@ -6257,12 +6271,12 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%' AND birth_date_min NOT LIKE '%-0%'";
-        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%' AND birth_date_max NOT LIKE '%-0%'";
-        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%' AND mar_date_min   NOT LIKE '%-0%'";
-        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%' AND mar_date_max   NOT LIKE '%-0%'";
-        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%' AND death_date_min NOT LIKE '%-0%'";
-        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%' AND death_date_max NOT LIKE '%-0%'";
+        String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%' AND birth_date_min NOT LIKE '%-0' ";
+        String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%' AND birth_date_max NOT LIKE '%-0' ";
+        String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%' AND mar_date_min   NOT LIKE '%-0' ";
+        String queryP4 = "UPDATE IGNORE person_c SET mar_max_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_max,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_max   IS NOT NULL AND mar_date_max   NOT LIKE '0-%' AND mar_date_max   NOT LIKE '%-0-%' AND mar_date_max   NOT LIKE '%-0' ";
+        String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%' AND death_date_min NOT LIKE '%-0' ";
+        String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%' AND death_date_max NOT LIKE '%-0' ";
 
         queryP1 += "AND id_source = " + source;
         queryP2 += "AND id_source = " + source;
@@ -6279,7 +6293,7 @@ public class LinksCleanThread extends Thread
             + "WHERE registration_date IS NOT NULL "
             + "AND registration_date NOT LIKE '0-%' "
             + "AND registration_date NOT LIKE '%-0-%' "
-            + "AND registration_date NOT LIKE '%-0%' "
+            + "AND registration_date NOT LIKE '%-0' "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
 

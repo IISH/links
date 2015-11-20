@@ -65,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-12-Nov-2015 Latest change
+ * FL-20-Nov-2015 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2992,13 +2992,17 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "12-Nov-2015 11:07";
+                String timestamp1 = "20-Nov-2015 11:15";
                 String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
                 try {
                     plog.show( "Links Data Manager 2.0 timestamp: " + timestamp1 );
                     plog.show( "Start at: " + timestamp2 );
                     plog.show( "ManagerGui/main/run()" );
+
+                    String version = System.getProperty( "java.version" );
+                    plog.show( "Java version: " + version );
+                    System.out.println( "Java version: " + version );
                 }
                 catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
