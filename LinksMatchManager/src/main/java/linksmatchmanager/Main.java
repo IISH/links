@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-12-Nov-2015 Latest change
+ * FL-17-Nov-2015 Latest change
  */
 
 public class Main
@@ -81,10 +81,14 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "16-Mar-2015 11:17";
+            String timestamp1 = "16-Nov-2015 09:27";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
+
+            String version = System.getProperty( "java.version" );
+            plog.show( "Java version: " + version );
+            System.out.println( "Java version: " + version );
 
             //String dbg = String.format( "Main thread (id %d); Matching EXIT." );
             //System.out.println( dbg ); plog.show( dbg );
@@ -570,7 +574,7 @@ public class Main
     {
         try
         {
-            String msg = "memtables_drop" ;
+            String msg = "memtables_drop()" ;
             System.out.println( msg ); plog.show( msg );
 
             if( name_postfix.isEmpty()  ) {
@@ -634,7 +638,7 @@ public class Main
         }
 
         return exists;
-    }
+    } // memtable_ls_exists
 
 
     private static void memtable_freq_name( String src_table, String dst_table )

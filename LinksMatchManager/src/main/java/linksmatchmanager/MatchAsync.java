@@ -326,6 +326,12 @@ public class MatchAsync extends Thread
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
                 //{ System.out.println( "Thread id " + threadId + "; records processed: " + s1_idx + ", matches found: " + n_match ); }
 
+
+                //int id_base1 = ql.s1_id_base.get( s1_idx );
+                //if( id_base1 == 2372864 ) { System.out.println( "found: id_base1" + id_base1 ); }
+                //else { continue; }
+
+
                 int s1EgoFamName  = ql.s1_ego_familyname.get( s1_idx );
                 int s1EgoFirName1 = ql.s1_ego_firstname1.get( s1_idx );
                 int s1EgoFirName2 = ql.s1_ego_firstname2.get( s1_idx );
