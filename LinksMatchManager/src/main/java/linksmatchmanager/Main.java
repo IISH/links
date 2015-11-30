@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-17-Nov-2015 Latest change
+ * FL-30-Nov-2015 Latest change
  */
 
 public class Main
@@ -429,6 +429,10 @@ public class Main
                 memtables_drop( freq_table_familyname, freq_table_firstname, name_postfix );
             }
             else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
+
+            String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+            plog.show( "Matching started at: " + timestamp2 );
+            plog.show( "Matching stopped at: " + timestamp3 );
 
         } // try
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
