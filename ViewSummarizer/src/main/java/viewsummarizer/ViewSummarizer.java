@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-28-Oct-2015 Latest change
+ * FL-30-Nov-2015 Latest change
  */
 public class ViewSummarizer
 {
@@ -611,12 +611,45 @@ public class ViewSummarizer
         System.out.printf( "use_minmax: .............. %s\n", use_minmax );
         */
 
-        if( s1_source.isEmpty() ) { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE registration_maintype = " + s1_maintype; }
-        else { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s1_source + " AND registration_maintype = " + s1_maintype; }
+        if( s1_source.isEmpty() )
+        { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE registration_maintype = " + s1_maintype;  }
+        else
+        {
+            query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE ";
+            if( s1_source.contains( "," ) )
+            {
+                String s1_source_where = "(";
+                for( String s : s1_source.split( "," ) ) {
+                    s1_source_where += "OR id_source = " + s + " ";
+                }
+                s1_source_where = s1_source_where.replaceFirst( "OR", "" );     // remove first OR
+                s1_source_where += ") ";
+                query += s1_source_where;
+            }
+            else { query += "id_source = " + s1_source + " "; }
+
+            query += "AND registration_maintype = " + s1_maintype;
+        }
         s1_potential = executeQuery( "s1_potential", query );
 
         if( s2_source.isEmpty() ) { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE registration_maintype = " + s2_maintype; }
-        else { query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE id_source = " + s2_source + " AND registration_maintype = " + s2_maintype; }
+        else
+        {
+            query = "SELECT COUNT(*) FROM links_cleaned.registration_c WHERE ";
+            if( s2_source.contains( "," ) )
+            {
+                String s2_source_where = "(";
+                for( String s : s2_source.split( "," ) ) {
+                    s2_source_where += "OR id_source = " + s + " ";
+                }
+                s2_source_where = s2_source_where.replaceFirst( "OR", "" );     // remove first OR
+                s2_source_where += ") ";
+                query += s2_source_where;
+            }
+            else { query += "id_source = " + s2_source + " "; }
+
+            query += "AND registration_maintype = " + s2_maintype;
+        }
         s2_potential = executeQuery( "s2_potential", query );
 
 
