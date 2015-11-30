@@ -32,7 +32,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-02-Nov-2015 Latest change
+ * FL-30-Nov-2015 Latest change
  */
 public class QueryGenerator
 {
@@ -409,7 +409,7 @@ public class QueryGenerator
                     qs.query2 += s2_role_ego_where + " AND ";
                 }
 
-                // Main type
+                // registration_maintype
                 if( s1_maintype != 0 ) {
                     qs.query1 += "registration_maintype = " + s1_maintype + " AND ";
                 }
@@ -417,28 +417,27 @@ public class QueryGenerator
                     qs.query2 += "registration_maintype = " + s2_maintype + " AND ";
                 }
 
-                // Type
-                if( !s1_type.isEmpty() ) {
+                // type
+                if( ! s1_type.isEmpty() ) {
                     qs.query1 += "registration_type = '" + s1_type + "' AND ";
                 }
-                if( !s2_type.isEmpty() ) {
+                if( ! s2_type.isEmpty() ) {
                     qs.query2 += "registration_type = '" + s2_type + "' AND ";
                 }
 
-                // ID source
-                if( !s1_source.isEmpty() && !s1_source.equals( "0" ) )
+                // s1 id_source
+                if( ! s1_source.isEmpty() && ! s1_source.equals( "0" ) )
                 {
-                    // where string 
-                    String s1_source_where = "";
+                    String s1_source_where = "";    // where string
 
-                    if( s1_source.contains( "," ) ) {
+                    if( s1_source.contains( "," ) )
+                    {
                         s1_source_where = "(";
                         for( String s : s1_source.split( "," ) ) {
                             s1_source_where += "OR id_source = " + s + " ";
                         }
 
-                        // replace first OR
-                        s1_source_where = s1_source_where.replaceFirst( "OR", "" );
+                        s1_source_where = s1_source_where.replaceFirst( "OR", "" ); // remove first OR
 
                         s1_source_where += ") ";
                     }
@@ -447,13 +446,13 @@ public class QueryGenerator
                     qs.query1 += s1_source_where + " AND ";
                 }
 
-                // ID source
-                if( !s2_source.isEmpty() && !s2_source.equals( "0" ) )
+                // s2 id_source
+                if( ! s2_source.isEmpty() && ! s2_source.equals( "0" ) )
                 {
-                    // where string 
-                    String s2_source_where = "";
+                    String s2_source_where = "";          // where string
 
-                    if( s2_source.contains( "," ) ) {
+                    if( s2_source.contains( "," ) )
+                    {
 
                         s2_source_where = "(";
 
@@ -461,8 +460,7 @@ public class QueryGenerator
                             s2_source_where += "OR id_source = " + s + " ";
                         }
 
-                        // replace first OR
-                        s2_source_where = s2_source_where.replaceFirst( "OR", "" );
+                        s2_source_where = s2_source_where.replaceFirst( "OR", "" ); // replace first OR
 
                         s2_source_where += ") ";
                     }
