@@ -35,7 +35,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-30-Nov-2015 Latest change
+ * FL-15-Jan-2015 Each thread its own db connectors
+ * FL-15-Jan-2015 Latest change
  */
 
 public class Main
@@ -81,7 +82,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "16-Nov-2015 09:27";
+            String timestamp1 = "15-Jan-2016 14:26";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -141,7 +142,7 @@ public class Main
             msg = String.format( "Currently active threads: %d", nthreads_active );
             System.out.println( msg ); plog.show( msg );
 
-            /* Create database connections*/
+            // Create database connections
             dbconMatch    = General.getConnection( url, "links_match", user, pass );
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
             dbconTemp     = General.getConnection( url, "links_temp", user, pass );
@@ -399,12 +400,16 @@ public class Main
 
                         if( qgs.get( n_qs ).method == 1 )
                         {
-                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                          //ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                          //    lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, rootFirstName, rootFamilyName, true );
+                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, url, user, pass,
                                 lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, rootFirstName, rootFamilyName, true );
                         }
                         else          // method == 0
                         {
-                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                          //ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, dbconPrematch, dbconMatch, dbconTemp,
+                          //    lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, variantFirstName, variantFamilyName );
+                            ma = new MatchAsync( debug, free_vecs, pm, n_mp, n_qs, ql, plog, qgs, inputSet, s1_offset, s1_piece, url, user, pass,
                                 lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use, variantFirstName, variantFamilyName );
                         }
 
@@ -430,9 +435,13 @@ public class Main
             }
             else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
 
+            dbconPrematch.close();
+            dbconMatch.close();
+            dbconTemp.close();
+
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
-            plog.show( "Matching started at: " + timestamp2 );
-            plog.show( "Matching stopped at: " + timestamp3 );
+            plog.show( "Matching was started at: " + timestamp2 );
+            plog.show( "Matching now stopped at: " + timestamp3 );
 
         } // try
         catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
@@ -478,7 +487,7 @@ public class Main
                 System.out.println( msg );
             }
         }
-    }
+    } // heckInputSet
 
 
     /**
@@ -489,7 +498,7 @@ public class Main
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat( format );
         return sdf.format(cal.getTime());
-    }
+    } // getTimeStamp2
 
 
     public static String millisec2hms( long millisec_start, long millisec_stop ) {
@@ -513,7 +522,7 @@ public class Main
         else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
 
         return hms;
-    }
+    } // millisec2hms
 
 
     /**

@@ -29,7 +29,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-09-Nov-2015 Latest change
+ * FL-15-Jan-2015 Each thread its own db connectors
+ * FL-15-Jan-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -57,7 +58,10 @@ public class MatchAsync extends Thread
 
     Connection dbconPrematch;
     Connection dbconMatch;
-    Connection dbconTemp;
+
+    String url;
+    String user;
+    String pass;
 
     String lvs_table_firstname;
     String lvs_table_familyname;
@@ -67,13 +71,14 @@ public class MatchAsync extends Thread
 
     int[][] variantFirstName;
     int[][] variantFamilyName;
+
     int[][] rootFirstName;
     int[][] rootFamilyName;
 
     boolean isUseRoot = false;      // false for variant
 
 
-    public MatchAsync
+    public MatchAsync       // for variant names
     (
         boolean debug,
         boolean free_vecs,
@@ -92,9 +97,11 @@ public class MatchAsync extends Thread
         int s1_offset,
         int s1_piece,
 
-        Connection dbconPrematch,
-        Connection dbconMatch,
-        Connection dbconTemp,
+        //Connection dbconPrematch,
+        //Connection dbconMatch,
+        String url,
+        String user,
+        String pass,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -123,9 +130,12 @@ public class MatchAsync extends Thread
         this.s1_offset = s1_offset;
         this.s1_piece  = s1_piece;
 
-        this.dbconPrematch = dbconPrematch;
-        this.dbconMatch    = dbconMatch;
-        this.dbconTemp     = dbconTemp;
+        //this.dbconPrematch = dbconPrematch;
+        //this.dbconMatch    = dbconMatch;
+        //this.dbconTemp     = dbconTemp;
+        this.url  = url;
+        this.user = user;
+        this.pass = pass;
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -140,7 +150,7 @@ public class MatchAsync extends Thread
     }
 
 
-    public MatchAsync   // variant has no root parameter
+    public MatchAsync       // for root names
     (
         boolean debug,
         boolean free_vecs,
@@ -159,9 +169,11 @@ public class MatchAsync extends Thread
         int s1_offset,
         int s1_piece,
 
-        Connection dbconPrematch,
-        Connection dbconMatch,
-        Connection dbconTemp,
+        //Connection dbconPrematch,
+        //Connection dbconMatch,
+        String url,
+        String user,
+        String pass,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -192,9 +204,11 @@ public class MatchAsync extends Thread
         this.s1_offset = s1_offset;
         this.s1_piece = s1_piece;
 
-        this.dbconPrematch = dbconPrematch;
-        this.dbconMatch    = dbconMatch;
-        this.dbconTemp     = dbconTemp;
+        //this.dbconPrematch = dbconPrematch;
+        //this.dbconMatch    = dbconMatch;
+        this.url  = url;
+        this.user = user;
+        this.pass = pass;
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -256,6 +270,10 @@ public class MatchAsync extends Thread
 
             msg = String.format( "Thread id %2d; Range %d of %d", threadId, (n_qs + 1), qgs.getSize() );
             System.out.println( msg ); plog.show( msg );
+
+            // Create database connections
+            dbconMatch    = General.getConnection( url, "links_match",    user, pass );
+            dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
 
             // Get a QuerySet object. This object will contains the data from a match_process table record
             QuerySet qs = qgs.get( n_qs );
@@ -939,6 +957,9 @@ public class MatchAsync extends Thread
                 ql = null;
                 qs = null;
             }
+
+            dbconPrematch.close();
+            dbconMatch.close();
 
             msg = String.format( "Thread id %2d; clock time", threadId );
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
