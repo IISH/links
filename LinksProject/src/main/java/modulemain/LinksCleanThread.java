@@ -57,7 +57,7 @@ import linksmanager.ManagerGui;
  * FL-17-Sep-2015 Bad registration dates: db NULLs
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
- * FL-20-Nov-2015 Latest change
+ * FL-19-Jan-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4090,8 +4090,7 @@ public class LinksCleanThread extends Thread
 
         long ts = System.currentTimeMillis();
         String msg = "";
-        showMessage( "SKIPPING until minMaxDateMain", false, true );
-        /*
+
         msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
@@ -4114,7 +4113,6 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
-
         // Fill empty dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Flagging empty dates (-> Reg dates) for source: %s...", threadId, source );
@@ -4131,7 +4129,7 @@ public class LinksCleanThread extends Thread
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %2d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Processing minMaxDateMain for source: %s...", threadId, source );
         showMessage( msg, false, true );
@@ -6254,14 +6252,6 @@ public class LinksCleanThread extends Thread
 
     private void daysSinceBegin( boolean debug, String source )
     {
-        // no occurrences found in the min/max dates
-        //String qP1 = "UPDATE links_cleaned.person_c SET birth_date_min = NULL WHERE birth_date_min = '00-00-0000' AND id_source = " + source;
-        //String qP1 = "UPDATE links_cleaned.person_c SET birth_date_max = NULL WHERE birth_date_max = '00-00-0000' AND id_source = " + source;
-        //String qP1 = "UPDATE links_cleaned.person_c SET mar_date_min   = NULL WHERE mar_date_min   = '00-00-0000' AND id_source = " + source;
-        //String qP1 = "UPDATE links_cleaned.person_c SET mar_date_max   = NULL WHERE mar_date_max   = '00-00-0000' AND id_source = " + source;
-        //String qP1 = "UPDATE links_cleaned.person_c SET death_date_min = NULL WHERE death_date_min = '00-00-0000' AND id_source = " + source;
-        //String qP1 = "UPDATE links_cleaned.person_c SET death_date_max = NULL WHERE death_date_max = '00-00-0000' AND id_source = " + source;
-
         String qRclean  = "UPDATE links_cleaned.registration_c SET registration_date = NULL WHERE registration_date = '00-00-0000' AND id_source = " + source;
         if( debug ) { showMessage( qRclean, false, true ); }
         else { showMessage( "reg dates '00-00-0000' -> NULL", false, true ); }
