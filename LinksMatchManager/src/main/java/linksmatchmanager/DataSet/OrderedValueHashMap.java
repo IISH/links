@@ -10,11 +10,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Fons Laan
  *
- * FL-05-Nov-2015
+ * FL-05-Nov-2015 Created
+ * FL-20-Jan-2016 keySet function not finished
  *
  * Needed Map to store name frequensies: -> HashMap
  * But must be thread save: -> ConcurrentHashMap
  * And want to sort by values (not keys, so not a ConcurrentSkipListMap): -> this OrderedValueHashMap
+ *
  * See: http://stackoverflow.com/questions/10592002/sorting-a-concurrent-hash-map-by-value
  * The above solution is not optimal if you are calling the methods keySet/entrySet very often as it
  * sorts entries on each call. You may want to cache these results to avoid re-computation while the
@@ -39,7 +41,7 @@ public class OrderedValueHashMap< K,V extends Comparable< V > > extends Concurre
 
         return orderedValueEntrySet;
     }
-
+    /*
     @Override
     public Set< K > keySet()
     {
@@ -50,4 +52,5 @@ public class OrderedValueHashMap< K,V extends Comparable< V > > extends Concurre
 
         return orderedKeySet;
     }
+    */
 }
