@@ -57,7 +57,8 @@ import linksmanager.ManagerGui;
  * FL-17-Sep-2015 Bad registration dates: db NULLs
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
- * FL-19-Jan-2016 Latest change
+ * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
+ * FL-22-Jan-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6204,6 +6205,29 @@ public class LinksCleanThread extends Thread
 
     private void partsToFullDate( String source )
     {
+        /*
+        Notice: the date components from person_c are INTs.
+        Below they are CONCATenated directly, implying that no leading zeros are inserted in the output string,
+        so we do NOT comply to the format '%02d-%02d-%04d' as dd-mm-yyyy.
+
+        If we would additionally use the the MySQL STR_TO_DATE as:
+        DATE = STR_TO_DATE( CONCAT( d, '-', m , '-', y), '%d-%m-%Y' );
+        then we get our wanted leading zeros, but we also get by definition the DATE format as YYY-MM-DD.
+        Because the format '%d-%m-%Y' is only used for the input; the output is fixed to YYY-MM-DD.
+
+        We actually like YYY-MM-DD, but then we should convert ALL our date strings in links_cleaned to YYY-MM-DD.
+        Also notice that STR_TO_DATE accepts 0's for components, but acts strange with 0 year:
+        SELECT STR_TO_DATE( CONCAT( 0, '-', 0, '-', 0 ), '%d-%m-%Y' );
+        +--------------------------------------------------------+
+        | STR_TO_DATE( CONCAT( 0, '-', 0, '-', 0 ), '%d-%m-%Y' ) |
+        +--------------------------------------------------------+
+        | 2000-00-00                                             |
+        +--------------------------------------------------------+
+        The documented supported range of DATE is '1000-01-01' to '9999-12-31'.
+        We should always check for 0 years, because then we have no valid date anyway
+        The MySQL date/time functions are not rock solid, we maybe be we should avoid them, and use Java Joda-time.
+        */
+
         String query = "UPDATE links_cleaned.person_c SET "
                 + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
                 + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
@@ -6268,6 +6292,9 @@ public class LinksCleanThread extends Thread
         String queryP5 = "UPDATE IGNORE person_c SET death_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_min IS NOT NULL AND death_date_min NOT LIKE '0-%' AND death_date_min NOT LIKE '%-0-%' AND death_date_min NOT LIKE '%-0' ";
         String queryP6 = "UPDATE IGNORE person_c SET death_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( death_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE death_date_max IS NOT NULL AND death_date_max NOT LIKE '0-%' AND death_date_max NOT LIKE '%-0-%' AND death_date_max NOT LIKE '%-0' ";
 
+        // The min/max dates in person_c are not normalized to '%02d-%02d-%04d'; there are no leading zero's.
+        // See partsToFullDate()
+
         queryP1 += "AND id_source = " + source;
         queryP2 += "AND id_source = " + source;
         queryP3 += "AND id_source = " + source;
@@ -6276,14 +6303,15 @@ public class LinksCleanThread extends Thread
         queryP6 += "AND id_source = " + source;
 
         // registration_date strings '01-01-0000' give a negative DATEDIFF, which gives an exception
-        // because the column links_cleaned.registration_days is defines as unsigned.
-        // We skip such negative results
+        // because the column links_cleaned.registration_days is defined as unsigned.
+        // We skip such negative results.
+        // 22-Jan-2016: we now assume that the registration_date of registration_c is formatted as '%02d-%02d-%04d'
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date IS NOT NULL "
-            + "AND registration_date NOT LIKE '0-%' "
-            + "AND registration_date NOT LIKE '%-0-%' "
-            + "AND registration_date NOT LIKE '%-0' "
+            + "AND registration_date NOT LIKE '00-%' "
+            + "AND registration_date NOT LIKE '%-00-%' "
+            + "AND registration_date NOT LIKE '%-0000' "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
 
