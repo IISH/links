@@ -6774,6 +6774,10 @@ public class LinksCleanThread extends Thread
                         if( isDuplicate ) { nDuplicates++; }
                     }
                 }
+
+                // free
+                registrationIds.clear();
+                registrationIds = null;
             }
 
             showMessage( "Number of duplicates removed from duplicate tuples: " + nDuplicates, false, true );
