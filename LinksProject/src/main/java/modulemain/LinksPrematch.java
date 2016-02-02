@@ -26,7 +26,8 @@ import prematch.Lv;
  * FL-10-Dec-2014 links_base table moved from links_base db to links_prematch db
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
- * FL-20-Nov-2015 Latest change
+ * FL-02-Feb-2016 Show # of updated records when links_base is re-created
+ * FL-02-Feb-2016 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -708,9 +709,8 @@ public class LinksPrematch extends Thread
         String qPrefix = "FillBaseTable/FillBaseTable_q";
         int nqFirst = 1;
         int nqLast  = 4;
-        //int nqLast = 33;  // reduced Omars's 33 queries to 4
-        // q41...q47 were no longer used by Omar; what is their function? (and q34...q40 are missing.)
 
+        // 4 queries: Ego, Mother, Father, Partner
         for( int n = nqFirst; n <= nqLast; n++ )
         {
             long start = System.currentTimeMillis();
@@ -719,9 +719,14 @@ public class LinksPrematch extends Thread
             String query = LinksSpecific.getSqlQuery( qPath );
             String msg = "query " + n + "-of-" + nqLast;
             showMessage( msg + "...", false, true );
-            if( debug ) { showMessage( query, false, true ); }
 
-            try { conPrematch.runQuery( query ); }
+            //if( debug ) { showMessage( query, false, true ); }
+            showMessage( query, false, true );
+
+            try {
+                int updated = conPrematch.runQueryUpdate( query );
+                showMessage( "Number of updated records: " + updated, false, true );
+            }
             catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
             elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
