@@ -36,7 +36,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-15-Jan-2015 Latest change
+ * FL-01-Feb-2015 Latest change
  */
 
 public class Main
@@ -82,7 +82,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "20-Jan-2016 09:07";
+            String timestamp1 = "01-Feb-2016 13:53";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -340,10 +340,11 @@ public class Main
                 int match_process_id = qgs.get( 0 ).id;
                 deleteMatches( match_process_id );
 
+                int range_counter = 0;  // debug
                 // Loop through the ranges/subqueries
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
-                    msg = String.format( "Range %d-of-%d", n_qs+1, qgs.getSize() );
+                    msg = String.format( "Range %d-of-%d", n_qs + 1, qgs.getSize() );
                     System.out.println( msg ); plog.show( msg );
 
                     QuerySet qs = qgs.get( n_qs );
@@ -374,6 +375,8 @@ public class Main
                     int s1_piece;                               // number of s1 records for individual thread
                     int nthreads_started = 0;                   // number of matching threads started
 
+                    int s1part_counter = 0;  // debug
+                    // Loop through the s1 parts
                     for( int s1_ipart = 0; s1_ipart < num_s1_parts; s1_ipart++ )
                     {
                         int s1_npart = s1_ipart + 1;
@@ -416,10 +419,20 @@ public class Main
                         ma.start();
                         threads.add( ma );
 
+                        long threadId = ma.getId();
+                        msg = String.format( "\nMain(): thread id %2d was started", threadId );
+                        System.out.println( msg ); plog.show( msg );
+
                         nthreads_started++;
                         plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, max_threads_simul ) );
+
+                        s1part_counter++;
                     } // for s1 parts
+                    plog.show( String.format( "%d s1parts processed", s1part_counter ) ); // debug
+
+                    range_counter++;
                 } // for ranges
+                plog.show( String.format( "%d ranges processed", range_counter ) ); // debug
             } // for 'y' records
 
             // join the threads: main thread must wait for children to finish

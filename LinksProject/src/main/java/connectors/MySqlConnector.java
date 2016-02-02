@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  * This class contains functions to connect and 
@@ -32,7 +33,8 @@ import java.sql.ResultSet;
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
- * FL-06-Feb-2015 Latest change
+ * FL-01-Feb-2016 runQueryUpdate()
+ * FL-01-Feb-2016 Latest change
  */
 public class MySqlConnector
 {
@@ -195,40 +197,55 @@ public class MySqlConnector
      * @param query
      * @throws Exception
      */
-    public void runQuery(String query) throws Exception {
-        conn.createStatement().execute(query);
+    public void runQuery( String query ) throws Exception
+    {
+        conn.createStatement().execute( query );
         conn.createStatement().close();
     }
 
+
     /**
-     * This method Executes a query 
-     * and returns the ResultSet
+     * Run query, return affected row count
+     * @param query
+     * @throws Exception
+     */
+    public int runQueryUpdate( String query ) throws Exception
+    {
+        Statement statement = conn.createStatement();
+        statement.execute( query );
+        int count = statement.getUpdateCount();
+        statement.close();
+        return count;
+    }
+
+
+    /**
+     * This method executes a query and returns the ResultSet
      * @param query Query to run on database
      * @return ResultSet ResultSet with results
      * @throws Exception When execution of query fails
      */
-    public ResultSet runQueryWithResult(String query) throws Exception {
-        ResultSet rs = conn.createStatement().executeQuery(query);
+    public ResultSet runQueryWithResult( String query ) throws Exception
+    {
+        ResultSet rs = conn.createStatement().executeQuery( query );
         conn.createStatement().close();
         return rs;
     }
 
+
     /**
-     * This method checks if a table excests
+     * This method checks if a table exists
      * @param TableName Table name
      * @return True if table does exists
      * @throws Exception When check goes wrong
      */
-    private boolean tableExsists(String TableName) throws Exception {
-
+    private boolean tableExists( String TableName ) throws Exception
+    {
         // Get meta data from database
         DatabaseMetaData dbm = conn.getMetaData();
+        ResultSet rs = dbm.getTables( null, null, TableName, null );
 
-        ResultSet rs = dbm.getTables(null, null, TableName, null);
-
-        if (rs.next()) {
-            return true;
-        }
+        if( rs.next() ) { return true; }
 
         return false;
     }

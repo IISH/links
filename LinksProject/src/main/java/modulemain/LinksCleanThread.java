@@ -11,7 +11,9 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Vector;
@@ -58,7 +60,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-22-Jan-2016 Latest change
+ * FL-02-Feb-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -125,7 +127,7 @@ public class LinksCleanThread extends Thread
     private PrintLogger plog;
     private boolean showskip = false;
 
-    private int count_step = 10000;              // used to be 1000
+    private int count_step = 10000;             // used to be 1000
 
     /**
      * Constructor
@@ -215,7 +217,7 @@ public class LinksCleanThread extends Thread
 
                 try
                 {
-                    String msg = String.format( "CleaningThread/run(): thread id %2d running for source %s", threadId, source ) ;
+                    String msg = String.format( "CleaningThread/run(): thread id %2d running for source %s", threadId, source );
                     plog.show( msg ); showMessage( msg, false, true );
 
                     doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
@@ -1164,7 +1166,7 @@ public class LinksCleanThread extends Thread
         // Firstnames to lowercase
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Converting firstnames to lowercase...", threadId );
-        showMessage( msg, false, true ) ;
+        showMessage( msg, false, true );
         String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER( firstname ) WHERE id_source = " +  source + ";";
         dbconCleaned.runQuery( qLower );
 
@@ -2036,7 +2038,7 @@ public class LinksCleanThread extends Thread
                 }
 
                 if( !listPF.isEmpty() ) {
-                    dbconCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) ) ;
+                    dbconCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
                 }
             }
 
@@ -3643,7 +3645,7 @@ public class LinksCleanThread extends Thread
                         if( debug ) { showMessage( "Warning 251 (via SC_X): id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
                         addToReportPerson( id_person, source, 251, age_literal );      // warning 251
 
-                        String query = PersonC.updateQuery( "age_literal", age_literal, id_person) ;
+                        String query = PersonC.updateQuery( "age_literal", age_literal, id_person);
                         dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_N ) )
@@ -4092,6 +4094,10 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
+        //msg = "Skipping until minMaxDateMain()";
+        //showMessage( msg, false, true );
+        // see below
+
         msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
@@ -4131,6 +4137,8 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %2d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
+        // Make minMaxDateMain() a separate GUI option:
+        // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Processing minMaxDateMain for source: %s...", threadId, source );
         showMessage( msg, false, true );
@@ -4591,9 +4599,9 @@ public class LinksCleanThread extends Thread
             returnSet.setMinMonth( 0 );
             returnSet.setMinYear(  0 );
 
-            //showMessage( "4 - combination ; marriage date, return 0-0-0", false, true );
+            //showMessage( "4 - combination; marriage date, return 0-0-0", false, true );
             return returnSet;
-        } // combination ; marriage date, return 0-0-0
+        } // combination; marriage date, return 0-0-0
 
 
         if( debug ) { System.out.println( "inputInfo.getDeathDate()" ); }
@@ -5792,7 +5800,7 @@ public class LinksCleanThread extends Thread
         try {
             dbconCleaned.runQuery( query1 );
             dbconCleaned.runQuery( query2 );
-            dbconCleaned.runQuery( query3) ;
+            dbconCleaned.runQuery( query3 );
         }
         catch( Exception ex ) {
             showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
@@ -6709,8 +6717,7 @@ public class LinksCleanThread extends Thread
         showMessage( "removeDuplicateRegs()", false, true );
         showMessage( "Notice: the familyname prefix is not used for comparisons", false , true );
 
-        int min_cnt = 2;
-        //int min_cnt = 3;
+        int min_cnt = 2;    // in practice we see double, triples and quadruples
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
         String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
@@ -6746,23 +6753,30 @@ public class LinksCleanThread extends Thread
                     System.out.println( msg );
                 }
 
-                String registrationIds[] = registrationIds_str.split( "," );
+                String registrationIdsStrs[] = registrationIds_str.split( "," );
+                Vector< Integer > registrationIds = new Vector< Integer >();
+                for( String registrationId : registrationIdsStrs ) {
+                    registrationIds.add( Integer.parseInt( registrationId ) );
+                }
+
+                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
+                Collections.sort( registrationIds );
+                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
 
                 //showMessage_nl();
-                //showMessage( "Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
+                //showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
 
-                for( int rid1 = 0 ; rid1 < registrationIds.length; rid1++ )
+                for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
                 {
-                    for( int rid2 = rid1 + 1 ; rid2 < registrationIds.length; rid2++ )
+                    for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
                     {
-                        boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds_str, registration_maintype );
-
+                        boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
                         if( isDuplicate ) { nDuplicates++; }
                     }
                 }
             }
 
-            showMessage( "Number of duplicates removed from duplicate pairs: " + nDuplicates, false, true );
+            showMessage( "Number of duplicates removed from duplicate tuples: " + nDuplicates, false, true );
         }
         catch( Exception ex ) {
             System.out.printf("'%s'\n", ex.getMessage());
@@ -6775,18 +6789,18 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param rid1
      * @param rid2
-     * @param registrationIds_str
+     * @param registrationIds
      * @param registration_maintype
      *
      * @throws Exception
      */
-    private boolean compare2Registrations( boolean debug, int rid1, int rid2, String registrationIds_str, int registration_maintype )
+    private boolean compare2Registrations( boolean debug, int rid1, int rid2, Vector< Integer > registrationIds, int registration_maintype )
     throws Exception
     {
-        String registrationIds[] = registrationIds_str.split( "," );
+        boolean isDeleted = false;
 
-        int id_registration1 = Integer.parseInt( registrationIds[ rid1 ] );
-        int id_registration2 = Integer.parseInt( registrationIds[ rid2 ] );
+        int id_registration1 = registrationIds.get( rid1 );
+        int id_registration2 = registrationIds.get( rid2 );
 
         if( debug ) { showMessage( "Comparing, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true ); }
 
@@ -6861,8 +6875,8 @@ public class LinksCleanThread extends Thread
                     showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
                 }
 
-                removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                return true;
+                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
             }
         }
 
@@ -6981,8 +6995,8 @@ public class LinksCleanThread extends Thread
                     showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
                 }
 
-                removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                return true;
+                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
             }
         }
 
@@ -7053,8 +7067,8 @@ public class LinksCleanThread extends Thread
                     showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
                 }
 
-                removeDuplicate( debug, registrationIds_str, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                return true;
+                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
             }
         }
 
@@ -7067,15 +7081,13 @@ public class LinksCleanThread extends Thread
      *
      * @throws Exception
      */
-    private void removeDuplicate( boolean debug, String registrationIds_str, String id_source1, String id_source2,
+    private int removeDuplicate( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
         int id_registration1, int id_registration2, int registration_maintype )
     throws Exception
     {
-        String registrationIds[] = registrationIds_str.split( "," );
-
         if( debug ) {
             showMessage_nl();
-            showMessage( "Duplicate in Id group of " + registrationIds.length + ": " + registrationIds_str, false, true );
+            showMessage( "Duplicate in Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
         }
 
         int id_reg_keep = 0;
@@ -7118,9 +7130,25 @@ public class LinksCleanThread extends Thread
             showMessage( deletePerson, false, true );
         }
 
-        dbconCleaned.runQuery( deleteRegist );
-        dbconCleaned.runQuery( deletePerson );
+        int countRegist = dbconCleaned.runQueryUpdate( deleteRegist );
+        int countPerson = dbconCleaned.runQueryUpdate( deletePerson );
 
+        // we expect regist_count == 1, otherwise complain
+        if( countRegist != 1 )
+        {
+            String msg = String.format( "removeDuplicate() id_registration: %d already removed", id_reg_remove );
+            showMessage( msg, false, true );
+
+            //showMessage( deleteRegist, false, true );
+            //msg = String.format( "removeDuplicate() countRegist: %d", countRegist );
+            //showMessage( msg, false, true );
+
+            //showMessage( deletePerson, false, true );
+            //msg = String.format( "removeDuplicate() countPerson: %d", countPerson );
+            //showMessage( msg, false, true );
+        }
+
+        return countRegist;
     } // removeDuplicate
 
 
