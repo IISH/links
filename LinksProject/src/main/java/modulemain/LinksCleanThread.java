@@ -9,11 +9,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.time.LocalDateTime;     // Java SE 8, based on Joda-Time
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Vector;
@@ -60,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-02-Feb-2016 Latest change
+ * FL-10-Feb-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -139,10 +140,10 @@ public class LinksCleanThread extends Thread
      */
     public LinksCleanThread
     (
-            Options opts,
-            JTextField outputLine,
-            JTextArea outputArea,
-            ManagerGui mg
+        Options opts,
+        JTextField outputLine,
+        JTextArea outputArea,
+        ManagerGui mg
     )
     {
         this.opts = opts;
@@ -240,7 +241,7 @@ public class LinksCleanThread extends Thread
 
                     doRole(  opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                   // GUI cb: Age, Role, Dates
 
-                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
+                    doDates(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                 // GUI cb: Age, Role, Dates
 
                     doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
 
@@ -267,6 +268,9 @@ public class LinksCleanThread extends Thread
                 String msg = "Cleaning sourceId " + source + " is done";
                 showTimingMessage( msg, threadStart );
                 System.out.println( msg );
+
+                LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
+                showMessage( timePoint.toString(), false, true );
 
                 int count = tm.removeThread();
                 msg = String.format( "Remaining cleaning threads: %d", count );
@@ -367,6 +371,9 @@ public class LinksCleanThread extends Thread
                 msg = String.format( "Main thread (id %d); Cleaning Finished.", mainThreadId );
                 elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
                 System.out.println( msg );
+
+                LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
+                showMessage( timePoint.toString(), false, true );
             }
 
             else    // single-threaded cleaning for multiple sources
@@ -424,6 +431,9 @@ public class LinksCleanThread extends Thread
                     msg = "Cleaning sourceId " + sourceId + " is done";
                     elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
                     System.out.println( msg );
+
+                    LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
+                    showMessage( timePoint.toString(), false, true );
                 }
 
                 // Close db connections
@@ -977,7 +987,7 @@ public class LinksCleanThread extends Thread
         // Copy key column data from links_original to links_cleaned
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c"
-            +      " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
+            + " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
             + " SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq"
             + " FROM links_original.registration_o"
             + " WHERE registration_o.id_source = " + source;
@@ -992,7 +1002,7 @@ public class LinksCleanThread extends Thread
 
         String keysPerson = ""
             + "INSERT INTO links_cleaned.person_c"
-            +      " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
+            + " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
             + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
             + " FROM links_original.person_o"
             + " WHERE person_o.id_source = " + source;
@@ -4098,35 +4108,48 @@ public class LinksCleanThread extends Thread
         //showMessage( msg, false, true );
         // see below
 
-        msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
-        showMessage( msg, false, true );
-        standardRegistrationDate( debug, source );
-
+        ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %2d; Processing standardDate for source: %s for: %s...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
+        msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
+        elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
+        ts = System.currentTimeMillis();
         type = "mar";
         msg = String.format( "Thread id %2d; Processing standardDate for source: %s for: %s...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
+        msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
+        elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
+        ts = System.currentTimeMillis();
         type = "death";
         msg = String.format( "Thread id %2d; Processing standardDate for source: %s for: %s...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
-
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
-        // Fill empty dates with registration dates
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %2d; Flagging empty dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
-        flagBirthDate( debug );
-        flagMarriageDate( debug );
-        flagDeathDate( debug );
+        standardRegistrationDate( debug, source );
+        msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
+        elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+
+        // Fill empty event dates with registration dates
+        ts = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
+        showMessage( msg, false, true );
+        flagBirthDate( debug, source );
+        msg = String.format( "Thread id %2d; Flagging empty marriage dates (-> Reg dates) for source: %s...", threadId, source );
+        showMessage( msg, false, true );
+        flagMarriageDate( debug, source );
+        msg = String.format( "Thread id %2d; Flagging empty death dates (-> Reg dates) for source: %s...", threadId, source );
+        showMessage( msg, false, true );
+        flagDeathDate( debug, source );
         msg = String.format( "Thread id %2d; Flagging empty dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
@@ -5297,8 +5320,11 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_registration      = rs_r.getInt( "id_registration" );
-                String registration_date = rs_r.getString( "registration_date" );
+                int id_registration       = rs_r.getInt( "id_registration" );
+                String registration_date  = rs_r.getString( "registration_date" );
+                int registration_day      = rs_r.getInt( "registration_day" );
+                int registration_month    = rs_r.getInt( "registration_month" );
+                int registration_year     = rs_r.getInt( "registration_year" );
 
                 // valid date string: dd-mm-yyyy
                 // exactly 2 hyphens should occur, but substrings like '-1', '-2', '-3', and '-4' are used to flag
@@ -5312,51 +5338,52 @@ public class LinksCleanThread extends Thread
                 }
 
                 // The initial registration_date is copied from the a2a field source.literaldate, which sometimes is NULL.
-                // Then we will try to use the source fields day-month-year
-                // all 3 data components must be numeric and > 0.
+                // Then we will try to use the source fields day-month-year,
+                // and all 3 data components must be numeric and > 0.
                 // Otherwise we try to replace the date by the event date.
-                boolean replace_regdate = false;
 
-                // check registration_date from links_original
-                DateYearMonthDaySet dymd0 = LinksSpecific.divideCheckDate( registration_date );
-                if( dymd0.isValidDate() ) { replace_regdate = false; }
-                else { replace_regdate = true;  }
+                // date object from links_original date string
+                // -1- FIRST dymd
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
 
-                String registration_date_comps = "";
-                if( replace_regdate )   // check date components from  links_original
+                // date object from links_original date components
+                String regist_comp = String.format( "%02d-%02d-%04d", registration_day, registration_month, registration_year );
+                DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
+
+                // compate the string date and the components date
+                boolean use_event_date = false;
+
+                if( dymd.isValidDate() )                    // valid registration_date
                 {
-                    String registration_day   = rs_r.getString( "registration_day" );
-                    String registration_month = rs_r.getString( "registration_month" );
-                    String registration_year  = rs_r.getString( "registration_year" );
-
-                    boolean use_comps = true;   // start optimistic
-
-                    if( registration_day == null || registration_day.isEmpty() ) { use_comps = false; }
-                    else { if( Integer.parseInt( registration_day ) <= 0 ) { use_comps = false; } }
-
-                    if( registration_month  == null || registration_month .isEmpty() ) { use_comps = false; }
-                    else { if( Integer.parseInt( registration_month  ) <= 0 ) { use_comps = false; } }
-
-                    if( registration_year == null || registration_year.isEmpty() ) { use_comps = false; }
-                    else { if( Integer.parseInt( registration_year ) <= 0 ) { use_comps = false; } }
-
-                    if( use_comps )
-                    { registration_date_comps = registration_day + "-"  + registration_month + "-" + registration_year; }
-
-                    DateYearMonthDaySet dymd1 = LinksSpecific.divideCheckDate( registration_date );
-                    if( dymd1.isValidDate() ) {
-                        replace_regdate = false;
-                        registration_date = registration_date_comps;    // use the validated components
+                    if( dymd_comp.isValidDate() ) {         // valid components date
+                        // both valid; components from dymd will be used
+                        if( ! ( dymd.getDay()   == dymd_comp.getDay() &&
+                                dymd.getMonth() == dymd_comp.getMonth() &&
+                                dymd.getYear()  == dymd_comp.getYear() ) ) {
+                            addToReportRegistration( id_registration, source + "", 204, dymd.getReports() );   // EC 204
+                        }
                     }
-                    else { replace_regdate = true;  }
+                    else {                                  // invalid components date
+                        // components from dymd will be used
+                    }
+                }
+                else                                        // invalid registration_date
+                {
+                    if( dymd_comp.isValidDate() ) {         // valid components date
+                        // -2- REPLACE dymd with components
+                        dymd = dymd_comp;                   // use components date
+                    }
+                    else {                                  // invalid components date
+                        // both invalid
+                        use_event_date = true;              // try to use event_date
+                    }
                 }
 
-                boolean reg_date_isvalid = true;
-                int registration_maintype = 0;
-                if( replace_regdate )
+                // replace registration date with event date
+                int registration_maintype = 0;              // to be used below 1/2/3
+                if( use_event_date )
                 {
-                    // try to replace invalid regdate with birth-/marriage-/death- date
-                    reg_date_isvalid = false;
+                    // try to replace invalid registration date with birth-/marriage-/death- date
                     nInvalidRegDates++;
 
                     if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
@@ -5364,9 +5391,8 @@ public class LinksCleanThread extends Thread
 
                     addToReportRegistration( id_registration, source, 202, "" );   // EC 202
 
-                    String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_o WHERE id_registration = " + id_registration;
-
-                    ResultSet rs_p = dbconOriginal.runQueryWithResult( query_p );
+                    String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_c WHERE id_registration = " + id_registration;
+                    ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
 
                     while( rs_p.next() )
                     {
@@ -5383,114 +5409,124 @@ public class LinksCleanThread extends Thread
                             break;      // we have a date; skip the remaining reg persons
                         }
                     }
-                }
+                    // -3- REPLACE dymd with event date
+                    dymd = LinksSpecific.divideCheckDate( registration_date );
 
-                // check the date string
-                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
-
-                // Notice: dymd may contain negative components if registration_date contains those
-                if( ! dymd.isValidDate() )
-                {
-                    if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
-
-                    addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
-
-                    int day   = dymd.getDay();
-                    int month = dymd.getMonth();
-                    int year  = dymd.getYear();
-
-                    if( month == 2 && day > 28 ) {
-                        day = 1;
-                        month = 3;
-                        dymd.setDay( day );
-                        dymd.setMonth( month );
-                    }
-
-                    if( day > 30 && ( month == 4 || month == 6 || month == 9 || month == 11 ) ) {
-                        day = 1;
-                        month += 1;
-                        dymd.setDay( day );
-                        dymd.setMonth( month );
-                    }
-
-                    if( day > 31 ) {
-                        day = 1;
-                        month += 1;
-                        if( month > 12 ) {
-                            month = 1;
-                            year += 1;
-                        }
-                        dymd.setDay( day );
-                        dymd.setMonth( month );
-                        dymd.setYear( year );
-                    }
-
-                    if( month > 12 ) {
-                        month = 12;
-                        dymd.setMonth( month );
-                    }
-
-                    // HSN data (id_source = 10) may contain negative data components, that have special meaning,
-                    // but we do not want invalid date strings in links_cleaned
-                    if( day < 1 ) {
-                        day = 1;
-                        dymd.setDay( day );
-                    }
-                    if( month < 1 ) {
-                        month = 1;
-                        dymd.setMonth( month );
-                    }
-
-                    // KM: for HSN data with negative date components in day and/or month:
-                    // birth    -> registration_date = 01-01-yyyy
-                    // marriage -> registration_date = 01-07-yyyy
-                    // death    -> registration_date = 31-12-yyyy
-                    if( nhyphens > 2 )
+                    // Notice: dymd may contain negative components if registration_date contains those
+                    if( ! dymd.isValidDate() )
                     {
-                        if( registration_maintype == 1 ) {
-                            day   = 1;
-                            month = 1;
-                        }
-                        else if( registration_maintype == 2 ) {
-                            day   = 1;
-                            month = 7;
-                        }
-                        else if( registration_maintype == 3 ) {
-                            day   = 31;
-                            month = 12;
-                        }
-                        dymd.setDay( day );
-                        dymd.setMonth( month );
-                    }
+                        if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
 
-                    registration_date = String.format( "%02d-%02d-%04d", day, month, year );
-                    if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
+                        addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
+
+                        int day   = dymd.getDay();
+                        int month = dymd.getMonth();
+                        int year  = dymd.getYear();
+
+                        if( month == 2 && day > 28 ) {
+                            day = 1;
+                            month = 3;
+                            dymd.setDay( day );
+                            dymd.setMonth( month );
+                        }
+
+                        if( day > 30 && ( month == 4 || month == 6 || month == 9 || month == 11 ) ) {
+                            day = 1;
+                            month += 1;
+                            dymd.setDay( day );
+                            dymd.setMonth( month );
+                        }
+
+                        if( day > 31 ) {
+                            day = 1;
+                            month += 1;
+                            if( month > 12 ) {
+                                month = 1;
+                                year += 1;
+                            }
+                            dymd.setDay( day );
+                            dymd.setMonth( month );
+                            dymd.setYear( year );
+                        }
+
+                        if( month > 12 ) {
+                            month = 12;
+                            dymd.setMonth( month );
+                        }
+
+                        // HSN data (id_source = 10) may contain negative data components, that have special meaning,
+                        // but we do not want invalid date strings in links_cleaned
+                        if( day < 1 ) {
+                            day = 1;
+                            dymd.setDay( day );
+                        }
+                        if( month < 1 ) {
+                            month = 1;
+                            dymd.setMonth( month );
+                        }
+
+                        // KM: for HSN data with negative date components in day and/or month:
+                        // birth    -> registration_date = 01-01-yyyy
+                        // marriage -> registration_date = 01-07-yyyy
+                        // death    -> registration_date = 31-12-yyyy
+
+                        // CHECK hyphens; from which string do they come?
+                        /*
+                        if( nhyphens > 2 )
+                        {
+                            if( registration_maintype == 1 ) {
+                                day   = 1;
+                                month = 1;
+                            }
+                            else if( registration_maintype == 2 ) {
+                                day   = 1;
+                                month = 7;
+                            }
+                            else if( registration_maintype == 3 ) {
+                                day   = 31;
+                                month = 12;
+                            }
+                            dymd.setDay( day );
+                            dymd.setMonth( month );
+                        }
+                        */
+
+                        registration_date = String.format( "%02d-%02d-%04d", day, month, year );
+                        // -4- conditionally REPLACEd dymd components; final check
+                         dymd = LinksSpecific.divideCheckDate( registration_date );
+                        if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
+                    }
+                    else
+                    { if( debug ) { System.out.println( "valid registration_date: " + registration_date ); } }
                 }
-                else
-                { if( debug ) { System.out.println( "valid registration_date: " + registration_date ); } }
 
                 String query = "";
-                if( reg_date_isvalid )
+                if( dymd.isValidDate() )
                 {
-                    query = "UPDATE registration_c "
-                        + "SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = "       + dymd.getDay()     + " , "
-                        + "registration_c.registration_month = "     + dymd.getMonth()   + " , "
-                        + "registration_c.registration_year = "      + dymd.getYear()    + " "
-                        + "WHERE registration_c.id_registration = "  + id_registration;
+                    registration_day   = dymd.getDay();
+                    registration_month = dymd.getMonth();
+                    registration_year  = dymd.getYear();
+
                 }
-                else
+                else    // could not get a valid registration_date; avoid confusing garbage
                 {
-                    // set registration_flag to 1
-                    query = "UPDATE registration_c "
-                        + "SET registration_c.registration_date = '" + registration_date + "' , "
-                        + "registration_c.registration_day = "       + dymd.getDay()     + " , "
-                        + "registration_c.registration_month = "     + dymd.getMonth()   + " , "
-                        + "registration_c.registration_year = "      + dymd.getYear()    + " , "
-                        + "registration_c.registration_flag = "      + 1                 + " "
-                        + "WHERE registration_c.id_registration = "  + id_registration;
+                    registration_date  = "";
+                    registration_day   = 0;
+                    registration_month = 0;
+                    registration_year  = 0;
+                }
+                query = "UPDATE registration_c SET "
+                    + "registration_c.registration_date = '" + registration_date  + "' , "
+                    + "registration_c.registration_day = "   + registration_day   + " , "
+                    + "registration_c.registration_month = " + registration_month + " , "
+                    + "registration_c.registration_year = "  + registration_year  + " ";
+
+                if( use_event_date ) {
+                    // invalid registration date: set registration_flag to 1
+                    query += ", registration_c.registration_flag = " + 1 + " ";
                 }
 
+                query += "WHERE registration_c.id_registration = "  + id_registration;
                 if( debug ) { System.out.println( "query: " + query ); }
                 dbconCleaned.runQuery( query );
             }
@@ -5517,8 +5553,9 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String startQuery = "SELECT id_person , id_source , " + type + "_date FROM person_o WHERE " + type + "_date is not null";
-            startQuery =  startQuery + " AND id_source = " + source;
+            String startQuery = "SELECT id_person , id_source , " + type + "_date , "
+                + type + "_day , " + type + "_month , " + type + "_year "
+                + " FROM person_o WHERE id_source = " + source;
 
             ResultSet rs = dbconOriginal.runQueryWithResult( startQuery );
 
@@ -5531,25 +5568,40 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person = rs.getInt( "id_person" );
-                int id_source = rs.getInt( "id_source" );
-                String date   = rs.getString( type + "_date" );
+                String date_str = rs.getString( type + "_date" );
 
-                if( date.isEmpty() ) {
-                    count_empty++;
-                    continue;
+                if( date_str == null || date_str.isEmpty() )    // try to repair date from components
+                {
+                    int year = rs.getInt( type + "_year" );
+                    if( year == 0 ) {
+                        count_empty++;
+                        continue;           // cannot be repaired
+                    }
+
+                    // create new date from components
+                    int day   = rs.getInt( type + "_day" );
+                    int month = rs.getInt( type + "_month" );
+                    date_str  = String.format( "%02d-%02d-%04d", day, month, year );
                 }
 
-                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date );
+                int id_person = rs.getInt( "id_person" );
+                int id_source = rs.getInt( "id_source" );
+
+                DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( date_str );
 
                 if( dymd.isValidDate() )
                 {
+                    int day   = dymd.getDay();
+                    int month = dymd.getMonth();
+                    int year  = dymd.getYear();
+                    date_str  = String.format( "%02d-%02d-%04d", day, month, year );
+
                     String query = ""
-                        + "UPDATE person_c "
-                        + "SET person_c." + type + "_date = '" + dymd.getDay() + "-" + dymd.getMonth() + "-" + dymd.getYear() + "' , "
-                        + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                        + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                        + "person_c." + type + "_year = " + dymd.getYear() + " , "
+                        + "UPDATE person_c SET "
+                        + "person_c." + type + "_date = '" + date_str + "' , "
+                        + "person_c." + type + "_day = " + day + " , "
+                        + "person_c." + type + "_month = " + month + " , "
+                        + "person_c." + type + "_year = " + year + " , "
                         + "person_c." + type + "_date_valid = 1 "
                         + "WHERE person_c.id_person = " + id_person;
 
@@ -5565,16 +5617,6 @@ public class LinksCleanThread extends Thread
                     else if ( type.equals( "death" ) ) { errno = 231; }
 
                     addToReportPerson( id_person, id_source + "", errno, dymd.getReports() );   // EC 211 / 221 / 231
-
-                    String query = ""
-                        + "UPDATE person_c "
-                        + "SET person_c." + type + "_date = '" + date + "' , "
-                        + "person_c." + type + "_day = " + dymd.getDay() + " , "
-                        + "person_c." + type + "_month = " + dymd.getMonth() + " , "
-                        + "person_c." + type + "_year = " + dymd.getYear() + " "
-                        + "WHERE person_c.id_person = " + id_person;
-
-                    dbconCleaned.runQuery( query );
                 }
             }
 
@@ -5760,51 +5802,57 @@ public class LinksCleanThread extends Thread
      *
      * @param debug
      */
-    public void flagBirthDate( boolean debug )
+    public void flagBirthDate( boolean debug, String source )
     {
-        String query1 = "UPDATE person_c, registration_c"
-            + " SET"
-            + " person_c.birth_date_flag  = 2,"
-            + " person_c.birth_date       = registration_c.registration_date ,"
-            + " person_c.birth_year       = registration_c.registration_year ,"
-            + " person_c.birth_month      = registration_c.registration_month ,"
-            + " person_c.birth_day        = registration_c.registration_day ,"
-            + " person_c.birth_date_valid = 1"
-            + " WHERE person_c.birth_date IS NULL"
-            + " AND registration_c.registration_maintype = 1"
-            + " AND person_c.role = 1"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_date_flag  = 2,"
+                + " person_c.birth_date       = registration_c.registration_date ,"
+                + " person_c.birth_year       = registration_c.registration_year ,"
+                + " person_c.birth_month      = registration_c.registration_month ,"
+                + " person_c.birth_day        = registration_c.registration_day ,"
+                + " person_c.birth_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.birth_date IS NULL"
+                + " AND person_c.role = 1"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
 
-        String query2 = "UPDATE person_c, registration_c"
-            + " SET"
-            + " person_c.birth_date_flag  = 3,"
-            + " person_c.birth_date       = registration_c.registration_date ,"
-            + " person_c.birth_year       = registration_c.registration_year ,"
-            + " person_c.birth_month      = registration_c.registration_month ,"
-            + " person_c.birth_day        = registration_c.registration_day ,"
-            + " person_c.birth_date_valid = 1"
-            + " WHERE person_c.birth_date_valid = 0"
-            + " AND person_c.birth_date_flag = 0"
-            + " AND registration_c.registration_maintype = 1"
-            + " AND person_c.role = 1"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_date_flag  = 3,"
+                + " person_c.birth_date       = registration_c.registration_date ,"
+                + " person_c.birth_year       = registration_c.registration_year ,"
+                + " person_c.birth_month      = registration_c.registration_month ,"
+                + " person_c.birth_day        = registration_c.registration_day ,"
+                + " person_c.birth_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.birth_date_valid = 0"
+                + " AND person_c.birth_date_flag = 0"
+                + " AND person_c.role = 1"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
 
-        String query3 = "UPDATE person_c, registration_c"
-            + " SET person_c.birth_date_flag = 1"
-            + " WHERE person_c.birth_date_valid = 1"
-            + " AND person_c.birth_date_flag = 0"
-            + " AND registration_c.registration_maintype = 1"
-            + " AND person_c.role = 1"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c"
+                + " SET person_c.birth_date_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.birth_date_valid = 1"
+                + " AND person_c.birth_date_flag = 0"
+                + " AND person_c.role = 1"
+                + " AND person_c.id_registration = registration_c.id_registration; "
+        };
 
-        try {
-            dbconCleaned.runQuery( query1 );
-            dbconCleaned.runQuery( query2 );
-            dbconCleaned.runQuery( query3 );
-        }
-        catch( Exception ex ) {
-            showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
+        for( String query : queries )
+        {
+            try { dbconCleaned.runQuery( query ); }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
         }
     } // flagBirthDate
 
@@ -5813,52 +5861,57 @@ public class LinksCleanThread extends Thread
      *
      * @param debug
      */
-    public void flagMarriageDate( boolean debug )
+    public void flagMarriageDate( boolean debug, String source )
     {
-        String query1 = "UPDATE person_c, registration_c"
-            + " SET"
-            + " person_c.mar_date_flag  = 2,"
-            + " person_c.mar_date       = registration_c.registration_date ,"
-            + " person_c.mar_year       = registration_c.registration_year ,"
-            + " person_c.mar_month      = registration_c.registration_month ,"
-            + " person_c.mar_day        = registration_c.registration_day ,"
-            + " person_c.mar_date_valid = 1"
-            + " WHERE person_c.mar_date IS NULL"
-            + " AND registration_c.registration_maintype = 2"
-            + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-            + " AND person_c.id_registration = registration_c.id_registration;";
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_date_flag  = 2,"
+                + " person_c.mar_date       = registration_c.registration_date ,"
+                + " person_c.mar_year       = registration_c.registration_year ,"
+                + " person_c.mar_month      = registration_c.registration_month ,"
+                + " person_c.mar_day        = registration_c.registration_day ,"
+                + " person_c.mar_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.mar_date IS NULL"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.id_registration = registration_c.id_registration;",
 
-        String query2 = "UPDATE person_c, registration_c"
-            + " SET"
-            + " person_c.mar_date_flag  = 3,"
-            + " person_c.mar_date       = registration_c.registration_date ,"
-            + " person_c.mar_year       = registration_c.registration_year ,"
-            + " person_c.mar_month      = registration_c.registration_month ,"
-            + " person_c.mar_day        = registration_c.registration_day ,"
-            + " person_c.mar_date_valid = 1"
-            + " WHERE registration_c.registration_maintype = 2"
-            + " AND person_c.mar_date_valid = 0"
-            + " AND person_c.mar_date_flag = 0"
-            + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_date_flag  = 3,"
+                + " person_c.mar_date       = registration_c.registration_date ,"
+                + " person_c.mar_year       = registration_c.registration_year ,"
+                + " person_c.mar_month      = registration_c.registration_month ,"
+                + " person_c.mar_day        = registration_c.registration_day ,"
+                + " person_c.mar_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.mar_date_valid = 0"
+                + " AND person_c.mar_date_flag = 0"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
 
-        String query3 = "UPDATE person_c, registration_c"
-            + " SET person_c.mar_date_flag = 1"
-            + " WHERE person_c.mar_date_valid = 1"
-            + " AND person_c.mar_date_flag = 0"
-            + " AND registration_c.registration_maintype = 2"
-            + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c"
+                + " SET person_c.mar_date_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.mar_date_valid = 1"
+                + " AND person_c.mar_date_flag = 0"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.id_registration = registration_c.id_registration; "
+        };
 
-        try {
-            dbconCleaned.runQuery( query1 );
-            dbconCleaned.runQuery( query2 );
-            dbconCleaned.runQuery( query3 );
-
-        }
-        catch( Exception ex ) {
-            showMessage( "Exception while flagging Marriage date: " + ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
+        for( String query : queries )
+        {
+            try { dbconCleaned.runQuery( query ); }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception while flagging Marriage date: " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
         }
     } // flagMarriageDate
 
@@ -5867,53 +5920,58 @@ public class LinksCleanThread extends Thread
      *
      * @param debug
      */
-    public void flagDeathDate( boolean debug )
+    public void flagDeathDate( boolean debug, String source )
     {
-        String query1 = "UPDATE person_c, registration_c"
-            + " SET"
-            + " person_c.death_date_flag  = 2 ,"
-            + " person_c.death_date       = registration_c.registration_date ,"
-            + " person_c.death_year       = registration_c.registration_year ,"
-            + " person_c.death_month      = registration_c.registration_month ,"
-            + " person_c.death_day        = registration_c.registration_day , "
-            + " person_c.death_date_valid = 1"
-            + " WHERE person_c.death_date IS NULL"
-            + " AND registration_c.registration_maintype = 3"
-            + " AND person_c.role = 10"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.death_date_flag  = 2 ,"
+                + " person_c.death_date       = registration_c.registration_date ,"
+                + " person_c.death_year       = registration_c.registration_year ,"
+                + " person_c.death_month      = registration_c.registration_month ,"
+                + " person_c.death_day        = registration_c.registration_day , "
+                + " person_c.death_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.death_date IS NULL"
+                + " AND person_c.role = 10"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
 
-        String query2 = "UPDATE person_c, registration_c "
-            + " SET "
-            + " person_c.death_date_flag = 3 ,"
-            + " person_c.death_date      = registration_c.registration_date ,"
-            + " person_c.death_year      = registration_c.registration_year ,"
-            + " person_c.death_month     = registration_c.registration_month ,"
-            + " person_c.death_day       = registration_c.registration_day ,"
-            + " person_c.death_date_valid = 1"
-            + " WHERE person_c.death_date_flag = 0"
-            + " AND person_c.death_date_valid = 0"
-            + " AND registration_c.registration_maintype = 3"
-            + " AND person_c.role = 10"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c "
+                + " SET "
+                + " person_c.death_date_flag = 3 ,"
+                + " person_c.death_date      = registration_c.registration_date ,"
+                + " person_c.death_year      = registration_c.registration_year ,"
+                + " person_c.death_month     = registration_c.registration_month ,"
+                + " person_c.death_day       = registration_c.registration_day ,"
+                + " person_c.death_date_valid = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.death_date_flag = 0"
+                + " AND person_c.death_date_valid = 0"
+                + " AND person_c.role = 10"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
 
-        String query3 = "UPDATE person_c, registration_c "
-            + " SET "
-            + " person_c.death_date_flag = 1 "
-            + " WHERE person_c.death_date_valid = 1"
-            + " AND person_c.death_date_flag = 0"
-            + " AND registration_c.registration_maintype = 3"
-            + " AND person_c.role = 10"
-            + " AND person_c.id_registration = registration_c.id_registration; ";
+            "UPDATE person_c, registration_c "
+                + " SET "
+                + " person_c.death_date_flag = 1 "
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.death_date_valid = 1"
+                + " AND person_c.death_date_flag = 0"
+                + " AND person_c.role = 10"
+                + " AND person_c.id_registration = registration_c.id_registration; "
+        };
 
-        try {
-            dbconCleaned.runQuery( query1 );
-            dbconCleaned.runQuery( query2 );
-            dbconCleaned.runQuery( query3 );
-
-        }
-        catch( Exception ex ) {
-            showMessage( "Exception while flagging Death date: " + ex.getMessage(), false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
+        for( String query : queries )
+        {
+            try { dbconCleaned.runQuery( query ); }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception while flagging Death date: " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
         }
     } // flagDeathDate
 
@@ -6722,7 +6780,7 @@ public class LinksCleanThread extends Thread
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
         String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
-            + "WHERE id_source =  " + source + " "
+            + "WHERE id_source = " + source + " "
             + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
             + "HAVING cnt >= " + min_cnt + " "
             + "ORDER BY cnt DESC;";
@@ -6734,8 +6792,11 @@ public class LinksCleanThread extends Thread
         try
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
-            int row = 0;
 
+            int ndeleteRegist = 0;
+            int ndeletePerson = 0;
+
+            int row = 0;
             while( rs_r.next() )        // process all groups
             {
                 row++;
@@ -6763,9 +6824,43 @@ public class LinksCleanThread extends Thread
                 Collections.sort( registrationIds );
                 if( debug ) { showMessage( registrationIds.toString(), false, true ); }
 
-                //showMessage_nl();
-                //showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                if( registrationIds.size() > 2 )   // useless registrations, remove them all
+                {
+                    for( int id_regist : registrationIds )
+                    {
+                        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_regist;
+                        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_regist;
 
+                        if( debug)
+                        {
+                            showMessage( "Deleting multi duplicate registration: " + id_regist, false, true );
+                            showMessage( queryDeleteRegist, false, true );
+                            showMessage( queryDeletePerson, false, true );
+                        }
+
+                        int countRegist = dbconCleaned.runQueryUpdate( queryDeleteRegist );
+                        int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
+                        ndeleteRegist += countRegist;
+                        ndeletePerson += countPerson;
+
+                        if( countRegist != 1 ) {
+                            String msg = String.format( "removeDuplicateRegs() id_registration: %d already removed", id_regist );
+                            showMessage( msg, false, true );
+                        }
+                    }
+
+                    String msg = String.format( "Number of duplicate regs removed from duplicate tuples: %d", ndeleteRegist );
+                    showMessage( msg, false, true );
+                }
+                else    // test pairs
+                {
+                    int rid1 = registrationIds.get( 0 );
+                    int rid2 = registrationIds.get( 1 );
+                    boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
+                    if( isDuplicate ) { nDuplicates++; }
+                }
+                /*
                 for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
                 {
                     for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
@@ -6774,13 +6869,15 @@ public class LinksCleanThread extends Thread
                         if( isDuplicate ) { nDuplicates++; }
                     }
                 }
+                */
 
                 // free
                 registrationIds.clear();
                 registrationIds = null;
             }
 
-            showMessage( "Number of duplicates removed from duplicate tuples: " + nDuplicates, false, true );
+            String msg = String.format( "Number of duplicate regs removed from duplicate pairs: %d", nDuplicates );
+            showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             System.out.printf("'%s'\n", ex.getMessage());
@@ -7099,14 +7196,16 @@ public class LinksCleanThread extends Thread
         String id_source_remove = "";
 
         // keep the smallest id_reg
-        if( id_registration2 > id_registration1 ) {
-            id_reg_keep   = id_registration1;
-            id_reg_remove = id_registration2;
+        if( id_registration2 > id_registration1 )
+        {
+            id_reg_keep      = id_registration1;
+            id_reg_remove    = id_registration2;
             id_source_remove = id_source2;
         }
-        else {
-            id_reg_keep   = id_registration2;
-            id_reg_remove = id_registration1;
+        else
+        {
+            id_reg_keep      = id_registration2;
+            id_reg_remove    = id_registration1;
             id_source_remove = id_source1;
         }
 
@@ -7125,17 +7224,17 @@ public class LinksCleanThread extends Thread
         addToReportRegistration( id_reg_remove, id_source_remove, 1, value );       // warning 1
 
         // remove second member of duplicates from registration_c and person_c
-        String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_remove;
-        String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_remove;
+        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_remove;
+        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_remove;
 
         if( debug ) {
             showMessage( "Deleting duplicate registration: " + id_reg_remove, false, true );
-            showMessage( deleteRegist, false, true );
-            showMessage( deletePerson, false, true );
+            showMessage( queryDeleteRegist, false, true );
+            showMessage( queryDeletePerson, false, true );
         }
 
-        int countRegist = dbconCleaned.runQueryUpdate( deleteRegist );
-        int countPerson = dbconCleaned.runQueryUpdate( deletePerson );
+        int countRegist = dbconCleaned.runQueryUpdate( queryDeleteRegist );
+        int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
 
         // we expect regist_count == 1, otherwise complain
         if( countRegist != 1 )

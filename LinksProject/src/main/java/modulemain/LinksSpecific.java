@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  * <p/>
  * FL-30-Jul-2014 Cleanup
  * FL-28-Jul-2015 handle negative date components
- * FL-15-Oct-2015 Latest change
+ * FL-09-Feb-2016 Latest change
  */
 public class LinksSpecific
 {
@@ -373,9 +373,9 @@ public class LinksSpecific
         Matcher m = regex.matcher( date );
 
         //
-        int day = 0;
+        int day   = 0;
         int month = 0;
-        int year = 0;
+        int year  = 0;
         
         // day
         if( m.find() ) {
@@ -393,7 +393,7 @@ public class LinksSpecific
         }
 
         // they are divided, now we check the value on errors
-        if( (year > 1680) && ( year < 2014 ) ) {
+        if( (year > 1680) && ( year < 2016 ) ) {
             dymd.setYear( year );
         }
         else {

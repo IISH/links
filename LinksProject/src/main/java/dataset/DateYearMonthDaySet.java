@@ -8,11 +8,11 @@ package dataset;
  */
 public final class DateYearMonthDaySet
 {
+    private boolean dateIsValid = true;
+
     private int year;
     private int month;
     private int day;
-
-    private boolean dateIsValid = true;
 
     private String reportsYear  = "";
     private String reportsMonth = "";
