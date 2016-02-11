@@ -27,7 +27,7 @@ import prematch.Lv;
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
- * FL-02-Feb-2016 Latest change
+ * FL-11-Feb-2016 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -509,14 +509,15 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        // Copy freq_familyname_and freq_firstnames to freq_familyname_tmp_and freq_firstnames_tmp
+        // The 18 standardization queries below are applied to freq_familyname_and freq_firstnames.
+        // Copy freq_familyname_and freq_firstnames to freq_familyname_cpy and freq_firstnames_cpy
         String[] queriesFamilyname =
         {
-            "DROP TABLE IF EXISTS links_prematch.freq_familyname_tmp;",
-            "CREATE TABLE links_prematch.freq_familyname_tmp LIKE links_prematch.freq_familyname;",
-            "ALTER TABLE  links_prematch.freq_familyname_tmp DISABLE KEYS;",
-            "INSERT INTO  links_prematch.freq_familyname_tmp SELECT * FROM links_prematch.freq_familyname;",
-            "ALTER TABLE  links_prematch.freq_familyname_tmp ENABLE KEYS;",
+            "DROP TABLE IF EXISTS links_prematch.freq_familyname_cpy;",
+            "CREATE TABLE links_prematch.freq_familyname_cpy LIKE links_prematch.freq_familyname;",
+            "ALTER TABLE  links_prematch.freq_familyname_cpy DISABLE KEYS;",
+            "INSERT INTO  links_prematch.freq_familyname_cpy SELECT * FROM links_prematch.freq_familyname;",
+            "ALTER TABLE  links_prematch.freq_familyname_cpy ENABLE KEYS;",
         };
 
         // run queries
@@ -527,11 +528,11 @@ public class LinksPrematch extends Thread
 
         String[] queriesFirstname =
         {
-            "DROP TABLE IF EXISTS links_prematch.freq_firstnames_tmp;",
-            "CREATE TABLE links_prematch.freq_firstnames_tmp LIKE links_prematch.freq_firstnames;",
-            "ALTER TABLE  links_prematch.freq_firstnames_tmp DISABLE KEYS;",
-            "INSERT INTO  links_prematch.freq_firstnames_tmp SELECT * FROM links_prematch.freq_firstnames;",
-            "ALTER TABLE  links_prematch.freq_firstnames_tmp ENABLE KEYS;"
+            "DROP TABLE IF EXISTS links_prematch.freq_firstnames_cpy;",
+            "CREATE TABLE links_prematch.freq_firstnames_cpy LIKE links_prematch.freq_firstnames;",
+            "ALTER TABLE  links_prematch.freq_firstnames_cpy DISABLE KEYS;",
+            "INSERT INTO  links_prematch.freq_firstnames_cpy SELECT * FROM links_prematch.freq_firstnames;",
+            "ALTER TABLE  links_prematch.freq_firstnames_cpy ENABLE KEYS;"
         };
 
         // run queries
@@ -546,7 +547,7 @@ public class LinksPrematch extends Thread
         // Execute queries
         /*
         int nqFirst = 1;
-        int nqLast = 28;
+        int nqLast = 18;    // used to be 28 ?
         String qPrefix = "FrequencyTables/FrequencyTables_q";
 
         for (int n = nqFirst; n <= nqLast; n++) {

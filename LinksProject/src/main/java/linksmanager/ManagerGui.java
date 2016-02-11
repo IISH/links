@@ -2337,7 +2337,10 @@ public class ManagerGui extends javax.swing.JFrame
 
         String doStandardization = properties.getProperty( "doStandardization" );
         if( doStandardization != null ) {
-            if( doStandardization.equals( "true" ) ) { cbPdoStandardization.setSelected( true ); }
+            if( doStandardization.equals( "true" ) ) {
+                cbPdoStandardization.setSelected( true );
+                cbPdoStandardization.setEnabled( true );
+            }
             else { cbPdoStandardization.setSelected( false ); }
         }
 
