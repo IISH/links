@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-10-Feb-2016 Latest change
+ * FL-12-Feb-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6482,9 +6482,9 @@ public class LinksCleanThread extends Thread
 
             "CREATE TABLE links_temp.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "INSERT INTO links_temp.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm';",
+            "INSERT INTO links_temp.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm' AND id_source = " + source,
 
-            "INSERT INTO links_temp.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'f';",
+            "INSERT INTO links_temp.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'f' AND id_source = " + source,
 
             "UPDATE links_cleaned.person_c, links_temp.male SET sex = 'f' WHERE links_temp.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
                     + " AND id_source = " + source,
