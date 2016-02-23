@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-12-Feb-2016 Latest change
+ * FL-23-Feb-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3623,7 +3623,8 @@ public class LinksCleanThread extends Thread
                     }
                 }
 
-                if( numeric && lit_year > 0) {
+                if( numeric && lit_year > 0 && lit_year < 115 )
+                {
                     String standard_year_str = almmLitAge.value( "standard_year", age_literal );
                     if( standard_year_str.isEmpty() ) { standard_year_str = "0"; }
                     int standard_year = Integer.parseInt( standard_year_str );
@@ -4107,7 +4108,7 @@ public class LinksCleanThread extends Thread
         //msg = "Skipping until minMaxDateMain()";
         //showMessage( msg, false, true );
         // see below
-
+        /*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %2d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4131,14 +4132,14 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type );
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-
+        */
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-
+        /*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
@@ -4168,7 +4169,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source );
         msg = String.format( "Thread id %2d; Processing minMaxDateMain ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-
+        */
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDates
@@ -5326,6 +5327,14 @@ public class LinksCleanThread extends Thread
                 int registration_month    = rs_r.getInt( "registration_month" );
                 int registration_year     = rs_r.getInt( "registration_year" );
 
+                if( debug ) {
+                    System.out.println( "id_registration: " + id_registration );
+                    System.out.println( "registration_date: " + registration_date );
+                    System.out.println( "registration_day: " + registration_day );
+                    System.out.println( "registration_month: " + registration_month );
+                    System.out.println( "registration_year: " + registration_year );
+                }
+
                 // valid date string: dd-mm-yyyy
                 // exactly 2 hyphens should occur, but substrings like '-1', '-2', '-3', and '-4' are used to flag
                 // e.g. unreadable date strings
@@ -5345,16 +5354,19 @@ public class LinksCleanThread extends Thread
                 // date object from links_original date string
                 // -1- FIRST dymd
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
+                if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }
 
                 // date object from links_original date components
                 String regist_comp = String.format( "%02d-%02d-%04d", registration_day, registration_month, registration_year );
                 DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
+                if( debug ) { System.out.println( "dymd_comp.isValidDate(): " + dymd_comp.isValidDate() ); }
 
-                // compate the string date and the components date
+                // compare the string date and the components date
                 boolean use_event_date = false;
 
                 if( dymd.isValidDate() )                    // valid registration_date
                 {
+
                     if( dymd_comp.isValidDate() ) {         // valid components date
                         // both valid; components from dymd will be used
                         if( ! ( dymd.getDay()   == dymd_comp.getDay() &&
@@ -5370,8 +5382,10 @@ public class LinksCleanThread extends Thread
                 else                                        // invalid registration_date
                 {
                     if( dymd_comp.isValidDate() ) {         // valid components date
-                        // -2- REPLACE dymd with components
+                        // -2- REPLACE dymd with comp values
                         dymd = dymd_comp;                   // use components date
+                        registration_date = String.format( "%02d-%02d-%04d",
+                                dymd_comp.getDay(), dymd_comp.getMonth(), dymd_comp.getYear() );
                     }
                     else {                                  // invalid components date
                         // both invalid
