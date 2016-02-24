@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-23-Feb-2016 Latest change
+ * FL-24-Feb-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6836,9 +6836,12 @@ public class LinksCleanThread extends Thread
 
                 if( debug ) { showMessage( registrationIds.toString(), false, true ); }
                 Collections.sort( registrationIds );
-                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
 
-                showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                if( debug ) {
+                    showMessage( registrationIds.toString(), false, true );
+                    showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                }
+
                 if( registrationIds.size() > 2 )   // useless registrations, remove them all
                 {
                     for( int id_regist : registrationIds )
@@ -6863,14 +6866,11 @@ public class LinksCleanThread extends Thread
                             showMessage( msg, false, true );
                         }
                     }
-
-                    String msg = String.format( "Number of duplicate regs removed from duplicate tuples: %d", ndeleteRegist );
-                    showMessage( msg, false, true );
                 }
                 else    // test pairs
                 {
-                    int rid1 = registrationIds.get( 0 );
-                    int rid2 = registrationIds.get( 1 );
+                    int rid1 = 0;
+                    int rid2 = 1;
                     boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
                     if( isDuplicate ) { nDuplicates++; }
                 }
@@ -6890,7 +6890,10 @@ public class LinksCleanThread extends Thread
                 registrationIds = null;
             }
 
-            String msg = String.format( "Number of duplicate regs removed from duplicate pairs: %d", nDuplicates );
+            String msg = String.format( "Number of duplicate regs removed from duplicate tuples: %d", ndeleteRegist );
+            showMessage( msg, false, true );
+
+            msg = String.format( "Number of duplicate regs removed from duplicate pairs: %d", nDuplicates );
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
@@ -6913,6 +6916,12 @@ public class LinksCleanThread extends Thread
     throws Exception
     {
         boolean isDeleted = false;
+
+        if( debug ) {
+            System.out.println( String.format( "rid1: %d, rid2: %d", rid1, rid2 ) );
+            System.out.println( String.format( "registrationIds.size(): %d", registrationIds.size() ) );
+            for( int rid : registrationIds ) { System.out.println( rid ); }
+        }
 
         int id_registration1 = registrationIds.get( rid1 );
         int id_registration2 = registrationIds.get( rid2 );
