@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-30-Nov-2015 Latest change
+ * FL-29-Feb-2016 Latest change
  */
 public class ViewSummarizer
 {
@@ -229,6 +229,7 @@ public class ViewSummarizer
             ResultSet rs = db_conn.createStatement().executeQuery( query );
             rs.first();
             result = rs.getString( 1 );
+            if( result == null ) { result = ""; }
         }
         catch( Exception ex ) { System.out.println( "Exception: " + query + " - Error message: " + ex.getMessage() ); }
 
@@ -243,7 +244,8 @@ public class ViewSummarizer
         {
             display = result;
 
-                 if( result.equals( "211" ) ) { display += " = Groningen"; }
+                 if( result.equals( "" ) )    { display += " = alles"; }
+            else if( result.equals( "211" ) ) { display += " = Groningen"; }
             else if( result.equals( "212" ) ) { display += " = Fri_Tresoar"; }
             else if( result.equals( "213" ) ) { display += " = Drenthe"; }
             else if( result.equals( "214" ) ) { display += " = Overijssel"; }
