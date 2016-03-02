@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-24-Feb-2016 Latest change
+ * FL-02-Mar-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6356,9 +6356,15 @@ public class LinksCleanThread extends Thread
 
     private void daysSinceBegin( boolean debug, String source )
     {
-        String qRclean  = "UPDATE links_cleaned.registration_c SET registration_date = NULL WHERE registration_date = '00-00-0000' AND id_source = " + source;
+        String qRclean  = "UPDATE links_cleaned.registration_c SET "
+            + "registration_date = NULL "
+            + "WHERE ( registration_date = '00-00-0000' OR registration_date = '0000-00-00' ) "
+            + "AND id_source = " + source;
         if( debug ) { showMessage( qRclean, false, true ); }
-        else { showMessage( "reg dates '00-00-0000' -> NULL", false, true ); }
+        else {
+            showMessage( "reg dates '00-00-0000' -> NULL", false, true );
+            showMessage( "reg dates '0000-00-00' -> NULL", false, true );
+        }
         try { dbconCleaned.runQuery( qRclean ); }
         catch( Exception ex ) {
             showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
