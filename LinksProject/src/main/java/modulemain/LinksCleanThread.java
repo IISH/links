@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-02-Mar-2016 Latest change
+ * FL-07-Mar-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3987,7 +3987,7 @@ public class LinksCleanThread extends Thread
                         addToReportPerson( id_person, source, 141, role );      // report warning 141
                         almmRole.add( role );                                   // add new role
 
-                        String role_nr = "999";
+                        String role_nr = "99";
                         String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
                         if( debug ) { showMessage( updateQuery, false, true ); }
                         dbconCleaned.runQuery( updateQuery );
