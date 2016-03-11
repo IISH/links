@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-07-Mar-2016 Latest change
+ * FL-11-Mar-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -591,7 +591,7 @@ public class LinksCleanThread extends Thread
                 + " `location`     VARCHAR(60)  NULL ,"
                 + " `reg_type`     VARCHAR(50)  NULL ,"
                 + " `date`         VARCHAR(20)  NULL ,"
-                + " `sequence`     VARCHAR(30)  NULL ,"
+                + " `sequence`     VARCHAR(60)  NULL ,"
                 + " `role`         VARCHAR(30)  NULL ,"
                 + " `guid`         VARCHAR(80)  NULL ,"
                 + " `reg_key`      INT UNSIGNED NULL ,"
@@ -3942,7 +3942,7 @@ public class LinksCleanThread extends Thread
                             if( debug ) { showMessage( "Warning 141 (via SC_X): id_person: " + id_person + ", role: " + role, false, true ); }
                             addToReportPerson( id_person, source, 141, role );      // warning 141
 
-                            String role_nr = "999";
+                            String role_nr = "99";
                             String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
                             if( debug ) { showMessage( updateQuery, false, true ); }
                             dbconCleaned.runQuery( updateQuery );
@@ -6396,6 +6396,7 @@ public class LinksCleanThread extends Thread
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date IS NOT NULL "
             + "AND registration_date NOT LIKE '00-%' "
+            + "AND registration_date NOT LIKE '0000-%' "
             + "AND registration_date NOT LIKE '%-00-%' "
             + "AND registration_date NOT LIKE '%-0000' "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
