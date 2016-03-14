@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-11-Mar-2016 Latest change
+ * FL-14-Mar-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -588,9 +588,9 @@ public class LinksCleanThread extends Thread
                 + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
                 + " `id_source`    INT UNSIGNED NULL ,"
                 + " `archive`      VARCHAR(30)  NULL ,"
-                + " `location`     VARCHAR(60)  NULL ,"
+                + " `location`     VARCHAR(120) NULL ,"
                 + " `reg_type`     VARCHAR(50)  NULL ,"
-                + " `date`         VARCHAR(20)  NULL ,"
+                + " `date`         VARCHAR(25)  NULL ,"
                 + " `sequence`     VARCHAR(60)  NULL ,"
                 + " `role`         VARCHAR(30)  NULL ,"
                 + " `guid`         VARCHAR(80)  NULL ,"
@@ -1016,7 +1016,7 @@ public class LinksCleanThread extends Thread
         dbconCleaned.runQuery( keysPerson );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-
+        showMessage_nl();
     } // doRenewData
 
 
