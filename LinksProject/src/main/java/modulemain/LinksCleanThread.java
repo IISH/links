@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-14-Mar-2016 Latest change
+ * FL-15-Mar-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6360,11 +6360,13 @@ public class LinksCleanThread extends Thread
             + "registration_date = NULL "
             + "WHERE ( registration_date = '00-00-0000' OR registration_date = '0000-00-00' ) "
             + "AND id_source = " + source;
+
         if( debug ) { showMessage( qRclean, false, true ); }
         else {
             showMessage( "reg dates '00-00-0000' -> NULL", false, true );
             showMessage( "reg dates '0000-00-00' -> NULL", false, true );
         }
+
         try { dbconCleaned.runQuery( qRclean ); }
         catch( Exception ex ) {
             showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
@@ -6392,6 +6394,7 @@ public class LinksCleanThread extends Thread
         // because the column links_cleaned.registration_days is defined as unsigned.
         // We skip such negative results.
         // 22-Jan-2016: we now assume that the registration_date of registration_c is formatted as '%02d-%02d-%04d'
+        // 15-Mar-2016: check for STR_TO_DATE result NOT NULL
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date IS NOT NULL "
@@ -6399,6 +6402,7 @@ public class LinksCleanThread extends Thread
             + "AND registration_date NOT LIKE '0000-%' "
             + "AND registration_date NOT LIKE '%-00-%' "
             + "AND registration_date NOT LIKE '%-0000' "
+            + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) IS NOT NULL "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
 
@@ -6430,7 +6434,9 @@ public class LinksCleanThread extends Thread
 
             if( debug ) { showMessage( queryR, false, true ); }
             else { showMessage( "7-of-7: registration_days", false, true ); }
-            dbconCleaned.runQuery( queryR );
+            int rowsAffected = dbconCleaned.runQueryUpdate( queryR );
+            showMessage( "registration_days rows affected: " + rowsAffected, false, true );
+
         }
         catch( Exception ex ) {
             showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
