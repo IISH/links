@@ -572,7 +572,7 @@ public class QueryGenerator
     {
         String query;
 
-        query = "SELECT id_base , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
+        query = "SELECT id_base , id_registration , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
 
         if( !ignore_minmax ) {
             query += ", ego_birth_min , ego_birth_max , ego_marriage_min , ego_marriage_max , ego_death_min , ego_death_max ";

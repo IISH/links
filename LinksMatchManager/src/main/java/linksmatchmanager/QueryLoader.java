@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-05-Nov-2015 Latest change
+ * FL-06-Apr-2016 Latest change
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -35,6 +35,7 @@ public class QueryLoader
 
     // Set variables
     public Vector< Integer > s1_id_base              = new Vector< Integer >();
+    public Vector< Integer > s1_id_registration      = new Vector< Integer >();
     public Vector< Integer > s1_registration_days    = new Vector< Integer >();
 
     public Vector< String > s1_ego_familyname_str    = new Vector< String >();
@@ -92,6 +93,7 @@ public class QueryLoader
 
 
     public Vector< Integer > s2_id_base              = new Vector< Integer >();
+    public Vector< Integer > s2_id_registration      = new Vector< Integer >();
     public Vector< Integer > s2_registration_days    = new Vector< Integer >();
 
     public Vector< String > s2_ego_familyname_str    = new Vector< String >();
@@ -108,6 +110,7 @@ public class QueryLoader
     public Vector< Integer > s2_ego_marriage_max     = new Vector< Integer >();
     public Vector< Integer > s2_ego_death_min        = new Vector< Integer >();
     public Vector< Integer > s2_ego_death_max        = new Vector< Integer >();
+
     public Vector< Integer > s2_sex                  = new Vector< Integer >();
 
     public Vector< Integer > s2_mother_familyname    = new Vector< Integer >();
@@ -161,6 +164,7 @@ public class QueryLoader
         this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
+        System.out.println( "QueryLoader()" );
 
         // get set 1 from links_base
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
@@ -186,7 +190,8 @@ public class QueryLoader
         while( set1.next() )
         {
             // Vars to use, global
-            int var_s1_id_base = 0;
+            int var_s1_id_base           = 0;
+            int var_s1_id_registration   = 0;
             int var_s1_registration_days = 0;
 
             String var_s1_ego_familyname_str = "";
@@ -205,6 +210,7 @@ public class QueryLoader
             int var_s1_ego_death_max    = 0;
 
             int var_s1_sex = 0;
+
             int var_s1_mother_familyname   = 0;
             int var_s1_mother_firstname1   = 0;
             int var_s1_mother_firstname2   = 0;
@@ -242,7 +248,8 @@ public class QueryLoader
             int var_s1_partner_death_max    = 0;
 
             // Get all vars from table
-            var_s1_id_base = set1.getInt( "id_base" );
+            var_s1_id_base           = set1.getInt( "id_base" );
+            var_s1_id_registration   = set1.getInt( "id_registration" );
             var_s1_registration_days = set1.getInt( "registration_days" );
 
             // Ego
@@ -430,13 +437,14 @@ public class QueryLoader
             {
                 String s = set1.getString( "ego_sex" );
 
-                if( s.equalsIgnoreCase( "v" ) )      { var_s1_sex = 1; }
-                else if( s.equalsIgnoreCase( "m" ) ) { var_s1_sex = 2; }
-                else                                 { var_s1_sex = 0; }
+                     if( s.equals( "f" ) ) { var_s1_sex = 1; }
+                else if( s.equals( "m" ) ) { var_s1_sex = 2; }
+                else                       { var_s1_sex = 0; }
             }
 
             // fill the arraylists
             s1_id_base          .add( var_s1_id_base );
+            s1_id_registration  .add( var_s1_id_registration );
             s1_registration_days.add( var_s1_registration_days );
 
             s1_ego_familyname_str.add( var_s1_ego_familyname_str );
@@ -454,7 +462,7 @@ public class QueryLoader
             s1_ego_death_min   .add( var_s1_ego_death_min );
             s1_ego_death_max   .add( var_s1_ego_death_max );
 
-            s1_sex.add(var_s1_sex);
+            s1_sex.add( var_s1_sex );
 
             s1_mother_familyname  .add( var_s1_mother_familyname );
             s1_mother_firstname1  .add( var_s1_mother_firstname1 );
@@ -497,7 +505,8 @@ public class QueryLoader
         // Do set 2
         while( set2.next() )
         {
-            int var_s2_id_base = 0;
+            int var_s2_id_base           = 0;
+            int var_s2_id_registration   = 0;
             int var_s2_registration_days = 0;
 
             String var_s2_ego_familyname_str = "";
@@ -554,7 +563,8 @@ public class QueryLoader
             int var_s2_partner_death_max    = 0;
 
             // Get all vars from table
-            var_s2_id_base = set2.getInt( "id_base" );
+            var_s2_id_base           = set2.getInt( "id_base" );
+            var_s2_id_registration   = set2.getInt( "id_registration" );
             var_s2_registration_days = set2.getInt( "registration_days" );
 
             // Ego
@@ -741,13 +751,14 @@ public class QueryLoader
             {
                 String s = set2.getString( "ego_sex" );
 
-                if( s.equalsIgnoreCase( "v" ) )      { var_s2_sex = 1; }
-                else if( s.equalsIgnoreCase( "m" ) ) { var_s2_sex = 2; }
-                else                                 { var_s2_sex = 0; }
+                     if( s.equals( "f" ) ) { var_s2_sex = 1; }
+                else if( s.equals( "m" ) ) { var_s2_sex = 2; }
+                else                       { var_s2_sex = 0; }
             }
 
             //fill the arraylists
-            s2_id_base.add( var_s2_id_base );
+            s2_id_base          .add( var_s2_id_base );
+            s2_id_registration  .add( var_s2_id_registration );
             s2_registration_days.add( var_s2_registration_days );
 
             s2_ego_familyname_str.add( var_s2_ego_familyname_str );
@@ -815,7 +826,8 @@ public class QueryLoader
 
     public void freeVectors() throws Exception
     {
-        s1_id_base              .clear(); s1_id_base = null;
+        s1_id_base              .clear(); s1_id_base              = null;
+        s1_id_registration      .clear(); s1_id_registration      = null;
         s1_registration_days    .clear(); s1_registration_days    = null;
 
         s1_ego_familyname_str   .clear(); s1_ego_familyname_str   = null;
@@ -873,6 +885,7 @@ public class QueryLoader
 
 
         s2_id_base              .clear(); s2_id_base = null;
+        s2_id_registration      .clear(); s2_id_registration      = null;
         s2_registration_days    .clear(); s2_registration_days    = null;
 
         s2_ego_familyname_str   .clear(); s2_ego_familyname_str   = null;

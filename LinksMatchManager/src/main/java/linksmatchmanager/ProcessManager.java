@@ -8,24 +8,18 @@ package linksmatchmanager;
  *
  * @author oaz
  */
-public class ProcessManager {
-
+public class ProcessManager
+{
+    boolean debug = true;
     int processCount;
     int max;
 
     /**
      * 
-     */
-    public ProcessManager(){
-        processCount = 0;
-        this.max = max;
-    }
-     
-    /**
-     * 
      * @param max 
      */
-    public ProcessManager(int max){
+    public ProcessManager( int max )
+    {
         processCount = 0;
         this.max = max;
     }
@@ -34,12 +28,10 @@ public class ProcessManager {
      * 
      * @return 
      */
-    public boolean allowProcess(){
-        
-        if( processCount < max){
-            return true;
-        }
-        
+    public boolean allowProcess()
+    {
+        if( debug ) { System.out.println( "allowProcess() processCount: " + processCount ); }
+        if( processCount < max) { return true; }
         return false;
     }
     
@@ -47,8 +39,11 @@ public class ProcessManager {
      * 
      * @return 
      */
-    public int addProcess() {
+    public int addProcess()
+    {
+        if( debug ) { System.out.println( "addProcess() before: processCount: " + processCount ); }
         processCount++;
+        if( debug ) { System.out.println( "addProcess() after: processCount: " + processCount ); }
         return processCount;
     }
 
@@ -56,8 +51,11 @@ public class ProcessManager {
      * 
      * @return 
      */
-    public int removeProcess() {
+    public int removeProcess()
+    {
+        if( debug ) { System.out.println( "removeProcess() before: processCount: " + processCount ); }
         processCount--;
+        if( debug ) { System.out.println( "removeProcess() after: processCount: " + processCount ); }
         return processCount;
     }
 

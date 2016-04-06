@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -36,10 +38,10 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-01-Feb-2015 Latest change
+ * FL-06-Apr-2015 Latest change
  */
 
-public class Main
+public class MatchMain
 {
     // class global vars
     private static boolean debug;
@@ -82,7 +84,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "01-Feb-2016 13:53";
+            String timestamp1 = "06-Apr-2016 12:02";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -129,10 +131,11 @@ public class Main
 
             plog.show( "Matching process started." );
             int max_threads_simul = Integer.parseInt( max_threads_str );
-
-            ProcessManager pm = new ProcessManager( max_threads_simul );
             msg = String.format( "Max simultaneous active matching threads: %d", max_threads_simul );
             System.out.println( msg ); plog.show( msg );
+
+            //ProcessManager pm = new ProcessManager( max_threads_simul );
+            final Semaphore pm = new Semaphore( max_threads_simul, true );
 
             int ncores = Runtime.getRuntime().availableProcessors();
             msg = String.format( "Available cores: %d", ncores );
@@ -351,6 +354,7 @@ public class Main
                     showQuerySet( qs );
 
                     long qlStart = System.currentTimeMillis();
+                    // Notice: SampleLoader becomes a replacement ofQueryLoader, but it is not finished
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
@@ -376,6 +380,11 @@ public class Main
                     int nthreads_started = 0;                   // number of matching threads started
 
                     int s1part_counter = 0;  // debug
+
+                    //int processCount = pm.getProcessCount();
+                    int processCount = pm.availablePermits();
+                    plog.show( "processCount: " + processCount );
+
                     // Loop through the s1 parts
                     for( int s1_ipart = 0; s1_ipart < num_s1_parts; s1_ipart++ )
                     {
@@ -392,12 +401,19 @@ public class Main
                         if( debugrange ) { continue; }
 
                         // Wait until process manager gives permission
-                        while( !pm.allowProcess() ) {
+                        /*
+                        while( ! pm.allowProcess() ) {
+                         plog.show( "No permission for new thread: Waiting 60 seconds" );
+                            Thread.sleep( 60000 );
+                        }
+                        processCount = pm.addProcess();        // Add a process to process list
+                        */
+                        while( ! pm.tryAcquire( 0, TimeUnit.SECONDS ) ) {
                             plog.show( "No permission for new thread: Waiting 60 seconds" );
                             Thread.sleep( 60000 );
                         }
-
-                        pm.addProcess();        // Add a process to process list
+                        processCount = pm.availablePermits();
+                        plog.show( "processCount: " + processCount );
 
                         MatchAsync ma;          // Here begins threading
 
@@ -428,7 +444,7 @@ public class Main
 
                         s1part_counter++;
                     } // for s1 parts
-                    plog.show( String.format( "%d s1parts processed", s1part_counter ) ); // debug
+                    plog.show( String.format( "%d s1_parts processed", s1part_counter ) ); // debug
 
                     range_counter++;
                 } // for ranges
@@ -457,7 +473,10 @@ public class Main
             plog.show( "Matching now stopped at: " + timestamp3 );
 
         } // try
-        catch( Exception ex ) { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
+
+        catch( Exception ex )
+        { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
+
     } // main
 
 

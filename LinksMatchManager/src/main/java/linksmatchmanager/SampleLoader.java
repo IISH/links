@@ -12,12 +12,15 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * <p/>
  * FL-09-Nov-2015 Created
- * FL-09-Nov-2015 Latest change
+ * FL-22-Mar-2016 Sex: f, m, u
+ * FL-06-Apr-2016 Latest change
+ *
+ * NOT FINISHED
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples, we prefer to keep them separately
  *
- * TODO incomplete, untested
+ * TODO incomplete, untested <<<
  */
 public class SampleLoader
 {
@@ -40,6 +43,7 @@ public class SampleLoader
 
     // Set variables
     public Vector< Integer > id_base              = new Vector< Integer >();
+    public Vector< Integer > id_registration      = new Vector< Integer >();
     public Vector< Integer > registration_days    = new Vector< Integer >();
 
     public Vector< String > ego_familyname_str    = new Vector< String >();
@@ -110,6 +114,8 @@ public class SampleLoader
         this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
+        System.out.println( "SampleLoader()" );
+
         this.set_no = set_no;
         rs = null;
         if( set_no == 1 ) {
@@ -137,10 +143,13 @@ public class SampleLoader
 
     private void fillArrays() throws Exception
     {
+        System.out.println( "fillArrays()" );
+
         while( rs.next() )
         {
             // Vars to use, global
-            int var_id_base = 0;
+            int var_id_base           = 0;
+            int var_id_registration   = 0;
             int var_registration_days = 0;
 
             String var_ego_familyname_str = "";
@@ -196,7 +205,8 @@ public class SampleLoader
             int var_partner_death_max    = 0;
 
             // Get all vars from table
-            var_id_base = rs.getInt( "id_base" );
+            var_id_base           = rs.getInt( "id_base" );
+            var_id_registration   = rs.getInt( "id_registration" );
             var_registration_days = rs.getInt( "registration_days" );
 
             // Ego
@@ -384,13 +394,16 @@ public class SampleLoader
             {
                 String s = rs.getString( "ego_sex" );
 
-                if( s.equalsIgnoreCase( "v" ) )      { var_sex = 1; }
-                else if( s.equalsIgnoreCase( "m" ) ) { var_sex = 2; }
-                else                                 { var_sex = 0; }
+                     if( s.equals( "f" ) ) { var_sex = 1; }    // female
+                else if( s.equals( "m" ) ) { var_sex = 2; }    // male
+                else                       { var_sex = 0; }    // 'u' = unknown
+
+                System.out.println( "id_registration: " + var_id_registration + ", sex: " + s + ", var_sex: " + var_sex  );
             }
 
             // fill the arraylists
             id_base          .add( var_id_base );
+            id_registration  .add( var_id_registration );
             registration_days.add( var_registration_days );
 
             ego_familyname_str.add( var_ego_familyname_str );
@@ -408,7 +421,7 @@ public class SampleLoader
             ego_death_min   .add( var_ego_death_min );
             ego_death_max   .add( var_ego_death_max );
 
-            sex.add(var_sex);
+            sex.add( var_sex );
 
             mother_familyname  .add( var_mother_familyname );
             mother_firstname1  .add( var_mother_firstname1 );
@@ -451,7 +464,8 @@ public class SampleLoader
         // Do set 2
         while( set2.next() )
         {
-            int var_s2_id_base = 0;
+            int var_s2_id_base           = 0;
+            int var_s2_id_registration   = 0;
             int var_s2_registration_days = 0;
 
             String var_s2_ego_familyname_str = "";
@@ -508,7 +522,8 @@ public class SampleLoader
             int var_s2_partner_death_max    = 0;
 
             // Get all vars from table
-            var_s2_id_base = set2.getInt( "id_base" );
+            var_s2_id_base           = set2.getInt( "id_base" );
+            var_s2_id_registration   = set2.getInt( "id_registration" );
             var_s2_registration_days = set2.getInt( "registration_days" );
 
             // Ego
@@ -701,7 +716,8 @@ public class SampleLoader
             }
 
             //fill the arraylists
-            s2_id_base.add( var_s2_id_base );
+            s2_id_base          .add( var_s2_id_base );
+            s2_id_registration  .add( var_s2_id_registration );
             s2_registration_days.add( var_s2_registration_days );
 
             s2_ego_familyname_str.add( var_s2_ego_familyname_str );
@@ -769,7 +785,8 @@ public class SampleLoader
 
     public void freeVectors() throws Exception
     {
-        id_base              .clear(); id_base = null;
+        id_base              .clear(); id_base              = null;
+        id_registration      .clear(); id_registration      = null;
         registration_days    .clear(); registration_days    = null;
 
         ego_familyname_str   .clear(); ego_familyname_str   = null;
@@ -826,7 +843,8 @@ public class SampleLoader
         partner_death_max    .clear(); partner_death_max    = null;
 
         /*
-        s2_id_base              .clear(); s2_id_base = null;
+        s2_id_base              .clear(); s2_id_base              = null;
+        s2_id_registration      .clear(); s2_id_registration      = null;
         s2_registration_days    .clear(); s2_registration_days    = null;
 
         s2_ego_familyname_str   .clear(); s2_ego_familyname_str   = null;
