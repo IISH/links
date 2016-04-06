@@ -2,11 +2,12 @@ package dataset;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-
 import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 import java.util.Set;
 
@@ -21,13 +22,15 @@ import modulemain.LinksSpecific;
 /**
  * @author Fons Laan
  *
- * FL-19-Nov-2015 Latest change
+ * FL-06-Apr-2016 AtomicBoolean update_busy
+ * FL-06-Apr-2016 Latest change
  */
 public class TableToArrayListMultimap
 {
     private boolean debug = false;
 
-    private boolean update_busy = false;
+    //private boolean update_busy = false;
+    private AtomicBoolean update_busy = new AtomicBoolean( false );
 
     private boolean check_duplicates  = false;
     private boolean delete_duplicates = false;   // only used with check_duplicates = true
@@ -86,6 +89,8 @@ public class TableToArrayListMultimap
 
         if( debug ) { System.out.println( "TableToArrayListMultimap, table name: " +
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
+
+        update_busy.set( false );
 
         oldMap = ArrayListMultimap.create();
         newSet = HashMultiset.create();
@@ -630,18 +635,16 @@ public class TableToArrayListMultimap
      * Insert the new set entries into the reference table
      *
      * Multi-threaded consideration:
-     * Do not call this function when the flag update_busy is false.
-     * We ignore the update request is another thread already has the update in progress.
+     * Do not call this function when the flag update_busy is true.
+     * We ignore the update request if another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
-     *
-     * This flagging did sometimes fail;
-     * TODO make it thread-save
      */
     public boolean updateTable()
     throws Exception
     {
-        //if( update_busy ) { return false; } // prevent: java.util.ConcurrentModificationException
-        //update_busy = true;
+        if( update_busy.get() ) { return false; } // prevent: java.util.ConcurrentModificationException
+
+        update_busy.set( true );    // if we were not busy, now we are...
 
         //System.out.println( "updateTable" );
 
@@ -657,14 +660,15 @@ public class TableToArrayListMultimap
             conn_write.insertIntoTableIgnore( tableName, fields, values );  // ignore duplicates for UNIQUE keys
         }
 
-        //update_busy = false;
+        update_busy.set( false );
 
         return true;
     } // updateTable
 
 
-    //public boolean isBusy() { return update_busy; }
-    public boolean isBusy() { return false; }
+    //public boolean isBusy() { return false; }
+    public boolean isBusy() { return update_busy.get(); }
+
 
 
     /**

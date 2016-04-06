@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-01-Apr-2016 Latest change
+ * FL-06-Apr-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -327,7 +327,7 @@ public class LinksCleanThread extends Thread
 
                 long timeStart = System.currentTimeMillis();
                 /*
-                msg = "Pre-loading all reference tables...";   // with multit-hreaded they are not explicitly freed
+                msg = "Pre-loading all reference tables...";   // with multi-threaded they are not explicitly freed
                 plog.show( msg ); showMessage( msg, false, true );
 
                 almmPrepiece     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
@@ -2613,24 +2613,18 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %2d; standardDeathLocation ", threadId );
         showTimingMessage( msg, start );
 
-        start = System.currentTimeMillis();
-        msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
-        showMessage( msg, false, true );
+        //start = System.currentTimeMillis();
+        //msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
+        //showMessage( msg, false, true );
 
-        /*
         while( almmLocation.isBusy() ) {
             plog.show( "No permission to update ref_location: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( ! almmLocation.updateTable() )
+        if( almmLocation.updateTable() )
         { showMessage( String.format( "Thread id %2d; Updated reference table ref_location", threadId ), false, true ); }
         else
         { showMessage( String.format( "Thread id %2d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
-        */
-        almmLocation.updateTable();
-        msg = String.format( "Thread id %2d; Updating reference table ref_location ", threadId );
-
-        showTimingMessage( msg, start );
 
         if( ! multithreaded ) { almmLocation.free(); }
 
@@ -5359,10 +5353,16 @@ public class LinksCleanThread extends Thread
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
                 if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }
 
+                if( ! dymd.isValidDate() )  // invalid registration_date
+                { addToReportRegistration( id_registration, source + "", 203, dymd.getReports() ); }    // EC 203
+
                 // date object from links_original date components
                 String regist_comp = String.format( "%02d-%02d-%04d", registration_day, registration_month, registration_year );
                 DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
                 if( debug ) { System.out.println( "dymd_comp.isValidDate(): " + dymd_comp.isValidDate() ); }
+
+                if( ! dymd_comp.isValidDate() )  // invalid registration_date from components
+                { addToReportRegistration( id_registration, source + "", 204, dymd.getReports() ); }    // EC 204
 
                 // compare the string date and the components date
                 boolean use_event_date = false;
@@ -5374,12 +5374,11 @@ public class LinksCleanThread extends Thread
                         // both valid; components from dymd will be used
                         if( ! ( dymd.getDay()   == dymd_comp.getDay() &&
                                 dymd.getMonth() == dymd_comp.getMonth() &&
-                                dymd.getYear()  == dymd_comp.getYear() ) ) {
-                            addToReportRegistration( id_registration, source + "", 204, dymd.getReports() );   // EC 204
-                        }
+                                dymd.getYear()  == dymd_comp.getYear() ) )
+                        { addToReportRegistration( id_registration, source + "", 206, dymd.getReports() ); }    // EC 206
                     }
                     else {                                  // invalid components date
-                        // components from dymd will be used
+                        // components from dymd will be used, extracted after the  "if( use_event_date )" loop
                     }
                 }
                 else                                        // invalid registration_date
@@ -5455,15 +5454,8 @@ public class LinksCleanThread extends Thread
                         }
 
                         if( day > 31 ) {
-                            day = 1;
-                            month += 1;
-                            if( month > 12 ) {
-                                month = 1;
-                                year += 1;
-                            }
+                            day = 31;
                             dymd.setDay( day );
-                            dymd.setMonth( month );
-                            dymd.setYear( year );
                         }
 
                         if( month > 12 ) {
@@ -5531,6 +5523,7 @@ public class LinksCleanThread extends Thread
                     registration_day   = 0;
                     registration_month = 0;
                     registration_year  = 0;
+                    addToReportRegistration( id_registration, source, 205, "" );    // EC 205
                 }
                 query = "UPDATE registration_c SET "
                     + "registration_c.registration_date = '" + registration_date  + "' , "
