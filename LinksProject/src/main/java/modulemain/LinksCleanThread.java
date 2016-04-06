@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-15-Mar-2016 Latest change
+ * FL-01-Apr-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -237,11 +237,11 @@ public class LinksCleanThread extends Thread
 
                     doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
 
-                    doAge(   opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                     // GUI cb: Age, Role,Dates
+                    doAge( opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                       // GUI cb: Age, Role,Dates
 
-                    doRole(  opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                   // GUI cb: Age, Role, Dates
+                    doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                    // GUI cb: Age, Role, Dates
 
-                    doDates(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                 // GUI cb: Age, Role, Dates
+                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
 
                     doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
 
@@ -4107,8 +4107,8 @@ public class LinksCleanThread extends Thread
 
         //msg = "Skipping until minMaxDateMain()";
         //showMessage( msg, false, true );
-        // see below
-        /*
+
+        ///*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %2d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4132,14 +4132,16 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type );
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
+
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
         msg = String.format( "Thread id %2d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        /*
+
+        ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %2d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
@@ -4169,7 +4171,8 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source );
         msg = String.format( "Thread id %2d; Processing minMaxDateMain ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
+
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDates
