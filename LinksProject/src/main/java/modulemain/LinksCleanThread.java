@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-06-Apr-2016 Latest change
+ * FL-07-Apr-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4101,7 +4101,6 @@ public class LinksCleanThread extends Thread
 
         //msg = "Skipping until minMaxDateMain()";
         //showMessage( msg, false, true );
-
         ///*
         ts = System.currentTimeMillis();
         String type = "birth";
@@ -5060,7 +5059,7 @@ public class LinksCleanThread extends Thread
 
         if( mmj.getMinYear() > mmj.getMaxYear() )   // min/max consistency check
         {
-            showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
+            //showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
             String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " +  mmj.getMaxYear();
             addToReportPerson( id_person, "0", 266, msg_minmax  );       // error 266 + min & max
 
@@ -5320,16 +5319,16 @@ public class LinksCleanThread extends Thread
 
                 int id_registration       = rs_r.getInt( "id_registration" );
                 String registration_date  = rs_r.getString( "registration_date" );
-                int registration_day      = rs_r.getInt( "registration_day" );
-                int registration_month    = rs_r.getInt( "registration_month" );
-                int registration_year     = rs_r.getInt( "registration_year" );
+                int regist_day      = rs_r.getInt( "registration_day" );
+                int regist_month    = rs_r.getInt( "registration_month" );
+                int regist_year     = rs_r.getInt( "registration_year" );
 
                 if( debug ) {
-                    System.out.println( "id_registration: " + id_registration );
-                    System.out.println( "registration_date: " + registration_date );
-                    System.out.println( "registration_day: " + registration_day );
-                    System.out.println( "registration_month: " + registration_month );
-                    System.out.println( "registration_year: " + registration_year );
+                    System.out.println( "id_registration: "    + id_registration );
+                    System.out.println( "registration_date: "  + registration_date );
+                    System.out.println( "registration_day: "   + regist_day );
+                    System.out.println( "registration_month: " + regist_month );
+                    System.out.println( "registration_year: "  + regist_year );
                 }
 
                 // valid date string: dd-mm-yyyy
@@ -5353,46 +5352,43 @@ public class LinksCleanThread extends Thread
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
                 if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }
 
-                if( ! dymd.isValidDate() )  // invalid registration_date
-                { addToReportRegistration( id_registration, source + "", 203, dymd.getReports() ); }    // EC 203
-
                 // date object from links_original date components
-                String regist_comp = String.format( "%02d-%02d-%04d", registration_day, registration_month, registration_year );
+                String regist_comp = String.format( "%02d-%02d-%04d", regist_day, regist_month, regist_year );
                 DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
                 if( debug ) { System.out.println( "dymd_comp.isValidDate(): " + dymd_comp.isValidDate() ); }
-
-                if( ! dymd_comp.isValidDate() )  // invalid registration_date from components
-                { addToReportRegistration( id_registration, source + "", 204, dymd.getReports() ); }    // EC 204
 
                 // compare the string date and the components date
                 boolean use_event_date = false;
 
                 if( dymd.isValidDate() )                    // valid registration_date
                 {
-
-                    if( dymd_comp.isValidDate() ) {         // valid components date
-                        // both valid; components from dymd will be used
-                        if( ! ( dymd.getDay()   == dymd_comp.getDay() &&
-                                dymd.getMonth() == dymd_comp.getMonth() &&
-                                dymd.getYear()  == dymd_comp.getYear() ) )
-                        { addToReportRegistration( id_registration, source + "", 206, dymd.getReports() ); }    // EC 206
+                    if( dymd_comp.isValidDate() )           // valid components date
+                    {
+                        if( ! ( dymd.getDay() == regist_day && dymd.getMonth() == regist_month && dymd.getYear() == regist_year ) )
+                        {
+                            // both valid but unequal; components from dymd will be used
+                            String unequal_str = String.format( "[ %s not equal %d %d %d ]", registration_date, regist_day, regist_month, regist_year );
+                            addToReportRegistration( id_registration, source + "", 206, unequal_str );
+                        }    // EC 206
                     }
-                    else {                                  // invalid components date
+                    else                                    // invalid components date + valid registration_date
+                    {
                         // components from dymd will be used, extracted after the  "if( use_event_date )" loop
+                        //if( ! ( regist_day == 0 && regist_month == 0 && regist_year == 0 ) )  // only report if components are not all 3 empty
+                        //{ addToReportRegistration( id_registration, source + "", 204, dymd_comp.getReports() ); }  // EC 204
                     }
                 }
                 else                                        // invalid registration_date
                 {
-                    if( dymd_comp.isValidDate() ) {         // valid components date
+                    if( dymd_comp.isValidDate() )           // valid components date + invalid registration_date
+                    {
+                        //if( registration_date != "" )       // only report if registration_date is not empty
+                        //{ addToReportRegistration( id_registration, source + "", 203, dymd.getReports() ); }    // EC 203
                         // -2- REPLACE dymd with comp values
                         dymd = dymd_comp;                   // use components date
-                        registration_date = String.format( "%02d-%02d-%04d",
-                                dymd_comp.getDay(), dymd_comp.getMonth(), dymd_comp.getYear() );
+                        registration_date = String.format( "%02d-%02d-%04d", regist_day, regist_month, regist_year );
                     }
-                    else {                                  // invalid components date
-                        // both invalid
-                        use_event_date = true;              // try to use event_date
-                    }
+                    else { use_event_date = true; }         // both invalid, try to use event_date
                 }
 
                 // replace registration date with event date
@@ -5433,7 +5429,8 @@ public class LinksCleanThread extends Thread
                     {
                         if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
 
-                        addToReportRegistration( id_registration, source, 201, dymd.getReports() );    // EC 201
+                        if( registration_date != "" )
+                        { addToReportRegistration( id_registration, source, 201, dymd.getReports() ); } // EC 201
 
                         int day   = dymd.getDay();
                         int month = dymd.getMonth();
@@ -5512,24 +5509,24 @@ public class LinksCleanThread extends Thread
                 String query = "";
                 if( dymd.isValidDate() )
                 {
-                    registration_day   = dymd.getDay();
-                    registration_month = dymd.getMonth();
-                    registration_year  = dymd.getYear();
+                    regist_day   = dymd.getDay();
+                    regist_month = dymd.getMonth();
+                    regist_year  = dymd.getYear();
 
                 }
                 else    // could not get a valid registration_date; avoid confusing garbage
                 {
                     registration_date  = "";
-                    registration_day   = 0;
-                    registration_month = 0;
-                    registration_year  = 0;
+                    regist_day   = 0;
+                    regist_month = 0;
+                    regist_year  = 0;
                     addToReportRegistration( id_registration, source, 205, "" );    // EC 205
                 }
                 query = "UPDATE registration_c SET "
                     + "registration_c.registration_date = '" + registration_date  + "' , "
-                    + "registration_c.registration_day = "   + registration_day   + " , "
-                    + "registration_c.registration_month = " + registration_month + " , "
-                    + "registration_c.registration_year = "  + registration_year  + " ";
+                    + "registration_c.registration_day = "   + regist_day   + " , "
+                    + "registration_c.registration_month = " + regist_month + " , "
+                    + "registration_c.registration_year = "  + regist_year  + " ";
 
                 if( use_event_date ) {
                     // invalid registration date: set registration_flag to 1
@@ -6391,6 +6388,7 @@ public class LinksCleanThread extends Thread
         // We skip such negative results.
         // 22-Jan-2016: we now assume that the registration_date of registration_c is formatted as '%02d-%02d-%04d'
         // 15-Mar-2016: check for STR_TO_DATE result NOT NULL
+        /*
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
             + "WHERE registration_date IS NOT NULL "
@@ -6399,8 +6397,10 @@ public class LinksCleanThread extends Thread
             + "AND registration_date NOT LIKE '%-00-%' "
             + "AND registration_date NOT LIKE '%-0000' "
             + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) IS NOT NULL "
+            + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) <> '0000-00-00' "
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
+        */
 
         try
         {
@@ -6428,16 +6428,72 @@ public class LinksCleanThread extends Thread
             else { showMessage( "6-of-7: death_date_max", false, true ); }
             dbconCleaned.runQuery( queryP6 );
 
+            /*
+            // sometimes exceptions for invalid dates...
             if( debug ) { showMessage( queryR, false, true ); }
             else { showMessage( "7-of-7: registration_days", false, true ); }
             int rowsAffected = dbconCleaned.runQueryUpdate( queryR );
             showMessage( "registration_days rows affected: " + rowsAffected, false, true );
-
+            */
         }
         catch( Exception ex ) {
             showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
+
+
+        try
+        {
+            showMessage( "7-of-7: registration_days", false, true );
+            String queryS = "SELECT id_registration, registration_date FROM registration_c WHERE id_source = " + source;
+
+            ResultSet rs_s = dbconCleaned.runQueryWithResult( queryS );
+
+            int count = 0;
+            int stepstate = count_step;
+            while( rs_s.next() )
+            {
+                count++;
+                if( count == stepstate ) {
+                    showMessage( count + "", true, true );
+                    stepstate += count_step;
+                }
+
+                int id_registration = rs_s.getInt( "id_registration" );
+                String registration_date  = rs_s.getString( "registration_date" );
+                //System.out.println( "count: " + count + ", id_registration: " + id_registration + ", registration_date: " + registration_date );
+
+                String queryU = "UPDATE registration_c SET "
+                    + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
+                    + "WHERE registration_date IS NOT NULL "
+                    + "AND registration_date NOT LIKE '00-%' "
+                    + "AND registration_date NOT LIKE '0000-%' "
+                    + "AND registration_date NOT LIKE '%-00-%' "
+                    + "AND registration_date NOT LIKE '%-0000' "
+                    + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) IS NOT NULL "
+                    + "AND STR_TO_DATE( registration_date, '%d-%m-%Y' ) <> '0000-00-00' "
+                    + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
+                    + "AND id_source = " + source + " "
+                    + "AND id_registration = " + id_registration;
+
+
+                 try {
+                    int rowsAffected = dbconCleaned.runQueryUpdate( queryU );
+                    //System.out.println( "registration_days rows affected: " + rowsAffected );
+                }
+                catch( Exception ex ) {
+                    showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+                    ex.printStackTrace( new PrintStream( System.out ) );
+                    System.out.println( "count: " + count + ", id_registration: " + id_registration + ", registration_date: " + registration_date );
+                }
+            }
+            System.out.println( "end count: " + count );
+        }
+        catch( Exception ex ) {
+            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
     } // daysSinceBegin
 
 
