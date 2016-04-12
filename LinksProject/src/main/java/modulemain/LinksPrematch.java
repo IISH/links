@@ -10,6 +10,8 @@ import java.sql.ResultSet;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import com.google.common.base.Strings;
+
 import connectors.MySqlConnector;
 import dataset.Options;
 import general.Functions;
@@ -27,7 +29,7 @@ import prematch.Lv;
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
- * FL-11-Feb-2016 Latest change
+ * FL-12-Apr-2016 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -40,6 +42,7 @@ public class LinksPrematch extends Thread
     private String db_url;
     private String db_user;
     private String db_pass;
+    private String sourceIdsGui;
 
     private boolean bSplitFirstames;
     private boolean bFrequencyTables;
@@ -90,12 +93,16 @@ public class LinksPrematch extends Thread
     )
     throws Exception
     {
+        this.opts = opts;
+
         this.debug = opts.isDbgPrematch();
         this.plog  = opts.getLogger();
 
         this.db_url  = opts.getDb_url();
         this.db_user = opts.getDb_user();
         this.db_pass = opts.getDb_pass();
+
+        this.sourceIdsGui = opts.getSourceIds();
 
         this.bSplitFirstames  = bSplitFirstnames;
         this.bFrequencyTables = bFrequencyTables;
@@ -143,7 +150,14 @@ public class LinksPrematch extends Thread
 
             doNamesToNumbers( debug, bNamesToNos );
 
-            doCreateNewBaseTable( debug, bBaseTable );
+            if( Strings.isNullOrEmpty( sourceIdsGui ) )
+            { doCreateNewBaseTable( debug, bBaseTable ); }
+            else
+            {
+                String idsStr[] = sourceIdsGui.split( " " );
+                for( String source : idsStr )
+                { doCreateNewBaseTableSource( debug, bBaseTable, source ); }    // update per source
+            }
 
             //doLevenshtein( debug, bLevenshtein, bExactMatches );        // now here in main
             String funcname = "doLevenshtein";
@@ -735,6 +749,291 @@ public class LinksPrematch extends Thread
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
     } // doCreateNewBaseTable
+
+
+    /**
+     * @param debug
+     * @param go
+     * @param source
+     * @thr@param ows Exception
+     */
+    public void doCreateNewBaseTableSource( boolean debug, boolean go, String source ) throws Exception
+    {
+        String funcname = "doCreateNewBaseTableSource";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        // delete the previous records for source
+        String qdelete = "DELETE FROM links_base WHERE id_source = " + source;
+        showMessage( qdelete, false, true );
+
+        try {
+            conPrematch.runQuery( qdelete );
+            int rowsAffected = conPrematch.runQueryUpdate( qdelete );
+            System.out.println( "# of records deleted: " + rowsAffected );
+        }
+        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+
+
+        String[] queries = getNewBaseTableQueries( debug, source );
+        int nupdated = 0;
+        int n = 0;
+
+        for( String query : queries )
+        {
+            n++;
+            String msg = "query " + n + "-of-" + queries.length;
+            showMessage( msg, false, true );
+            System.out.println( "\n" + query );
+
+            long start = System.currentTimeMillis();
+            try {
+                int count = conPrematch.runQueryUpdate( query );
+                if( n == 1 )
+                { showMessage( "Number of inserted records from query " + n + ": " + count, false, true ); }
+                else
+                {
+                    nupdated += count;
+                    showMessage( "Number of updated records from query " + n + ": " + count, false, true );
+                }
+            }
+            catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+            elapsedShowMessage( msg + " done in", start, System.currentTimeMillis() );
+        }
+        //showMessage( "Total updated records: " + nupdated, false, true );
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doCreateNewBaseTableSource
+
+
+
+     /**
+     * @param debug
+     * @param source
+     * @throws Exception
+     */
+    public String[] getNewBaseTableQueries( boolean debug, String source ) throws Exception
+    {
+        String query1 = ""
+            + "INSERT INTO links_prematch.links_base "
+            + "( "
+            + "id_registration , "
+            + "id_source , "
+            + "id_persist_registration , "
+            + "registration_maintype , "
+            + "registration_type , "
+            + "extract , "
+            + "registration_days , "
+            + "registration_location , "
+            + "ego_id , "
+            + "ego_familyname_fc , "
+            + "ego_familyname_prefix , "
+            + "ego_familyname_str , "
+            + "ego_familyname , "
+            + "ego_firstname , "
+            + "ego_firstname1_str , "
+            + "ego_firstname1 , "
+            + "ego_firstname2 , "
+            + "ego_firstname3 , "
+            + "ego_firstname4 , "
+            + "ego_sex , "
+            + "ego_birth_min , "
+            + "ego_birth_max , "
+            + "ego_birth_loc , "
+            + "ego_marriage_min , "
+            + "ego_marriage_max , "
+            + "ego_marriage_loc , "
+            + "ego_death_min , "
+            + "ego_death_max , "
+            + "ego_death_loc , "
+            + "ego_role "
+            + ") "
+            + "SELECT "
+            + "links_cleaned.registration_c.id_registration , "
+            + "links_cleaned.registration_c.id_source , "
+            + "links_cleaned.registration_c.id_persist_registration , "
+            + "links_cleaned.registration_c.registration_maintype , "
+            + "links_cleaned.registration_c.registration_type , "
+            + "links_cleaned.registration_c.extract , "
+            + "links_cleaned.registration_c.registration_days , "
+            + "links_cleaned.registration_c.registration_location_no , "
+            + "links_cleaned.person_c.id_person , "
+            + "LEFT( links_cleaned.person_c.familyname, 1 ), "
+            + "links_cleaned.person_c.prefix , "
+            + "links_cleaned.person_c.familyname , "
+            + "links_cleaned.person_c.familyname_no , "
+            + "links_cleaned.person_c.firstname , "
+            + "links_cleaned.person_c.firstname1 , "
+            + "links_cleaned.person_c.firstname1_no , "
+            + "links_cleaned.person_c.firstname2_no , "
+            + "links_cleaned.person_c.firstname3_no , "
+            + "links_cleaned.person_c.firstname4_no , "
+            + "links_cleaned.person_c.sex , "
+            + "links_cleaned.person_c.birth_min_days , "
+            + "links_cleaned.person_c.birth_max_days , "
+            + "links_cleaned.person_c.birth_location , "
+            + "links_cleaned.person_c.mar_min_days , "
+            + "links_cleaned.person_c.mar_max_days , "
+            + "links_cleaned.person_c.mar_location , "
+            + "links_cleaned.person_c.death_min_days , "
+            + "links_cleaned.person_c.death_max_days , "
+            + "links_cleaned.person_c.death_location , "
+            + "links_cleaned.person_c.role "
+            + "FROM links_cleaned.registration_c , links_cleaned.person_c "
+            + ""
+            + "WHERE links_cleaned.registration_c.id_source = " + source
+            + " AND links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration AND ( "
+            + " ( links_cleaned.registration_c.registration_maintype = 1 AND ( "
+            + "    links_cleaned.person_c.role = 1 OR "
+            + "    links_cleaned.person_c.role = 2 OR "
+            + "    links_cleaned.person_c.role = 3 ) "
+            + " ) OR "
+            + " ( links_cleaned.registration_c.registration_maintype = 2 AND ( "
+            + "    links_cleaned.person_c.role = 4 OR "
+            + "    links_cleaned.person_c.role = 5 OR "
+            + "    links_cleaned.person_c.role = 6 OR "
+            + "    links_cleaned.person_c.role = 7 OR "
+            + "    links_cleaned.person_c.role = 8 OR "
+            + "    links_cleaned.person_c.role = 9 ) "
+            + " ) OR "
+            + " ( links_cleaned.registration_c.registration_maintype = 3 AND ( "
+            + "    links_cleaned.person_c.role =  2 OR "
+            + "    links_cleaned.person_c.role =  3 OR "
+            + "    links_cleaned.person_c.role = 10 OR "
+            + "    links_cleaned.person_c.role = 11 ) "
+            + " ) "
+            + " ) ; ";
+
+        String query2 = ""
+            + "UPDATE links_prematch.links_base , links_cleaned.person_c "
+            + "SET "
+            + "mother_id                = links_cleaned.person_c.id_person , "
+            + "mother_familyname_fc     = LEFT( links_cleaned.person_c.familyname, 1) , "
+            + "mother_familyname_prefix = links_cleaned.person_c.prefix , "
+            + "mother_familyname_str    = links_cleaned.person_c.familyname , "
+            + "mother_familyname        = links_cleaned.person_c.familyname_no , "
+            + "mother_firstname         = links_cleaned.person_c.firstname , "
+            + "mother_firstname1_str    = links_cleaned.person_c.firstname1 , "
+            + "mother_firstname1        = links_cleaned.person_c.firstname1_no , "
+            + "mother_firstname2        = links_cleaned.person_c.firstname2_no , "
+            + "mother_firstname3        = links_cleaned.person_c.firstname3_no , "
+            + "mother_firstname4        = links_cleaned.person_c.firstname4_no , "
+            + "mother_sex               = links_cleaned.person_c.sex , "
+            + "mother_birth_min         = links_cleaned.person_c.birth_min_days , "
+            + "mother_birth_max         = links_cleaned.person_c.birth_max_days , "
+            + "mother_birth_loc         = links_cleaned.person_c.birth_location , "
+            + "mother_marriage_min      = links_cleaned.person_c.mar_min_days , "
+            + "mother_marriage_max      = links_cleaned.person_c.mar_max_days , "
+            + "mother_marriage_loc      = links_cleaned.person_c.mar_location , "
+            + "mother_death_min         = links_cleaned.person_c.death_min_days , "
+            + "mother_death_max         = links_cleaned.person_c.death_max_days , "
+            + "mother_death_loc         = links_cleaned.person_c.death_location "
+            + ""
+            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
+            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "( "
+            + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 1 ) OR "
+            + ""
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 5 AND links_prematch.links_base.ego_role = 4 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 8 AND links_prematch.links_base.ego_role = 7 ) OR "
+            + ""
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 10 ) "
+            + ") ; ";
+
+        String query3 = ""
+            + "UPDATE links_prematch.links_base , links_cleaned.person_c "
+            + "SET "
+            + "father_id                = links_cleaned.person_c.id_person , "
+            + "father_familyname_fc     = LEFT( links_cleaned.person_c.familyname, 1) , "
+            + "father_familyname_prefix = links_cleaned.person_c.prefix , "
+            + "father_familyname_str    = links_cleaned.person_c.familyname , "
+            + "father_familyname        = links_cleaned.person_c.familyname_no , "
+            + "father_firstname         = links_cleaned.person_c.firstname , "
+            + "father_firstname1_str    = links_cleaned.person_c.firstname1 , "
+            + "father_firstname1        = links_cleaned.person_c.firstname1_no , "
+            + "father_firstname2        = links_cleaned.person_c.firstname2_no , "
+            + "father_firstname3        = links_cleaned.person_c.firstname3_no , "
+            + "father_firstname4        = links_cleaned.person_c.firstname4_no , "
+            + "father_sex               = links_cleaned.person_c.sex , "
+            + "father_birth_min         = links_cleaned.person_c.birth_min_days , "
+            + "father_birth_max         = links_cleaned.person_c.birth_max_days , "
+            + "father_birth_loc         = links_cleaned.person_c.birth_location , "
+            + "father_marriage_min      = links_cleaned.person_c.mar_min_days , "
+            + "father_marriage_max      = links_cleaned.person_c.mar_max_days , "
+            + "father_marriage_loc      = links_cleaned.person_c.mar_location , "
+            + "father_death_min         = links_cleaned.person_c.death_min_days , "
+            + "father_death_max         = links_cleaned.person_c.death_max_days , "
+            + "father_death_loc         = links_cleaned.person_c.death_location "
+            + ""
+            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
+            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "( "
+            + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role =  1 ) OR "
+            + " "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 6 AND links_prematch.links_base.ego_role =  4 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 9 AND links_prematch.links_base.ego_role =  7 ) OR "
+            + ""
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role = 10 ) "
+            + " ) ; ";
+
+        String query4 = ""
+            + "UPDATE links_prematch.links_base , links_cleaned.person_c "
+            + "SET "
+            + "partner_id                = links_cleaned.person_c.id_person , "
+            + "partner_familyname_fc     = LEFT( links_cleaned.person_c.familyname, 1) , "
+            + "partner_familyname_prefix = links_cleaned.person_c.prefix , "
+            + "partner_familyname_str    = links_cleaned.person_c.familyname , "
+            + "partner_familyname        = links_cleaned.person_c.familyname_no , "
+            + "partner_firstname         = links_cleaned.person_c.firstname , "
+            + "partner_firstname1_str    = links_cleaned.person_c.firstname1 , "
+            + "partner_firstname1        = links_cleaned.person_c.firstname1_no , "
+            + "partner_firstname2        = links_cleaned.person_c.firstname2_no , "
+            + "partner_firstname3        = links_cleaned.person_c.firstname3_no , "
+            + "partner_firstname4        = links_cleaned.person_c.firstname4_no , "
+            + "partner_sex               = links_cleaned.person_c.sex , "
+            + "partner_birth_min         = links_cleaned.person_c.birth_min_days , "
+            + "partner_birth_max         = links_cleaned.person_c.birth_max_days , "
+            + "partner_birth_loc         = links_cleaned.person_c.birth_location , "
+            + "partner_marriage_min      = links_cleaned.person_c.mar_min_days , "
+            + "partner_marriage_max      = links_cleaned.person_c.mar_max_days , "
+            + "partner_marriage_loc      = links_cleaned.person_c.mar_location , "
+            + "partner_death_min         = links_cleaned.person_c.death_min_days , "
+            + "partner_death_max         = links_cleaned.person_c.death_max_days , "
+            + "partner_death_loc         = links_cleaned.person_c.death_location "
+            + ""
+            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
+            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "( "
+            + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 3 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role = 2 ) OR "
+            + ""
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 4 AND links_prematch.links_base.ego_role = 7 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 7 AND links_prematch.links_base.ego_role = 4 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 5 AND links_prematch.links_base.ego_role = 6 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 6 AND links_prematch.links_base.ego_role = 5 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 8 AND links_prematch.links_base.ego_role = 9 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 2 AND links_cleaned.person_c.role = 9 AND links_prematch.links_base.ego_role = 8 ) OR "
+            + ""
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role =  2 AND links_prematch.links_base.ego_role =  3 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role =  3 AND links_prematch.links_base.ego_role =  2 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 10 AND links_prematch.links_base.ego_role = 11 ) OR "
+            + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 11 AND links_prematch.links_base.ego_role = 10 ) "
+            + ") ; ";
+
+        String[] queries = { query1, query2, query3, query4 };
+
+        return queries;
+
+    } // doCreateNewBaseTableQueries
 
 
     /*---< Levenshtein >------------------------------------------------------*/
