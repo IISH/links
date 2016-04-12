@@ -326,7 +326,7 @@ public class LinksCleanThread extends Thread
                 plog.show( msg ); showMessage( msg, false, true );
 
                 long timeStart = System.currentTimeMillis();
-                /*
+
                 msg = "Pre-loading all reference tables...";   // with multi-threaded they are not explicitly freed
                 plog.show( msg ); showMessage( msg, false, true );
 
@@ -346,7 +346,7 @@ public class LinksCleanThread extends Thread
                 almmLitAge       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
 
                 elapsedShowMessage( "Pre-loading all reference tables", timeStart, System.currentTimeMillis() );
-                */
+
 
                 ArrayList< CleaningThread > threads = new ArrayList();
 
@@ -4100,7 +4100,8 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         //msg = "Skipping until minMaxDateMain()";
-        //showMessage( msg, false, true );
+        //msg = "Doing only...()";
+        showMessage( msg, false, true );
         ///*
         ts = System.currentTimeMillis();
         String type = "birth";
@@ -5393,10 +5394,14 @@ public class LinksCleanThread extends Thread
 
                 // replace registration date with event date
                 int registration_maintype = 0;              // to be used below 1/2/3
+                int registration_flag = 0;
+
                 if( use_event_date )
                 {
                     // try to replace invalid registration date with birth-/marriage-/death- date
                     nInvalidRegDates++;
+
+                    registration_flag = 1;
 
                     if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
                     if( debug ) { System.out.println( "No (valid) registration date for id_registration: " + id_registration + ", registration_date: " + registration_date ); }
@@ -5427,59 +5432,24 @@ public class LinksCleanThread extends Thread
                     // Notice: dymd may contain negative components if registration_date contains those
                     if( ! dymd.isValidDate() )
                     {
+                        // -4- conditionally REPLACEd dymd components
                         if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
-
-                        if( registration_date != "" )
-                        { addToReportRegistration( id_registration, source, 201, dymd.getReports() ); } // EC 201
 
                         int day   = dymd.getDay();
                         int month = dymd.getMonth();
                         int year  = dymd.getYear();
 
-                        if( month == 2 && day > 28 ) {
-                            day = 1;
-                            month = 3;
-                            dymd.setDay( day );
-                            dymd.setMonth( month );
-                        }
-
-                        if( day > 30 && ( month == 4 || month == 6 || month == 9 || month == 11 ) ) {
-                            day = 1;
-                            month += 1;
-                            dymd.setDay( day );
-                            dymd.setMonth( month );
-                        }
-
-                        if( day > 31 ) {
-                            day = 31;
-                            dymd.setDay( day );
-                        }
-
-                        if( month > 12 ) {
-                            month = 12;
-                            dymd.setMonth( month );
-                        }
-
-                        // HSN data (id_source = 10) may contain negative data components, that have special meaning,
-                        // but we do not want invalid date strings in links_cleaned
-                        if( day < 1 ) {
-                            day = 1;
-                            dymd.setDay( day );
-                        }
-                        if( month < 1 ) {
-                            month = 1;
-                            dymd.setMonth( month );
-                        }
-
-                        // KM: for HSN data with negative date components in day and/or month:
-                        // birth    -> registration_date = 01-01-yyyy
-                        // marriage -> registration_date = 01-07-yyyy
-                        // death    -> registration_date = 31-12-yyyy
-
-                        // CHECK hyphens; from which string do they come?
-                        /*
-                        if( nhyphens > 2 )
+                        if( day <= 0 && month <= 0 && year > 0 )
                         {
+                            // KM: for HSN data with negative date components in day and/or month:
+                            // birth    -> registration_date = 01-01-yyyy
+                            // marriage -> registration_date = 01-07-yyyy
+                            // death    -> registration_date = 31-12-yyyy
+
+                            addToReportRegistration( id_registration, source, 202, dymd.getReports() ); // EC 202
+
+                            registration_flag = 2;
+
                             if( registration_maintype == 1 ) {
                                 day   = 1;
                                 month = 1;
@@ -5492,13 +5462,32 @@ public class LinksCleanThread extends Thread
                                 day   = 31;
                                 month = 12;
                             }
-                            dymd.setDay( day );
-                            dymd.setMonth( month );
                         }
-                        */
+                        else
+                        {
+                            addToReportRegistration( id_registration, source, 201, dymd.getReports() ); // EC 201
 
+                            if( month == 2 && day > 28 ) {
+                                day   = 1;
+                                month = 3;
+                            }
+
+                            if( day > 30 && ( month == 4 || month == 6 || month == 9 || month == 11 ) ) {
+                                day    = 1;
+                                month += 1;
+                            }
+
+                            if( day   > 31 ) { day   = 31; }
+                            if( month > 12 ) { month = 12; }
+
+                            // HSN data (id_source = 10) may contain negative data components, that have special meaning,
+                            // but we do not want invalid date strings in links_cleaned
+                            if (day   < 1 ) { day   = 1; }
+                            if( month < 1 ) { month = 1; }
+                        }
+
+                        // final check
                         registration_date = String.format( "%02d-%02d-%04d", day, month, year );
-                        // -4- conditionally REPLACEd dymd components; final check
                          dymd = LinksSpecific.divideCheckDate( registration_date );
                         if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
                     }
@@ -5520,7 +5509,7 @@ public class LinksCleanThread extends Thread
                     regist_day   = 0;
                     regist_month = 0;
                     regist_year  = 0;
-                    addToReportRegistration( id_registration, source, 205, "" );    // EC 205
+                    addToReportRegistration( id_registration, source, 205, dymd.getReports() ); // EC 205
                 }
                 query = "UPDATE registration_c SET "
                     + "registration_c.registration_date = '" + registration_date  + "' , "
@@ -5528,10 +5517,8 @@ public class LinksCleanThread extends Thread
                     + "registration_c.registration_month = " + regist_month + " , "
                     + "registration_c.registration_year = "  + regist_year  + " ";
 
-                if( use_event_date ) {
-                    // invalid registration date: set registration_flag to 1
-                    query += ", registration_c.registration_flag = " + 1 + " ";
-                }
+                if( use_event_date && registration_flag != 0 )  // invalid registration date: set registration_flag to 1 or 2
+                { query += ", registration_c.registration_flag = " + registration_flag + " "; }
 
                 query += "WHERE registration_c.id_registration = "  + id_registration;
                 if( debug ) { System.out.println( "query: " + query ); }
@@ -6475,7 +6462,6 @@ public class LinksCleanThread extends Thread
                     + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
                     + "AND id_source = " + source + " "
                     + "AND id_registration = " + id_registration;
-
 
                  try {
                     int rowsAffected = dbconCleaned.runQueryUpdate( queryU );
