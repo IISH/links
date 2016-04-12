@@ -23,7 +23,7 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
- * FL-07-Apr-2016 Latest change
+ * FL-11-Apr-2016 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -511,7 +511,7 @@ public class TableToArrayListMultimap
 
         if( value == null ) {
             value = "";
-            System.out.println( "TableToArrayListMultimap/value(): null value for: key: " + key + ", column: " + column );
+            if( debug ) { System.out.println( "TableToArrayListMultimap/value(): null value for: key: " + key + ", column: " + column ); }
         }
         return value;
     } // value
