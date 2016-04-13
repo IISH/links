@@ -151,7 +151,7 @@ public class LinksPrematch extends Thread
             doNamesToNumbers( debug, bNamesToNos );
 
             if( Strings.isNullOrEmpty( sourceIdsGui ) )
-            { doCreateNewBaseTable( debug, bBaseTable ); }
+            { doCreateNewBaseTable( debug, bBaseTable ); }                      // new links_base
             else
             {
                 String idsStr[] = sourceIdsGui.split( " " );
@@ -772,6 +772,7 @@ public class LinksPrematch extends Thread
         showMessage( funcname + "...", false, true );
 
         // delete the previous records for source
+        long start_del = System.currentTimeMillis();
         String qdelete = "DELETE FROM links_base WHERE id_source = " + source;
         showMessage( qdelete, false, true );
 
@@ -781,7 +782,7 @@ public class LinksPrematch extends Thread
             System.out.println( "# of records deleted: " + rowsAffected );
         }
         catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
-
+        elapsedShowMessage( "delete done in", start_del, System.currentTimeMillis() );
 
         String[] queries = getNewBaseTableQueries( debug, source );
         int nupdated = 0;

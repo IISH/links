@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-07-Apr-2016 Latest change
+ * FL-13-Apr-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5406,11 +5406,10 @@ public class LinksCleanThread extends Thread
                     if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
                     if( debug ) { System.out.println( "No (valid) registration date for id_registration: " + id_registration + ", registration_date: " + registration_date ); }
 
-                    addToReportRegistration( id_registration, source, 202, "" );   // EC 202
-
                     String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
 
+                    DateYearMonthDaySet dymd_event = null;
                     while( rs_p.next() )
                     {
                         registration_maintype = rs_p.getInt( "registration_maintype" );
@@ -5421,18 +5420,28 @@ public class LinksCleanThread extends Thread
                         else if( registration_maintype == 2 ) { event_date = rs_p.getString( "mar_date" ); }
                         else if( registration_maintype == 3 ) { event_date = rs_p.getString( "death_date" ); }
 
-                        if( ! ( event_date == null || event_date.isEmpty() ) ) {
+                        dymd_event = LinksSpecific.divideCheckDate( event_date );
+                        if( dymd_event.isValidDate() ) {
+                            // we have a valid event date; skip the remaining reg persons
                             registration_date = event_date;
-                            break;      // we have a date; skip the remaining reg persons
+                            break;
                         }
                     }
-                    // -3- REPLACE dymd with event date
-                    dymd = LinksSpecific.divideCheckDate( registration_date );
 
-                    // Notice: dymd may contain negative components if registration_date contains those
-                    if( ! dymd.isValidDate() )
+                    if( dymd_event != null && dymd_event.isValidDate() ) {
+                        // -3- REPLACE registration_date with event_date
+                        dymd = dymd_event;
+                        int event_day   = dymd.getDay();
+                        int event_month = dymd.getMonth();
+                        int event_year  = dymd.getYear();
+                        registration_date = String.format( "%02d-%02d-%04d", event_day, event_month, event_year );
+                    }
+                    else
                     {
-                        // -4- conditionally REPLACEd dymd components
+                        // (invalid) event_date not used; continue with registration_date components
+                        // Notice: (HSN date) components may be negative if registration_date contains those
+
+                        // -4- conditionally REPLACEd dymd components of registration_date
                         if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
 
                         int day   = dymd.getDay();
@@ -5488,11 +5497,9 @@ public class LinksCleanThread extends Thread
 
                         // final check
                         registration_date = String.format( "%02d-%02d-%04d", day, month, year );
-                         dymd = LinksSpecific.divideCheckDate( registration_date );
+                        dymd = LinksSpecific.divideCheckDate( registration_date );
                         if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
                     }
-                    else
-                    { if( debug ) { System.out.println( "valid registration_date: " + registration_date ); } }
                 }
 
                 String query = "";
@@ -5501,7 +5508,6 @@ public class LinksCleanThread extends Thread
                     regist_day   = dymd.getDay();
                     regist_month = dymd.getMonth();
                     regist_year  = dymd.getYear();
-
                 }
                 else    // could not get a valid registration_date; avoid confusing garbage
                 {
@@ -5511,6 +5517,7 @@ public class LinksCleanThread extends Thread
                     regist_year  = 0;
                     addToReportRegistration( id_registration, source, 205, dymd.getReports() ); // EC 205
                 }
+
                 query = "UPDATE registration_c SET "
                     + "registration_c.registration_date = '" + registration_date  + "' , "
                     + "registration_c.registration_day = "   + regist_day   + " , "
@@ -5525,8 +5532,8 @@ public class LinksCleanThread extends Thread
                 dbconCleaned.runQuery( query );
             }
 
-            if( nInvalidRegDates > 0 )  { showMessage( "Number of registrations without a (valid) reg date: " + nInvalidRegDates, false, true ); }
-            if( nTooManyHyphens > 0 ) { showMessage( "Number of registrations with too many hyphens in reg date: " + nTooManyHyphens, false, true ); }
+            if( nInvalidRegDates > 0 ) { showMessage( "Number of registrations without a (valid) reg date: " + nInvalidRegDates, false, true ); }
+            if( nTooManyHyphens  > 0 ) { showMessage( "Number of registrations with too many hyphens in reg date: " + nTooManyHyphens, false, true ); }
         }
         catch( Exception ex ) {
             showMessage( "count: " + count + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
