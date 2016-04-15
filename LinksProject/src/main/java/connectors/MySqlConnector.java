@@ -34,7 +34,7 @@ import java.sql.Statement;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-01-Feb-2016 runQueryUpdate()
- * FL-01-Feb-2016 Latest change
+ * FL-14-Apr-2016 Latest change
  */
 public class MySqlConnector
 {
@@ -67,9 +67,14 @@ public class MySqlConnector
      * @return Database object that can be used for database tasks
      * @throws Exception When Connection fails
      */
-    private Connection connect(String url, String db, String user, String pass) throws Exception {
+    private Connection connect( String url, String db, String user, String pass )
+    throws Exception
+    {
         String driver = "org.gjt.mm.mysql.Driver";
+
         String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
+      //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&connectTimeout=0&socketTimeout=0";
+
         String username = user;
         String password = pass;
 
