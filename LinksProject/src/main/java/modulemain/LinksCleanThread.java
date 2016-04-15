@@ -4100,8 +4100,8 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         //msg = "Skipping until minMaxDateMain()";
-        //msg = "Doing only...()";
-        showMessage( msg, false, true );
+        //msg = "Doing onlystandardRegistrationDate()";
+        //showMessage( msg, false, true );
         ///*
         ts = System.currentTimeMillis();
         String type = "birth";
@@ -5324,6 +5324,9 @@ public class LinksCleanThread extends Thread
                 int regist_month    = rs_r.getInt( "registration_month" );
                 int regist_year     = rs_r.getInt( "registration_year" );
 
+                //if( id_registration == 24628217 ) { debug = true; }
+                //else { debug = false; continue; }
+
                 if( debug ) {
                     System.out.println( "id_registration: "    + id_registration );
                     System.out.println( "registration_date: "  + registration_date );
@@ -5361,7 +5364,8 @@ public class LinksCleanThread extends Thread
                 // compare the string date and the components date
                 boolean use_event_date = false;
 
-                if( dymd.isValidDate() )                    // valid registration_date
+                // divideCheckDate() fucks up with additional hyphens!
+                if( nhyphens == 2 && dymd.isValidDate() )   // valid registration_date
                 {
                     if( dymd_comp.isValidDate() )           // valid components date
                     {
@@ -5423,18 +5427,21 @@ public class LinksCleanThread extends Thread
                         dymd_event = LinksSpecific.divideCheckDate( event_date );
                         if( dymd_event.isValidDate() ) {
                             // we have a valid event date; skip the remaining reg persons
+                            if( debug ) { System.out.println( "valid event_date: " + event_date ); }
                             registration_date = event_date;
                             break;
                         }
                     }
 
-                    if( dymd_event != null && dymd_event.isValidDate() ) {
+                    if( dymd_event != null && dymd_event.isValidDate() )
+                    {
                         // -3- REPLACE registration_date with event_date
                         dymd = dymd_event;
                         int event_day   = dymd.getDay();
                         int event_month = dymd.getMonth();
                         int event_year  = dymd.getYear();
                         registration_date = String.format( "%02d-%02d-%04d", event_day, event_month, event_year );
+                        if( debug ) { System.out.println( "use event_date: " + registration_date ); }
                     }
                     else
                     {

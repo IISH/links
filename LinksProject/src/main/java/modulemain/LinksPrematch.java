@@ -275,15 +275,29 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> ''";
+        if( debug ) {
+            String query = "SELECT COUNT(*) AS count FROM person_c WHERE firstname IS NOT NULL AND firstname <> '';";
+            showMessage( query, false, true);
+            ResultSet rsFirstNameCount = conCleaned.runQueryWithResult( query );
+            rsFirstNameCount.first();
+            int count = rsFirstNameCount.getInt( "count" );
+            System.out.println( "count: " + count );
+            showMessage( "count: " + count, false, true);
+        }
+
+        String query = "SELECT id_person , firstname FROM person_c WHERE firstname IS NOT NULL AND firstname <> '';";
         if( debug ) { showMessage( query, false, true); }
 
         ResultSet rsFirstName = conCleaned.runQueryWithResult( query );
+        if( debug ) { showMessage( "query done", false, true); }
+        // A communication failure here, may be caused by too little memory granted for the JVM; see the startup script
 
         //removeFirstnameFile();
         //removeFirstnameTable();
 
+        if( debug ) { showMessage( "createTempFirstname()", false, true); }
         createTempFirstname( debug );
+        if( debug ) { showMessage( "createTempFirstnameFile()", false, true); }
         createTempFirstnameFile();
 
         int count = 0;
