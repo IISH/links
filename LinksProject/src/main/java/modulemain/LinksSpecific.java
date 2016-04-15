@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  * <p/>
  * FL-30-Jul-2014 Cleanup
  * FL-28-Jul-2015 handle negative date components
- * FL-09-Feb-2016 Latest change
+ * FL-15-Apr-2016 Latest change
  */
 public class LinksSpecific
 {
@@ -49,7 +49,7 @@ public class LinksSpecific
      * @param lineToRepare
      * @return
      */
-//    public final static String funcToDiacritic(String lineToRepare){
+//    public final static String funcToDiacritic(String lineToRepare) {
 //        lineToRepare = lineToRepare.
 //            replaceAll("\\x00", "Ç").
 //            replaceAll("\\x01", "ü").
@@ -85,14 +85,14 @@ public class LinksSpecific
      * @param line
      * @return
      */
-//    public static String funcPrepareForMysql(String line){
+//    public static String funcPrepareForMysql(String line) {
 //        String line1 = line.replaceAll("\\\\", "\\\\\\\\");
 //        String line2 = line1.replaceAll("'", "\\\\'");
 //        //String line3 = line2.replaceAll("\"", "\\\\\"");
 //        return line2;
 //    }
 
-    public static String prepareForMysql(String line){
+    public static String prepareForMysql(String line) {
         String line1 = line.replaceAll("\\\\", "\\\\\\\\");
         String line2 = line1.replaceAll("'", "\\\\'");
         //String line3 = line2.replaceAll("\"", "\\\\\"");
@@ -106,19 +106,19 @@ public class LinksSpecific
      * @param line
      * @return
      */
-    public static String funcCleanSides(String line){
+    public static String funcCleanSides(String line) {
         while(  (line.length() > 0) && (line.substring(0,1).equals("\"") ||
                 line.substring(0,1).equals(" ") ||
                 line.substring(line.length()-1,line.length()).equals("\"") ||
-                line.substring(line.length()-1,line.length()).equals( " " ) ) ){
+                line.substring(line.length()-1,line.length()).equals( " " ) ) ) {
             
             String begin = line.substring(0,1);
             String end = line.substring(line.length()-1,line.length());
             
-            if( begin.equals("\"") || begin.equals(" ") ){
+            if( begin.equals("\"") || begin.equals(" ") ) {
                 line = line.substring( 1 , line.length() );
             }
-            else if( end.equals("\"") ||end.equals(" ") ){
+            else if( end.equals("\"") ||end.equals(" ") ) {
                 line = line.substring( 0 , ( line.length() -1 ) );
             }
         }
@@ -158,7 +158,7 @@ public class LinksSpecific
         return doc;
     }
 
-    public static String SelectFileWithCheck(String extension){
+    public static String SelectFileWithCheck(String extension) {
         JFileChooser fileopen = new JFileChooser();
         FileFilter filter = new FileNameExtensionFilter( extension.toUpperCase() + " File (." + extension + ")", extension);
         fileopen.addChoosableFileFilter(filter);
@@ -170,7 +170,7 @@ public class LinksSpecific
 
             String extention = "";
 
-            if(!(file.getPath().substring((file.getPath().length() -4 ), file.getPath().length())).toLowerCase().equals("." + extension)){
+            if(!(file.getPath().substring((file.getPath().length() -4 ), file.getPath().length())).toLowerCase().equals("." + extension)) {
                 extention = "." + extension;
             }
 
@@ -211,17 +211,17 @@ public class LinksSpecific
      * @param multiple True if you want to select more than one file.
      * @return Path of selected file.
      */
-    public static String OpenFile(String extension, boolean multiple){
+    public static String OpenFile(String extension, boolean multiple) {
         JFileChooser fileopen = new JFileChooser();
         FileFilter filter = new FileNameExtensionFilter( extension.toUpperCase() + " File (." + extension + ")", extension);
         fileopen.addChoosableFileFilter(filter);
         
-        if(multiple){fileopen.setMultiSelectionEnabled(true);}
+        if(multiple) {fileopen.setMultiSelectionEnabled(true);}
 
         int ret = fileopen.showDialog(null, "Open file");
 
         if (ret == JFileChooser.APPROVE_OPTION) {
-            if(multiple){
+            if(multiple) {
                 File[] file = fileopen.getSelectedFiles();
                 String fileLocations = "";
                 for (int i = 0; i < file.length; i++) {
@@ -248,7 +248,7 @@ public class LinksSpecific
      *
      * @return true als het om ene Windows OS gaat
      */
-    public static boolean isWindows(){
+    public static boolean isWindows() {
         String os = System.getProperty("os.name").toLowerCase();
         return (os.indexOf( "win") >=0);
     }
@@ -269,9 +269,9 @@ public class LinksSpecific
     }
 
 
-    public static void addLogToGui(String logText, boolean isMinOnly, JTextField tb, JTextArea ta){
+    public static void addLogToGui(String logText, boolean isMinOnly, JTextField tb, JTextArea ta) {
         tb.setText(logText);
-        if(!isMinOnly){
+        if(!isMinOnly) {
             ta.append(logText + "\r\n");
         }
     }
@@ -315,7 +315,7 @@ public class LinksSpecific
      * @param seconds
      * @return
      */
-    public static String stopWatch(int seconds){
+    public static String stopWatch(int seconds) {
         int minutes = seconds / 60;
         int restsec = seconds % 60;
         int uren = minutes / 60;
@@ -334,11 +334,15 @@ public class LinksSpecific
 
 
     /**
-     * Gebruik deze functie om een datum te controleren en te splitsen
+     * divideCheckDate splits a date string, and check the components
      * De datum kan splitchars bevatten als -, / \ [] etc.
      * Formaat kan zijn: d-M-yyyy or dd-M-yyyy or d-MM-yyyy or dd-MM-yyyy
+     *
+     * FL-15-Apr-2016: divideCheckDate() fucks up with additional hyphens!
+     * change the regexp
+     *
      * @param date
-     * @return een DateYearMonthDay object met datum en evt. fouten
+     * @return een DateYearMonthDay object met date plus original errors
      */
     public static DateYearMonthDaySet divideCheckDate( String date )
     {
@@ -376,81 +380,65 @@ public class LinksSpecific
         int day   = 0;
         int month = 0;
         int year  = 0;
-        
-        // day
-        if( m.find() ) {
-            day = Integer.parseInt( m.group() );
-        }
 
-        //month
-        if( m.find() ){
-            month = Integer.parseInt( m.group() );
-        }
+        if( m.find() ) { day   = Integer.parseInt( m.group() ); }   // day
+        if( m.find() ) { month = Integer.parseInt( m.group() ); }   // month
+        if( m.find() ) { year  = Integer.parseInt( m.group() ); }   //year
 
-        //year
-        if( m.find() ) {
-            year = Integer.parseInt( m.group() );
-        }
-
-        // they are divided, now we check the value on errors
-        if( (year > 1680) && ( year < 2016 ) ) {
-            dymd.setYear( year );
-        }
-        else {
-            // MELDING
+        // check components
+        // year
+        if( ( year > 1680 ) && ( year < 2016 ) ) { dymd.setYear( year ); }
+        else
+        {
             dymd.setReportYear( Integer.toString( year ) );
-            //dymd.setYear( 0 );
+          //dymd.setYear( 0 );
             dymd.setYear( year );
         }
 
-         // they are divided, now we check the value on errors
-        if( (month > 0) && ( month < 13 ) ){
-            dymd.setMonth( month );
-        }
-        else {
-            // MELDING
+        // month
+        if( ( month > 0 ) && ( month < 13 ) ) { dymd.setMonth( month ); }
+        else
+        {
             dymd.setReportMonth( Integer.toString( month ) );
-            //dymd.setMonth( 0 );
+          //dymd.setMonth( 0 );
             dymd.setMonth( month );
         }
 
-        // check day number
-        if( ( day < 1 ) && ( day > 31 ) ){
-            // MELDING
+        // day
+        if( ( day < 1 ) || ( day > 31 ) ) {
             dymd.setReportDay( Integer.toString( day ) );
-            //dymd.setDay( 0 );
+          //dymd.setDay( 0 );
             dymd.setDay( day );
         }
 
         //check if day is 31 in wrong month
-        else if( ( day == 31 ) && ( ( month == 2 ) || ( month == 4 ) || ( month == 6 ) || ( month == 9 ) || ( month == 11 ) ) ){
-            // MELDING
+        else if( ( day == 31 ) && ( ( month == 2 ) || ( month == 4 ) || ( month == 6 ) || ( month == 9 ) || ( month == 11 ) ) )
+        {
             dymd.setReportDay( Integer.toString( day ) );
-            //dymd.setDay( 0 );
+          //dymd.setDay( 0 );
             dymd.setDay( day );
         }
+
         // Check if februari has 30 days
-        else if( ( month == 2 ) && ( day == 30 ) ){
-            // MELDING
+        else if( ( month == 2 ) && ( day == 30 ) )
+        {
             dymd.setReportDay( Integer.toString( day ) );
-            //dymd.setDay( 0 );
+          //dymd.setDay( 0 );
             dymd.setDay( day );
         }
+
         // leap year calculation
-        else if ( ( month == 2 ) && ( day == 29 ) ){
-            if( ( year % 4 == 0 ) && ( year % 100 != 0 ) || ( year % 400 == 0 ) ) { // is leap year
-                dymd.setDay( day );
-            }
-            else {
-                // MELDING
+        else if ( ( month == 2 ) && ( day == 29 ) )
+        {
+            if( ( year % 4 == 0 ) && ( year % 100 != 0 ) || ( year % 400 == 0 ) ) { dymd.setDay( day ); }  // is leap year
+            else
+            {
                 dymd.setReportDay( Integer.toString( day ) );
-                //dymd.setDay( 0 );
+              //dymd.setDay( 0 );
                 dymd.setDay( day );
             }
         }
-        else { //februari with 28 or lesser days
-            dymd.setDay( day );
-        }
+        else {  dymd.setDay( day ); }   // februari with 28 or lesser days
 
         return dymd;
     }
