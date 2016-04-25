@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-13-Apr-2016 Latest change
+ * FL-25-Apr-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6857,9 +6857,14 @@ public class LinksCleanThread extends Thread
         int min_cnt = 2;    // in practice we see double, triples and quadruples
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
+        // And we require that the 4 grouping hve normal values.
         String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
             + "WHERE id_source = " + source + " "
+            + "AND registration_maintype IS NOT NULL AND registration_maintype <> 0 "
+            + "AND registration_location_no IS NOT NULL AND registration_location_no <> 0 "
+            + "AND registration_date IS NOT NULL AND registration_date <> '' "
+            + "AND registration_seq IS NOT NULL AND registration_seq <> '' "
             + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
             + "HAVING cnt >= " + min_cnt + " "
             + "ORDER BY cnt DESC;";
