@@ -2571,8 +2571,13 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( "Number of keys in arraylist multimap: " + numkeys, false, true ); }
 
-        long start = System.currentTimeMillis();
-        String msg = String.format( "Thread id %2d; standardRegistrationLocation...", threadId );
+        long start = 0;
+        String msg = "";
+
+        //showMessage( "Skipping standard*Location", false, true );
+        ///*
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; standardRegistrationLocation...", threadId );
         showMessage( msg, false, true );
         standardRegistrationLocation( debug, source );
         msg = String.format( "Thread id %2d; standardRegistrationLocation ", threadId );
@@ -2612,6 +2617,29 @@ public class LinksCleanThread extends Thread
         standardDeathLocation( debug, source );
         msg = String.format( "Thread id %2d; standardDeathLocation ", threadId );
         showTimingMessage( msg, start );
+        //*/
+
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagBirthLocation...", threadId );
+        showMessage( msg, false, true );
+        flagBirthLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagBirthLocation ", threadId );
+        showTimingMessage( msg, start );
+
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagMarriageLocation...", threadId );
+        showMessage( msg, false, true );
+        flagMarriageLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagMarriageLocation ", threadId );
+        showTimingMessage( msg, start );
+
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagDeathLocation...", threadId );
+        showMessage( msg, false, true );
+        flagDeathLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagDeathLocation ", threadId );
+        showTimingMessage( msg, start );
+
 
         //start = System.currentTimeMillis();
         //msg = String.format( "Thread id %2d; Updating reference table: location...", threadId );
@@ -2899,6 +2927,156 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDeathLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagBirthLocation( boolean debug, String source )
+    {
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.birth_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_location_flag = 2,"
+                + " person_c.birth_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.birth_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+        };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try {
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "flag = 1 # of rows affected: %d", rowsAffected ); }
+                else
+                { msg = String.format( "flag = 2 # of rows affected: %d", rowsAffected ); }
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception in flagBirthLocation(): " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagBirthLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagMarriageLocation( boolean debug, String source )
+    {
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.mar_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_location_flag = 2,"
+                + " person_c.mar_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.mar_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+        };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try {
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "flag = 1 # of rows affected: %d", rowsAffected ); }
+                else
+                { msg = String.format( "flag = 2 # of rows affected: %d", rowsAffected ); }
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception in flagMarriageLocation(): " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagMarriageLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagDeathLocation( boolean debug, String source )
+    {
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.death_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.role = 10"
+                + " AND person_c.death_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+
+            "UPDATE person_c, registration_c "
+                + " SET "
+                + " person_c.death_location_flag = 2,"
+                + " person_c.death_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.role = 10"
+                + " AND person_c.death_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+        };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try {
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "flag = 1 # of rows affected: %d", rowsAffected ); }
+                else
+                { msg = String.format( "flag = 2 # of rows affected: %d", rowsAffected ); }
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                showMessage( query, false, true );
+                showMessage( "Exception in flagDeathLocation(): " + ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagDeathLocation
 
 
     /*---< Civil status and Sex >---------------------------------------------*/
@@ -5807,8 +5985,8 @@ public class LinksCleanThread extends Thread
 
 
     /**
-     *
      * @param debug
+     * @param source
      */
     public void flagBirthDate( boolean debug, String source )
     {
@@ -5866,8 +6044,8 @@ public class LinksCleanThread extends Thread
 
 
     /**
-     *
      * @param debug
+     * @param source
      */
     public void flagMarriageDate( boolean debug, String source )
     {
@@ -5925,8 +6103,8 @@ public class LinksCleanThread extends Thread
 
 
     /**
-     *
      * @param debug
+     * @param source
      */
     public void flagDeathDate( boolean debug, String source )
     {
