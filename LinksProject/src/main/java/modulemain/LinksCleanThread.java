@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-25-Apr-2016 Latest change
+ * FL-02-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -2618,27 +2618,6 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %2d; standardDeathLocation ", threadId );
         showTimingMessage( msg, start );
         //*/
-
-        start = System.currentTimeMillis();
-        msg = String.format( "Thread id %2d; flagBirthLocation...", threadId );
-        showMessage( msg, false, true );
-        flagBirthLocation( debug, source );
-        msg = String.format( "Thread id %2d; flagBirthLocation ", threadId );
-        showTimingMessage( msg, start );
-
-        start = System.currentTimeMillis();
-        msg = String.format( "Thread id %2d; flagMarriageLocation...", threadId );
-        showMessage( msg, false, true );
-        flagMarriageLocation( debug, source );
-        msg = String.format( "Thread id %2d; flagMarriageLocation ", threadId );
-        showTimingMessage( msg, start );
-
-        start = System.currentTimeMillis();
-        msg = String.format( "Thread id %2d; flagDeathLocation...", threadId );
-        showMessage( msg, false, true );
-        flagDeathLocation( debug, source );
-        msg = String.format( "Thread id %2d; flagDeathLocation ", threadId );
-        showTimingMessage( msg, start );
 
 
         //start = System.currentTimeMillis();
@@ -6693,15 +6672,41 @@ public class LinksCleanThread extends Thread
             return;
         }
 
-        long timeStart = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
         String msg = String.format( "Thread id %2d; Processing postTasks for source: %s...", threadId, source );
         showMessage( msg, false, true );
         postTasks( debug, source );
 
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        elapsedShowMessage( funcname, start, System.currentTimeMillis() );
         showMessage_nl();
+
+
+        // The location flag functions below use the "role" variable. Therefore they must be called after
+        // doRole() has been run. The calling of these functions has been (temporarily?) moved from doLocations() to
+        // here in doPostTasks(). (The function bodies were left in the Locations segment.)
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagBirthLocation...", threadId );
+        showMessage( msg, false, true );
+        flagBirthLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagBirthLocation ", threadId );
+        showTimingMessage( msg, start );
+
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagMarriageLocation...", threadId );
+        showMessage( msg, false, true );
+        flagMarriageLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagMarriageLocation ", threadId );
+        showTimingMessage( msg, start );
+
+        start = System.currentTimeMillis();
+        msg = String.format( "Thread id %2d; flagDeathLocation...", threadId );
+        showMessage( msg, false, true );
+        flagDeathLocation( debug, source );
+        msg = String.format( "Thread id %2d; flagDeathLocation ", threadId );
+        showTimingMessage( msg, start );
+
     } // doPostTasks
 
 
@@ -6717,6 +6722,11 @@ public class LinksCleanThread extends Thread
         // Notice:
         // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
+        // need to add threadId for multi-threaded cleaning
+        long threadId = Thread.currentThread().getId();
+        String table_male   = "links_temp.male_"   + Long.toString( threadId );
+        String table_female = "links_temp.female_" + Long.toString( threadId );
+
         String[] queries =
         {
             "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 2 AND id_source = " + source,
@@ -6731,52 +6741,43 @@ public class LinksCleanThread extends Thread
             "UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
 
 
-            "DROP TABLE IF EXISTS links_temp.male;",
+            "DROP TABLE IF EXISTS " + table_male   + ";",
+            "DROP TABLE IF EXISTS " + table_female + ";",
 
-            "DROP TABLE IF EXISTS links_temp.female;",
+            "CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
 
-            "CREATE TABLE links_temp.male   ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "INSERT INTO " + table_male   + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
+                + "WHERE role = 10 AND sex = 'm' AND id_source = " + source,
 
-            "CREATE TABLE links_temp.female ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "INSERT INTO " + table_female + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
+                + "WHERE role = 10 AND sex = 'f' AND id_source = " + source,
 
-            "INSERT INTO links_temp.male   (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'm' AND id_source = " + source,
+            "UPDATE links_cleaned.person_c, " + table_male   + " SET sex = 'f' "
+                + "WHERE " + table_male   + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                + "AND id_source = " + source,
 
-            "INSERT INTO links_temp.female (id_registration) SELECT id_registration FROM links_cleaned.person_c WHERE role = 10 AND sex = 'f' AND id_source = " + source,
+            "UPDATE links_cleaned.person_c, " + table_female + " SET sex = 'm' "
+                + "WHERE " + table_female + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+                + "AND id_source = " + source,
 
-            "UPDATE links_cleaned.person_c, links_temp.male SET sex = 'f' WHERE links_temp.male.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-                    + " AND id_source = " + source,
-
-            "UPDATE links_cleaned.person_c, links_temp.female SET sex = 'm' WHERE links_temp.female.id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-                    + " AND id_source = " + source,
-
-            "DROP TABLE links_temp.male;",
-
-            "DROP TABLE links_temp.female;",
+            "DROP TABLE IF EXISTS " + table_male + ";",
+            "DROP TABLE IF EXISTS " + table_female + ";",
         };
 
-        // suppressed queries
-        /*
-            // superfluous: must have been done in doNames
-            //"UPDATE links_cleaned.person_c SET firstname = LOWER(firstname),  familyname = LOWER(familyname) WHERE id_source = " + source,
-
-
-            "UPDATE IGNORE links_cleaned.person_c "
-                + "SET age_year = FLOOR( DATEDIFF( STR_TO_DATE( mar_date , '%d-%m-%Y' ) , STR_TO_DATE( birth_date , '%d-%m-%Y') ) / 365 ) "
-                + "WHERE birth_date_valid = 1 "
-                + "AND mar_date_valid = 1 "
-                + "AND age_year is null "
-                + "AND ( role = 7 OR role = 4 ) "
-                + "AND mar_date   NOT LIKE '0-%' "
-                + "AND mar_date   NOT LIKE '%-0-%' "
-                + "AND birth_date NOT LIKE '0-%' "
-                + "AND birth_date NOT LIKE '%-0-%' "
-                + "AND id_source = " + source
-        */
-
         // Execute queries
-        for( String s : queries ) {
-            dbconCleaned.runQuery( s );
+        int n = 0;
+        for( String query : queries )
+        {
+            n++;
+
+            if( debug ) { System.out.println( query ); }
+
+            String msg = String.format( "Thread id %2d; query %d-of-%d", threadId, n, queries.length );
+            showMessage( msg, false, true );
+            dbconCleaned.runQuery( query );
         }
+
     } // postTasks
 
 
@@ -7035,7 +7036,7 @@ public class LinksCleanThread extends Thread
         int min_cnt = 2;    // in practice we see double, triples and quadruples
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
-        // And we require that the 4 grouping hve normal values.
+        // And we require that the 4 grouping variables have normal values.
         String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
             + "FROM registration_c "
             + "WHERE id_source = " + source + " "
