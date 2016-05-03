@@ -29,7 +29,7 @@ import prematch.Lv;
  * FL-18-Feb-2015 Both str & int names in freq_* & ls_* tables
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
- * FL-12-Apr-2016 Latest change
+ * FL-03-May-2016 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -187,7 +187,8 @@ public class LinksPrematch extends Thread
                 lv4.join();
             }
 
-            String msg = String.format( "\nPrematching Finished." );
+            showMessage( "", false, true );
+            String msg = String.format( "Prematching Finished." );
             elapsedShowMessage( msg, timeStart, System.currentTimeMillis() );
             System.out.println( msg );
 
