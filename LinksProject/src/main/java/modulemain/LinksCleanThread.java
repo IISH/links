@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-09-May-2016 Latest change
+ * FL-10-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -934,6 +934,7 @@ public class LinksCleanThread extends Thread
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doRenewData for source %s", threadId, source );
 
         if( !go ) {
@@ -1036,6 +1037,7 @@ public class LinksCleanThread extends Thread
     private void doPrepieceSuffix( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doPrepieceSuffix for source %s", threadId, source );
 
         if( !go ) {
@@ -1094,6 +1096,7 @@ public class LinksCleanThread extends Thread
     private void doFirstnames( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doFirstnames for source %s", threadId, source );
 
         if( !go ) {
@@ -1208,6 +1211,7 @@ public class LinksCleanThread extends Thread
     private void doFamilynames( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doFamilynames for source %s", threadId, source );
 
         if( !go ) {
@@ -1316,12 +1320,12 @@ public class LinksCleanThread extends Thread
      */
     public void standardFirstname( boolean debug, FileWriter writerFirstname, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         int count = 0;
         int count_empty = 0;
         int count_still = 0;
         int stepstate = count_step;
-
-        long threadId = Thread.currentThread().getId();
 
         try
         {
@@ -1674,11 +1678,11 @@ public class LinksCleanThread extends Thread
      */
     public void standardFamilyname( boolean debug, FileWriter writerFamilyname, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         int count = 0;
         int count_empty = 0;
         int stepstate = count_step;
-
-        long threadId = Thread.currentThread().getId();
 
         try {
             String selectQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + source;
@@ -2324,6 +2328,7 @@ public class LinksCleanThread extends Thread
     private void createTempFamilynameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String tablename = "familyname_t_" + source;
 
         showMessage( String.format( "Thread id %02d; Creating %s table", threadId, tablename  ), false, true );
@@ -2344,6 +2349,7 @@ public class LinksCleanThread extends Thread
     private FileWriter createTempFamilynameFile( String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String filename = "familyname_t_" + source + ".csv";
 
         showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
@@ -2360,6 +2366,7 @@ public class LinksCleanThread extends Thread
     private void loadFamilynameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String csvname   = "familyname_t_" + source + ".csv";
         String tablename = "familyname_t_" + source;
 
@@ -2380,6 +2387,7 @@ public class LinksCleanThread extends Thread
     private void updateFamilynameToPersonC( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         showMessage( String.format( "Thread id %02d; Moving familynames from temp table to person_c", threadId ), false, true );
 
         String tablename = "familyname_t_" + source;
@@ -2395,6 +2403,7 @@ public class LinksCleanThread extends Thread
     public void removeFamilynameFile( String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String csvname = "familyname_t_" + source + ".csv";
 
         showMessage( String.format( "Thread id %02d; Removing file %s", threadId, csvname ), false, true );
@@ -2407,6 +2416,7 @@ public class LinksCleanThread extends Thread
     public void removeFamilynameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String tablename = "familyname_t_" + source;
 
         showMessage( String.format( "Thread id %02d; Removing table %s", threadId, tablename ), false, true );
@@ -2423,6 +2433,7 @@ public class LinksCleanThread extends Thread
     private void createTempFirstnameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String tablename = "firstname_t_" + source;
 
         showMessage( String.format( "Thread id %02d; Creating %s", threadId, tablename + " table" ), false, true );
@@ -2444,6 +2455,7 @@ public class LinksCleanThread extends Thread
     private FileWriter createTempFirstnameFile( String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String filename = "firstname_t_" + source + ".csv";
 
         showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
@@ -2460,6 +2472,7 @@ public class LinksCleanThread extends Thread
     private void loadFirstnameCsvToTableT( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String csvname   = "firstname_t_" + source + ".csv";
         String tablename = "firstname_t_" + source;
 
@@ -2479,6 +2492,7 @@ public class LinksCleanThread extends Thread
     private void updateFirstnameToPersonC( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         showMessage( String.format( "Thread id %02d; Moving first names from temp table to person_c...", threadId ), false, true );
 
         String tablename = "firstname_t_" + source;
@@ -2498,6 +2512,7 @@ public class LinksCleanThread extends Thread
     public void removeFirstnameFile( String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String csvname = "firstname_t_" + source + ".csv";
 
         showMessage( String.format( "Thread id %02d; Removing file %s", threadId, csvname ), false, true );
@@ -2513,6 +2528,7 @@ public class LinksCleanThread extends Thread
     public void removeFirstnameTable( MySqlConnector dbconTemp, String source ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String tablename = "firstname_t_" + source;
 
         showMessage( String.format( "Thread id %02d; Removing table %s", threadId, tablename ), false, true );
@@ -2571,6 +2587,7 @@ public class LinksCleanThread extends Thread
     private void doLocations( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doLocations for source %s", threadId, source );
 
         if( !go ) {
@@ -2969,7 +2986,8 @@ public class LinksCleanThread extends Thread
         int n = 0;
         for( String query : queries )
         {
-            try {
+            try
+            {
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
@@ -2995,6 +3013,8 @@ public class LinksCleanThread extends Thread
      */
     public void flagMarriageLocation( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String[] queries =
         {
             "UPDATE person_c, registration_c"
@@ -3020,13 +3040,15 @@ public class LinksCleanThread extends Thread
         int n = 0;
         for( String query : queries )
         {
-            try {
+            try
+            {
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
-                { msg = String.format( "flag = 1 # of rows affected: %d", rowsAffected ); }
+                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
                 else
-                { msg = String.format( "flag = 2 # of rows affected: %d", rowsAffected ); }
+                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
+
                 showMessage( msg, false, true );
                 n++;
             }
@@ -3045,6 +3067,8 @@ public class LinksCleanThread extends Thread
      */
     public void flagDeathLocation( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String[] queries =
         {
             "UPDATE person_c, registration_c"
@@ -3070,13 +3094,15 @@ public class LinksCleanThread extends Thread
         int n = 0;
         for( String query : queries )
         {
-            try {
+            try
+            {
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
-                { msg = String.format( "flag = 1 # of rows affected: %d", rowsAffected ); }
+                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
                 else
-                { msg = String.format( "flag = 2 # of rows affected: %d", rowsAffected ); }
+                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
+
                 showMessage( msg, false, true );
                 n++;
             }
@@ -3099,6 +3125,7 @@ public class LinksCleanThread extends Thread
     private void doStatusSex( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doStatusSex for source %s", threadId, source );
 
         if( !go ) {
@@ -3148,11 +3175,11 @@ public class LinksCleanThread extends Thread
      */
     public void standardSex( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         int count = 0;
         int count_empty = 0;
         int stepstate = count_step;
-
-        long threadId = Thread.currentThread().getId();
 
         try
         {
@@ -3251,11 +3278,12 @@ public class LinksCleanThread extends Thread
      */
     public void standardCivilstatus( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         int count = 0;
         int count_empty = 0;
         int stepstate = count_step;
 
-        long threadId = Thread.currentThread().getId();
         int count_sex_new = almmCivilstatus.newcount();     // standardSex also writes to almmCivilstatus
 
         try
@@ -3377,6 +3405,7 @@ public class LinksCleanThread extends Thread
     private void doRegistrationType( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doRegistrationType for source %s", threadId, source );
 
         if( !go ) {
@@ -3510,6 +3539,7 @@ public class LinksCleanThread extends Thread
     private void doOccupation( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doOccupation for source %s", threadId, source );
 
         if( !go ) {
@@ -3706,6 +3736,7 @@ public class LinksCleanThread extends Thread
     private void doAge( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doAge for source %s", threadId, source );
 
         if( !go ) {
@@ -4026,6 +4057,7 @@ public class LinksCleanThread extends Thread
     private void doRole( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doRole for source %s", threadId, source );
 
         if( !go ) {
@@ -4367,8 +4399,6 @@ public class LinksCleanThread extends Thread
      */
     public void minMaxDateMain( boolean debug, String source ) throws Exception
     {
-        //debug = true;
-
         long threadId = Thread.currentThread().getId();
 
         int count = 0;
@@ -4417,7 +4447,7 @@ public class LinksCleanThread extends Thread
             int total = rsPersons.getRow();
             rsPersons.beforeFirst();
 
-            String msg = String.format( "person_c records: %d", threadId,  total );
+            String msg = String.format( "Thread id %02d; person_c records: %d", threadId, total );
             showMessage( msg, true, true );
             showMessage( msg, false, true );
 
@@ -5750,6 +5780,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardDate( boolean debug, String source, String type )
     {
+        long threadId = Thread.currentThread().getId();
+
         int count = 0;
         int count_empty = 0;
         int count_invalid = 0;
@@ -5824,7 +5856,7 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            String msg = String.format( "Number of %s records: %d, empty dates: %d, invalid dates: %d", type, count, count_empty, count_invalid );
+            String msg = String.format( "Thread id %02d; Number of %s records: %d, empty dates: %d, invalid dates: %d", threadId, type, count, count_empty, count_invalid );
             showMessage( msg, false, true );
             rs = null;
         }
@@ -6192,6 +6224,7 @@ public class LinksCleanThread extends Thread
     private void doMinMaxMarriage( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doMinMaxMarriage for source %s", threadId, source );
 
         if( !go ) {
@@ -6456,6 +6489,7 @@ public class LinksCleanThread extends Thread
     private void doPartsToFullDate( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doPartsToFullDate for source %s", threadId, source );
 
         if( !go ) {
@@ -6627,13 +6661,13 @@ public class LinksCleanThread extends Thread
             dbconCleaned.runQuery( queryP5 );
 
             if( debug ) { showMessage( queryP6, false, true ); }
-            else { showMessage(String.format(  "Thread id %02d; 6-of-7: death_date_max", threadId ), false, true ); }
+            else { showMessage( String.format( "Thread id %02d; 6-of-7: death_date_max", threadId ), false, true ); }
             dbconCleaned.runQuery( queryP6 );
 
             /*
             // sometimes exceptions for invalid dates...
             if( debug ) { showMessage( queryR, false, true ); }
-            else { showMessage( "7-of-7: registration_days", false, true ); }
+            else { showMessage( String.format( "Thread id %02d; 7-of-7: registration_days", threadId ), false, true ); }
             int rowsAffected = dbconCleaned.runQueryUpdate( queryR );
             showMessage( "registration_days rows affected: " + rowsAffected, false, true );
             */
@@ -6646,7 +6680,8 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            showMessage( "7-of-7: registration_days", false, true );
+            showMessage( String.format( "Thread id %02d; 7-of-7: registration_days", threadId ), false, true );
+
             String queryS = "SELECT id_registration, registration_date FROM registration_c WHERE id_source = " + source;
 
             ResultSet rs_s = dbconCleaned.runQueryWithResult( queryS );
@@ -6709,6 +6744,7 @@ public class LinksCleanThread extends Thread
     private void doPostTasks( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doPostTasks for source %s", threadId, source );
 
         if( !go ) {
@@ -6760,14 +6796,14 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void postTasks( boolean debug, String source )
-            throws Exception
+    throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         if( debug ) { showMessage( "postTasks()", false, true ); }
         // Notice:
         // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
-        // need to add threadId for multi-threaded cleaning
-        long threadId = Thread.currentThread().getId();
         String table_male   = "links_temp.male_"   + Long.toString( threadId );
         String table_female = "links_temp.female_" + Long.toString( threadId );
 
@@ -7009,7 +7045,8 @@ public class LinksCleanThread extends Thread
                         norole =  true;
 
                         if( debug ) {
-                            String msg = String.format( "No role: id_registration: %d, id_person: %d, registration_maintype: %d, role: %d" );
+                            String msg = String.format( "No role: id_registration: %d, id_person: %d, registration_maintype: %d, role: %d",
+                               id_registration, id_person, registration_maintype );
                             System.out.println( msg ); showMessage( msg, false, true );
                         }
                         break;  // Kees: all persons of a registration must have a role, so we are done for this reg
@@ -7038,7 +7075,7 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            String msg = "Number of registrations with missing role(s) removed: " + nNoRole;
+            String msg = String.format( "Thread id %02d; Number of registrations with missing role(s) removed: %d", threadId, nNoRole );
             System.out.println( msg ); showMessage( msg, false, true );
         }
         catch( Exception ex ) {
@@ -7056,6 +7093,7 @@ public class LinksCleanThread extends Thread
     private void doRemoveDuplicateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
+
         String funcname = String.format( "Thread id %02d; doRemoveDuplicateRegs for source %s", threadId, source );
 
         if( !go ) {
@@ -7795,6 +7833,8 @@ public class LinksCleanThread extends Thread
     private void scanRemarksUpdate( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
     //throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         String query_u = "";
 
         if( name_table.equals( "registration_c" ) ) {
@@ -7814,7 +7854,6 @@ public class LinksCleanThread extends Thread
         try {  dbconCleaned.runQuery( query_u ); }
         catch( Exception ex ) {
             showMessage( "Query: " + query_u, false, true );
-            long threadId = Thread.currentThread().getId();
             String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
             showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
