@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-10-May-2016 Latest change
+ * FL-11-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -307,8 +307,14 @@ public class LinksCleanThread extends Thread
             sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
-            if( sourceList.length == 1 ) { s = String.format( "Thread id %02d; Processing source: ", mainThreadId ); }
-            else { s = String.format("Thread id %02d; Processing sources: ", mainThreadId ); }
+            if( sourceList.length == 1 )
+            {
+                multithreaded = false;  // only 1 source
+                s = String.format( "Thread id %02d; Processing source: ", mainThreadId );
+            }
+            else
+            { s = String.format("Thread id %02d; Processing sources: ", mainThreadId ); }
+
             for( int i : sourceList ) { s = s + i + " "; }
             showMessage( s, false, true );
 
@@ -435,7 +441,8 @@ public class LinksCleanThread extends Thread
                     System.out.println( msg );
 
                     LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
-                    showMessage( timePoint.toString(), false, true );
+                    msg = String.format( "Thread id %02d; timestamp: %s", mainThreadId, timePoint.toString() );
+                    showMessage( msg, false, true );
                 }
 
                 // Close db connections
@@ -1115,7 +1122,7 @@ public class LinksCleanThread extends Thread
         if( ! multithreaded )
         {
             // Loading Prepiece/Suffix/Alias reference tables
-            msg = "Loading Prepiece/Suffix/Alias reference tables";
+            msg = String.format( "Thread id %02d; Loading Prepiece/Suffix/Alias reference tables", threadId );
             showMessage( msg + "...", false, true );
 
             // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
@@ -1140,7 +1147,7 @@ public class LinksCleanThread extends Thread
 
         if( ! multithreaded ) {
             start = System.currentTimeMillis();
-            msg = "Loading reference table: ref_firstname";
+            msg = String.format( "Thread id %02d; Loading reference table: ref_firstname", threadId );
             showMessage( msg + "...", false, true );
 
             almmFirstname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
@@ -1229,7 +1236,7 @@ public class LinksCleanThread extends Thread
 
         if( ! multithreaded ) {
             // Loading Prepiece/Suffix/Alias reference tables
-            msg = String.format( "Loading Prepiece/Suffix/Alias reference tables" );
+            msg = String.format( "Thread id %02d; Loading Prepiece/Suffix/Alias reference tables", threadId );
             showMessage( msg + "...", false, true );
 
             // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
@@ -1253,7 +1260,7 @@ public class LinksCleanThread extends Thread
 
         if( ! multithreaded ) {
             start = System.currentTimeMillis();
-            msg = "Loading reference table: ref_familyname";
+            msg = String.format( "Thread id %02d; Loading reference table: ref_familyname", threadId );
             showMessage( msg + "...", false, true );
 
             almmFamilyname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
@@ -2600,7 +2607,7 @@ public class LinksCleanThread extends Thread
 
         if( ! multithreaded ) {
             long timeStart = System.currentTimeMillis();
-            String msg = "Loading reference table: location";
+            String msg = String.format( "Thread id %02d; Loading reference table: location", threadId );
             showMessage( msg + "...", false, true );
             long start = System.currentTimeMillis();
             almmLocation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
@@ -3137,10 +3144,12 @@ public class LinksCleanThread extends Thread
         showMessage( funcname + "...", false, true );
 
         if( ! multithreaded ) {
-            showMessage( "Loading reference table: ref_status_sex (sex as key)...", false, true );
+            String msg = String.format( "Thread id %02d; Loading reference table: ref_status_sex (sex as key)...", threadId );
+            showMessage( msg, false, true );
             almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
 
-            showMessage( "Loading reference table: status_sex (civil status as key)...", false, true );
+            msg = String.format( "Thread id %02d; Loading reference table: status_sex (civil status as key)...", threadId );
+            showMessage( msg, false, true );
             almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
         }
 
@@ -3552,7 +3561,7 @@ public class LinksCleanThread extends Thread
 
         if( ! multithreaded ) {
             long start = System.currentTimeMillis();
-            String msg = "Loading reference table: ref_occupation";
+            String msg = String.format( "Thread id %02d; Loading reference table: ref_occupation", threadId );
             showMessage( msg + "...", false, true );
             almmOccupation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
             elapsedShowMessage( msg, start, System.currentTimeMillis() );
@@ -4070,7 +4079,7 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
 
         if( ! multithreaded ) {
-            String msg = "Loading reference table: ref_role";
+            String msg = String.format( "Thread id %02d; Loading reference table: ref_role", threadId );
             showMessage( msg + "...", false, true );
 
             almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
@@ -4354,7 +4363,10 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
-        ///*
+        msg = "skipping remaining date functions";
+        showMessage( msg, false, true );
+
+        /*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
@@ -4384,7 +4396,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5671,7 +5683,7 @@ public class LinksCleanThread extends Thread
                         // (invalid) event_date not used; continue with registration_date components
                         // Notice: (HSN date) components may be negative if registration_date contains those
 
-                        // -4- conditionally REPLACEd dymd components of registration_date
+                        // -4- conditionally REPLACE dymd components of registration_date
                         if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
 
                         int day   = dymd.getDay();
@@ -6786,6 +6798,7 @@ public class LinksCleanThread extends Thread
         flagDeathLocation( debug, source );
         msg = String.format( "Thread id %02d; flagDeathLocation ", threadId );
         showTimingMessage( msg, start );
+        showMessage_nl();
 
     } // doPostTasks
 

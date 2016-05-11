@@ -65,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-10-May-2016 Latest change
+ * FL-11-May-2016 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2966,6 +2966,8 @@ public class ManagerGui extends javax.swing.JFrame
      */
     public static void main( String args[] )
     {
+        long threadId = Thread.currentThread().getId();
+
         //try { logger.info( "ManagerGui/main()" ); }
         //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -2975,8 +2977,8 @@ public class ManagerGui extends javax.swing.JFrame
 
         try {
             plog = new general.PrintLogger();
-            plog.show( "Running on host: " + hostname );
-            plog.show( "ManagerGui/main()" );
+            plog.show( String.format( "Thread id %02d; Running on host: %s", threadId, hostname ) );
+            plog.show( String.format( "Thread id %02d; ManagerGui/main()", threadId ) );
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -2995,21 +2997,24 @@ public class ManagerGui extends javax.swing.JFrame
         {
             public void run()
             {
-                String timestamp1 = "10-May-2016 10:37";
-                String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+            long threadId = Thread.currentThread().getId();
+            String timestamp1 = "11-May-2016 11:11";
+            String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
-                try {
-                    plog.show( "Links Data Manager 2.0 timestamp: " + timestamp1 );
-                    plog.show( "Start at: " + timestamp2 );
-                    plog.show( "ManagerGui/main/run()" );
+            try
+            {
+                plog.show( String.format( "Thread id %02d; Links Data Manager 2.0 timestamp: %s", threadId, timestamp1 ) );
+                plog.show( String.format( "Thread id %02d; Start at: %s", threadId, timestamp2 ) );
+                plog.show( String.format( "Thread id %02d; ManagerGui/main/run()", threadId ) );
 
-                    String version = System.getProperty( "java.version" );
-                    plog.show( "Java version: " + version );
-                    System.out.println( "Java version: " + version );
-                }
-                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+                String version = System.getProperty( "java.version" );
+                String msg = String.format( "Thread id %02d; Java version: %s", threadId, version );
+                plog.show( msg );
+                System.out.println( msg );
+            }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-                new ManagerGui().setVisible( true );
+            new ManagerGui().setVisible( true );
             }
         });
     }

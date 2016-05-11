@@ -96,12 +96,22 @@ public class LinksClean extends Thread
      */
     public void run()
     {
-        try {
-            plog.show( "Links Data Manager 2.0" );
-            plog.show( "LinksClean/run()" );
+        long threadId = Thread.currentThread().getId();
+
+        try
+        {
+            String msg = String.format( "Thread id %02d; Links Data Manager 2.0", threadId );
+            plog.show( msg );
+
+            msg = String.format( "Thread id %02d; LinksClean/run()", threadId );
+            plog.show( msg );
+
             int ncores = Runtime.getRuntime().availableProcessors();
-            plog.show( "Available cores: " + ncores );
-            plog.show( "sourceIds from GUI: " + sourceIdsGui );
+            msg = String.format( "Thread id %02d; Available cores: %d", threadId, ncores );
+            plog.show( msg );
+
+            msg = String.format( "Thread id %02d; sourceIds from GUI: %s", threadId, sourceIdsGui );
+            plog.show( msg );
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -113,13 +123,16 @@ public class LinksClean extends Thread
 
         String s = "LinksClean: Available source Ids: ";
         for( int i : sourceListAvail ) { s = s + i + " "; }
-        showMessage( s, false, true );
+
+        String msg = String.format( "Thread id %02d; %s", threadId, s );
+        showMessage( msg, false, true );
 
         LinksCleanThread linksCleanedThread = new LinksCleanThread(
              opts,
              outputLine,
              outputArea,
-             mg );
+             mg
+        );
 
         linksCleanedThread.start();
     }
