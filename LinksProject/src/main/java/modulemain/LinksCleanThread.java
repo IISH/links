@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-11-May-2016 Latest change
+ * FL-12-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4327,8 +4327,7 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        //msg = "Skipping until minMaxDateMain()";
-        //msg = "Doing onlystandardRegistrationDate()";
+        //msg = "skipping till standardRegistrationDate()";
         //showMessage( msg, false, true );
         ///*
         ts = System.currentTimeMillis();
@@ -4360,13 +4359,12 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
-        msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
+        msg = String.format( "Thread id %02d; Processing standardRegistrationDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
-        msg = "skipping remaining date functions";
-        showMessage( msg, false, true );
-
-        /*
+        //msg = "skipping remaining date functions";
+        //showMessage( msg, false, true );
+        ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
@@ -4396,7 +4394,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5540,7 +5538,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String query_r = "SELECT id_registration , registration_date, registration_day, registration_month, registration_year ";
+            String query_r = "SELECT id_registration, registration_maintype, registration_date, registration_day, registration_month, registration_year ";
             query_r += "FROM registration_o WHERE id_source = " + source;
 
             ResultSet rs_r = dbconOriginal.runQueryWithResult( query_r );
@@ -5554,15 +5552,18 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_registration       = rs_r.getInt( "id_registration" );
+                int registration_maintype = rs_r.getInt( "registration_maintype" );
                 String registration_date  = rs_r.getString( "registration_date" );
+
                 int regist_day      = rs_r.getInt( "registration_day" );
                 int regist_month    = rs_r.getInt( "registration_month" );
                 int regist_year     = rs_r.getInt( "registration_year" );
 
-                //if( id_registration == 24628217 ) { debug = true; }
+                //if( id_registration == 6916957 ) { debug = true; }
                 //else { debug = false; continue; }
 
-                if( debug ) {
+                if( debug )
+                {
                     System.out.println( "id_registration: "    + id_registration );
                     System.out.println( "registration_date: "  + registration_date );
                     System.out.println( "registration_day: "   + regist_day );
@@ -5632,18 +5633,17 @@ public class LinksCleanThread extends Thread
                 }
 
                 // replace registration date with event date
-                int registration_maintype = 0;              // to be used below 1/2/3
                 int registration_flag = 0;
 
                 if( use_event_date )
                 {
+                    if( debug ) { System.out.println( "try to use event_date" ); }
                     // try to replace invalid registration date with birth-/marriage-/death- date
                     nInvalidRegDates++;
 
                     registration_flag = 1;
 
                     if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
-                    if( debug ) { System.out.println( "No (valid) registration date for id_registration: " + id_registration + ", registration_date: " + registration_date ); }
 
                     String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
@@ -5651,8 +5651,6 @@ public class LinksCleanThread extends Thread
                     DateYearMonthDaySet dymd_event = null;
                     while( rs_p.next() )
                     {
-                        registration_maintype = rs_p.getInt( "registration_maintype" );
-
                         // try to use the event date
                         String event_date = "";
                              if( registration_maintype == 1 ) { event_date = rs_p.getString( "birth_date" ); }
@@ -5660,12 +5658,15 @@ public class LinksCleanThread extends Thread
                         else if( registration_maintype == 3 ) { event_date = rs_p.getString( "death_date" ); }
 
                         dymd_event = LinksSpecific.divideCheckDate( event_date );
+
                         if( dymd_event.isValidDate() ) {
                             // we have a valid event date; skip the remaining reg persons
                             if( debug ) { System.out.println( "valid event_date: " + event_date ); }
                             registration_date = event_date;
                             break;
                         }
+                        else
+                        if( debug ) { System.out.println( "invalid event_date: " + event_date ); }
                     }
 
                     if( dymd_event != null && dymd_event.isValidDate() )
@@ -5676,22 +5677,25 @@ public class LinksCleanThread extends Thread
                         int event_month = dymd.getMonth();
                         int event_year  = dymd.getYear();
                         registration_date = String.format( "%02d-%02d-%04d", event_day, event_month, event_year );
-                        if( debug ) { System.out.println( "use event_date: " + registration_date ); }
+
+                        //if( debug ) { System.out.println( "use event_date: " + registration_date ); }
                     }
                     else
                     {
+                        if( debug ) { System.out.println( "invalid event_date; use/set registration components " ); }
+
                         // (invalid) event_date not used; continue with registration_date components
                         // Notice: (HSN date) components may be negative if registration_date contains those
 
                         // -4- conditionally REPLACE dymd components of registration_date
-                        if( debug ) { System.out.println( "invalid registration_date: " + registration_date ); }
-
-                        int day   = dymd.getDay();
-                        int month = dymd.getMonth();
-                        int year  = dymd.getYear();
+                        int day   = dymd_comp.getDay();
+                        int month = dymd_comp.getMonth();
+                        int year  = dymd_comp.getYear();
 
                         if( day <= 0 && month <= 0 && year > 0 )
                         {
+                            //if( debug ) { System.out.println( String.format( "date components (y+) %02d-%02d-%04d", day, month, year ) ); }
+
                             // KM: for HSN data with negative date components in day and/or month:
                             // birth    -> registration_date = 01-01-yyyy
                             // marriage -> registration_date = 01-07-yyyy
@@ -5716,6 +5720,8 @@ public class LinksCleanThread extends Thread
                         }
                         else
                         {
+                            //if( debug ) { System.out.println( String.format( "date components (y-) %02d-%02d-%04d", day, month, year ) ); }
+
                             addToReportRegistration( id_registration, source, 201, dymd.getReports() ); // EC 201
 
                             if( month == 2 && day > 28 ) {
@@ -5738,9 +5744,11 @@ public class LinksCleanThread extends Thread
                         }
 
                         // final check
+                        if( debug ) { System.out.println( String.format( "date components %02d-%02d-%04d", day, month, year ) ); }
                         registration_date = String.format( "%02d-%02d-%04d", day, month, year );
                         dymd = LinksSpecific.divideCheckDate( registration_date );
-                        if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
+
+                        //if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
                     }
                 }
 
