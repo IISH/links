@@ -19,7 +19,7 @@ import linksmanager.ManagerGui;
  * @author Fons Laan
  *
  * FL-24-Nov-2014 Created
- * FL-07-May-2015
+ * FL-13-May-2015
  */
 public class LinksClean extends Thread
 {
@@ -126,6 +126,8 @@ public class LinksClean extends Thread
 
         String msg = String.format( "Thread id %02d; %s", threadId, s );
         showMessage( msg, false, true );
+
+        try { plog.show( "" ); } catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
         LinksCleanThread linksCleanedThread = new LinksCleanThread(
              opts,

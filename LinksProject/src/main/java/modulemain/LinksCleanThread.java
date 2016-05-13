@@ -6743,7 +6743,7 @@ public class LinksCleanThread extends Thread
                     System.out.println( "count: " + count + ", id_registration: " + id_registration + ", registration_date: " + registration_date );
                 }
             }
-            System.out.println( "end count: " + count );
+            //System.out.println( "end count: " + count );
         }
         catch( Exception ex ) {
             showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
@@ -6975,7 +6975,7 @@ public class LinksCleanThread extends Thread
             }
             
             String msg =  String.format( "Thread id %02d; Number of registrations without date: %d", threadId, nNoRegDate );
-            System.out.println( msg ); showMessage( msg, false, true );
+            showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
@@ -7097,7 +7097,7 @@ public class LinksCleanThread extends Thread
             }
 
             String msg = String.format( "Thread id %02d; Number of registrations with missing role(s) removed: %d", threadId, nNoRole );
-            System.out.println( msg ); showMessage( msg, false, true );
+            showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             System.out.printf("'%s'\n", ex.getMessage());

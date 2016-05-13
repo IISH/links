@@ -65,7 +65,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-12-May-2016 Latest change
+ * FL-13-May-2016 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2979,6 +2979,7 @@ public class ManagerGui extends javax.swing.JFrame
             plog = new general.PrintLogger();
             plog.show( String.format( "Thread id %02d; Running on host: %s", threadId, hostname ) );
             plog.show( String.format( "Thread id %02d; ManagerGui/main()", threadId ) );
+            plog.show( "" );
         }
         catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
@@ -2998,7 +2999,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "12-May-2016 13:10";
+            String timestamp1 = "13-May-2016 11:14";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try
@@ -3010,6 +3011,7 @@ public class ManagerGui extends javax.swing.JFrame
                 String version = System.getProperty( "java.version" );
                 String msg = String.format( "Thread id %02d; Java version: %s", threadId, version );
                 plog.show( msg );
+                plog.show( "" );
                 System.out.println( msg );
             }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
