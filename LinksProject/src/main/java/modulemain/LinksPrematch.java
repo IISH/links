@@ -176,10 +176,10 @@ public class LinksPrematch extends Thread
                 Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
                 Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
 
-                lv1.start();
-                lv2.start();
-                lv3.start();
-                lv4.start();
+                lv1.start();    // firstname    strict = true   tables: ls_firstname_strict
+                lv2.start();    // firstname    strict = false  tables: ls_firstname, ls_firstname_first
+                lv3.start();    // familyname   strict = true   tables: ls_familyname_strict
+                lv4.start();    // familyname   strict = false  tables: ls_familyname, ls_familyname_first
 
                 lv1.join();
                 lv2.join();

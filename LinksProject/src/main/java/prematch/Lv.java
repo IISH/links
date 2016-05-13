@@ -380,7 +380,7 @@ public class Lv extends Thread
         long threadId = Thread.currentThread().getId();
 
         long start = System.currentTimeMillis();
-        String msg = String.format( "thread (id %d); Loading CSV LV data into LV table", threadId );
+        String msg = String.format( "thread (id %d); LoadCsvLsToTable(): Loading CSV LV data into LV table: %s", threadId, db_table );
         showMessage( msg + "...", false, true );
 
         String query = "TRUNCATE TABLE `" + db_name + "`.`" + db_table + "`";
@@ -422,7 +422,7 @@ public class Lv extends Thread
             String ls_table_first = ls_table + "_first";
 
             long start = System.currentTimeMillis();
-            String msg = String.format( "thread (id %d); Filling table %s", threadId, ls_table_first );
+            String msg = String.format( "thread (id %d); createLsFirstTable(): Filling table: %s", threadId, ls_table_first );
             showMessage( msg, false, true );
 
             String[] queries =
@@ -455,7 +455,8 @@ public class Lv extends Thread
 
         else
         {
-            String msg = String.format( "thread (id %d); createLsFirstTable, deleting Lvs 3 and 4:  %s", threadId, ls_table );
+            // ls_table is ls_firstname_strict or ls_familyname_strict: remove lvs = 3 & 4
+            String msg = String.format( "thread (id %d); createLsFirstTable(): Deleting Lvs 3 and 4 from table: %s", threadId, ls_table );
             showMessage(msg, false, true );
 
             String query = "DELETE FROM " + ls_table + " WHERE value = 3 OR value = 4;";
