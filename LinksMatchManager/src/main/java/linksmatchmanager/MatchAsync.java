@@ -939,6 +939,10 @@ public class MatchAsync extends Thread
                 ql = null;
                 qs = null;
             }
+            else {
+                msg = "not freeing vectors";
+                System.out.println( msg ); plog.show( msg );
+            }
 
             dbconPrematch.close();
             dbconMatch.close();

@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-06-Apr-2016 Latest change
+ * FL-17-May-2016 Latest change
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -164,7 +164,7 @@ public class QueryLoader
         this.ignore_sex    = qs.ignore_sex;
         this.ignore_minmax = qs.ignore_minmax;
 
-        System.out.println( "QueryLoader()" );
+        System.out.println( "Thread id " + threadId + "; QueryLoader()" );
 
         // get set 1 from links_base
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
@@ -178,9 +178,12 @@ public class QueryLoader
         set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !
 
+        System.out.println( "Thread id " + threadId + "; filling the s1 and s2 vectors..." );
         fillArrays();
 
         this.dbconPrematch = dbconPrematch;
+
+        System.out.println( "Thread id " + threadId + "; QueryLoader() done" );
     }
 
 

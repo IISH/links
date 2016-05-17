@@ -38,7 +38,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-03-May-2016 Latest change
+ * FL-17-May-2016 Latest change
  */
 
 public class MatchMain
@@ -84,7 +84,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "03-May-2016 11:30";
+            String timestamp1 = "17-May-2016 15:17";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -317,7 +317,7 @@ public class MatchMain
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
                 int num_s1_parts = 0;   // the number of parts into which s1 will be split
-                if( isSize * qgs.getSize() > s1_split_limit )       // split s1 if we have have few threads (but not 1 )
+                if( isSize * qgs.getSize() > s1_split_limit )       // split s1 if we have have few threads (but not 1)
                 {  num_s1_parts = 1; }   // do not split s1 into separate pieces
                 else
                 { num_s1_parts = max_threads_simul; }
