@@ -42,7 +42,8 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * <p/>
- * FL-03-Mar-2015 Latest change
+ * FL-03-Mar-2015 changed
+ * FL-17-May-2016 Latest change: ( year > 1500  ) && ( year < 2016 ) )
  *
  */
 public class Functions
@@ -357,8 +358,8 @@ public class Functions
             year = Integer.parseInt(m.group());
         }
 
-        // they are devides, now we check the value on errors
-        if( (year > 1680) && ( year < 1960 ) ){
+        // they are devided, now we check the value on errors
+        if( ( year > 1500  ) && ( year < 2016 ) ) {
             dymd.setYear(year);
         }
         else {

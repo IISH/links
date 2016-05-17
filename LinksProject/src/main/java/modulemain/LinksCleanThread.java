@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-12-May-2016 Latest change
+ * FL-17-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5559,7 +5559,7 @@ public class LinksCleanThread extends Thread
                 int regist_month    = rs_r.getInt( "registration_month" );
                 int regist_year     = rs_r.getInt( "registration_year" );
 
-                //if( id_registration == 6916957 ) { debug = true; }
+                //if( id_registration == 7117706 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
@@ -5692,10 +5692,10 @@ public class LinksCleanThread extends Thread
                         int month = dymd_comp.getMonth();
                         int year  = dymd_comp.getYear();
 
+                        if( debug ) { System.out.println( String.format( "date components (initial) %02d-%02d-%04d", day, month, year ) ); }
+
                         if( day <= 0 && month <= 0 && year > 0 )
                         {
-                            //if( debug ) { System.out.println( String.format( "date components (y+) %02d-%02d-%04d", day, month, year ) ); }
-
                             // KM: for HSN data with negative date components in day and/or month:
                             // birth    -> registration_date = 01-01-yyyy
                             // marriage -> registration_date = 01-07-yyyy
@@ -5720,8 +5720,6 @@ public class LinksCleanThread extends Thread
                         }
                         else
                         {
-                            //if( debug ) { System.out.println( String.format( "date components (y-) %02d-%02d-%04d", day, month, year ) ); }
-
                             addToReportRegistration( id_registration, source, 201, dymd.getReports() ); // EC 201
 
                             if( month == 2 && day > 28 ) {
@@ -5744,11 +5742,13 @@ public class LinksCleanThread extends Thread
                         }
 
                         // final check
-                        if( debug ) { System.out.println( String.format( "date components %02d-%02d-%04d", day, month, year ) ); }
-                        registration_date = String.format( "%02d-%02d-%04d", day, month, year );
-                        dymd = LinksSpecific.divideCheckDate( registration_date );
+                        if( debug ) { System.out.println( String.format( "date components (changed) %02d-%02d-%04d", day, month, year ) ); }
 
-                        //if( debug ) { System.out.println( "registration_date from dmy: " + registration_date ); }
+                        registration_date = String.format( "%02d-%02d-%04d", day, month, year );
+                        if( debug ) { System.out.println( "registration_date from components: " + registration_date ); }
+
+                        dymd = LinksSpecific.divideCheckDate( registration_date );
+                        if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }
                     }
                 }
 

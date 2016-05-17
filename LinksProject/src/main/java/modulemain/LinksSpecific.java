@@ -40,7 +40,7 @@ import dataset.DateYearMonthDaySet;
  * <p/>
  * FL-30-Jul-2014 Cleanup
  * FL-28-Jul-2015 handle negative date components
- * FL-15-Apr-2016 Latest change
+ * FL-17-May-2016 Latest change
  */
 public class LinksSpecific
 {
@@ -386,8 +386,8 @@ public class LinksSpecific
         if( m.find() ) { year  = Integer.parseInt( m.group() ); }   //year
 
         // check components
-        // year
-        if( ( year > 1680 ) && ( year < 2016 ) ) { dymd.setYear( year ); }
+        // year: we have "TROUWEN" records from Leiden going back to 1575
+        if( ( year > 1500 ) && ( year < 2016 ) ) { dymd.setYear( year ); }
         else
         {
             dymd.setReportYear( Integer.toString( year ) );
