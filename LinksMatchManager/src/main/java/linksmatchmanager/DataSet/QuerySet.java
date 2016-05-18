@@ -21,12 +21,12 @@ package linksmatchmanager.DataSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-02-Nov-2015 Latest change
+ * FL-18-May-2016 Latest change
  */
 public class QuerySet
 {
     public String  query1;              // query to get s1 data set from links_base
-    public String  query2;              // query to get s1 data set from links_base
+    public String  query2;              // query to get s2 data set from links_base
 
     public int s1_maintype  = 0;
     public int s2_maintype  = 0;

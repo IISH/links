@@ -38,7 +38,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-17-May-2016 Latest change
+ * FL-18-May-2016 Latest change
  */
 
 public class MatchMain
@@ -98,11 +98,11 @@ public class MatchMain
             //System.exit( 0 );
 
             // Load arguments; check length
-            if( args.length != 6 ) {
-                String msg ="Invalid argument length " + args.length + ", it should be 6";
+            if( args.length != 7 ) {
+                String msg ="Invalid argument length " + args.length + ", it should be 7";
                 plog.show( msg ); System.out.println( msg );
 
-                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <debug>";
+                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <sample_limit> <debug>";
                 plog.show( msg ); System.out.println( msg );
 
                 return;
@@ -114,7 +114,8 @@ public class MatchMain
             String pass                = args[ 2 ];
             String max_threads_str     = args[ 3 ];
             String max_heap_table_size = args[ 4 ];
-            String debug_str           = args[ 5 ];
+            String sample_limit        = args[ 5 ];
+            String debug_str           = args[ 6 ];
 
             //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
@@ -122,10 +123,13 @@ public class MatchMain
             //System.out.println( "debug: '" + debug + "'" );
 
 
-            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, debug: %s",
-                url, user, pass, max_threads_str, max_heap_table_size, debug );
+            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, sample_limit: %s, debug: %s",
+                url, user, pass, max_threads_str, max_heap_table_size, sample_limit, debug );
             System.out.println( msg );
             plog.show( msg );
+
+            String s1_sample_limit = "100000000";
+            String s2_sample_limit = sample_limit;
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
@@ -165,9 +169,9 @@ public class MatchMain
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
-            QueryGenerator queryGen = new QueryGenerator( plog, dbconMatch );
+            QueryGenerator queryGen = new QueryGenerator( plog, dbconMatch, s1_sample_limit, s2_sample_limit );
 
-            // The InputSet 'is', is the only accessible object from queryGen
+            // The InputSet 'is', is the only accessible object from the queryGen object.
             InputSet inputSet = queryGen.is;
             checkInputSet( inputSet );
 
@@ -355,7 +359,7 @@ public class MatchMain
                     showQuerySet( qs );
 
                     long qlStart = System.currentTimeMillis();
-                    // Notice: SampleLoader becomes a replacement ofQueryLoader, but it is not finished
+                    // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );

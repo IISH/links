@@ -32,7 +32,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-30-Nov-2015 Latest change
+ * FL-18-May-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -40,20 +40,30 @@ public class QueryGenerator
 
     private boolean debug = false;
     private PrintLogger plog;
+    private String s1_sampleLimit;
+    private String s2_sampleLimit;
     private ResultSet rs;
 
     /**
      * Constructor
      * @param plog
      * @param dbconMatch
+     * @param s1_sampleLimit
+     * @param s2_sampleLimit
      * @throws Exception
      *
      * There is just one QueryGenerator containing all input variables, plus resultSet from match_process.
      * So it could/should have been a singleton object.
      */
-    public QueryGenerator( PrintLogger plog, Connection dbconMatch ) throws Exception
+    public QueryGenerator( PrintLogger plog, Connection dbconMatch, String s1_sampleLimit, String s2_sampleLimit ) throws Exception
     {
         this.plog = plog;
+
+        this.s1_sampleLimit = s1_sampleLimit;
+        this.s2_sampleLimit = s2_sampleLimit;
+
+        String msg = String.format( "QueryGenerator(): s1-SampleLimit = %s, String s2_SampleLimit = %s", s1_sampleLimit, s2_sampleLimit );
+        plog.show( msg );
 
         // Get all records and fields from the match_process table
         rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process ORDER BY id" );
@@ -221,13 +231,15 @@ public class QueryGenerator
             }
 
             // FL-02-Mar-2015
-            // If 'once' is true, the while loop is executed only once, and the InputSet will contain just
-            // one QueryGroupSet. With a given s1_range > 0 from the match_process table, multiple QueryGroupSets
-            // will be generated. The variables in those QueryGroupSets will be mostly the same; the difference
-            // lies in the values for s1_days, s2_days and s1_range.
+            // If 'once' is true, the while loop is executed only once, and the InputSet will contain just one QueryGroupSet.
+            // With a given s1_range > 0 from the match_process table, multiple QueryGroupSets will be generated.
+            // The variables in those QueryGroupSets will be mostly the same; the difference lies in the values for
+            // s1_days, s2_days and s1_range.
             while( loop )
             {
-                // collect the above variables in a QuerySet object
+                // Collect the above variables in a QuerySet object. So a 'qs'contains:
+                // - the parameters of a single 'y' match_process record,
+                // - the s1 & s2 queries to retrieve the sample data from links_base.
                 QuerySet qs = new QuerySet();
 
                 qs.s1_maintype = s1_maintype;
@@ -530,7 +542,7 @@ public class QueryGenerator
 
 
 
-                // clean
+                // clean end of queries
                 if( qs.query1.endsWith( " AND " ) ) {
                     qs.query1 = qs.query1.substring( 0, (qs.query1.length() - 4) );
                 }
@@ -539,9 +551,20 @@ public class QueryGenerator
                     qs.query2 = qs.query2.substring( 0, (qs.query2.length() - 4) );
                 }
 
-                // Order
-                qs.query1 += "ORDER BY ego_familyname LIMIT 0,100000000";
-                qs.query2 += "ORDER BY ego_familyname LIMIT 0,100000000";
+                // ORDER BY
+                qs.query1 += "ORDER BY ego_familyname ";
+                qs.query2 += "ORDER BY ego_familyname ";
+
+                // LIMIT
+                // instead of [0, limit] we should go with chunks through the number of hits:
+                // LIMIT row_count OFFSET offset
+                qs.query1 += "LIMIT " + s1_sampleLimit + " ";     // used to be: 100000000
+                qs.query2 += "LIMIT " + s2_sampleLimit + " ";     // used to be: 100000000
+
+                String s1_sampleOffset = "0";
+                String s2_sampleOffset = "0";
+                qs.query1 += "OFFSET " + s1_sampleOffset;     // used to be: 0
+                qs.query2 += "OFFSET " + s2_sampleOffset;     // used to be: 0
 
                 qgs.add( qs );      // add the QuerySet to the QueryGroupSet
                 counter++;
