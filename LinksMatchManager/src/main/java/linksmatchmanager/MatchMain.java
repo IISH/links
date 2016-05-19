@@ -150,9 +150,9 @@ public class MatchMain
             System.out.println( msg ); plog.show( msg );
 
             // Create database connections
-            dbconMatch    = General.getConnection( url, "links_match", user, pass );
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
-            dbconTemp     = General.getConnection( url, "links_temp", user, pass );
+            dbconMatch    = General.getConnection( url, "links_match",    user, pass );
+            dbconTemp     = General.getConnection( url, "links_temp",     user, pass );
 
             // we now use links_prematch for tmp mem tables, so it must be writable
             //dbconPrematch.setReadOnly( true );                // Set read only
@@ -169,7 +169,7 @@ public class MatchMain
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
-            QueryGenerator queryGen = new QueryGenerator( plog, dbconMatch, s1_sample_limit, s2_sample_limit );
+            QueryGenerator queryGen = new QueryGenerator( plog, dbconPrematch, dbconMatch, s1_sample_limit, s2_sample_limit );
 
             // The InputSet 'is', is the only accessible object from the queryGen object.
             InputSet inputSet = queryGen.is;
@@ -178,10 +178,7 @@ public class MatchMain
             // The inputSet contains an ArrayList< QueryGroupSet >, 1 QueryGroupSet per 'y' record from the match_process table
             int isSize = inputSet.getSize();
             plog.show( String.format( "Number of active records from links_match.match_process: %d\n", isSize ) );
-            if( isSize == 0 ) {
-                System.out.println( "Nothing to do; Stop." );
-                plog.show( "Nothing to do; Stop." );
-            }
+            if( isSize == 0 ) { msg = "Nothing to do; Stop.";  System.out.println( msg ); plog.show( msg ); }
 
             // The first ls_firstname and ls_familyname, are copied to a MEMORY database table
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
@@ -322,7 +319,7 @@ public class MatchMain
 
                 int num_s1_parts = 0;   // the number of parts into which s1 will be split
                 if( isSize * qgs.getSize() > s1_split_limit )       // split s1 if we have have few threads (but not 1)
-                {  num_s1_parts = 1; }   // do not split s1 into separate pieces
+                {  num_s1_parts = 1; }  // do not split s1 into separate pieces
                 else
                 { num_s1_parts = max_threads_simul; }
 
@@ -365,6 +362,12 @@ public class MatchMain
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     msg = String.format( "Range %d-of-%d; query loader time", n_qs+1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
+
+
+                    msg = "SKIPPING MatchAsyns !!!";
+                    System.out.println( msg ); plog.show( msg );
+                    if( 1 == 1 ) { continue; }
+
 
                     int s1_size = ql.s1_id_base.size();
                     msg = String.format( "s1_size: " + s1_size );
@@ -877,8 +880,8 @@ public class MatchMain
         {
             plog.show( "match_process settings:" );
             plog.show( String.format( "id = %d", qs.id ) );
-            plog.show( String.format( "query1 = %s", qs.query1 ) );
-            plog.show( String.format( "query2 = %s", qs.query2 ) );
+            plog.show( String.format( "query1 = %s", qs.s1_querydata ) );
+            plog.show( String.format( "query2 = %s", qs.s2_querydata ) );
 
             plog.show( String.format( "s1_days_low ............. = %s", qs.s1_days_low ) );
             plog.show( String.format( "s1_days_high ............ = %s", qs.s1_days_high ) );

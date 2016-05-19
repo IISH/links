@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package linksmatchmanager;
 
+import java.io.PrintStream;
 import java.sql.*;
 import java.util.*;
 
@@ -32,7 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-18-May-2016 Latest change
+ * FL-19-May-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -55,7 +56,7 @@ public class QueryGenerator
      * There is just one QueryGenerator containing all input variables, plus resultSet from match_process.
      * So it could/should have been a singleton object.
      */
-    public QueryGenerator( PrintLogger plog, Connection dbconMatch, String s1_sampleLimit, String s2_sampleLimit ) throws Exception
+    public QueryGenerator( PrintLogger plog, Connection dbconPrematch, Connection dbconMatch, String s1_sampleLimit, String s2_sampleLimit ) throws Exception
     {
         this.plog = plog;
 
@@ -70,7 +71,7 @@ public class QueryGenerator
 
         is = new InputSet();
 
-        setToArray();   // fill 1 or more QueryGroupSets, and add them to the InputSet 'is'
+        setToArray( dbconPrematch );   // fill 1 or more QueryGroupSets, and add them to the InputSet 'is'
     }
 
 
@@ -96,9 +97,9 @@ public class QueryGenerator
 
                 returnValue += "\t" + "\t" + "Query Pair no [" + (j + 1) + "] :" + "\r\n";
 
-                returnValue += "\t" + "\t" + "Query 1: " + iQs.query1 + "\r\n";
+                returnValue += "\t" + "\t" + "Query 1: " + iQs.s1_querydata + "\r\n";
 
-                returnValue += "\t" + "\t" + "Query 2: " + iQs.query2 + "\r\n";
+                returnValue += "\t" + "\t" + "Query 2: " + iQs.s2_querydata + "\r\n";
             }
         }
         return returnValue;
@@ -109,7 +110,7 @@ public class QueryGenerator
      * Creates an array of queries
      * @throws Exception When a database operation fails
      */
-    private void setToArray() throws Exception
+    private void setToArray( Connection dbconPrematch ) throws Exception
     {
         if( debug ) { System.out.println( "QueryGenerator/setToArray()" ); }
 
@@ -227,7 +228,7 @@ public class QueryGenerator
             boolean once = false;
             if( s1_range == 0 ) {
                 s1_range = s1_endyear - s1_startyear;
-                once = true;
+                once = true;    // 1 pair of s1/s2 queries for the 'y' record, otherwise more pairs
             }
 
             // FL-02-Mar-2015
@@ -283,18 +284,19 @@ public class QueryGenerator
                 qs.use_father  = use_father .equalsIgnoreCase( "y" ) ? true : false;
                 qs.use_partner = use_partner.equalsIgnoreCase( "y" ) ? true : false;
 
-                // Initial part of query to get the data from links_base
-                qs.query1 = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname );
-                qs.query2 = qs.query1;
+                // Initial SELECT part of query to get the data from links_base
+                String queryselect = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname );
+                qs.s1_querydata = queryselect;
+                qs.s2_querydata = queryselect;
 
                 if( !qs.ignore_sex ) {
-                    qs.query1 += ", ego_sex ";
-                    qs.query2 += ", ego_sex ";
+                    qs.s1_querydata += ", ego_sex ";
+                    qs.s2_querydata += ", ego_sex ";
                 }
 
                 // FROM
-                qs.query1 += "FROM links_base ";
-                qs.query2 += "FROM links_base ";
+                qs.s1_querydata += "FROM links_base ";
+                qs.s2_querydata += "FROM links_base ";
 
                 // FL-13-Feb-2015, suppress empty names, if used
                 String notzero = "";
@@ -338,8 +340,8 @@ public class QueryGenerator
                 }
 
 
-                qs.query1 += notzero;
-                qs.query2 += notzero;
+                qs.s1_querydata += notzero;
+                qs.s2_querydata += notzero;
 
 
                 // AND
@@ -353,21 +355,21 @@ public class QueryGenerator
                 )
                 {
                     if( notzero.isEmpty() ) {
-                        qs.query1 += "WHERE ";
-                        qs.query2 += "WHERE ";
+                        qs.s1_querydata += "WHERE ";
+                        qs.s2_querydata += "WHERE ";
                     }
                     else {
-                        qs.query1 += "AND ";
-                        qs.query2 += "AND ";
+                        qs.s1_querydata += "AND ";
+                        qs.s2_querydata += "AND ";
                     }
                 }
 
                 // ego role
                 //if (s1_role_ego != 0) {
-                //    qs.query1 += "ego_role = " + s1_role_ego + " AND ";
+                //    qs.s1_querydata += "ego_role = " + s1_role_ego + " AND ";
                 //}
                 //if (s2_role_ego != 0) {
-                //    qs.query2 += "ego_role = " + s2_role_ego + " AND ";
+                //    qs.s2_querydata += "ego_role = " + s2_role_ego + " AND ";
                 //}
 
                 // Ego s1 role
@@ -392,7 +394,7 @@ public class QueryGenerator
                     }
                     else { s1_role_ego_where += "ego_role = " + s1_role_ego; }
 
-                    qs.query1 += s1_role_ego_where + " AND ";
+                    qs.s1_querydata += s1_role_ego_where;
                 }
 
                 // Ego s2 role
@@ -418,23 +420,23 @@ public class QueryGenerator
                     }
                     else { s2_role_ego_where += "ego_role = " + s2_role_ego; }
 
-                    qs.query2 += s2_role_ego_where + " AND ";
+                    qs.s2_querydata += s2_role_ego_where;
                 }
 
                 // registration_maintype
                 if( s1_maintype != 0 ) {
-                    qs.query1 += "registration_maintype = " + s1_maintype + " AND ";
+                    qs.s1_querydata += " AND registration_maintype = " + s1_maintype;
                 }
                 if( s2_maintype != 0 ) {
-                    qs.query2 += "registration_maintype = " + s2_maintype + " AND ";
+                    qs.s2_querydata += " AND registration_maintype = " + s2_maintype;
                 }
 
                 // type
                 if( ! s1_type.isEmpty() ) {
-                    qs.query1 += "registration_type = '" + s1_type + "' AND ";
+                    qs.s1_querydata += " AND registration_type = '" + s1_type + "'";
                 }
                 if( ! s2_type.isEmpty() ) {
-                    qs.query2 += "registration_type = '" + s2_type + "' AND ";
+                    qs.s2_querydata += " AND registration_type = '" + s2_type + "'";
                 }
 
                 // s1 id_source
@@ -455,7 +457,7 @@ public class QueryGenerator
                     }
                     else { s1_source_where += " id_source = " + s1_source; }
 
-                    qs.query1 += s1_source_where + " AND ";
+                    qs.s1_querydata += " AND " + s1_source_where;
                 }
 
                 // s2 id_source
@@ -478,7 +480,7 @@ public class QueryGenerator
                     }
                     else { s2_source_where += " id_source = " + s2_source; }
 
-                    qs.query2 += s2_source_where + " AND ";
+                    qs.s2_querydata += " AND " + s2_source_where;
                 }
 
                 // begin registration days
@@ -487,13 +489,13 @@ public class QueryGenerator
                     int s2_days_low = daysSinceBegin( s2_startyear + (counter * s1_range), 1, 1 );
 
                     if( s1_days_low > 0 ) {
-                        qs.query1 += "registration_days >= " + s1_days_low + " AND ";
+                        qs.s1_querydata += " AND registration_days >= " + s1_days_low;
                         qs.s1_days_low = s1_days_low;
                         if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days >= %d", counter, s1_days_low ) ); }
                     }
 
                     if( s2_days_low > 0 ) {
-                        qs.query2 += "registration_days >= " + s2_days_low + " AND ";
+                        qs.s2_querydata += " AND registration_days >= " + s2_days_low;
                         qs.s2_days_low = s2_days_low;
                         if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days >= %d", counter, s2_days_low ) ); }
                     }
@@ -518,7 +520,7 @@ public class QueryGenerator
                     }
 
                     if( s1_days_high > 0 ) {
-                        qs.query1 += "registration_days <= " + s1_days_high + " AND ";
+                        qs.s1_querydata += " AND registration_days <= " + s1_days_high;
                         qs.s1_days_high = s1_days_high;
                         if( debug ) { System.out.println( String.format( "counter: %d, s1 registration_days <= %d", counter, s1_days_high ) ); }
                     }
@@ -531,7 +533,7 @@ public class QueryGenerator
                         }
 
                         if( s2_days_high > 0 ) {
-                            qs.query2 += "registration_days <= " + s2_days_high + " AND ";
+                            qs.s2_querydata += " AND registration_days <= " + s2_days_high;
                             qs.s2_days_high = s2_days_high;
                             if( debug ) { System.out.println( String.format( "counter: %d, s2 registration_days <= %d", counter, s2_days_high ) ); }
                         }
@@ -541,30 +543,53 @@ public class QueryGenerator
                 // ignore_sex
 
 
-
+                /*
                 // clean end of queries
-                if( qs.query1.endsWith( " AND " ) ) {
-                    qs.query1 = qs.query1.substring( 0, (qs.query1.length() - 4) );
+                if( qs.s1_querydata.endsWith( " AND " ) ) {
+                    qs.s1_querydata = qs.s1_querydata.substring( 0, (qs.s1_querydata.length() - 4) );
                 }
 
-                if( qs.query2.endsWith( " AND " ) ) {
-                    qs.query2 = qs.query2.substring( 0, (qs.query2.length() - 4) );
+                if( qs.s2_querydata.endsWith( " AND " ) ) {
+                    qs.s2_querydata = qs.s2_querydata.substring( 0, (qs.s2_querydata.length() - 4) );
                 }
+                */
+
+                int from1 = qs.s1_querydata.indexOf( "FROM links_base" );
+                int from2 = qs.s2_querydata.indexOf( "FROM links_base" );
+
+                qs.s1_querycount = "SELECT COUNT(*) " + qs.s1_querydata.substring( from1 );
+                qs.s2_querycount = "SELECT COUNT(*) " + qs.s2_querydata.substring( from2 );
+
+                System.out.println( String.format( "q1: %s", qs.s1_querycount ) );
+                System.out.println( String.format( "q2: %s", qs.s2_querycount ) );
 
                 // ORDER BY
-                qs.query1 += "ORDER BY ego_familyname ";
-                qs.query2 += "ORDER BY ego_familyname ";
+                qs.s1_querydata += " ORDER BY ego_familyname";
+                qs.s2_querydata += " ORDER BY ego_familyname";
 
+                int s1_record_count = getRecordCount( dbconPrematch, qs.s1_querycount );
+                int s2_record_count = getRecordCount( dbconPrematch, qs.s2_querycount );
+
+                String msg1 = String.format( "s1: %d records from links_base", s1_record_count );
+                String msg2 = String.format( "s2: %d records from links_base", s2_record_count  );
+
+                plog.show( msg1 ); System.out.println( msg1 );
+                plog.show( msg2 ); System.out.println( msg2 );
+
+                /*
+                // Constructing multiple queries from s1_querydata and s2_querydata with LIMIT and OFFSET computed
+                // from the COUNT(*)s will be done when we really need the data.
                 // LIMIT
                 // instead of [0, limit] we should go with chunks through the number of hits:
                 // LIMIT row_count OFFSET offset
-                qs.query1 += "LIMIT " + s1_sampleLimit + " ";     // used to be: 100000000
-                qs.query2 += "LIMIT " + s2_sampleLimit + " ";     // used to be: 100000000
+                qs.s1_querydata += " LIMIT " + s1_sampleLimit;     // used to be: 100000000
+                qs.s2_querydata += " LIMIT " + s2_sampleLimit;     // used to be: 100000000
 
                 String s1_sampleOffset = "0";
                 String s2_sampleOffset = "0";
-                qs.query1 += "OFFSET " + s1_sampleOffset;     // used to be: 0
-                qs.query2 += "OFFSET " + s2_sampleOffset;     // used to be: 0
+                qs.s1_querydata += " OFFSET " + s1_sampleOffset;     // used to be: 0
+                qs.s2_querydata += " OFFSET " + s2_sampleOffset;     // used to be: 0
+                */
 
                 qgs.add( qs );      // add the QuerySet to the QueryGroupSet
                 counter++;
@@ -572,12 +597,35 @@ public class QueryGenerator
                 if( once ) { loop = false; }
             }
 
+            String msg = String.format( "%d query sets generated for match_process id %d", qgs.getSize(), id );
+            System.out.println( msg );
+
             is.add( qgs );          // add the QueryGroupSet to the InputSet
         }
 
         String msg = String.format( "match_process lines: %s, using %d, ignoring %d", nline, nline_y, nline_n );
         System.out.println( msg );
         plog.show( msg );
+    }
+
+
+    private int getRecordCount( Connection dbconPrematch, String countquery )
+    {
+        int count = 0;
+
+        try
+        {
+            ResultSet rs_count = dbconPrematch.createStatement().executeQuery( countquery );
+            rs_count.first();
+            count = rs_count.getInt( "COUNT(*)" );
+        }
+        catch( Exception ex )
+        {
+            try { plog.show( ex.getMessage() ); } catch( Exception ex2 ) { System.out.println( ex2.getMessage() ); }
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+        return count;
     }
 
 

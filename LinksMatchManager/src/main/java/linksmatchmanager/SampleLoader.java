@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
- * FL-06-Apr-2016 Latest change
+ * FL-19-May-2016 Latest change
  *
  * NOT FINISHED
  *
@@ -120,14 +120,14 @@ public class SampleLoader
         rs = null;
         if( set_no == 1 ) {
             // get set 1 from links_base
-            query = qs.query1;
+            query = qs.s1_querydata;
             System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
             System.out.println( query );
             rs = dbconPrematch.createStatement().executeQuery( query );
         }
         else if( set_no == 2 ) {
             // get set 2 from links_base
-            query = qs.query2;
+            query = qs.s2_querydata;
             System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
             System.out.println( query );
 

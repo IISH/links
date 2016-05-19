@@ -150,6 +150,43 @@ public class QueryLoader
     public Vector< Integer > s2_partner_death_max    = new Vector< Integer >();
 
 
+    public static String millisec2hms( long millisec_start, long millisec_stop ) {
+        long millisec = millisec_stop - millisec_start;
+        long sec = millisec / 1000;
+
+        long hour = sec / 3600;
+        long min = sec / 60;
+        long rmin = min - 60 * hour;
+        long rsec = sec - ( 60 * ( rmin + 60 * hour ) );
+
+        String hms = "";
+        if( hour == 0 ) {
+            if( rmin == 0 ) {
+                double fsec = ((double)millisec) / 1000.0;
+                //hms = String.format("[%d sec]", rsec );
+                hms = String.format("[%.1f sec]", fsec );
+            }
+            else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+        }
+        else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
+
+        return hms;
+    } // millisec2hms
+
+
+    /**
+     * @param msg_in
+     * @param start
+     * @param stop
+     */
+    private static void elapsedShowMessage( String msg_in, long start, long stop )
+    {
+        String elapsed = millisec2hms( start, stop );
+        String msg_out = msg_in + " " + elapsed + " elapsed";
+        System.out.println( msg_out);
+    } // elapsedShowMessage
+
+
     /**
      * 
      * @param qs
@@ -167,16 +204,21 @@ public class QueryLoader
         System.out.println( "Thread id " + threadId + "; QueryLoader()" );
 
         // get set 1 from links_base
+        long start = System.currentTimeMillis();
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
-        System.out.println( qs.query1 );
-        set1 = dbconPrematch.createStatement().executeQuery( qs.query1 );
+        System.out.println( qs.s1_querydata );
+
+        set1 = dbconPrematch.createStatement().executeQuery( qs.s1_querydata );
+        elapsedShowMessage( "retrieving set 1 from links_base ", start, System.currentTimeMillis() );
 
         // get set 2 from links_base
+        start = System.currentTimeMillis();
         System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
-        System.out.println( qs.query2 );
+        System.out.println( qs.s2_querydata );
 
-        set2 = dbconPrematch.createStatement().executeQuery( qs.query2 );
-        //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !
+        set2 = dbconPrematch.createStatement().executeQuery( qs.s2_querydata );
+        //set2 = dbconPrematch.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
+        elapsedShowMessage( "retrieving set 2 from links_base ", start, System.currentTimeMillis() );
 
         System.out.println( "Thread id " + threadId + "; filling the s1 and s2 vectors..." );
         fillArrays();
