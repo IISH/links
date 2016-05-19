@@ -3,8 +3,12 @@ package prematch;
 import java.io.FileWriter;
 import java.io.PrintStream;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -21,7 +25,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-03-May-2016 Latest change
+ * FL-19-May-2016 Latest change
  */
 public class Lv extends Thread
 {
@@ -82,6 +86,11 @@ public class Lv extends Thread
     @Override
     public void run()
     {
+        // If you want the actual CPU time of the current thread (or indeed, any arbitrary thread) rather than
+        // the wall clock time then you can get this via ThreadMXBean. Basically, do this at the start:
+        ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
+        threadMXB.setThreadCpuTimeEnabled( true );
+
         long start = System.currentTimeMillis();
         long threadId = Thread.currentThread().getId();
 
@@ -322,6 +331,12 @@ public class Lv extends Thread
 
         msg = String.format( "thread (id %d); Finished.", threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+        long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
+        long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
+        msg = String.format( "thread (id %d); thread time", threadId );
+        elapsedShowMessage( msg, 0, cpuTimeMsec );
+
         showMessage_nl();
     }
 
@@ -384,7 +399,7 @@ public class Lv extends Thread
         showMessage( msg + "...", false, true );
 
         String query = "TRUNCATE TABLE `" + db_name + "`.`" + db_table + "`";
-        if(debug ) { showMessage( query, false, true ); }
+        if( debug ) { showMessage( query, false, true ); }
         db_conn.runQuery( query );
 
         query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
@@ -392,7 +407,7 @@ public class Lv extends Thread
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
             + " ( `name_str_1` , `name_str_2`, `length_1`, `length_2`, `name_int_1` , `name_int_2`, `value` );";
 
-        if(debug ) { showMessage( query, false, true ); }
+        if( debug ) { showMessage( query, false, true ); }
         db_conn.runQuery( query );
 
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
@@ -436,8 +451,10 @@ public class Lv extends Thread
                 "DELETE FROM "  + ls_table + " WHERE value = 3 OR value = 4;"
             };
 
-            for( String query : queries ) {
-                showMessage( query, false, true );
+            for( String query : queries )
+            {
+                msg = String.format( "thread (id %d); %s", query );
+                showMessage( msg, false, true );
                 db_conn.runQuery( query );
             }
 
