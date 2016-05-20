@@ -9,7 +9,7 @@ Version:	0.1
 Goal:		Count and compare links original & cleaned record counts
 
 29-Mar-2016 Created
-04-May-2016 Changed
+20-May-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -256,7 +256,7 @@ def registration_counts( debug, db ):
 	print( "" )
 	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
 	print( "============================================================================" )
-	print( "     id        short        registration_o  registration_c  -- difference --" )
+	print( "     id        short        registration_o  registration_c  --- o/c loss ---" )
 	print( " # source  archive name      record count    record count   diff     procent" )
 	print( "----------------------------------------------------------------------------" )
 	
@@ -368,11 +368,13 @@ def person_counts( debug, db ):
 	
 	
 	# Get the number of records per source from links_base. 
-	# We add the requirement that the ego_familyname are non-zero, because 
-	# 0-values mean that the prematch names-to-numbers has not been run, 
-	# which makes the base table unusable for matching. 
+	# The requirements for ego_familyname and registration_days may lead to 
+	# different counts between person_c and links_base. 
+	# A too large difference indicates a potential problem with cleaning and/or prematching. 
 	table = "links_base"
-	query_b = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table + " WHERE ego_familyname <> 0 GROUP BY id_source" + ";"
+	query_b  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
+	query_b += " WHERE ego_familyname <> 0 AND registration_days IS NOT NULL AND registration_days <> 0"
+	query_b += " GROUP BY id_source" + ";"
 	print( query_b )
 	
 	resp_b = db.query( query_b )
@@ -404,10 +406,10 @@ def person_counts( debug, db ):
 	now = datetime.datetime.now()
 	print( "" )
 	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
-	print( "================================================================================================" )
-	print( "     id        short           person_o        person_c      o/c difference    links_base   c/b " )
-	print( " # source  archive name      record count    record count   diff     procent  record count  diff" )
-	print( "------------------------------------------------------------------------------------------------" )
+	print( "======================================================================================================" )
+	print( "     id        short          person_o       person_c     -- o/c loss --   links_base   -- c/b loss --" )
+	print( " # source  archive name     record count   record count   diff   procent  record count  diff   procent" )
+	print( "------------------------------------------------------------------------------------------------------" )
 	
 	n = 0
 	for key in sorted( sources ):
@@ -440,23 +442,24 @@ def person_counts( debug, db ):
 		clean = count_c
 		base  = count_b
 		
-		diff = orig - clean
+		diff_oc = orig - clean
 		if orig != 0:
-			procent = 100.0 * float( diff ) / ( orig )
+			procent_oc = 100.0 * float( diff_oc ) / ( orig )
+			procent_oc_str = "%6.2f %%" % procent_oc
 		else:
-			procent = None
+			procent_oc_str = "     "
 		
-		diff2 = clean - base
-		
-		if procent is not None:
-			print( "%2d %4s   %-20s %7d         %7d   %7d    %6.2f %%    %7d %7d" % 
-				( n, id_source_str, name, orig, clean, diff, procent, base, diff2 ) )
+		diff_cb = clean - base
+		if clean != 0:
+			procent_cb = 100.0 * float( diff_cb ) / ( clean )
+			procent_cb_str = "%6.2f %%" % procent_cb
 		else:
-			procent_str = "     "
-			print( "%2d %4s   %-20s %7d         %7d   %7d    %5s    %7d %7d" % 
-				( n, id_source_str, name, orig, clean, diff, procent_str, base, diff2 ) )
+			procent_cb_str = "     "
+		
+		print( "%2d %4s   %-20s %7d        %7d  %7d  %5s    %7d  %7d  %5s" % 
+			( n, id_source_str, name, orig, clean, diff_oc, procent_oc_str, base, diff_cb, procent_cb_str ) )
 			
-	print( "================================================================================================\n" )
+	print( "======================================================================================================\n" )
 
 
 
