@@ -21,15 +21,17 @@ package linksmatchmanager.DataSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-19-May-2016 Latest change
+ * FL-20-May-2016 Latest change
  */
 public class QuerySet
 {
-    public String  s1_querycount;       // query to get the # of records of query1data
-    public String  s2_querycount;       // query to get the # of records of query2data
+    public String  s1_query;            // query to get s1 data set from links_base
+    public String  s2_query;            // query to get s2 data set from links_base
 
-    public String  s1_querydata;        // query to get s1 data set from links_base
-    public String  s2_querydata;        // query to get s2 data set from links_base
+    public int id;                      // id from match_process table
+
+    public int s1_record_count = 0;
+    public int s2_record_count = 0;
 
     public int s1_maintype  = 0;
     public int s2_maintype  = 0;
@@ -39,8 +41,6 @@ public class QuerySet
 
     public int s1_days_high = 0;
     public int s2_days_high = 0;
-
-    public int id;                      // id from match_process table
 
     public boolean use_mother  = false;
     public boolean use_father  = false;
@@ -74,4 +74,81 @@ public class QuerySet
     public int int_minmax_m;
     public int int_minmax_f;
     public int int_minmax_p;
+
+
+    public int date_range = 0;      // moving date window counter
+
+    public int s1_offset = 0;       // s1 query OFFSET
+    public int s2_offset = 0;       // s2 query OFFSET
+
+    public int s1_limit = 0;       // s1 query LIMIT
+    public int s2_limit = 0;       // s2 query LIMIT
+
+
+    public QuerySet copyQuerySet()
+    {
+        QuerySet qs = new QuerySet();
+
+        qs.s1_query = s1_query;
+        qs.s2_query = s2_query;
+
+        qs.id = id;
+
+        qs.s1_record_count = s1_record_count;     // in using the copy, must be replaced by actual COUNT(*) value
+        qs.s2_record_count = s2_record_count;     // in using the copy, must be replaced by actual COUNT(*) value
+
+        qs.date_range = date_range;
+
+        qs.s1_maintype  = s1_maintype;
+        qs.s2_maintype  = s2_maintype;
+
+        qs.s1_days_low  = s1_days_low;
+        qs.s2_days_low  = s2_days_low;
+
+        qs.s1_days_high = s1_days_high;
+        qs.s2_days_high = s2_days_high;
+
+        qs.use_mother  = use_mother;
+        qs.use_father  = use_father;
+        qs.use_partner = use_partner;
+
+        qs.method        = method;
+        qs.ignore_sex    = ignore_sex;
+        qs.ignore_minmax = ignore_minmax;
+        qs.firstname     = firstname;
+
+        qs.prematch_familyname       = prematch_familyname;
+        qs.prematch_familyname_value = prematch_familyname_value;
+        qs.prematch_firstname        = prematch_firstname;
+        qs.prematch_firstname_value  = prematch_firstname_value;
+
+        //public String use_familyname;
+        //public String use_firstname;
+        //public String use_minmax;
+
+        qs.int_familyname_e = int_familyname_e;
+        qs.int_familyname_m = int_familyname_m;
+        qs.int_familyname_f = int_familyname_f;
+        qs.int_familyname_p = int_familyname_p;
+
+        qs.int_firstname_e = int_firstname_e;
+        qs.int_firstname_m = int_familyname_m;
+        qs.int_firstname_f = int_firstname_f;
+        qs.int_firstname_p = int_firstname_p;
+
+        qs.int_minmax_e = int_minmax_e;
+        qs.int_minmax_m = int_minmax_m;
+        qs.int_minmax_f = int_minmax_f;
+        qs.int_minmax_p = int_minmax_p;
+
+        qs.s1_offset = s1_offset;
+        qs.s2_offset = s2_offset;
+
+        qs.s1_limit = s1_limit;
+        qs.s2_limit = s2_limit;
+
+        return qs;
+    }
 }
+
+// [eof]

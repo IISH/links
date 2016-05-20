@@ -38,7 +38,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-18-May-2016 Latest change
+ * FL-20-May-2016 Latest change
  */
 
 public class MatchMain
@@ -84,7 +84,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "17-May-2016 15:17";
+            String timestamp1 = "20-May-2016 16:25";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -98,11 +98,11 @@ public class MatchMain
             //System.exit( 0 );
 
             // Load arguments; check length
-            if( args.length != 7 ) {
-                String msg ="Invalid argument length " + args.length + ", it should be 7";
+            if( args.length != 8 ) {
+                String msg ="Invalid argument length " + args.length + ", it should be 8";
                 plog.show( msg ); System.out.println( msg );
 
-                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <sample_limit> <debug>";
+                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <s1_sample_limit> <s2_sample_limit> <debug>";
                 plog.show( msg ); System.out.println( msg );
 
                 return;
@@ -114,8 +114,9 @@ public class MatchMain
             String pass                = args[ 2 ];
             String max_threads_str     = args[ 3 ];
             String max_heap_table_size = args[ 4 ];
-            String sample_limit        = args[ 5 ];
-            String debug_str           = args[ 6 ];
+            String s1_sample_limit     = args[ 5 ];
+            String s2_sample_limit     = args[ 6 ];
+            String debug_str           = args[ 7 ];
 
             //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
@@ -124,12 +125,9 @@ public class MatchMain
 
 
             String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, sample_limit: %s, debug: %s",
-                url, user, pass, max_threads_str, max_heap_table_size, sample_limit, debug );
+                url, user, pass, max_threads_str, max_heap_table_size, s1_sample_limit, s2_sample_limit, debug );
             System.out.println( msg );
             plog.show( msg );
-
-            String s1_sample_limit = "100000000";
-            String s2_sample_limit = sample_limit;
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
@@ -317,6 +315,7 @@ public class MatchMain
                 // Each QueryGroupSet contains an ArrayList< QuerySet >, all QuerySets refer to the same record from the match_process table.
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
+                /*
                 int num_s1_parts = 0;   // the number of parts into which s1 will be split
                 if( isSize * qgs.getSize() > s1_split_limit )       // split s1 if we have have few threads (but not 1)
                 {  num_s1_parts = 1; }  // do not split s1 into separate pieces
@@ -331,7 +330,9 @@ public class MatchMain
                     msg = String.format( "sample s1 split into %d parts", num_s1_parts );
                     System.out.println( msg); plog.show( msg );
                 }
+                */
 
+                int num_s1_parts = 1;       // chunking is now done via OFFSET and LIMIT in QueryGenerator
                 boolean free_vecs = false;
                 if( num_s1_parts == 1 ) { free_vecs = true; }
 
@@ -522,8 +523,10 @@ public class MatchMain
                     System.out.println( String.format( "Number of QuerySets in QueryGroupSet: %d", qgsSize ) );
                 }
 
-                String msg = String.format( "QuerySet :%2d, s1_days_low: %d, 1_days_high: %d, s2_days_low: %d, s2_days_high: %d",
-                    n_qs, qs.s1_days_low, qs.s1_days_high, qs.s2_days_low, qs.s2_days_high );
+                String msg = String.format(
+                    "QuerySet: %2d, date_range: %d, s1_record_count: %d, s2_record_count: %d, s2_days_low: %d, s1_days_high: %d, s2_days_low: %d, s2_days_high: %d, s1_limit: %d, s1_offset: %d, s2_limit: %d, s2_offset: %d",
+                    n_qs, qs.date_range, qs.s1_record_count, qs.s2_record_count, qs.s1_days_low, qs.s1_days_high, qs.s2_days_low, qs.s2_days_high,
+                    qs.s1_limit, qs.s1_offset, qs.s2_limit, qs.s2_offset );
                 System.out.println( msg );
             }
         }
@@ -880,8 +883,8 @@ public class MatchMain
         {
             plog.show( "match_process settings:" );
             plog.show( String.format( "id = %d", qs.id ) );
-            plog.show( String.format( "query1 = %s", qs.s1_querydata ) );
-            plog.show( String.format( "query2 = %s", qs.s2_querydata ) );
+            plog.show( String.format( "query1 = %s", qs.s1_query ) );
+            plog.show( String.format( "query2 = %s", qs.s2_query ) );
 
             plog.show( String.format( "s1_days_low ............. = %s", qs.s1_days_low ) );
             plog.show( String.format( "s1_days_high ............ = %s", qs.s1_days_high ) );

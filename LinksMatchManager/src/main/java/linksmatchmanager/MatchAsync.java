@@ -294,10 +294,10 @@ public class MatchAsync extends Thread
 
             long threadId_current = Thread.currentThread().getId();
 
-            msg = String.format( "Thread id %2d, based on s1 query:\n%s", threadId_current, qs.s1_querydata );
+            msg = String.format( "Thread id %2d, based on s1 query:\n%s", threadId_current, qs.s1_query );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d, based on s2 query:\n%s", threadId_current, qs.s2_querydata );
+            msg = String.format( "Thread id %2d, based on s2 query:\n%s", threadId_current, qs.s2_query );
             System.out.println( msg ); plog.show( msg );
 
             // Previous s1EgoFamilyName, initial is 0. Because the familynames are ordered, the calculation of the potential

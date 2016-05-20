@@ -118,16 +118,19 @@ public class SampleLoader
 
         this.set_no = set_no;
         rs = null;
-        if( set_no == 1 ) {
+
+        if( set_no == 1 )
+        {
             // get set 1 from links_base
-            query = qs.s1_querydata;
+            query = qs.s1_query;
             System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
             System.out.println( query );
             rs = dbconPrematch.createStatement().executeQuery( query );
         }
-        else if( set_no == 2 ) {
+        else if( set_no == 2 )
+        {
             // get set 2 from links_base
-            query = qs.s2_querydata;
+            query = qs.s2_query;
             System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
             System.out.println( query );
 

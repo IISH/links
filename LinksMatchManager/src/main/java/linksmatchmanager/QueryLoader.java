@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-17-May-2016 Latest change
+ * FL-20-May-2016 Latest change
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -150,7 +150,8 @@ public class QueryLoader
     public Vector< Integer > s2_partner_death_max    = new Vector< Integer >();
 
 
-    public static String millisec2hms( long millisec_start, long millisec_stop ) {
+    public static String millisec2hms( long millisec_start, long millisec_stop )
+    {
         long millisec = millisec_stop - millisec_start;
         long sec = millisec / 1000;
 
@@ -206,17 +207,17 @@ public class QueryLoader
         // get set 1 from links_base
         long start = System.currentTimeMillis();
         System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
-        System.out.println( qs.s1_querydata );
+        System.out.println( qs.s1_query );
 
-        set1 = dbconPrematch.createStatement().executeQuery( qs.s1_querydata );
+        set1 = dbconPrematch.createStatement().executeQuery( qs.s1_query );
         elapsedShowMessage( "retrieving set 1 from links_base ", start, System.currentTimeMillis() );
 
         // get set 2 from links_base
         start = System.currentTimeMillis();
         System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
-        System.out.println( qs.s2_querydata );
+        System.out.println( qs.s2_query );
 
-        set2 = dbconPrematch.createStatement().executeQuery( qs.s2_querydata );
+        set2 = dbconPrematch.createStatement().executeQuery( qs.s2_query );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
         elapsedShowMessage( "retrieving set 2 from links_base ", start, System.currentTimeMillis() );
 
@@ -231,9 +232,13 @@ public class QueryLoader
 
     private void fillArrays() throws Exception
     {
+        int s1_record_count = 0;
+
         // Do set 1
         while( set1.next() )
         {
+            s1_record_count++;
+
             // Vars to use, global
             int var_s1_id_base           = 0;
             int var_s1_id_registration   = 0;
@@ -547,9 +552,13 @@ public class QueryLoader
         }
 
 
+        int s2_record_count = 0;
+
         // Do set 2
         while( set2.next() )
         {
+            s2_record_count++;
+
             int var_s2_id_base           = 0;
             int var_s2_id_registration   = 0;
             int var_s2_registration_days = 0;
@@ -866,6 +875,8 @@ public class QueryLoader
 
         set1 = null;
         set2 = null;
+
+        System.out.println( String.format( "s1_record_count: %d, s2_record_count: %d", s1_record_count, s2_record_count ) );
     }
 
 
