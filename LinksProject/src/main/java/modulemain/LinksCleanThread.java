@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-17-May-2016 Latest change
+ * FL-23-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6787,21 +6787,21 @@ public class LinksCleanThread extends Thread
         // doRole() has been run. The calling of these functions has been (temporarily?) moved from doLocations() to
         // here in doPostTasks(). (The function bodies were left in the Locations segment.)
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagBirthLocation...", threadId );
+        msg = String.format( "Thread id %02d; flagBirthLocation for source %s...", threadId, source );
         showMessage( msg, false, true );
         flagBirthLocation( debug, source );
         msg = String.format( "Thread id %02d; flagBirthLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagMarriageLocation...", threadId );
+        msg = String.format( "Thread id %02d; flagMarriageLocation for source %s...", threadId, source );
         showMessage( msg, false, true );
         flagMarriageLocation( debug, source );
         msg = String.format( "Thread id %02d; flagMarriageLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagDeathLocation...", threadId );
+        msg = String.format( "Thread id %02d; flagDeathLocation for source %s...", threadId, source );
         showMessage( msg, false, true );
         flagDeathLocation( debug, source );
         msg = String.format( "Thread id %02d; flagDeathLocation ", threadId );
@@ -7656,7 +7656,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Scanning Remarks...", threadId  );
+        String msg = funcname + "...";
         showMessage( msg, false, true );
 
         scanRemarks( debug, source );
