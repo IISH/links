@@ -38,7 +38,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-20-May-2016 Latest change
+ * FL-23-May-2016 Latest change
  */
 
 public class MatchMain
@@ -84,7 +84,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "20-May-2016 16:25";
+            String timestamp1 = "23-May-2016 14:53";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
@@ -364,11 +364,11 @@ public class MatchMain
                     msg = String.format( "Range %d-of-%d; query loader time", n_qs+1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
-
-                    msg = "SKIPPING MatchAsyns !!!";
+                    /*
+                    msg = "SKIPPING MatchAsyncs !!!";
                     System.out.println( msg ); plog.show( msg );
                     if( 1 == 1 ) { continue; }
-
+                    */
 
                     int s1_size = ql.s1_id_base.size();
                     msg = String.format( "s1_size: " + s1_size );
@@ -506,11 +506,11 @@ public class MatchMain
 
         int isSize = inputSet.getSize();
         System.out.println( String.format( "Number of matching records from links_match.match_process: %d", isSize ) );
+        System.out.println( String.format( "Notice: s1 & s2 record_counts are the total # of records (without the limits and offsets)" ) );
 
         // Loop through the records from the match_process table
         for( int n_mp = 0; n_mp < isSize; n_mp++ )
         {
-
             QueryGroupSet qgs = inputSet.get( n_mp );
 
             int qgsSize = qgs.getSize();

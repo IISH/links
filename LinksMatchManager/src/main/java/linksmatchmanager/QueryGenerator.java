@@ -33,7 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-20-May-2016 Latest change
+ * FL-23-May-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -594,26 +594,34 @@ public class QueryGenerator
                 qs.s2_query += " OFFSET " + s2_sampleOffset;     // used to be: 0
                 */
 
-                for( int j = 0; j < s2_nchunks; j++ )
+                // the qs querySet used for copying may involve date window ranges, but its queries have neither
+                // LIMIT not OFFSET. WE chunk for LIMIT and OFFSET here.
+                for( int i = 0; i < s1_nchunks; i++ )
                 {
-                    QuerySet qs_s2 = qs.copyQuerySet();
+                    for( int j = 0; j < s2_nchunks; j++ )
+                    {
+                        QuerySet qs_lo = qs.copyQuerySet();
 
-                    qs_s2.s1_limit  = s1_limit;
+                        qs_lo.s1_limit  = s1_limit;
+                        qs_lo.s1_offset = i * s1_limit;
 
-                    qs_s2.s2_limit  = s2_limit;
-                    qs_s2.s2_offset = j * s2_limit;
+                        qs_lo.s1_query = qs.s1_query + " LIMIT " + qs_lo.s1_limit + " OFFSET " + qs_lo.s1_offset;
 
-                    String s2_query = qs.s2_query + " LIMIT " + qs_s2.s2_limit + " OFFSET " + qs_s2.s2_offset;
+                        qs_lo.s2_limit  = s2_limit;
+                        qs_lo.s2_offset = j * s2_limit;
 
-                    qs_s2.s2_query = s2_query;
+                        qs_lo.s2_query = qs.s2_query + " LIMIT " + qs_lo.s2_limit + " OFFSET " + qs_lo.s2_offset;
 
-                    qgs.add( qs_s2 );      // add the QuerySet to the QueryGroupSet
+                        qgs.add( qs_lo );      // add the QuerySet to the QueryGroupSet
 
-                    msg2 = s2_query + "\n";
-                    plog.show( msg2 ); System.out.println( msg2 );
+                        msg1 = qs_lo.s1_query + "\n";
+                        plog.show( msg1 ); System.out.println( msg1 );
+                        msg2 = qs_lo.s2_query + "\n";
+                        plog.show( msg2 ); System.out.println( msg2 );
+                    }
                 }
 
-                //qgs.add( qs );      // add the Omar QuerySet to the QueryGroupSet
+                //qgs.add( qs );        // add the Omar QuerySet to the QueryGroupSet
 
                 counter++;              // used for the date ranges computation above
                 
