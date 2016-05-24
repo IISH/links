@@ -16,7 +16,7 @@ import connectors.MySqlConnector;
 import dataset.Options;
 import general.Functions;
 import general.PrintLogger;
-import prematch.Lv;
+import prematch.Lvs;
 
 /**
  * @author Omar Azouguagh
@@ -166,7 +166,7 @@ public class LinksPrematch extends Thread
             else
             {
                 if( debug ) { System.out.println( funcname ); }
-
+                /*
                 // prematch.Lv is a separate thread, so timing should be done there internally
                 showMessage( funcname + ", using 4 threads", false, true );
 
@@ -185,6 +185,36 @@ public class LinksPrematch extends Thread
                 lv2.join();
                 lv3.join();
                 lv4.join();
+                */
+
+                // prematch.Lvs is a separate thread, so timing should be done there internally
+                showMessage( funcname + ", using 6 threads", false, true );
+
+                //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
+                Lvs lvs1 = new Lvs( debug, conPrematch, "links_prematch", "freq_firstname",  "strict", bExactMatches, outputLine, outputArea, plog );
+                Lvs lvs2 = new Lvs( debug, conPrematch, "links_prematch", "freq_firstname",  "normal", bExactMatches, outputLine, outputArea, plog );
+                Lvs lvs3 = new Lvs( debug, conPrematch, "links_prematch", "freq_firstname",  "first",  bExactMatches, outputLine, outputArea, plog );
+
+                Lvs lvs4 = new Lvs( debug, conPrematch, "links_prematch", "freq_familyname", "strict", bExactMatches, outputLine, outputArea, plog );
+                Lvs lvs5 = new Lvs( debug, conPrematch, "links_prematch", "freq_familyname", "normal", bExactMatches, outputLine, outputArea, plog );
+                Lvs lvs6 = new Lvs( debug, conPrematch, "links_prematch", "freq_familyname", "first",  bExactMatches, outputLine, outputArea, plog );
+
+                lvs1.start();    // firstname   table: ls_firstname
+                lvs2.start();    // firstname   table: ls_firstname_strict
+                lvs3.start();    // firstname   table: ls_firstname_first
+
+                lvs4.start();    // familyname  table: ls_familyname
+                lvs5.start();    // familyname  table: ls_familyname_strict
+                lvs6.start();    // familyname  table: ls_familyname_first
+
+                lvs1.join();
+                lvs2.join();
+                lvs3.join();
+
+                lvs4.join();
+                lvs5.join();
+                lvs6.join();
+
             }
 
             showMessage( "", false, true );
