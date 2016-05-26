@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @author Fons Laan
  *
  * FL-24-May-2016 Copied from Lv.java; goal: direct computation of the variants: normal, strict, first.
- * FL-24-May-2016 Latest change
+ * FL-26-May-2016 Latest change
  */
 public class Lvs extends Thread
 {
@@ -87,14 +87,14 @@ public class Lvs extends Thread
         long start = System.currentTimeMillis();
         long threadId = Thread.currentThread().getId();
 
-        String msg = String.format( "thread (id %d); Levenshtein: from freq table: %s, lvs type: %s", threadId, freq_table, lvs_type );
+        String msg = String.format( "thread (id %d); Lvs/run() using freq table: %s, lvs type: %s", threadId, freq_table, lvs_type );
         showMessage( msg, false, true );
 
-        msg = String.format( "thread (id %d); Including exact matches: %s", threadId, also_exact_matches );
+        msg = String.format( "thread (id %d); Lvs/run() Including exact matches: %s", threadId, also_exact_matches );
         showMessage( msg, false, true );
 
         String csv_name = "LS-" + freq_table + "-type=" + lvs_type + ".csv";
-        msg = String.format( "thread (id %d); Output filename: %s", threadId, csv_name );
+        msg = String.format( "thread (id %d); Lvs/run() Output filename: %s", threadId, csv_name );
         showMessage( msg, false, true );
 
         String lvs_table = "";
@@ -105,11 +105,11 @@ public class Lvs extends Thread
                  if( freq_table.equals( "freq_firstname"  ) ) { lvs_table = "ls_firstname_strict"; }
             else if( freq_table.equals( "freq_familyname" ) ) { lvs_table = "ls_familyname_strict"; }
             else {
-                msg = String.format( "thread (id %d); Levenshtein Error: freq table name: %s ?", threadId, freq_table );
+                msg = String.format( "thread (id %d); Lvs/run() Error: freq table name: %s ?", threadId, freq_table );
                 showMessage( msg, false, true );
                 return;
             }
-            do_lvs_strict( threadId );
+            do_lvs_strict( debug, threadId, db_conn, db_name, freq_table, csv_name );    // create csv file
         }
 
         else if( lvs_type.equals( "normal" ) )
@@ -117,11 +117,11 @@ public class Lvs extends Thread
                  if( freq_table.equals( "freq_firstname"  ) ) { lvs_table = "ls_firstname"; }
             else if( freq_table.equals( "freq_familyname" ) ) { lvs_table = "ls_familyname"; }
             else {
-                msg = String.format( "thread (id %d); Levenshtein Error: freq table name: %s ?", threadId, freq_table );
+                msg = String.format( "thread (id %d); Lvs/run() Error: freq table name: %s ?", threadId, freq_table );
                 showMessage( msg, false, true );
                 return;
             }
-            do_lvs_normal( threadId );
+            do_lvs_normal( debug, threadId, db_conn, db_name, freq_table, csv_name );    // create csv file
         }
 
         else if( lvs_type.equals( "first"  ) )
@@ -129,23 +129,21 @@ public class Lvs extends Thread
                  if( freq_table.equals( "freq_firstname"  ) ) { lvs_table = "ls_firstname_first"; }
             else if( freq_table.equals( "freq_familyname" ) ) { lvs_table = "ls_familyname_first"; }
             else {
-                msg = String.format( "thread (id %d); Levenshtein Error: freq table name: %s ?", threadId, freq_table );
+                msg = String.format( "thread (id %d); Lvs/run() Error: freq table name: %s ?", threadId, freq_table );
                 showMessage( msg, false, true );
                 return;
             }
-            do_lvs_first( threadId );
+            do_lvs_first( debug, threadId, db_conn, db_name, freq_table, csv_name );    // create csv file
         }
 
         else {
-            msg = String.format( "thread (id %d); Levenshtein Error: lvs type: %s ?", threadId, lvs_type );
+            msg = String.format( "thread (id %d); Lvs/run() Error: lvs type: %s ?", threadId, lvs_type );
             showMessage( msg, false, true );
             return;
         }
 
-
-        msg = String.format( "thread (id %d); Levenshtein: lvs table name: %s", threadId, lvs_table );
+        msg = String.format( "thread (id %d); Lvs/run() Creating lvs table name: %s", threadId, lvs_table );
         showMessage( msg, false, true );
-        if( 1 == 1 ) { return; }
 
         /*
         The old Levenshtein table creation used 4 threads, 2 for firstname, 2 for familyname;
@@ -166,9 +164,37 @@ public class Lvs extends Thread
         _first:  normal method, lvs=0,1,2,3,4; check for first char = identical
         */
 
+        // csv file has been created above; copy csv file -> lvs table
+        try { loadCsvLsToTable( debug, db_conn, db_name, csv_name, lvs_table ); }
+        catch( Exception ex ) { showMessage( "Lvs/run() Error: " + ex.getMessage(), false, true ); }
 
-        int nline = 0;
+        // removing csv file
+        msg = String.format( "thread (id %d); Lvs/run() Removing file %s", threadId, csv_name );
+        showMessage( msg + "...", false, true );
 
+        java.io.File file = new java.io.File( csv_name );
+        file.delete();
+
+        msg = String.format( "thread (id %d); Lvs/run() Finished.", threadId );
+        elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+        long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
+        long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
+
+        msg = String.format( "thread (id %d); Lvs/run() Thread time", threadId );
+        elapsedShowMessage( msg, 0, cpuTimeMsec );
+
+        showMessage_nl();
+    } // run
+
+
+
+    public void do_lvs_strict( boolean debug, long threadId, MySqlConnector db_conn, String db_name, String freq_table, String csv_name )
+    {
+        // strict: strict method, lvsd=0,1,2
+        int lvsd_max = 2;
+
+        int n_csv_line = 0;
         try
         {
             String query = "SELECT id, name_str FROM " + db_name + "." + freq_table;
@@ -195,8 +221,8 @@ public class Lvs extends Thread
             }
 
             int size = id.size();
-          //showMessage( "table " + db_table + " loaded, records: " + size, false, true );
-            msg = String.format( "thread (id %d); table %s loaded, records: %d", threadId, freq_table, size );
+            //showMessage( "table " + db_table + " loaded, records: " + size, false, true );
+            String msg = String.format( "thread (id %d); do_lvs_strict() Table %s loaded, records: %d", threadId, freq_table, size );
             showMessage( msg, false, true );
 
             FileWriter csvwriter = new FileWriter( csv_name );
@@ -211,29 +237,20 @@ public class Lvs extends Thread
             // process all names
             for( int i = 0; i < size ; i++ )
             {
-                //int id1 = id.get( i );
-                //int id2 = 0;
-
                 String name_str_1 = name_str.get( i );
-                   int name_int_1 = id.get( i );
+                int name_int_1 = id.get( i );
 
-                //String name_str_2 = "";
-                   //int name_int_2 = 0;
-
-                //int begin = i+1;                          // Omar
                 int begin = i;                              // starting at i: also gives Levenshtein 0 values
                 if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
 
                 for( int j = begin; j < name_str.size() ; j++ )
                 {
-                                //id2 = id.get( j );
                     String name_str_2 = name_str.get( j );
-                     //int name_int_2 = name_int.get( j );
-                       int name_int_2 = id.get( j );
+                    int name_int_2 = id.get( j );
 
                     int len_1 = name_str_1.length();
                     int len_2 = name_str_2.length();
-                    
+
                     int len_smallest = (len_1 < len_2) ?  len_1 : len_2;
 
                     int len_small;
@@ -253,108 +270,52 @@ public class Lvs extends Thread
 
                     // the length difference imposes a lower bound on the levenshtein distance,
                     // which is used to discard name pairs is the distance is too big.
-                    if( len_diff > 4 ) { continue; }                    // ld > 4
+                    if( len_diff > lvsd_max ) { continue; }             // implies ld > 4
 
-                    if( lvs_type.equals( "strict" ) )
-                    {
-                        if( len_small ==  1                    && len_diff > 0 ) { continue; }
+                    // lvs_type.equals( "strict" )
+                    if( len_small ==  1                    && len_diff > 0 ) { continue; }
 
-                        if( len_small >=  2 && len_small <=  5 && len_diff > 1 ) { continue; }
+                    if( len_small >=  2 && len_small <=  5 && len_diff > 1 ) { continue; }
 
-                        if( len_small >=  6 && len_small <=  8 && len_diff > 2 ) { continue; }
+                    if( len_small >=  6 && len_small <=  8 && len_diff > 2 ) { continue; }
 
-                        if( len_small >=  9 && len_small <= 11 && len_diff > 3 ) { continue; }
+                    if( len_small >=  9 && len_small <= 11 && len_diff > 3 ) { continue; }
 
-                        if( len_small >= 12                    && len_diff > 4 ) { continue; }
-                    }
-                    else    // "normal" & "first"
-                    {
-                        if( len_small == 1                   && len_diff > 0 ) { continue; }
+                    if( len_small >= 12                    && len_diff > 4 ) { continue; }
 
-                        if( len_small >= 2 && len_small <= 4 && len_diff > 1 ) { continue; }
-
-                        if( len_small >= 5 && len_small <= 7 && len_diff > 2 ) { continue; }
-
-                        if( len_small == 8                   && len_diff > 3 ) { continue; }
-
-                        if( len_small >= 9                   && len_diff > 4 ) { continue; }
-                    }
-
-
-                    // in order to discard additional name pairs we use the
-                    // actual levenshtein distance
+                    // in order to discard additional name pairs we use the actual levenshtein distance
                     int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
 
-                    if( ld > 4 ) { continue; }                          // distance too high
+                    if( ld > lvsd_max ) { continue; }                   // distance too high
 
-                    if( lvs_type.equals( "strict" ) )
-                    {
-                        if( len_small ==  1                    && ld > 0 ) { continue; }
+                    // lvs_type.equals( "strict" )
+                    if( len_small ==  1                    && ld > 0 ) { continue; }
 
-                        if( len_small >=  2 && len_small <=  5 && ld > 1 ) { continue; }
+                    if( len_small >=  2 && len_small <=  5 && ld > 1 ) { continue; }
 
-                        if( len_small >=  6 && len_small <=  8 && ld > 2 ) { continue; }
+                    if( len_small >=  6 && len_small <=  8 && ld > 2 ) { continue; }
 
-                        if( len_small >=  9 && len_small <= 11 && ld > 3 ) { continue; }
+                    if( len_small >=  9 && len_small <= 11 && ld > 3 ) { continue; }
 
-                        if( len_small >= 12                    && ld > 4 ) { continue; }
-                    }
-                    else    // "normal" & "first"
-                    {
-                        if( len_small == 1                   && ld > 0 ) { continue; }
+                    if( len_small >= 12                    && ld > 4 ) { continue; }
 
-                        if( len_small >= 2 && len_small <= 4 && ld > 1 ) { continue; }
-
-                        if( len_small >= 5 && len_small <= 7 && ld > 2 ) { continue; }
-
-                        if( len_small == 8                   && ld > 3 ) { continue; }
-
-                        if( len_small >= 9                   && ld > 4 ) { continue; }
-                    }
-
-
-                    /*
-                    // this 'direct' implementation is indeed slower than the above one
-                    int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
-
-                    if( lvs_type.equals( "strict" ) )
-                    {
-                        if( ld == 0 && ( len_small ==  1 )                    ||
-                            ld <= 1 && ( len_small >=  2 && len_small <=  5 ) ||
-                            ld <= 2 && ( len_small >=  6 && len_small <=  8 ) ||
-                            ld <= 3 && ( len_small >=  9 && len_small <= 11 ) ||
-                            ld <= 4 && ( len_small >= 12 ) )
-                        { ; }                   // pass
-                        else { continue; }      // try next pair
-                    }
-                    else    // "normal" & "first"
-                    {
-                        if( ld == 0 && ( len_small == 1 )                   ||
-                            ld <= 1 && ( len_small >= 2 && len_small <= 4 ) ||
-                            ld <= 2 && ( len_small >= 5 && len_small <= 7 ) ||
-                            ld <= 3 && ( len_small == 8 )                   ||
-                            ld <= 4 && ( len_small >= 9 ) )
-                        { ; }                   // pass
-                        else { continue; }      // try next pair
-                    }
-                    */
 
                     // Write to CSV
                     String line = name_str_1 + "," + name_str_2 + "," + len_1 + ","+ len_2 + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
                     //if( debug ) { System.out.println( line ); }
 
-                    nline ++;
+                    n_csv_line ++;
 
                     try {  csvwriter.write( line ); }
                     catch( Exception ex ) {
-                        msg = String.format( "thread (id %d); Levenshtein Error: %s", threadId, ex.getMessage() );
+                        msg = String.format( "thread (id %d); do_lvs_strict() Error: %s", threadId, ex.getMessage() );
                         showMessage( msg, false, true );
                     }
                 }
 
                 // show progress
                 if( i == stepheight ) {
-                    msg = String.format( "thread (id %d); LV name %d-of-%d", threadId, i, size );
+                    msg = String.format( "thread (id %d); do_lvs_strict() LV name %d-of-%d", threadId, i, size );
                     showMessage( msg, true, true );
                     stepheight += step;
                 }
@@ -362,59 +323,308 @@ public class Lvs extends Thread
 
             showMessage( "", true, true );      // clear
             csvwriter.close();
-            if( debug ) { showMessage( nline + " records written to CSV file", false, true ); }
+            if( debug ) { showMessage( "do_lvs_strict()" + n_csv_line + " Records written to CSV file", false, true ); }
 
             // elapsed
             timeExpand = System.currentTimeMillis() - begintime;
             int iTimeEx = (int)( timeExpand / 1000 );
         }
-        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
+        catch( Exception ex ) { showMessage( "do_lvs_strict() Error: " + ex.getMessage(), false, true ); }
+
+    } // do_lvs_strict
 
 
-        // csv file -> lvs table
-        try { loadCsvLsToTable( debug, db_conn, db_name, csv_name, lvs_table ); }
-        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
-
-        // create lvs first table
-        try { createLsFirstTable( debug, db_conn, db_name, lvs_table ); }
-        catch( Exception ex ) { showMessage( "Levenshtein Error: " + ex.getMessage(), false, true ); }
-
-        // removing csv file
-        msg = String.format( "thread (id %d); Removing file %s", threadId, csv_name );
-        showMessage( msg + "...", false, true );
-
-        java.io.File f = new java.io.File( csv_name );
-        f.delete();
-
-
-        msg = String.format( "thread (id %d); Finished.", threadId );
-        elapsedShowMessage( msg, start, System.currentTimeMillis() );
-
-        long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
-        long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
-        msg = String.format( "thread (id %d); thread time", threadId );
-        elapsedShowMessage( msg, 0, cpuTimeMsec );
-
-        showMessage_nl();
-    }
-
-
-
-    private static void do_lvs_strict( long threadId )
+    public void do_lvs_normal( boolean debug, long threadId, MySqlConnector db_conn, String db_name, String freq_table, String csv_name  )
     {
+        // normal: normal method, lvsd=0,1,2
+        int lvsd_max = 2;
 
-    }
+        int n_csv_line = 0;
+        try
+        {
+            String query = "SELECT id, name_str FROM " + db_name + "." + freq_table;
+            if( debug ) { showMessage( query, false, true ); }
 
-    private static void do_lvs_normal( long threadId )
+            ResultSet rs = null;
+            try { rs = db_conn.runQueryWithResult( query ); }
+            catch( Exception ex ) {
+                System.out.println( query );
+                showMessage( query, false, true );
+
+                System.out.println( ex.getMessage() );
+                showMessage( ex.getMessage(), false, true );
+                return;
+            }
+
+            ArrayList< Integer > id      = new ArrayList< Integer >();
+            ArrayList< String > name_str = new ArrayList< String >();
+
+            while( rs.next() )
+            {
+                id.add( rs.getInt( "id" ) );
+                name_str.add( rs.getString( "name_str" ) );
+            }
+
+            int size = id.size();
+            //showMessage( "table " + db_table + " loaded, records: " + size, false, true );
+            String msg = String.format( "thread (id %d); do_lvs_normal() Table %s loaded, records: %d", threadId, freq_table, size );
+            showMessage( msg, false, true );
+
+            FileWriter csvwriter = new FileWriter( csv_name );
+
+            // timing
+            long timeExpand = 0;
+            long begintime = System.currentTimeMillis();
+
+            int step = 1000;
+            int stepheight = step;
+
+            // process all names
+            for( int i = 0; i < size ; i++ )
+            {
+                String name_str_1 = name_str.get( i );
+                int name_int_1 = id.get( i );
+
+                int begin = i;                              // starting at i: also gives Levenshtein 0 values
+                if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
+
+                for( int j = begin; j < name_str.size() ; j++ )
+                {
+                    String name_str_2 = name_str.get( j );
+                    int name_int_2 = id.get( j );
+
+                    int len_1 = name_str_1.length();
+                    int len_2 = name_str_2.length();
+
+                    int len_smallest = (len_1 < len_2) ?  len_1 : len_2;
+
+                    int len_small;
+                    int len_great;
+
+                    if( len_1 == len_smallest ) {
+                        len_small = len_1;
+                        len_great = len_2;
+                    }
+                    else {
+                        len_small = len_2;
+                        len_great = len_1;
+                    }
+
+                    int len_diff = len_great - len_small;
+
+
+                    // the length difference imposes a lower bound on the levenshtein distance,
+                    // which is used to discard name pairs is the distance is too big.
+                    if( len_diff > lvsd_max ) { continue; }             // implies ld > 4
+
+                    // "normal" & "first"
+                    if( len_small == 1                   && len_diff > 0 ) { continue; }
+
+                    if( len_small >= 2 && len_small <= 4 && len_diff > 1 ) { continue; }
+
+                    if( len_small >= 5 && len_small <= 7 && len_diff > 2 ) { continue; }
+
+                    if( len_small == 8                   && len_diff > 3 ) { continue; }
+
+                    if( len_small >= 9                   && len_diff > 4 ) { continue; }
+
+                    // in order to discard additional name pairs we use the actual levenshtein distance
+                    int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
+
+                    if( ld > lvsd_max ) { continue; }                   // distance too high
+
+                    // "normal" & "first"
+                    if( len_small == 1                   && ld > 0 ) { continue; }
+
+                    if( len_small >= 2 && len_small <= 4 && ld > 1 ) { continue; }
+
+                    if( len_small >= 5 && len_small <= 7 && ld > 2 ) { continue; }
+
+                    if( len_small == 8                   && ld > 3 ) { continue; }
+
+                    if( len_small >= 9                   && ld > 4 ) { continue; }
+
+
+                    // Write to CSV
+                    String line = name_str_1 + "," + name_str_2 + "," + len_1 + ","+ len_2 + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
+                    //if( debug ) { System.out.println( line ); }
+
+                    n_csv_line ++;
+
+                    try {  csvwriter.write( line ); }
+                    catch( Exception ex ) {
+                        msg = String.format( "thread (id %d); do_lvs_normal() Error: %s", threadId, ex.getMessage() );
+                        showMessage( msg, false, true );
+                    }
+                }
+
+                // show progress
+                if( i == stepheight ) {
+                    msg = String.format( "thread (id %d); do_lvs_normal() LV name %d-of-%d", threadId, i, size );
+                    showMessage( msg, true, true );
+                    stepheight += step;
+                }
+            }
+
+            showMessage( "", true, true );      // clear
+            csvwriter.close();
+            if( debug ) { showMessage( "do_lvs_normal()" + n_csv_line + " Records written to CSV file", false, true ); }
+
+            // elapsed
+            timeExpand = System.currentTimeMillis() - begintime;
+            int iTimeEx = (int)( timeExpand / 1000 );
+        }
+        catch( Exception ex ) { showMessage( "do_lvs_normal() Error: " + ex.getMessage(), false, true ); }
+
+    } // do_lvs_normal
+
+
+    public void do_lvs_first( boolean debug, long threadId, MySqlConnector db_conn, String db_name, String freq_table, String csv_name  )
     {
+        // first: normal method, lvs=0,1,2,3,4; check for first char = identical
+        int lvsd_max = 4;
 
-    }
+        int n_csv_line = 0;
+        try
+        {
+            String query = "SELECT id, name_str FROM " + db_name + "." + freq_table;
+            if( debug ) { showMessage( query, false, true ); }
+
+            ResultSet rs = null;
+            try { rs = db_conn.runQueryWithResult( query ); }
+            catch( Exception ex ) {
+                System.out.println( query );
+                showMessage( query, false, true );
+
+                System.out.println( ex.getMessage() );
+                showMessage( ex.getMessage(), false, true );
+                return;
+            }
+
+            ArrayList< Integer > id      = new ArrayList< Integer >();
+            ArrayList< String > name_str = new ArrayList< String >();
+
+            while( rs.next() )
+            {
+                id.add( rs.getInt( "id" ) );
+                name_str.add( rs.getString( "name_str" ) );
+            }
+
+            int size = id.size();
+            //showMessage( "table " + db_table + " loaded, records: " + size, false, true );
+            String msg = String.format( "thread (id %d); do_lvs_first() Table %s loaded, records: %d", threadId, freq_table, size );
+            showMessage( msg, false, true );
+
+            FileWriter csvwriter = new FileWriter( csv_name );
+
+            // timing
+            long timeExpand = 0;
+            long begintime = System.currentTimeMillis();
+
+            int step = 1000;
+            int stepheight = step;
+
+            // process all names
+            for( int i = 0; i < size ; i++ )
+            {
+                String name_str_1 = name_str.get( i );
+                int name_int_1 = id.get( i );
+
+                int begin = i;                              // starting at i: also gives Levenshtein 0 values
+                if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
+
+                for( int j = begin; j < name_str.size() ; j++ )
+                {
+                    String name_str_2 = name_str.get( j );
+                    int name_int_2 = id.get( j );
+
+                    // require that first characters are identical
+                    if( name_str_1.charAt( 0 ) != name_str_2.charAt( 0 ) ) { continue; }
+
+                    int len_1 = name_str_1.length();
+                    int len_2 = name_str_2.length();
+
+                    int len_smallest = (len_1 < len_2) ?  len_1 : len_2;
+
+                    int len_small;
+                    int len_great;
+
+                    if( len_1 == len_smallest ) {
+                        len_small = len_1;
+                        len_great = len_2;
+                    }
+                    else {
+                        len_small = len_2;
+                        len_great = len_1;
+                    }
+
+                    int len_diff = len_great - len_small;
 
 
-    private static void do_lvs_first( long threadId )
-    {
+                    // the length difference imposes a lower bound on the levenshtein distance,
+                    // which is used to discard name pairs is the distance is too big.
+                    if( len_diff > lvsd_max ) { continue; }             // implies ld > 4
 
-    }
+                    // "normal" & "first"
+                    if( len_small == 1                   && len_diff > 0 ) { continue; }
+
+                    if( len_small >= 2 && len_small <= 4 && len_diff > 1 ) { continue; }
+
+                    if( len_small >= 5 && len_small <= 7 && len_diff > 2 ) { continue; }
+
+                    if( len_small == 8                   && len_diff > 3 ) { continue; }
+
+                    if( len_small >= 9                   && len_diff > 4 ) { continue; }
+
+                    // in order to discard additional name pairs we use the actual levenshtein distance
+                    int ld = levenshtein( name_str_1, name_str_2 );     // levenshtein distance
+
+                    if( ld > lvsd_max ) { continue; }                   // distance too high
+
+                    // "normal" & "first"
+                    if( len_small == 1                   && ld > 0 ) { continue; }
+
+                    if( len_small >= 2 && len_small <= 4 && ld > 1 ) { continue; }
+
+                    if( len_small >= 5 && len_small <= 7 && ld > 2 ) { continue; }
+
+                    if( len_small == 8                   && ld > 3 ) { continue; }
+
+                    if( len_small >= 9                   && ld > 4 ) { continue; }
+
+
+                    // Write to CSV
+                    String line = name_str_1 + "," + name_str_2 + "," + len_1 + ","+ len_2 + "," + name_int_1 + "," + name_int_2 + "," + ld + "\r\n";
+                    //if( debug ) { System.out.println( line ); }
+
+                    n_csv_line ++;
+
+                    try {  csvwriter.write( line ); }
+                    catch( Exception ex ) {
+                        msg = String.format( "thread (id %d); do_lvs_first() Error: %s", threadId, ex.getMessage() );
+                        showMessage( msg, false, true );
+                    }
+                }
+
+                // show progress
+                if( i == stepheight ) {
+                    msg = String.format( "thread (id %d); do_lvs_first() LV name %d-of-%d", threadId, i, size );
+                    showMessage( msg, true, true );
+                    stepheight += step;
+                }
+            }
+
+            showMessage( "", true, true );      // clear
+            csvwriter.close();
+            if( debug ) { showMessage( "do_lvs_first()" + n_csv_line + " records written to CSV file", false, true ); }
+
+            // elapsed
+            timeExpand = System.currentTimeMillis() - begintime;
+            int iTimeEx = (int)( timeExpand / 1000 );
+        }
+        catch( Exception ex ) { showMessage( "do_lvs_first() Error: " + ex.getMessage(), false, true ); }
+
+    } // do_lvs_first
 
 
 
