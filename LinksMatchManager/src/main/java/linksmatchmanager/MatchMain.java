@@ -38,7 +38,7 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-23-May-2016 Latest change
+ * FL-26-May-2016 Latest change
  */
 
 public class MatchMain
@@ -84,7 +84,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "23-May-2016 14:53";
+            String timestamp1 = "26-May-2016 17:27";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Start at: " + timestamp2 );
