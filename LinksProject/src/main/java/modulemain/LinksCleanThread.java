@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-23-May-2016 Latest change
+ * FL-31-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4490,30 +4490,6 @@ public class LinksCleanThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
-                /*
-                if( ! ( id_person == 3258976 ||
-                        id_person == 3259253 ||
-                        id_person == 3259371 ||
-                        id_person == 3259602 ||
-                        id_person == 3259782 ||
-                        id_person == 3260300 ||
-                        id_person == 3260530 ||
-                        id_person == 3260606 ||
-                        id_person == 3260829 ||
-                        id_person == 3261682 ||
-                        id_person == 3258976 ||
-                        id_person == 3259253 ||
-                        id_person == 3259371 ||
-                        id_person == 3259602 ||
-                        id_person == 3259782 ||
-                        id_person == 3260300 ||
-                        id_person == 3260530 ||
-                        id_person == 3260606 ||
-                        id_person == 3260829 ||
-                        id_person == 3261682 ) )
-                { continue; }
-                */
-
                 if( debug )
                 {
                     showMessage_nl();
@@ -5865,6 +5841,8 @@ public class LinksCleanThread extends Thread
                 }
                 else
                 {
+                    // why not set "person_c." + type + "_date_valid = -1 ?
+
                     count_invalid++;
 
                     int errno = 0;
@@ -6062,8 +6040,19 @@ public class LinksCleanThread extends Thread
      */
     public void flagBirthDate( boolean debug, String source )
     {
+        // birth_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
+        // to be used for ensuring that the records of the next queries are non-overlapping
+
         String[] queries =
         {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_date_flag  = -1,"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.birth_date_flag  = 2,"
@@ -6121,8 +6110,19 @@ public class LinksCleanThread extends Thread
      */
     public void flagMarriageDate( boolean debug, String source )
     {
+        // mar_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
+        // to be used for ensuring that the records of the next queries are non-overlapping
+
         String[] queries =
         {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_date_flag  = -1,"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.mar_date_flag  = 2,"
@@ -6180,8 +6180,19 @@ public class LinksCleanThread extends Thread
      */
     public void flagDeathDate( boolean debug, String source )
     {
+        // death_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
+        // to be used for ensuring that the records of the next queries are non-overlapping
+
         String[] queries =
         {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_date_flag  = -1,"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.role = 10"
+                + " AND person_c.id_registration = registration_c.id_registration; ",
+
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.death_date_flag  = 2 ,"
