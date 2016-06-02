@@ -31,7 +31,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-26-May-2015 Latest change
+ * FL-02-Jun-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -41,10 +41,9 @@ import linksmatchmanager.DataSet.QuerySet;
 public class MatchAsync extends Thread
 {
     boolean debug;
-    boolean free_vecs;
+    boolean dry_run;
 
-    //ProcessManager pm;
-    Semaphore pm;
+    Semaphore sem;
 
     int n_mp;           // match_process 'y' records: 0...
     int n_qs;           // query sets: 0...
@@ -54,12 +53,6 @@ public class MatchAsync extends Thread
 
     QueryGroupSet qgs;
     InputSet inputSet;
-
-    int s1_offset;      // which record to start from sample 1
-    int s1_piece;       // how many records from sample 1
-
-    Connection dbconPrematch;
-    Connection dbconMatch;
 
     String url;
     String user;
@@ -80,13 +73,16 @@ public class MatchAsync extends Thread
     boolean isUseRoot = false;      // false for variant
 
 
+    Connection dbconPrematch;
+    Connection dbconMatch;
+
+
     public MatchAsync       // for variant names
     (
         boolean debug,
-        boolean free_vecs,
+        boolean dry_run,
 
-        //ProcessManager pm,
-        Semaphore pm,
+        Semaphore sem,
 
         int n_mp,
         int n_qs,
@@ -97,11 +93,6 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        int s1_offset,
-        int s1_piece,
-
-        //Connection dbconPrematch,
-        //Connection dbconMatch,
         String url,
         String user,
         String pass,
@@ -117,9 +108,9 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
-        this.free_vecs = free_vecs;
+        this.dry_run = dry_run;
 
-        this.pm = pm;
+        this.sem = sem;
 
         this.n_mp = n_mp;
         this.n_qs = n_qs;
@@ -130,12 +121,6 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.s1_offset = s1_offset;
-        this.s1_piece  = s1_piece;
-
-        //this.dbconPrematch = dbconPrematch;
-        //this.dbconMatch    = dbconMatch;
-        //this.dbconTemp     = dbconTemp;
         this.url  = url;
         this.user = user;
         this.pass = pass;
@@ -156,10 +141,9 @@ public class MatchAsync extends Thread
     public MatchAsync       // for root names
     (
         boolean debug,
-        boolean free_vecs,
+        boolean dry_run,
 
-        //ProcessManager pm,
-        Semaphore pm,
+        Semaphore sem,
 
         int n_mp,
         int n_qs,
@@ -170,11 +154,6 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        int s1_offset,
-        int s1_piece,
-
-        //Connection dbconPrematch,
-        //Connection dbconMatch,
         String url,
         String user,
         String pass,
@@ -192,9 +171,9 @@ public class MatchAsync extends Thread
     )
     {
         this.debug = debug;
-        this.free_vecs = free_vecs;
+        this.dry_run = dry_run;
 
-        this.pm = pm;
+        this.sem = sem;
 
         this.n_mp = n_mp;
         this.n_qs = n_qs;
@@ -205,11 +184,6 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.s1_offset = s1_offset;
-        this.s1_piece = s1_piece;
-
-        //this.dbconPrematch = dbconPrematch;
-        //this.dbconMatch    = dbconMatch;
         this.url  = url;
         this.user = user;
         this.pass = pass;
@@ -325,20 +299,19 @@ public class MatchAsync extends Thread
 
             // Loop through set 1
             //msg = String.format( "Thread id %2d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
-            msg = String.format( "Thread id %2d; Set 1 offset: %d, piece: %d from links_base", threadId, s1_offset, s1_piece );
-            System.out.println( msg );
-            plog.show( msg );
+            msg = String.format( "Thread id %2d", threadId );
+            System.out.println( msg ); plog.show( msg );
 
             long n_recs   = 0;
             long n_match  = 0;
 
             int s1_size  = ql.s1_id_base.size();
-            int s1_nchunks = 100;
-            int s1_chunk = s1_piece / s1_nchunks;
+
+            int s1_nchunks = 100;       // show progress in s1_nchunks steps
+            int s1_chunk = s1_size / s1_nchunks;
 
             // Outer loop over the records of the s1 query set
-            // individual threads get a portion of s1: start at s1_offset and process s1_piece records
-            for( int s1_idx = s1_offset; s1_idx < (s1_offset + s1_piece); s1_idx++ )
+            for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
                 n_recs ++;
 
@@ -574,6 +547,18 @@ public class MatchAsync extends Thread
                     int id_registration2 = ql.s2_id_registration.get( s2_idx );
                     // the debug/test selection is done on the basis of s1_idx; do not skip id_registration2's here
 
+                    /*
+                    // debug
+                    int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
+                    int id_linksbase_2 = ql.s2_id_base.get( lv_idx );
+                    if( (id_linksbase_1 == 79124979 && id_linksbase_2 == 11087267) ||
+                        (id_linksbase_1 == 79124636 && id_linksbase_2 == 10848667) ) {
+                        msg = String.format( "id_linksbase_1 = %d, id_linksbase_2 = %d", id_linksbase_1, id_linksbase_2 );
+                        System.out.println( msg ); plog.show( msg );
+                    }
+                    if( 1 == 1 ) { continue; }
+                    */
+
                     // familyname
                     int s2EgoFamName      = ql.s2_ego_familyname    .get( s2_idx );
                     int s2MotherFamName   = ql.s2_mother_familyname .get( s2_idx );
@@ -804,8 +789,8 @@ public class MatchAsync extends Thread
 
                         int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
 
-                        int id_s1 = ql.s1_id_base.get( s1_idx );
-                        int id_s2 = ql.s2_id_base.get( lv_idx );
+                        int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
+                        int id_linksbase_2 = ql.s2_id_base.get( lv_idx );
 
                         String lvs_dist_first_ego  = intOrNull( s2_idx_firstname_ego_lvs .get( l ) );
                         String lvs_dist_family_ego = intOrNull( s2_idx_familyname_ego_lvs.get( l ) );
@@ -824,7 +809,7 @@ public class MatchAsync extends Thread
                             "value_firstname_mo , value_familyname_mo , " +
                             "value_firstname_fa , value_familyname_fa , " +
                             "value_firstname_pa , value_familyname_pa ) " +
-                            "VALUES ( " + id_match_process + "," + id_s1 + "," + id_s2 + "," +
+                            "VALUES ( " + id_match_process + "," + id_linksbase_1 + "," + id_linksbase_2 + "," +
                             lvs_dist_first_ego + "," + lvs_dist_family_ego + "," +
                             lvs_dist_first_mo  + "," + lvs_dist_family_mo  + "," +
                             lvs_dist_first_fa  + "," + lvs_dist_family_fa  + "," +
@@ -836,8 +821,10 @@ public class MatchAsync extends Thread
                             plog.show( msg );
                         }
 
-                        dbconMatch.createStatement().execute( query );
-                        dbconMatch.createStatement().close();
+                        if( ! dry_run ) {
+                            dbconMatch.createStatement().execute( query );
+                            dbconMatch.createStatement().close();
+                        }
                     }
                 }
                 s2_idx_variants_cpy = null;
@@ -845,10 +832,9 @@ public class MatchAsync extends Thread
                 System.err.flush();
             }
 
-            //int processCount = pm.removeProcess();
-            pm.release();
-            int processCount = pm.availablePermits();
-            plog.show( "processCount: " + processCount );
+            sem.release();
+            int npermits = sem.availablePermits();
+            plog.show( "Semaphore: # of permits: " + npermits );
 
             msg = String.format( "Thread id %2d; s1 records processed:         %10d", threadId, n_recs );
             System.out.println( msg ); plog.show( msg );
@@ -937,17 +923,11 @@ public class MatchAsync extends Thread
             System.out.println( msg );
             plog.show( msg );
 
-            if( free_vecs ) {
-                msg = String.format( "Thread id %2d; freeing s1 and s2 vectors", threadId );
-                System.out.println( msg ); plog.show( msg );
-                ql.freeVectors();
-                ql = null;
-                qs = null;
-            }
-            else {
-                msg = "not freeing vectors";
-                System.out.println( msg ); plog.show( msg );
-            }
+            msg = String.format( "Thread id %2d; freeing s1 and s2 vectors", threadId );
+            System.out.println( msg ); plog.show( msg );
+            ql.freeVectors();
+            ql = null;
+            qs = null;
 
             dbconPrematch.close();
             dbconMatch.close();
@@ -966,8 +946,7 @@ public class MatchAsync extends Thread
         }
         catch( Exception ex1 )
         {
-            //pm.removeProcess();
-            pm.release();
+            sem.release();
 
             String err = "MatchAsync/run(): thread error: s1_idx_cpy = " + s1_idx_cpy + ", lv_idx_cpy = " + lv_idx_cpy + ", error = " + ex1.getMessage();
             System.out.println( err );
