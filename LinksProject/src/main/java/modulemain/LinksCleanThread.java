@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-31-May-2016 Latest change
+ * FL-07-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5841,7 +5841,12 @@ public class LinksCleanThread extends Thread
                 }
                 else
                 {
-                    // why not set "person_c." + type + "_date_valid = -1 ?
+                    String query = ""
+                        + "UPDATE person_c SET "
+                        + "person_c." + type + "_date_valid = 0 "
+                        + "WHERE person_c.id_person = " + id_person;
+
+                    dbconCleaned.runQuery( query );
 
                     count_invalid++;
 
@@ -6040,56 +6045,60 @@ public class LinksCleanThread extends Thread
      */
     public void flagBirthDate( boolean debug, String source )
     {
-        // birth_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
-        // to be used for ensuring that the records of the next queries are non-overlapping
+        // birth_date_flag is not used elsewhere in the cleaning.
+        // In standardDate() birth_date_valid is set to either 1 (valid birth date) or 0 (invalid birth date)
 
         String[] queries =
         {
             "UPDATE person_c, registration_c"
                 + " SET"
-                + " person_c.birth_date_flag  = -1,"
+                + " person_c.birth_date_flag = 0"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 1"
+                + " AND person_c.birth_date_valid = 0"
                 + " AND person_c.role = 1"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
+                + " AND registration_c.registration_flag <> 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_date_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.birth_date_valid = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.birth_date_flag  = 2,"
-                + " person_c.birth_date       = registration_c.registration_date ,"
-                + " person_c.birth_year       = registration_c.registration_year ,"
-                + " person_c.birth_month      = registration_c.registration_month ,"
-                + " person_c.birth_day        = registration_c.registration_day ,"
-                + " person_c.birth_date_valid = 1"
+                + " person_c.birth_date_valid = 1,"
+                + " person_c.birth_date  = registration_c.registration_date,"
+                + " person_c.birth_year  = registration_c.registration_year,"
+                + " person_c.birth_month = registration_c.registration_month,"
+                + " person_c.birth_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 1"
-                + " AND person_c.birth_date IS NULL"
+                + " AND ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.birth_date_flag  = 3,"
-                + " person_c.birth_date       = registration_c.registration_date ,"
-                + " person_c.birth_year       = registration_c.registration_year ,"
-                + " person_c.birth_month      = registration_c.registration_month ,"
-                + " person_c.birth_day        = registration_c.registration_day ,"
-                + " person_c.birth_date_valid = 1"
+                + " person_c.birth_date_valid = 1,"
+                + " person_c.birth_date  = registration_c.registration_date,"
+                + " person_c.birth_year  = registration_c.registration_year,"
+                + " person_c.birth_month = registration_c.registration_month,"
+                + " person_c.birth_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 1"
                 + " AND person_c.birth_date_valid = 0"
-                + " AND person_c.birth_date_flag = 0"
+                + " AND NOT ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c"
-                + " SET person_c.birth_date_flag = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 1"
-                + " AND person_c.birth_date_valid = 1"
-                + " AND person_c.birth_date_flag = 0"
-                + " AND person_c.role = 1"
-                + " AND person_c.id_registration = registration_c.id_registration; "
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
         for( String query : queries )
@@ -6110,56 +6119,60 @@ public class LinksCleanThread extends Thread
      */
     public void flagMarriageDate( boolean debug, String source )
     {
-        // mar_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
-        // to be used for ensuring that the records of the next queries are non-overlapping
+        // mar_date_flag is not used elsewhere in the cleaning.
+        // // In standardDate() mar_date_valid is set to either 1 (valid mar date) or 0 (invalid mar date)
 
         String[] queries =
         {
             "UPDATE person_c, registration_c"
                 + " SET"
-                + " person_c.mar_date_flag  = -1,"
+                + " person_c.mar_date_flag = 0"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.mar_date_valid = 0"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
+                + " AND registration_c.registration_flag <> 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
                 + " SET"
-                + " person_c.mar_date_flag  = 2,"
-                + " person_c.mar_date       = registration_c.registration_date ,"
-                + " person_c.mar_year       = registration_c.registration_year ,"
-                + " person_c.mar_month      = registration_c.registration_month ,"
-                + " person_c.mar_day        = registration_c.registration_day ,"
-                + " person_c.mar_date_valid = 1"
+                + " person_c.mar_date_flag = 1"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
-                + " AND person_c.mar_date IS NULL"
+                + " AND person_c.mar_date_valid = 1"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
                 + " SET"
+                + " person_c.mar_date_flag  = 2,"
+                + " person_c.mar_date_valid = 1,"
+                + " person_c.mar_date  = registration_c.registration_date,"
+                + " person_c.mar_year  = registration_c.registration_year,"
+                + " person_c.mar_month = registration_c.registration_month,"
+                + " person_c.mar_day   = registration_c.registration_day"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
                 + " person_c.mar_date_flag  = 3,"
-                + " person_c.mar_date       = registration_c.registration_date ,"
-                + " person_c.mar_year       = registration_c.registration_year ,"
-                + " person_c.mar_month      = registration_c.registration_month ,"
-                + " person_c.mar_day        = registration_c.registration_day ,"
-                + " person_c.mar_date_valid = 1"
+                + " person_c.mar_date_valid = 1,"
+                + " person_c.mar_date  = registration_c.registration_date,"
+                + " person_c.mar_year  = registration_c.registration_year,"
+                + " person_c.mar_month = registration_c.registration_month,"
+                + " person_c.mar_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
                 + " AND person_c.mar_date_valid = 0"
-                + " AND person_c.mar_date_flag = 0"
+                + " AND NOT ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c"
-                + " SET person_c.mar_date_flag = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 2"
-                + " AND person_c.mar_date_valid = 1"
-                + " AND person_c.mar_date_flag = 0"
-                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.id_registration = registration_c.id_registration; "
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
         for( String query : queries )
@@ -6180,57 +6193,60 @@ public class LinksCleanThread extends Thread
      */
     public void flagDeathDate( boolean debug, String source )
     {
-        // death_date_flag is not used elsewhere in the cleaning. we initialize it with the first query,
-        // to be used for ensuring that the records of the next queries are non-overlapping
+        // death_date_flag is not used elsewhere in the cleaning.
+        // In standardDate() death_date_valid is set to either 1 (valid death date) or 0 (invalid death date)
 
         String[] queries =
         {
             "UPDATE person_c, registration_c"
                 + " SET"
-                + " person_c.birth_date_flag  = -1,"
+                + " person_c.death_date_flag = 0"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 3"
-                + " AND person_c.role = 10"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.death_date_flag  = 2 ,"
-                + " person_c.death_date       = registration_c.registration_date ,"
-                + " person_c.death_year       = registration_c.registration_year ,"
-                + " person_c.death_month      = registration_c.registration_month ,"
-                + " person_c.death_day        = registration_c.registration_day , "
-                + " person_c.death_date_valid = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 3"
-                + " AND person_c.death_date IS NULL"
-                + " AND person_c.role = 10"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c "
-                + " SET "
-                + " person_c.death_date_flag = 3 ,"
-                + " person_c.death_date      = registration_c.registration_date ,"
-                + " person_c.death_year      = registration_c.registration_year ,"
-                + " person_c.death_month     = registration_c.registration_month ,"
-                + " person_c.death_day       = registration_c.registration_day ,"
-                + " person_c.death_date_valid = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 3"
-                + " AND person_c.death_date_flag = 0"
                 + " AND person_c.death_date_valid = 0"
                 + " AND person_c.role = 10"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
+                + " AND registration_c.registration_flag <> 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c "
-                + " SET "
-                + " person_c.death_date_flag = 1 "
+                + " SET"
+                + " person_c.death_date_flag = 1"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 3"
                 + " AND person_c.death_date_valid = 1"
-                + " AND person_c.death_date_flag = 0"
                 + " AND person_c.role = 10"
-                + " AND person_c.id_registration = registration_c.id_registration; "
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.death_date_flag  = 2,"
+                + " person_c.death_date_valid = 1,"
+                + " person_c.death_date  = registration_c.registration_date,"
+                + " person_c.death_year  = registration_c.registration_year,"
+                + " person_c.death_month = registration_c.registration_month,"
+                + " person_c.death_day   = registration_c.registration_day"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND ( person_c.death_date IS NULL OR person_c.death_date = '' )"
+                + " AND person_c.role = 10"
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c "
+                + " SET "
+                + " person_c.death_date_flag  = 3,"
+                + " person_c.death_date_valid = 1,"
+                + " person_c.death_date  = registration_c.registration_date,"
+                + " person_c.death_year  = registration_c.registration_year,"
+                + " person_c.death_month = registration_c.registration_month,"
+                + " person_c.death_day   = registration_c.registration_day"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.death_date_valid = 0"
+                + " AND NOT ( person_c.death_date IS NULL OR person_c.death_date = '' )"
+                + " AND person_c.role = 10"
+                + " AND registration_c.registration_flag = 0"
+                + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
         for( String query : queries )
@@ -7849,7 +7865,8 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            System.out.printf( "Number of updates: %d\n", nupdates );
+            String msg = String.format( "scanRemarks: Number of updates: %d", nupdates );
+            showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
