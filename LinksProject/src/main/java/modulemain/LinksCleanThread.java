@@ -61,7 +61,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-07-May-2016 Latest change
+ * FL-08-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5619,7 +5619,10 @@ public class LinksCleanThread extends Thread
 
                     registration_flag = 1;
 
-                    if( nhyphens > 2 ) { System.out.println( "id_registration: " + id_registration + ", registration_date: " + registration_date ); }
+                    if( nhyphens > 2 ) {
+                        String msg = String.format( "Thread id %02d; id_registration: %d, registration_date: %s", threadId, id_registration, registration_date );
+                        System.out.println( msg );
+                    }
 
                     String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
@@ -7865,7 +7868,7 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            String msg = String.format( "scanRemarks: Number of updates: %d", nupdates );
+            String msg = String.format( "Thread id %02d; scanRemarks: Number of updates: %d", threadId, nupdates );
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
