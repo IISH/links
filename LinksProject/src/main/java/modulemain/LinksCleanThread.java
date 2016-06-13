@@ -61,7 +61,8 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-08-May-2016 Latest change
+ * FL-13-May-2016 split firstnames now in standardFirstnames()
+ * FL-13-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -1143,7 +1144,7 @@ public class LinksCleanThread extends Thread
 
         createTempFirstnameTable( dbconTemp, source );
 
-        FileWriter writerFirstname = createTempFirstnameFile(  source );
+        FileWriter writerFirstname = createTempFirstnameFile( source );
 
         if( ! multithreaded ) {
             start = System.currentTimeMillis();
@@ -1183,8 +1184,10 @@ public class LinksCleanThread extends Thread
         writerFirstname.close();
         loadFirstnameCsvToTableT( dbconTemp, source );
         updateFirstnameToPersonC( dbconTemp, source );
-        removeFirstnameFile(      source );
-        removeFirstnameTable(     dbconTemp, source );
+
+        showMessage( "NOT removing FirstnameFile or temp FirstnameTable", false, true );
+        //removeFirstnameFile(      source );
+        //removeFirstnameTable(     dbconTemp, source );
 
         msg = String.format( "Thread id %02d; remains Firstname", threadId );
         showTimingMessage( msg, start );
@@ -1365,23 +1368,13 @@ public class LinksCleanThread extends Thread
                 // currently never filled in person_o, but flagged by having a firstname 'Levenloos'
                 //String stillbirth = rsFirstName.getString( "stillbirth" );
 
-                /*
-                // check levenloos
-                if( id_person == 2338 ) {
-                    debug = true;
-                    System.out.println( "id_person: " + id_person );
-                }
-                else {
-                    debug = false;
-                    continue;
-                }
-                */
-
                 // Is firstname empty?
                 if( firstname != null && !firstname.isEmpty() )
                 {
                     if( debug ) { System.out.println( "firstname: " + firstname ); }
                     firstname = cleanFirstname( debug, source, id_person, firstname );
+
+                    // cleanFirstname() assumes the presence of uppercase letters, so only now to lowercase
                     firstname = firstname.toLowerCase();
                     if( debug ) { System.out.println( "firstname: " + firstname ); }
 
@@ -1390,17 +1383,17 @@ public class LinksCleanThread extends Thread
 
                     // Check on serried spaces; split name on spaces
                     String[] names = nameNoAlias.split( " " );
-                    boolean spaces = false;
 
                     ArrayList< String > preList  = new ArrayList< String >();
                     ArrayList< String > postList = new ArrayList< String >();
 
-                    for( String n : names ) {
-                        if( n.isEmpty() ) { spaces = true; }
-                        else {  preList.add( n ); }     // add to list
+                    boolean empty_name = false;
+                    for( String name : names ) {
+                        if( name.isEmpty() ) { empty_name = true; }
+                        else { preList.add( name ); }       // add to list
                     }
 
-                    if( spaces ) { addToReportPerson( id_person, source, 1103, "" ); }  // EC 1103
+                    if( empty_name ) { addToReportPerson( id_person, source, 1103, "" ); }  // EC 1103
 
                     String stillbirth = "";
                     // loop through the pieces of the name
@@ -1587,7 +1580,7 @@ public class LinksCleanThread extends Thread
                                 if( almmFirstname.contains( nameNoPieces ) )
                                 {
                                     // Check the standard code
-                                    String standard_code = almmFirstname.code(nameNoPieces);
+                                    String standard_code = almmFirstname.code( nameNoPieces );
 
                                     if( standard_code.equals( SC_Y ) )
                                     {
@@ -1595,20 +1588,20 @@ public class LinksCleanThread extends Thread
                                     }
                                     else if( standard_code.equals( SC_U ) )
                                     {
-                                        addToReportPerson( id_person, source, 1100, nameNoPieces );   // EC 1100
+                                        addToReportPerson( id_person, source, 1100, nameNoPieces );     // EC 1100
                                         postList.add( almmFirstname.standard( nameNoPieces ) );
                                     }
                                     else if( standard_code.equals( SC_N ) )
                                     {
-                                        addToReportPerson( id_person, source, 1105, nameNoPieces );    // EC 1105
+                                        addToReportPerson( id_person, source, 1105, nameNoPieces );     // EC 1105
                                     }
                                     else if( standard_code.equals( SC_X ) )
                                     {
-                                        addToReportPerson( id_person, source, 1109, nameNoPieces );    // EC 1109
+                                        addToReportPerson( id_person, source, 1109, nameNoPieces );     // EC 1109
                                         postList.add( nameNoPieces );
                                     }
                                     else { // EC 1100, standard_code not invalid
-                                        addToReportPerson(id_person, source, 1100, nameNoPieces);    // EC 1100
+                                        addToReportPerson( id_person, source, 1100, nameNoPieces );     // EC 1100
                                     }
                                 }
                                 else {
@@ -1620,21 +1613,33 @@ public class LinksCleanThread extends Thread
                         }
                     }
 
-                    // Write all parts to Person postList
-                    String vn = "";
-
-                    for( int i = 0; i < postList.size(); i++ )
+                    // recollect firstnames, and set individual firstnames
+                    String firstnames = "";
+                    String firstname1 = "";
+                    String firstname2 = "";
+                    String firstname3 = "";
+                    String firstname4 = "";
+                    for( int n = 0; n < postList.size(); n++ )
                     {
-                        vn += postList.get( i );
-                        if( i != ( postList.size() - 1) ) { vn += " "; }    // add space
+                        if( n > 0 ) { firstnames += " "; }      // add space
+                        String name = postList.get( n );
+                        firstnames += name;
+
+                        if( n == 0 ) { firstname1 = name; }
+                        if( n == 1 ) { firstname2 = name; }
+                        if( n == 2 ) { firstname3 = name; }
+                        if( n == 3 ) { firstname4 = name; }
                     }
 
-                    // if vn not empty write to vn
-                    if( !vn.isEmpty() ) {
+                    // if firstnames not empty write to csv
+                    if( !firstnames.isEmpty() ) {
                         //String query = PersonC.updateQuery("firstname", vn, id_person);
                         //dbconCleaned.runQuery(query);
 
-                        writerFirstname.write( id_person + "," + vn.trim().toLowerCase() + "," + stillbirth + "\n" );
+                        //writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
+                        String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
+                            id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
+                        writerFirstname.write( line );
                     }
 
                     preList.clear();
@@ -1647,14 +1652,7 @@ public class LinksCleanThread extends Thread
                     count_empty++;
                     addToReportPerson( id_person, source, 1101, "" );        // EC 1101
                 }
-
-                // close this
-                id_person = 0;
-                firstname = null;
             }
-
-            // TODO: empty resultset
-            //rsFirstName = con.createStatement().executeQuery("SELECT 0;");
 
             rsFirstName.close();
             con.close();
@@ -2359,10 +2357,13 @@ public class LinksCleanThread extends Thread
 
         String filename = "familyname_t_" + source + ".csv";
 
-        showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
-
         File f = new File( filename );
-        if( f.exists() ) { f.delete(); }
+        if( f.exists() ) {
+            showMessage( String.format( "Thread id %02d; Deleting file %s", threadId, filename ), false, true );
+            f.delete();
+        }
+
+        showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
         return new FileWriter( filename );
     } // createTempFamilynameFile
 
@@ -2413,7 +2414,7 @@ public class LinksCleanThread extends Thread
 
         String csvname = "familyname_t_" + source + ".csv";
 
-        showMessage( String.format( "Thread id %02d; Removing file %s", threadId, csvname ), false, true );
+        showMessage( String.format( "Thread id %02d; Deleting file %s", threadId, csvname ), false, true );
 
         java.io.File f = new java.io.File( csvname );
         f.delete();
@@ -2426,7 +2427,7 @@ public class LinksCleanThread extends Thread
 
         String tablename = "familyname_t_" + source;
 
-        showMessage( String.format( "Thread id %02d; Removing table %s", threadId, tablename ), false, true );
+        showMessage( String.format( "Thread id %02d; Deleting table %s", threadId, tablename ), false, true );
 
         String query = "DROP TABLE IF EXISTS " + tablename + ";";
 
@@ -2449,6 +2450,10 @@ public class LinksCleanThread extends Thread
         String query = "CREATE  TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " firstname VARCHAR(100) NULL ,"
+            + " firstname1 VARCHAR(30) NULL ,"
+            + " firstname2 VARCHAR(30) NULL ,"
+            + " firstname3 VARCHAR(30) NULL ,"
+            + " firstname4 VARCHAR(30) NULL ,"
             + " stillbirth VARCHAR(3) NULL ,"
             + " PRIMARY KEY (person_id) );";
 
@@ -2465,10 +2470,13 @@ public class LinksCleanThread extends Thread
 
         String filename = "firstname_t_" + source + ".csv";
 
-        showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
+        File file = new File( filename );
+        if( file.exists() ) {
+            showMessage( String.format( "Thread id %02d; Deleting file %s", threadId, filename ), false, true );
+            file.delete();
+        }
 
-        File f = new File( filename );
-        if( f.exists() ) { f.delete(); }
+        showMessage( String.format( "Thread id %02d; Creating %s", threadId, filename ), false, true );
         return new FileWriter( filename );
     } // createTempFirstnameFile
 
@@ -2487,7 +2495,8 @@ public class LinksCleanThread extends Thread
 
         String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
             + " INTO TABLE " + tablename
-            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' ( person_id , firstname , stillbirth );";
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
+            + " ( person_id , firstname , firstname1 , firstname2 , firstname3 , firstname4 , stillbirth );";
 
         dbconTemp.runQuery( query );
     } // loadFirstnameCsvToTableT
@@ -2505,8 +2514,13 @@ public class LinksCleanThread extends Thread
         String tablename = "firstname_t_" + source;
 
         String query   = "UPDATE links_cleaned.person_c, links_temp." + tablename
-            +   " SET links_cleaned.person_c.firstname = links_temp." + tablename + ".firstname"
-            +    " , links_cleaned.person_c.stillbirth = links_temp." + tablename + ".stillbirth"
+            + " SET"
+            + " links_cleaned.person_c.firstname = links_temp."  + tablename + ".firstname ,"
+            + " links_cleaned.person_c.firstname1 = links_temp." + tablename + ".firstname1 ,"
+            + " links_cleaned.person_c.firstname2 = links_temp." + tablename + ".firstname2 ,"
+            + " links_cleaned.person_c.firstname3 = links_temp." + tablename + ".firstname3 ,"
+            + " links_cleaned.person_c.firstname4 = links_temp." + tablename + ".firstname4 ,"
+            + " links_cleaned.person_c.stillbirth = links_temp." + tablename + ".stillbirth"
             + " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
         dbconTemp.runQuery(query);
@@ -2522,7 +2536,7 @@ public class LinksCleanThread extends Thread
 
         String csvname = "firstname_t_" + source + ".csv";
 
-        showMessage( String.format( "Thread id %02d; Removing file %s", threadId, csvname ), false, true );
+        showMessage( String.format( "Thread id %02d; Deleting file %s", threadId, csvname ), false, true );
 
         File f = new File( csvname );
         f.delete();
@@ -2538,7 +2552,7 @@ public class LinksCleanThread extends Thread
 
         String tablename = "firstname_t_" + source;
 
-        showMessage( String.format( "Thread id %02d; Removing table %s", threadId, tablename ), false, true );
+        showMessage( String.format( "Thread id %02d; Deleting table %s", threadId, tablename ), false, true );
 
         String query = "DROP TABLE IF EXISTS " + tablename + ";";
         dbconTemp.runQuery( query );

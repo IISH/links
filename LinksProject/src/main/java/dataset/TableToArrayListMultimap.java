@@ -73,11 +73,11 @@ public class TableToArrayListMultimap
      */
     public TableToArrayListMultimap
     (
-            MySqlConnector conn_read,
-            MySqlConnector conn_write,
-            String tableName,
-            String keyColumn,
-            String standardColumn
+        MySqlConnector conn_read,
+        MySqlConnector conn_write,
+        String tableName,
+        String keyColumn,
+        String standardColumn
     )
     throws Exception
     {
