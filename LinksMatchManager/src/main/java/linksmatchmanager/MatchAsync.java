@@ -21,6 +21,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 
 import linksmatchmanager.DataSet.InputSet;
+import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
@@ -31,7 +32,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-02-Jun-2015 Latest change
+ * FL-09-Jun-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -72,6 +73,7 @@ public class MatchAsync extends Thread
 
     boolean isUseRoot = false;      // false for variant
 
+    NameLvsVariants nameLvsVariants;
 
     Connection dbconPrematch;
     Connection dbconMatch;
@@ -104,7 +106,9 @@ public class MatchAsync extends Thread
         String freq_table_familyname,
 
         int[][] variantFirstName,
-        int[][] variantFamilyName
+        int[][] variantFamilyName,
+
+        NameLvsVariants nameLvsVariants
     )
     {
         this.debug = debug;
@@ -133,6 +137,8 @@ public class MatchAsync extends Thread
 
         this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
+
+        this.nameLvsVariants = nameLvsVariants;
 
         System.out.println( "\nMatchAsync: using variant names (instead of root names)" );
     }
@@ -167,6 +173,8 @@ public class MatchAsync extends Thread
         int[][] rootFirstName,
         int[][] rootFamilyName,
 
+        NameLvsVariants nameLvsVariants,
+
         boolean root
     )
     {
@@ -196,6 +204,8 @@ public class MatchAsync extends Thread
 
         this.rootFirstName  = rootFirstName;
         this.rootFamilyName = rootFamilyName;
+
+        this.nameLvsVariants = nameLvsVariants;
 
         this.isUseRoot = true;      // true for root
 
@@ -387,34 +397,42 @@ public class MatchAsync extends Thread
                             System.out.println( "ego_familyname..." );
 
                         }
+
                         else if( name == "ego_firstname" ) {
                             System.out.println( "ego_firstname..." );
 
                         }
+
                         else if( name == "mother_familyname" ) {
                             System.out.println( "mother_familyname..." );
 
                         }
+
                         else if( name == "mother_firstname" ) {
                             System.out.println( "mother_firstname..." );
 
                         }
+
                         else if( name == "father_familyname" ) {
                             System.out.println( "father_familyname..." );
 
                         }
+
                         else if( name == "father_firstname" ) {
                             System.out.println( "father_firstname..." );
 
                         }
+
                         else if( name == "partner_familyname" ) {
                             System.out.println( "partner_familyname..." );
 
                         }
+
                         else if( name == "partner_firstname" ) {
                             System.out.println( "partner_firstname..." );
 
                         }
+
                         else {
                             System.out.println( "name ??" );
                             System.exit( 1 );
@@ -424,6 +442,10 @@ public class MatchAsync extends Thread
                     nameFreqMap = null;
                 }
 
+                String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
+                nameLvsVariants.init( threadId, s1EgoFamName, s1EgoFamNameStr, lvs_table_familyname, lvs_dist_familyname );
+
+
 
                 // If the s1EgoFamName changes, create a new variant names list, otherwise go on
                 // to check the other s1 entries with the same s1EgoFamName against this set.
@@ -432,7 +454,6 @@ public class MatchAsync extends Thread
                     previous_s1EgoFamilyName = s1EgoFamName;        // Set new previous name
 
                     if( debug ) {
-                        String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                         msg = String.format( "s1EgoFamNameStr: %s", s1EgoFamNameStr );
                         System.out.println( msg ); plog.show( msg );
                     }

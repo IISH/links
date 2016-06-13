@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 
 import linksmatchmanager.DataSet.InputSet;
+import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
 
@@ -389,15 +390,17 @@ public class MatchMain
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
+                        NameLvsVariants nameLvsVariants = new NameLvsVariants();
                         ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
-                            rootFirstName, rootFamilyName, true );
+                            rootFirstName, rootFamilyName, nameLvsVariants, true );
                     }
                     else          // method == 0
                     {
+                        NameLvsVariants nameLvsVariants = new NameLvsVariants();
                         ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
-                            variantFirstName, variantFamilyName );
+                            variantFirstName, variantFamilyName, nameLvsVariants );
                     }
 
                     ma.start();
