@@ -62,7 +62,7 @@ import linksmanager.ManagerGui;
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
- * FL-13-May-2016 Latest change
+ * FL-14-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -1182,12 +1182,10 @@ public class LinksCleanThread extends Thread
         if( ! multithreaded ) { almmFirstname.free(); }
 
         writerFirstname.close();
-        loadFirstnameCsvToTableT( dbconTemp, source );
-        updateFirstnameToPersonC( dbconTemp, source );
-
-        showMessage( "NOT removing FirstnameFile or temp FirstnameTable", false, true );
-        //removeFirstnameFile(      source );
-        //removeFirstnameTable(     dbconTemp, source );
+        loadFirstnameCsvToTableT( dbconTemp, source );      // insert csv -> temp table
+        updateFirstnameToPersonC( dbconTemp, source );      // update person_c with temp table
+        removeFirstnameFile(      source );                 // cleanup
+        removeFirstnameTable(     dbconTemp, source );      // cleanup
 
         msg = String.format( "Thread id %02d; remains Firstname", threadId );
         showTimingMessage( msg, start );
