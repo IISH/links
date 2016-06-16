@@ -294,17 +294,17 @@ public class MatchAsync extends Thread
             // all occurrences in the s2 set of the above variants
             Vector< Integer > s2_idx_variants_ego       = new Vector< Integer >();
 
-            Vector< Integer > s2_idx_firstname_ego_lvs  = new Vector< Integer >();
             Vector< Integer > s2_idx_familyname_ego_lvs = new Vector< Integer >();
+            Vector< Integer > s2_idx_firstname_ego_lvs  = new Vector< Integer >();
 
-            Vector< Integer > s2_idx_firstname_mo_lvs   = new Vector< Integer >();
             Vector< Integer > s2_idx_familyname_mo_lvs  = new Vector< Integer >();
+            Vector< Integer > s2_idx_firstname_mo_lvs   = new Vector< Integer >();
 
-            Vector< Integer > s2_idx_firstname_fa_lvs   = new Vector< Integer >();
             Vector< Integer > s2_idx_familyname_fa_lvs  = new Vector< Integer >();
+            Vector< Integer > s2_idx_firstname_fa_lvs   = new Vector< Integer >();
 
-            Vector< Integer > s2_idx_firstname_pa_lvs   = new Vector< Integer >();
             Vector< Integer > s2_idx_familyname_pa_lvs  = new Vector< Integer >();
+            Vector< Integer > s2_idx_firstname_pa_lvs   = new Vector< Integer >();
 
             // Loop through set 1
             //msg = String.format( "Thread id %2d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
@@ -326,7 +326,10 @@ public class MatchAsync extends Thread
             // Outer loop over the records of the s1 query set
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
-                if( debug ) { System.out.println( "--------------------------------------------------------------------------------" ); }
+                if( debug ) {
+                    System.out.println( "--------------------------------------------------------------------------------" );
+                    System.out.println( String.format( "s1_idx: %d-of-%d", s1_idx, s1_size-1 ) );
+                }
 
                 n_recs ++;
 
@@ -335,12 +338,18 @@ public class MatchAsync extends Thread
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
-
-                if( s1_idx == 100 ) {
+                /*
+                if( n_match >= 10 ) {
                     System.out.println( "BREAK" );
                     break;
                 }
-
+                */
+                /*
+                if( s1_idx == 5 ) {
+                    System.out.println( "BREAK" );
+                    break;
+                }
+                */
                 /*
                 int id_registration1 = ql.s1_id_registration.get( s1_idx );
                 if( id_registration1 == 2555759 ) {
@@ -484,17 +493,17 @@ public class MatchAsync extends Thread
 
                     s2_idx_variants_ego      .clear();                  // Empty the lists
 
-                    s2_idx_firstname_ego_lvs .clear();
                     s2_idx_familyname_ego_lvs.clear();
+                    s2_idx_firstname_ego_lvs .clear();
 
-                    s2_idx_firstname_mo_lvs .clear();
                     s2_idx_familyname_mo_lvs.clear();
+                    s2_idx_firstname_mo_lvs .clear();
 
-                    s2_idx_firstname_fa_lvs .clear();
                     s2_idx_familyname_fa_lvs.clear();
+                    s2_idx_firstname_fa_lvs .clear();
 
-                    s2_idx_firstname_pa_lvs .clear();
                     s2_idx_familyname_pa_lvs.clear();
+                    s2_idx_firstname_pa_lvs .clear();
 
                     for( int lvs_idx = 0; lvs_idx < lvsVariants.size(); lvs_idx++ )
                     {
@@ -527,8 +536,8 @@ public class MatchAsync extends Thread
                                     int id_base             = ql.s2_id_base.get( s2_idx );
                                     int id_regist           = ql.s2_id_registration.get( s2_idx );
 
-                                    msg = String.format( "lvs variant of s1EgoFamNameInt found in s2EgoFamNameInt: %d=%s, id_base: %d, id_regist: %d",
-                                        s2EgoFamName, s2EgoFamName_str, id_base, id_regist );
+                                    msg = String.format( "lvs variant of s1EgoFamNameInt found in s2EgoFamNameInt: %d=%s, s2_idx: %d, id_base: %d, id_regist: %d",
+                                        s2EgoFamName, s2EgoFamName_str, s2_idx, id_base, id_regist );
                                     System.out.println( msg ); plog.show( msg );
                                 }
 
@@ -563,7 +572,7 @@ public class MatchAsync extends Thread
                 // As long as the ego familyname stays the same, we reuse the variant vectors.
                 // We flag a non-match by setting the current s2_idx_variants entry to -1.
                 // Because of the reuse, we must use a copy of s2_idx_variants for the -1 setting.
-                Vector< Integer > s2_idx_variants_cpy = new Vector( s2_idx_variants_ego );
+                Vector< Integer > s2_idx_variants_ego_cpy = new Vector( s2_idx_variants_ego );
 
                 if( debug  && s2_idx_variants_ego.size() > 0 ) {
                     for( int lv_idx = 0; lv_idx < s2_idx_variants_ego.size(); lv_idx++ ) {
@@ -575,51 +584,44 @@ public class MatchAsync extends Thread
                     msg = String.format( "Thread id %2d; potential matches: %d", threadId, s2_idx_variants_ego.size() );
                     System.out.println( msg ); plog.show( msg );
 
-                    msg = String.format( "loop through the %d familynames of s2; exact + variants", s2_idx_variants_cpy.size() );
+                    msg = String.format( "loop through the %d familynames of s2; exact + variants", s2_idx_variants_ego_cpy.size() );
                     System.out.println( msg ); plog.show( msg );
                 }
 
 
-                String lvs_dist_first_ego  = "null";
+
                 String lvs_dist_family_ego = "null";
+                String lvs_dist_first_ego  = "null";
 
-                String lvs_dist_first_mo   = "null";
+
                 String lvs_dist_family_mo  = "null";
+                String lvs_dist_first_mo   = "null";
 
-                String lvs_dist_first_fa   = "null";
                 String lvs_dist_family_fa  = "null";
+                String lvs_dist_first_fa   = "null";
 
-                String lvs_dist_first_pa   = "null";
                 String lvs_dist_family_pa  = "null";
+                String lvs_dist_first_pa   = "null";
 
                 // 1-of-10 Ego familyname
                 // if the size of the variant list is 0, the ego familyname does not match
                 int n_match_variant = 0;
 
-              //for( int lv_idx = 0; lv_idx < s2_idx_variants_cpy.size(); lv_idx++ )
-                for( int s2_hit = 0; s2_hit < s2_idx_variants_cpy.size(); s2_hit++ )
+                for( int s2_hit = 0; s2_hit < s2_idx_variants_ego_cpy.size(); s2_hit++ )
                 {
                     s2_hit_cpy = s2_hit;        // copy for display if exception occurs
 
-                    int s2_idx = s2_idx_variants_ego.get( s2_hit );
-                    int lvs_dist_fam_ego = s2_idx_familyname_ego_lvs.get( s2_hit );
+                    int s2_idx = s2_idx_variants_ego_cpy.get( s2_hit );
 
+                    lvs_dist_family_ego = intOrNull( s2_idx_familyname_ego_lvs.get( s2_hit ) );
 
-                    int id_registration2 = ql.s2_id_registration.get( s2_idx );
+                    //int id_registration2 = ql.s2_id_registration.get( s2_idx );
                     // the debug/test selection is done on the basis of s1_idx; do not skip id_registration2's here
-
-
-                    // lv_idx is NOT a good index name for s2_idx_variants_cpy
-                    // s2_idx_variants_cpy contain the multiple s2EgoFamName occurrences found in s2
-                    System.out.println( "lvsDistances.size(): " + lvsDistances.size() );
-                    System.out.println( "s2_idx_variants_cpy.size(): " + s2_idx_variants_cpy.size() );
-                  //System.out.println( "lv_idx: " + lv_idx );
-                  //lvs_dist_family_ego = intOrNull( lvsDistances.get( lv_idx ) );
-                    System.out.println( "lv_idx: " + s2_hit );
-                    lvs_dist_family_ego = intOrNull( lvs_dist_fam_ego );
 
                     /*
                     // debug
+                    System.out.println( "s2_hit: " + s2_hit );
+
                     int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
                     int id_linksbase_2 = ql.s2_id_base.get( lv_idx );
                     if( (id_linksbase_1 == 79124979 && id_linksbase_2 == 11087267) ||
@@ -636,19 +638,18 @@ public class MatchAsync extends Thread
                         int s2MotherFamName = ql.s2_mother_familyname.get( s2_idx );
                         int lvs_dist = isVariant( s1MotherFamName, s2MotherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
 
-                        lvs_dist_family_mo = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
-                            s2_idx_familyname_mo_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_familyname_m++;
                             if( debugfail ) { System.out.println( "failed int_familyname_m" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_family_mo = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
+                            s2_idx_familyname_mo_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -658,19 +659,18 @@ public class MatchAsync extends Thread
                         int s2PartnerFamName = ql.s2_partner_familyname.get( s2_idx );
                         int lvs_dist = isVariant( s1PartnerFamName, s2PartnerFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
 
-                        lvs_dist_family_pa = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_familyname_p" ); }
-                            s2_idx_familyname_pa_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_familyname_p++;
                             if( debugfail ) { System.out.println( "failed int_familyname_p" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_family_pa = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_familyname_p" ); }
+                            s2_idx_familyname_pa_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -687,19 +687,18 @@ public class MatchAsync extends Thread
                             s2EgoFirName1, s2EgoFirName2, s2EgoFirName3, s2EgoFirName4,
                             qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                        lvs_dist_first_ego = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_firstname_e" ); }
-                            s2_idx_firstname_ego_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );              // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );              // no match
                             n_int_firstname_e++;
                             if( debugfail ) { System.out.println( "failed int_firstname_e" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_first_ego = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_firstname_e" ); }
+                            s2_idx_firstname_ego_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -716,19 +715,18 @@ public class MatchAsync extends Thread
                             s2MotherFirName1, s2MotherFirName2, s2MotherFirName3, s2MotherFirName4,
                             qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                        lvs_dist_first_mo = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
-                            s2_idx_firstname_mo_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_firstname_m++;
                             if( debugfail ) { System.out.println( "failed int_firstname_m" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_first_mo = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_familyname_m" ); }
+                            s2_idx_firstname_mo_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -745,19 +743,18 @@ public class MatchAsync extends Thread
                             s2FatherFirName1, s2FatherFirName2, s2FatherFirName3, s2FatherFirName4,
                             qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                        lvs_dist_first_fa = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_firstname_f" ); }
-                            s2_idx_firstname_fa_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_firstname_f++;
                             if( debugfail ) { System.out.println( "failed int_firstname_f" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_first_fa = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_firstname_f" ); }
+                            s2_idx_firstname_fa_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -774,19 +771,18 @@ public class MatchAsync extends Thread
                             s2PartnerFirName1, s2PartnerFirName2, s2PartnerFirName3, s2PartnerFirName4,
                             qs.method, lvs_table_firstname, lvs_dist_firstname );
 
-                        lvs_dist_first_pa = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_firstname_p" ); }
-                            s2_idx_firstname_pa_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_firstname_p++;
                             if( debugfail ) { System.out.println( "failed int_firstname_p" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_first_pa = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_firstname_p" ); }
+                            s2_idx_firstname_pa_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -796,19 +792,18 @@ public class MatchAsync extends Thread
                         int s2FatherFamName   = ql.s2_father_familyname .get( s2_idx );
                         int lvs_dist = isVariant( s1FatherFamName, s2FatherFamName, lvs_table_familyname, lvs_dist_familyname, NameType.FAMILYNAME, qs.method );
 
-                        lvs_dist_family_fa = intOrNull( lvs_dist );
-
-                        if( lvs_dist >= 0 )  // match
+                        if( lvs_dist < 0 )  // no match
                         {
-                            if( debugfail ) { System.out.println( "matched int_familyname_f" ); }
-                            s2_idx_familyname_fa_lvs.set( s2_hit, lvs_dist );         // for match table
-                        }
-                        else
-                        {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );       // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );       // no match
                             n_int_familyname_f++;
                             if( debugfail ) { System.out.println( "failed int_familyname_f" ); }
                             continue;
+                        }
+                        else  // match
+                        {
+                            lvs_dist_family_fa = intOrNull( lvs_dist );
+                            if( debugfail ) { System.out.println( "matched int_familyname_f" ); }
+                            s2_idx_familyname_fa_lvs.set( s2_hit, lvs_dist );         // for match table
                         }
                     }
 
@@ -816,7 +811,7 @@ public class MatchAsync extends Thread
                     if( ! qs.ignore_minmax )
                     {
                         if( ! CheckMinMax( qs, s1_idx, s2_idx ) ) {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );           // no match
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );           // no match
                             n_minmax++;
                             if( debugfail ) { System.out.println( "failed _minmax" ); }
                             continue;
@@ -832,7 +827,7 @@ public class MatchAsync extends Thread
 
                         if( ( s1_sex == 1 && s2_sex == 2 ) || ( s1_sex == 2 && s2_sex == 1 ) )  // no match
                         {
-                            s2_idx_variants_cpy.set( s2_hit, -1 );
+                            s2_idx_variants_ego_cpy.set( s2_hit, -1 );
                             n_sex++;
                             if( debugfail ) { System.out.println( "failed _sex: s1_sex=" + s1_sex + ", s2_sex=" + s2_sex ); }
                             continue;
@@ -841,10 +836,11 @@ public class MatchAsync extends Thread
                     }
 
                     // all checks passed, so we have a match
+                    n_match++;              // number of matches of this thread
                     n_match_variant++;
 
                     int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
-                    int id_linksbase_2 = ql.s2_id_base.get( s2_hit );
+                    int id_linksbase_2 = ql.s2_id_base.get( s2_idx );
 
                     String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
                         "value_firstname_ego, value_familyname_ego, " +
@@ -862,33 +858,38 @@ public class MatchAsync extends Thread
                         System.out.println( msg ); plog.show( msg );
                     }
 
+                    if( ! dry_run ) {
+                        dbconMatch.createStatement().execute( query );
+                        dbconMatch.createStatement().close();
+                    }
+
                 } // s2_hit loop
 
                 if( debug ) {
                     msg = "s1EgoFamName variants done";
                     System.out.println( msg ); plog.show( msg );
-                    msg = String.format( "variant matches: %d-of-%d", n_match_variant, s2_idx_variants_cpy.size() );
+                    msg = String.format( "variant matches: %d-of-%d", n_match_variant, s2_idx_variants_ego_cpy.size() );
                     System.out.println( msg ); plog.show( msg );
                 }
 
-
+                /*
                 // entries of matchesList that have not been zeroed above imply a match
                 n_match_variant = 0;
-                for( int l = 0; l < s2_idx_variants_cpy.size(); l++ )
+                for( int s2_hit = 0; s2_hit < s2_idx_variants_ego_cpy.size(); s2_hit++ )
                 {
-                    int lv_idx = s2_idx_variants_cpy.get( l );
-                    if( lv_idx == -1 )        // this variant ego familyname had no match
+                    int s2_idx = s2_idx_variants_ego_cpy.get( s2_hit );
+                    if( s2_idx == -1 )        // this variant ego familyname had no match
                     {
                         n_int_familyname_e++;
                         if( debug ) {
-                            msg = String.format( "variant %2d: no match", l );
+                            msg = String.format( "variant %2d: no match", s2_hit );
                             System.out.println( msg ); plog.show( msg );
                         }
                     }
                     else
                     {
                         if( debug ) {
-                            msg = String.format( "variant %2d: match", l );
+                            msg = String.format( "variant %2d: match for s2_idx = %d", s2_hit, s2_idx );
                             System.out.println( msg ); plog.show( msg );
                         }
 
@@ -896,19 +897,19 @@ public class MatchAsync extends Thread
                         n_match_variant++;      // s2 variant matches of current s1 record
 
                         int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
-                        int id_linksbase_2 = ql.s2_id_base.get( lv_idx );
+                        int id_linksbase_2 = ql.s2_id_base.get( s2_idx );
 
-                        lvs_dist_first_ego  = intOrNull( s2_idx_firstname_ego_lvs .get( l ) );
-                        lvs_dist_family_ego = intOrNull( s2_idx_familyname_ego_lvs.get( l ) );
+                        lvs_dist_first_ego  = intOrNull( s2_idx_firstname_ego_lvs .get( s2_hit ) );
+                        lvs_dist_family_ego = intOrNull( s2_idx_familyname_ego_lvs.get( s2_hit ) );
 
-                        lvs_dist_first_mo   = intOrNull( s2_idx_firstname_mo_lvs .get( l ) );
-                        lvs_dist_family_mo  = intOrNull( s2_idx_familyname_mo_lvs.get( l ) );
+                        lvs_dist_first_mo   = intOrNull( s2_idx_firstname_mo_lvs .get( s2_hit ) );
+                        lvs_dist_family_mo  = intOrNull( s2_idx_familyname_mo_lvs.get( s2_hit ) );
 
-                        lvs_dist_first_fa   = intOrNull( s2_idx_firstname_fa_lvs .get( l ) );
-                        lvs_dist_family_fa  = intOrNull( s2_idx_familyname_fa_lvs.get( l ) );
+                        lvs_dist_first_fa   = intOrNull( s2_idx_firstname_fa_lvs .get( s2_hit ) );
+                        lvs_dist_family_fa  = intOrNull( s2_idx_familyname_fa_lvs.get( s2_hit ) );
 
-                        lvs_dist_first_pa   = intOrNull( s2_idx_firstname_pa_lvs .get( l ) );
-                        lvs_dist_family_pa  = intOrNull( s2_idx_familyname_pa_lvs.get( l ) );
+                        lvs_dist_first_pa   = intOrNull( s2_idx_firstname_pa_lvs .get( s2_hit ) );
+                        lvs_dist_family_pa  = intOrNull( s2_idx_familyname_pa_lvs.get( s2_hit ) );
 
                         String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
                             "value_firstname_ego, value_familyname_ego, " +
@@ -922,7 +923,7 @@ public class MatchAsync extends Thread
                             lvs_dist_first_pa  + "," + lvs_dist_family_pa  + ")";
 
                         if( debug ) {
-                            msg = String.format( "variant %2d: %s", l, query );
+                            msg = String.format( "variant %2d: %s", s2_hit, query );
                             System.out.println( msg ); plog.show( msg );
                         }
 
@@ -931,14 +932,15 @@ public class MatchAsync extends Thread
                             dbconMatch.createStatement().close();
                         }
                     }
-                } // l loop
+                } // s2_hit INSERT loop
+                */
 
                 if( debug ) {
-                    msg = String.format( "variant matches: %d-of-%d", n_match_variant, s2_idx_variants_cpy.size() );
+                    msg = String.format( "variant matches: %d-of-%d", n_match_variant, s2_idx_variants_ego_cpy.size() );
                     System.out.println( msg ); plog.show( msg );
                 }
 
-                s2_idx_variants_cpy = null;
+                s2_idx_variants_ego_cpy = null;
                 System.out.flush();
                 System.err.flush();
             } // s1_idx loop
