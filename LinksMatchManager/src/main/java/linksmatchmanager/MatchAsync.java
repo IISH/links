@@ -352,14 +352,6 @@ public class MatchAsync extends Thread
                 }
                 */
 
-                if( debug ) {
-                    String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
-                    String s1EgoFirNameStr = ql.s1_ego_firstname1_str.get( s1_idx );
-                    System.out.printf( "s1 ego familyname: %s, s1 ego firstname1: %s\n", s1EgoFamNameStr, s1EgoFirNameStr );
-                }
-
-                int s1EgoFamName  = ql.s1_ego_familyname.get( s1_idx );
-
 
                 /*
                 // match from low-to-high name frequencies
@@ -432,11 +424,20 @@ public class MatchAsync extends Thread
                 }
                 */
 
+                ///*
+                if( debug ) {
+                    String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
+                    String s1EgoFirNameStr = ql.s1_ego_firstname1_str.get( s1_idx );
+                    System.out.printf( "s1 ego familyname: %s, s1 ego firstname1: %s\n", s1EgoFamNameStr, s1EgoFirNameStr );
+                }
+
+                int s1EgoFamName  = ql.s1_ego_familyname.get( s1_idx );
+
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                 //nameLvsVariants.init( threadId, s1EgoFamName, s1EgoFamNameStr, lvs_table_familyname, lvs_dist_familyname );
+                //*/
 
-
-
+                ///*
                 // If the s1EgoFamName changes, create a new variant names list, otherwise go on
                 // to check the other s1 entries with the same s1EgoFamName against this set.
                 if( s1EgoFamName != previous_s1EgoFamilyName )
@@ -513,7 +514,9 @@ public class MatchAsync extends Thread
                     }
                     //System.out.println( "" );
                 }
+                //*/
 
+                ///*
                 // The above variant vectors are only refreshed when we encounter a new ego familyname.
                 // As long as the ego familyname stays the same, we reuse the variant vectors.
                 // We flag a non-match by setting the current s2_idx_variants entry to -1.
@@ -533,11 +536,12 @@ public class MatchAsync extends Thread
                     msg = String.format( "loop through the %d familynames of s2; exact + variants", s2_idx_variants_ego_cpy.size() );
                     System.out.println( msg ); plog.show( msg );
                 }
+                //*/
 
-
+                ///*
                 // Only the matching records are stored in the matches table. In that case, the lvs_dist's of the
                 // names used for matching always all get a value. Thefore this initialization need not be inside
-                // the inner loop. 
+                // the inner loop.
                 String lvs_dist_family_ego = "null";
                 String lvs_dist_first_ego  = "null";
 
@@ -767,6 +771,8 @@ public class MatchAsync extends Thread
                 }
 
                 s2_idx_variants_ego_cpy = null;
+                //*/
+
                 System.out.flush();
                 System.err.flush();
             } // s1_idx loop
