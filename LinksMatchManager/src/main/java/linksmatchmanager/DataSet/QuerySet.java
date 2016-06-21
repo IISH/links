@@ -21,7 +21,7 @@ package linksmatchmanager.DataSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-20-May-2016 Latest change
+ * FL-21-JUn-2016 Latest change
  */
 public class QuerySet
 {
@@ -49,12 +49,12 @@ public class QuerySet
     public int     method = 0;
     public boolean ignore_sex    = false;
     public boolean ignore_minmax = false;
-    public int     firstname = 0;
+    public int     firstname_method = 0;
 
     public String prematch_familyname;
-    public int    prematch_familyname_value;
+    public int    lvs_dist_max_familyname;
     public String prematch_firstname;
-    public int    prematch_firstname_value;
+    public int    lvs_dist_max_firstname;
 
     //public String use_familyname;
     //public String use_firstname;
@@ -112,15 +112,15 @@ public class QuerySet
         qs.use_father  = use_father;
         qs.use_partner = use_partner;
 
-        qs.method        = method;
-        qs.ignore_sex    = ignore_sex;
-        qs.ignore_minmax = ignore_minmax;
-        qs.firstname     = firstname;
+        qs.method           = method;
+        qs.ignore_sex       = ignore_sex;
+        qs.ignore_minmax    = ignore_minmax;
+        qs.firstname_method = firstname_method;
 
-        qs.prematch_familyname       = prematch_familyname;
-        qs.prematch_familyname_value = prematch_familyname_value;
-        qs.prematch_firstname        = prematch_firstname;
-        qs.prematch_firstname_value  = prematch_firstname_value;
+        qs.prematch_familyname     = prematch_familyname;
+        qs.lvs_dist_max_familyname = lvs_dist_max_familyname;
+        qs.prematch_firstname      = prematch_firstname;
+        qs.lvs_dist_max_firstname  = lvs_dist_max_firstname;
 
         //public String use_familyname;
         //public String use_firstname;

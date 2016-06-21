@@ -863,12 +863,12 @@ public class MatchMain
 
             plog.show( String.format( "ignore_sex .............. = %s", qs.ignore_sex ) );
             plog.show( String.format( "ignore_minmax ........... = %s", qs.ignore_minmax ) );
-            plog.show( String.format( "firstname ............... = %d", qs.firstname ) );
+            plog.show( String.format( "firstname (method)....... = %d", qs.firstname_method ) );
 
             plog.show( String.format( "prematch_familyname ..... = %s", qs.prematch_familyname ) );
-            plog.show( String.format( "prematch_familyname_value = %d", qs.prematch_familyname_value ) );
+            plog.show( String.format( "prematch_familyname_value = %d", qs.lvs_dist_max_familyname ) );
             plog.show( String.format( "prematch_firstname ...... = %s", qs.prematch_firstname ) );
-            plog.show( String.format( "prematch_firstname_value  = %d", qs.prematch_firstname_value ) );
+            plog.show( String.format( "prematch_firstname_value  = %d", qs.lvs_dist_max_firstname ) );
 
             //plog.show( String.format( "use_familyname .......... = %s", qs.use_familyname ) );
             //plog.show( String.format( "use_firstname ........... = %s", qs.use_firstname ) );

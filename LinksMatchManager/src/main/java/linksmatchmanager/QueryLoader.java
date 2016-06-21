@@ -14,7 +14,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-20-May-2016 Latest change
+ * FL-21-Jun-2016 Latest change
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -28,7 +28,7 @@ public class QueryLoader
     private boolean ignore_sex;
     private boolean ignore_minmax;
 
-    private int firstname;
+    private int firstname_method;
 
     private ResultSet set1;
     private ResultSet set2;
@@ -195,12 +195,12 @@ public class QueryLoader
      */
     public QueryLoader( long threadId, QuerySet qs, Connection dbconPrematch ) throws Exception
     {
-        this.use_mother    = qs.use_mother;
-        this.use_father    = qs.use_father;
-        this.use_partner   = qs.use_partner;
-        this.firstname     = qs.firstname;
-        this.ignore_sex    = qs.ignore_sex;
-        this.ignore_minmax = qs.ignore_minmax;
+        this.use_mother       = qs.use_mother;
+        this.use_father       = qs.use_father;
+        this.use_partner      = qs.use_partner;
+        this.firstname_method = qs.firstname_method;
+        this.ignore_sex       = qs.ignore_sex;
+        this.ignore_minmax    = qs.ignore_minmax;
 
         System.out.println( "Thread id " + threadId + "; QueryLoader()" );
 
@@ -309,7 +309,7 @@ public class QueryLoader
             var_s1_ego_firstname1_str = set1.getString( "ego_firstname1_str" );
 
             // First Names ego
-            switch( firstname )     // firstname method:
+            switch( firstname_method )     // firstname matching method:
             {
                 case 1:
                     var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
@@ -353,7 +353,7 @@ public class QueryLoader
                 var_s1_mother_familyname = set1.getInt( "mother_familyname" );
 
                 // First name
-                switch( firstname )
+                switch( firstname_method )      // firstname matching method:
                 {
                     case 1:
                         var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
@@ -398,7 +398,7 @@ public class QueryLoader
                 var_s1_father_familyname = set1.getInt( "father_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname matching method:
                 {
                     case 1:
                         var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
@@ -443,7 +443,7 @@ public class QueryLoader
                 var_s1_partner_familyname = set1.getInt( "partner_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname matching method:
                 {
                     case 1:
                         var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
@@ -628,7 +628,7 @@ public class QueryLoader
             var_s2_ego_firstname1_str = set2.getString( "ego_firstname1_str" );
 
             // First name
-            switch( firstname )     // firstname method:
+            switch( firstname_method )      // firstname matching method:
             {
                 case 1:
                     var_s2_ego_firstname1 = set2.getInt( "ego_firstname1" );
@@ -672,7 +672,7 @@ public class QueryLoader
                 var_s2_mother_familyname = set2.getInt( "mother_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname matching method:
                 {
                     case 1:
                         var_s2_mother_firstname1 = set2.getInt( "mother_firstname1" );
@@ -717,7 +717,7 @@ public class QueryLoader
                 var_s2_father_familyname = set2.getInt( "father_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname matching method:
                 {
                     case 1:
                         var_s2_father_firstname1 = set2.getInt( "father_firstname1" );
@@ -762,7 +762,8 @@ public class QueryLoader
                 var_s2_partner_familyname = set2.getInt( "partner_familyname" );
 
                 // First Names
-                switch (firstname) {
+                switch( firstname_method )      // firstname matching method:
+                {
                     case 1:
                         var_s2_partner_firstname1 = set2.getInt( "partner_firstname1" );
                         var_s2_partner_firstname2 = set2.getInt( "partner_firstname2" );

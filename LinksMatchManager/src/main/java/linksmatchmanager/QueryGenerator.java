@@ -33,7 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-23-May-2016 Latest change
+ * FL-21-Jun-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -167,11 +167,12 @@ public class QueryGenerator
             // set to "n" below
             // String ignore_minmax = rs.getString( "ignore_minmax" ) != null ? rs.getString( "ignore_minmax" ) : "";
 
-            int firstname = rs.getInt( "firstname" );
-            String prematch_familyname    = rs.getString( "prematch_familyname" ) != null ? rs.getString( "prematch_familyname" ) : "";
-            int prematch_familyname_value = rs.getInt( "prematch_familyname_value" );
-            String prematch_firstname     = rs.getString( "prematch_firstname" ) != null ? rs.getString( "prematch_firstname" ) : "";
-            int prematch_firstname_value  = rs.getInt( "prematch_firstname_value" );
+            int firstname_method = rs.getInt( "firstname" );
+
+            String prematch_familyname  = rs.getString( "prematch_familyname" ) != null ? rs.getString( "prematch_familyname" ) : "";
+            int lvs_dist_max_familyname = rs.getInt( "prematch_familyname_value" );
+            String prematch_firstname   = rs.getString( "prematch_firstname" ) != null ? rs.getString( "prematch_firstname" ) : "";
+            int lvs_dist_max_firstname  = rs.getInt( "prematch_firstname_value" );
 
             //new fields
             String use_familyname = rs.getString( "use_familyname" ) != null ? rs.getString( "use_familyname" ) : "";
@@ -273,14 +274,14 @@ public class QueryGenerator
                 qs.ignore_minmax = ignore_minmax.equalsIgnoreCase( "y" ) ? true : false;
                 qs.ignore_sex    = ignore_sex   .equalsIgnoreCase( "y" ) ? true : false;
 
-                qs.firstname = firstname;
+                qs.firstname_method = firstname_method;
 
                 qs.method = method;
 
-                qs.prematch_familyname       = prematch_familyname;
-                qs.prematch_familyname_value = prematch_familyname_value;
-                qs.prematch_firstname        = prematch_firstname;
-                qs.prematch_firstname_value  = prematch_firstname_value;
+                qs.prematch_familyname     = prematch_familyname;
+                qs.lvs_dist_max_familyname = lvs_dist_max_familyname;
+                qs.prematch_firstname      = prematch_firstname;
+                qs.lvs_dist_max_firstname  = lvs_dist_max_firstname;
 
                 //new
                 qs.use_mother  = use_mother .equalsIgnoreCase( "y" ) ? true : false;
@@ -289,7 +290,7 @@ public class QueryGenerator
 
 
                 // Initial SELECT part of query to get the data from links_base
-                String queryselect = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname );
+                String queryselect = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname_method );
                 qs.s1_query = queryselect;
                 qs.s2_query = queryselect;
 

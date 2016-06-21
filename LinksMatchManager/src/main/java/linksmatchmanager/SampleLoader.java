@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
- * FL-19-May-2016 Latest change
+ * FL-21-Jun-2016 Latest change
  *
  * NOT FINISHED
  *
@@ -32,7 +32,7 @@ public class SampleLoader
     private boolean ignore_sex;
     private boolean ignore_minmax;
 
-    private int firstname;
+    private int firstname_method;
 
   //private ResultSet set1;
   //private ResultSet set2;
@@ -107,12 +107,12 @@ public class SampleLoader
      */
     public SampleLoader( long threadId, QuerySet qs, Connection dbconPrematch, int set_no ) throws Exception
     {
-        this.use_mother    = qs.use_mother;
-        this.use_father    = qs.use_father;
-        this.use_partner   = qs.use_partner;
-        this.firstname     = qs.firstname;
-        this.ignore_sex    = qs.ignore_sex;
-        this.ignore_minmax = qs.ignore_minmax;
+        this.use_mother       = qs.use_mother;
+        this.use_father       = qs.use_father;
+        this.use_partner      = qs.use_partner;
+        this.firstname_method = qs.firstname_method;
+        this.ignore_sex       = qs.ignore_sex;
+        this.ignore_minmax     = qs.ignore_minmax;
 
         System.out.println( "SampleLoader()" );
 
@@ -219,7 +219,7 @@ public class SampleLoader
             var_ego_firstname1_str = rs.getString( "ego_firstname1_str" );
 
             // First Names ego
-            switch( firstname )     // firstname method:
+            switch( firstname_method )      // firstname method method:
             {
                 case 1:
                     var_ego_firstname1 = rs.getInt( "ego_firstname1" );
@@ -263,7 +263,7 @@ public class SampleLoader
                 var_mother_familyname = rs.getInt( "mother_familyname" );
 
                 // First name
-                switch( firstname )
+                switch( firstname_method )      // firstname method method:
                 {
                     case 1:
                         var_mother_firstname1 = rs.getInt( "mother_firstname1" );
@@ -308,7 +308,7 @@ public class SampleLoader
                 var_father_familyname = rs.getInt( "father_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname method method:
                 {
                     case 1:
                         var_father_firstname1 = rs.getInt( "father_firstname1" );
@@ -353,7 +353,7 @@ public class SampleLoader
                 var_partner_familyname = rs.getInt( "partner_familyname" );
 
                 // First Names
-                switch( firstname )
+                switch( firstname_method )      // firstname method method:
                 {
                     case 1:
                         var_partner_firstname1 = rs.getInt( "partner_firstname1" );
