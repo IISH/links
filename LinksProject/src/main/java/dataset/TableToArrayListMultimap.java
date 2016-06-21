@@ -23,13 +23,12 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
- * FL-11-Apr-2016 Latest change
+ * FL-20-Jun-2016 Latest change
  */
 public class TableToArrayListMultimap
 {
     private boolean debug = false;
 
-    //private boolean update_busy = false;
     private AtomicBoolean update_busy = new AtomicBoolean( false );
 
     private boolean check_duplicates  = false;
@@ -643,10 +642,10 @@ public class TableToArrayListMultimap
      * We ignore the update request if another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
      */
-    public boolean updateTable()
+    public AtomicBoolean updateTable()
     throws Exception
     {
-        if( update_busy.get() ) { return false; } // prevent: java.util.ConcurrentModificationException
+        if( update_busy.get() ) { return update_busy; } // prevent: java.util.ConcurrentModificationException
 
         update_busy.set( true );    // if we were not busy, now we are...
 
@@ -666,12 +665,11 @@ public class TableToArrayListMultimap
 
         update_busy.set( false );
 
-        return true;
+        return update_busy;
     } // updateTable
 
 
-    //public boolean isBusy() { return false; }
-    public boolean isBusy() { return update_busy.get(); }
+    public AtomicBoolean isBusy() { return update_busy; }
 
 
 
