@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-22-May-2016 Latest change
+ * FL-23-May-2016 Latest change
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4041,7 +4041,7 @@ public class LinksCleanThread extends Thread
                 else
                 {
                     addToReportPerson( id_person, source, 244, age_year + "" );
-                    System.out.println( "standardAge: " + age_year );
+                    //System.out.println( "standardAge: " + age_year );
 
                     String updateQuery = "UPDATE links_cleaned.person_c SET age_year = null"
                         + " WHERE id_person = " + id_person + " AND id_source = " + source;
