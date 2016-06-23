@@ -19,6 +19,9 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
+import com.google.common.collect.Collections2;
 
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameLvsVariants;
@@ -287,14 +290,10 @@ public class MatchAsync extends Thread
             msg = String.format( "Thread id %2d, based on s2 query:\n%s", threadId_current, qs.s2_query );
             System.out.println( msg ); plog.show( msg );
 
-            // variant names for s1 ego familyname from ls_ table, plus lvs distance
+            // variant names for s1 name from ls_ table, plus lvs distance
             Vector< Integer > lvsVariants  = new Vector< Integer >();
             Vector< Integer > lvsDistances = new Vector< Integer >();
 
-            // all occurrences in the s2 set of the above variants
-            Vector< Integer > s2_idx_variants_ego       = new Vector< Integer >();
-
-            Vector< Integer > s2_idx_familyname_ego_lvs = new Vector< Integer >();
 
             // Loop through set 1
             //msg = String.format( "Thread id %2d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
@@ -328,12 +327,12 @@ public class MatchAsync extends Thread
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
-                /*
-                if( n_match >= 10 ) {
+
+                if( n_recs > 5 ) {
                     System.out.println( "BREAK" );
                     break;
                 }
-                */
+
                 /*
                 if( s1_idx == 5 ) {
                     System.out.println( "BREAK" );
@@ -352,79 +351,116 @@ public class MatchAsync extends Thread
                 }
                 */
 
+                if( debug ) {
+                    String s1_ego_firstname1_str = ql.s1_ego_firstname1_str.get( s1_idx );
+                    String s1_ego_familyname_str = ql.s1_ego_familyname_str.get( s1_idx );
 
-                /*
+                    System.out.println( "s1_ego_ego_firstname:  " + s1_ego_firstname1_str );
+                    System.out.println( "s1_ego_ego_familyname: " + s1_ego_familyname_str );
+                }
+
                 // match from low-to-high name frequencies
                 boolean freq_order = true;
-                if( freq_order && n_recs < 7 )        // just a test with the first 7
+                if( freq_order  )
                 {
-                    // get frequencies of used names, process from low to high frequency
+                    // get frequencies of _used_ names, process from low to high frequency
                     ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
 
                     System.out.println( "" );
                     System.out.println( "nameFreqMap entries: " + nameFreqMap.size() );
+
+                    Multiset< Integer> keys = nameFreqMap.keys();
                     Collection< String > values = nameFreqMap.values();
 
-                    String entries = nameFreqMap.values().toString();
-                    System.out.println( entries );
+                    System.out.println( "keys: " + keys.toString() );
+                    System.out.println( "values: " + values.toString() );
 
-                    System.out.println( nameFreqMap.keys() );
-
-                    for ( String name : values )    // names in frequency order
+                    boolean recheck_firstnames = false;
+                    int n = 0;
+                    for ( String name : values )    // names in increasing frequency order
                     {
-                        //match_ego_familyname();
-                        System.out.println( name );
-                        if( name == "ego_familyname" ) {
-                            System.out.println( "ego_familyname..." );
+                        Integer key = (Integer) keys.toArray()[ n ];
+                        System.out.println( String.format( "prop %d: key: %d, name: %s", n, key, name ) );
+
+                        if( n == 0 )
+                        {
+                            // only for the lowest frequency name we search s1 variants in s2
+                            System.out.println( "get Levenshtein variants..." );
+
+                            String lvs_table = "";
+                            int lvs_dist_max = 0;
+
+                            if( name.endsWith( "_firstname" ) ) {
+                                lvs_table = lvs_table_firstname;
+                                lvs_dist_max = qs.lvs_dist_max_firstname;
+                                if( qs.firstname_method == 2 ) { recheck_firstnames = true; }
+                            }
+                            else if( name.endsWith( "_familyname" ) ) {
+                                lvs_table = lvs_table_familyname;
+                                lvs_dist_max = qs.lvs_dist_max_familyname;
+                            }
+
+                            int s1_name = 0;
+
+                            if( name.equals( "ego_firstname" ) ) {
+                                System.out.println( "ego_firstname" );
+                                s1_name = ql.s1_ego_firstname1.get( s1_idx );
+                            }
+                            else if( name.equals( "mother_firstname" ) ) {
+                                System.out.println( "mother_firstname" );
+                                s1_name = ql.s1_mother_firstname1.get( s1_idx );
+                            }
+                            else if( name.equals( "father_firstname" ) ) {
+                                System.out.println( "father_firstname" );
+                                s1_name = ql.s1_father_firstname1.get( s1_idx );
+                            }
+                            else if( name.equals( "partner_firstname" ) ) {
+                                System.out.println( "partner_firstname" );
+                                s1_name = ql.s1_partner_firstname1.get( s1_idx );
+                            }
+
+                            else if( name.equals( "ego_familyname" ) ) {
+                                System.out.println( "ego_familyname" );
+                                s1_name = ql.s1_ego_familyname.get( s1_idx );
+                            }
+                            else if( name.equals( "mother_familyname" ) ) {
+                                System.out.println( "mother_familyname" );
+                                s1_name = ql.s1_mother_familyname.get( s1_idx );
+                            }
+                            else if( name.equals( "father_familyname" ) ) {
+                                System.out.println( "father_familyname" );
+                                s1_name = ql.s1_father_familyname.get( s1_idx );
+                            }
+                            else if( name.equals( "partner_familyname" ) ) {
+                                System.out.println( "partner_familyname" );
+                                s1_name = ql.s1_partner_familyname.get( s1_idx );
+                            }
+
+                            // get the variants
+                            System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table, lvs_dist_max, s1_name );
+                            lvsVariants .clear();                           // Empty the lists
+                            lvsDistances.clear();
+                            getLvsVariants( s1_name, lvs_table, lvs_dist_max, lvsVariants, lvsDistances );
+                        }
+
+                        if( n == 0 )
+                        { }
+
+                        for( int lvs_idx = 0; lvs_idx < lvsVariants.size(); lvs_idx++ )
+                        {
+                            // if fn_method == 2, only firstname1 of s1 & s2 is used
 
                         }
 
-                        else if( name == "ego_firstname" ) {
-                            System.out.println( "ego_firstname..." );
-
-                        }
-
-                        else if( name == "mother_familyname" ) {
-                            System.out.println( "mother_familyname..." );
-
-                        }
-
-                        else if( name == "mother_firstname" ) {
-                            System.out.println( "mother_firstname..." );
-
-                        }
-
-                        else if( name == "father_familyname" ) {
-                            System.out.println( "father_familyname..." );
-
-                        }
-
-                        else if( name == "father_firstname" ) {
-                            System.out.println( "father_firstname..." );
-
-                        }
-
-                        else if( name == "partner_familyname" ) {
-                            System.out.println( "partner_familyname..." );
-
-                        }
-
-                        else if( name == "partner_firstname" ) {
-                            System.out.println( "partner_firstname..." );
-
-                        }
-
-                        else {
-                            System.out.println( "name ??" );
-                            System.exit( 1 );
-                        }
+                        n++;
                     }
 
                     nameFreqMap = null;
                 }
-                */
 
-                ///*
+
+
+                /*
                 if( debug ) {
                     String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                     String s1EgoFirNameStr = ql.s1_ego_firstname1_str.get( s1_idx );
@@ -435,9 +471,9 @@ public class MatchAsync extends Thread
 
                 String s1EgoFamNameStr = ql.s1_ego_familyname_str.get( s1_idx );
                 //nameLvsVariants.init( threadId, s1EgoFamName, s1EgoFamNameStr, lvs_table_familyname, lvs_dist_familyname );
-                //*/
+                */
 
-                ///*
+                /*
                 // If the s1EgoFamName changes, create a new variant names list, otherwise go on
                 // to check the other s1 entries with the same s1EgoFamName against this set.
                 if( s1EgoFamName != previous_s1EgoFamilyName )
@@ -514,9 +550,9 @@ public class MatchAsync extends Thread
                     }
                     //System.out.println( "" );
                 }
-                //*/
+                */
 
-                ///*
+                /*
                 // The above variant vectors are only refreshed when we encounter a new ego familyname.
                 // As long as the ego familyname stays the same, we reuse the variant vectors.
                 // We flag a non-match by setting the current s2_idx_variants entry to -1.
@@ -536,9 +572,9 @@ public class MatchAsync extends Thread
                     msg = String.format( "loop through the %d familynames of s2; exact + variants", s2_idx_variants_ego_cpy.size() );
                     System.out.println( msg ); plog.show( msg );
                 }
-                //*/
+                */
 
-                ///*
+                /*
                 // Only the matching records are stored in the matches table. In that case, the lvs_dist's of the
                 // names used for matching always all get a value. Thefore this initialization need not be inside
                 // the inner loop.
@@ -771,7 +807,7 @@ public class MatchAsync extends Thread
                 }
 
                 s2_idx_variants_ego_cpy = null;
-                //*/
+                */
 
                 System.out.flush();
                 System.err.flush();
@@ -1289,7 +1325,7 @@ public class MatchAsync extends Thread
                         System.out.println( msg ); plog.show( msg );
                     }
 
-                    String msg = String.format( "name_str_2: %s (name_int_2: %d) ", name_str_2, name_int_2 );
+                    String msg = String.format( "name_str_2: %s (name_int_2: %d), lvs_dist: %d", name_str_2, name_int_2, lvs_dist );
                     System.out.println( msg ); plog.show( msg );
                 }
 
