@@ -1164,7 +1164,7 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        if( ! multithreaded ) { showTimingMessage( msg, start ); }
+        //if( ! multithreaded ) { showTimingMessage( msg, start ); }
 
         msg = String.format( "Thread id %02d; standardFirstname...", threadId );
         showMessage( msg, false, true );
@@ -1277,7 +1277,7 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( String.format( "Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        if( ! multithreaded ) { showTimingMessage( msg, start ); }
+        //if( ! multithreaded ) { showTimingMessage( msg, start ); }
 
         msg = String.format( "Thread id %02d; standardFamilyname", threadId );
         showMessage( msg + "...", false, true );
