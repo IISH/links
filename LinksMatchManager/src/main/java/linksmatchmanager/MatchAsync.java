@@ -228,8 +228,8 @@ public class MatchAsync extends Thread
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
+        int s2_hit_cpy  = 0;
         int lvs_idx_cpy = 0;
-        int s2_hit_cpy = 0;
 
         // count why the matches fail
         long n_int_familyname_e = 0;
@@ -317,7 +317,7 @@ public class MatchAsync extends Thread
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
                 if( debug ) {
-                    System.out.println( "===============================================================================" );
+                    System.out.println( "*******************************************************************************" );
                     System.out.println( String.format( "s1_idx: %d-of-%d", s1_idx, s1_size-1 ) );
                 }
 
@@ -329,7 +329,7 @@ public class MatchAsync extends Thread
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
 
-                if( n_recs > 5 ) {
+                if( n_recs > 3 ) {
                     System.out.println( "BREAK" );
                     break;
                 }
@@ -360,8 +360,7 @@ public class MatchAsync extends Thread
                     System.out.println( "s1_ego_ego_familyname: " + s1_ego_familyname_str );
                 }
 
-                // match from low-to-high name frequencies
-                // get frequencies of names used for matching, process from low to high frequency
+                // get the frequencies of names used for matching, ordered from low to high frequency
                 ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
 
                 System.out.println( "" );
@@ -376,142 +375,214 @@ public class MatchAsync extends Thread
                 boolean recheck_firstnames = false;
                 if( qs.firstname_method != 2 ) { recheck_firstnames = true; }   // not only firstname1 used
 
-                // 1-of-3 the lowest frequency category determines the variants
-                Integer key = (Integer)  keys.toArray()[ 0 ];
-                String name = (String) values.toArray()[ 0 ];
+                // Use the first emfp_name (lowest frequency, i.e. index = 0) category to determine the variant names
+                Integer freq_key0 = (Integer)  keys.toArray()[ 0 ];
+                String emfp_name0 = (String) values.toArray()[ 0 ];
 
-                if( name.endsWith( "_firstname" ) )
+                if( emfp_name0.endsWith( "_firstname" ) )
                 {
                     int s1_firstname = -1;
 
-                    if( name.equals( "ego_firstname" ) ) {
+                    if( emfp_name0.equals( "ego_firstname" ) ) {
                         System.out.println( "ego_firstname" );
                         s1_firstname = ql.s1_ego_firstname1.get( s1_idx );
                     }
-                    else if( name.equals( "mother_firstname" ) ) {
+                    else if( emfp_name0.equals( "mother_firstname" ) ) {
                         System.out.println( "mother_firstname" );
                         s1_firstname = ql.s1_mother_firstname1.get( s1_idx );
                     }
-                    else if( name.equals( "father_firstname" ) ) {
+                    else if( emfp_name0.equals( "father_firstname" ) ) {
                         System.out.println( "father_firstname" );
                         s1_firstname = ql.s1_father_firstname1.get( s1_idx );
                     }
-                    else if( name.equals( "partner_firstname" ) ) {
+                    else if( emfp_name0.equals( "partner_firstname" ) ) {
                         System.out.println( "partner_firstname" );
                         s1_firstname = ql.s1_partner_firstname1.get( s1_idx );
                     }
 
-                    if( ! ( s1_firstname == name_previous && ending_previous.equals( "firstname" ) ) )    // get new s1 firstname variants
+                    // if the name or ending changed, get new s1 firstname variants
+                    if( ! ( s1_firstname == name_previous && ending_previous.equals( "firstname" ) ) )
                     {
-                        System.out.println( "-------------------------------------------------------------------------------" );
-                        System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), key, name ) );
+                        System.out.println( "===============================================================================" );
+                        System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), freq_key0, emfp_name0 ) );
                         System.out.println( "get firstname Levenshtein variants..." );
                         System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_firstname, qs.lvs_dist_max_firstname, s1_firstname );
                         name_previous = s1_firstname;
                         ending_previous = "_firstname";
-                        lvsVariantsName .clear();          // Empty the lists
+                        lvsVariantsName .clear();          // Empty the previous lists
                         lvsDistancesName.clear();
                         getLvsVariants( s1_firstname, lvs_table_firstname, qs.lvs_dist_max_firstname, lvsVariantsName, lvsDistancesName );
                     }
                 }
 
-                if( name.endsWith( "_familyname" ) )
+                if( emfp_name0.endsWith( "_familyname" ) )
                 {
                     int s1_familyname = -1;
 
-                    if( name.equals( "ego_familyname" ) ) {
+                    if( emfp_name0.equals( "ego_familyname" ) ) {
                         System.out.println( "ego_familyname" );
                         s1_familyname = ql.s1_ego_familyname.get( s1_idx );
                     }
-                    else if( name.equals( "mother_familyname" ) ) {
+                    else if( emfp_name0.equals( "mother_familyname" ) ) {
                         System.out.println( "mother_familyname" );
                         s1_familyname = ql.s1_mother_familyname.get( s1_idx );
                     }
-                    else if( name.equals( "father_familyname" ) ) {
+                    else if( emfp_name0.equals( "father_familyname" ) ) {
                         System.out.println( "father_familyname" );
                         s1_familyname = ql.s1_father_familyname.get( s1_idx );
                     }
-                    else if( name.equals( "partner_familyname" ) ) {
+                    else if( emfp_name0.equals( "partner_familyname" ) ) {
                         System.out.println( "partner_familyname" );
                         s1_familyname = ql.s1_partner_familyname.get( s1_idx );
                     }
 
-                    if( ! ( s1_familyname == name_previous && ending_previous.equals( "familyname" ) ) )    // get new s1 familyname variants
+                    // if the name or ending changed, get new s1 familyname variants
+                    if( ! ( s1_familyname == name_previous && ending_previous.equals( "familyname" ) ) )
                     {
-                        System.out.println( "-------------------------------------------------------------------------------" );
-                        System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), key, name ) );
+                        System.out.println( "===============================================================================" );
+                        System.out.println( String.format( "match name 0-of-%d: key: %d, emfp_name: %s", keys.size(), freq_key0, emfp_name0 ) );
                         System.out.println( "get familyname Levenshtein variants..." );
                         System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_familyname, qs.lvs_dist_max_familyname, s1_familyname );
                         name_previous = s1_familyname;
                         ending_previous = "_familyname";
-                        lvsVariantsName .clear();         // Empty the lists
+                        lvsVariantsName .clear();         // Empty the previous lists
                         lvsDistancesName.clear();
                         getLvsVariants( s1_familyname, lvs_table_familyname, qs.lvs_dist_max_familyname, lvsVariantsName, lvsDistancesName );
                     }
                 }
 
-
-                // 2-of-3 the other categories do additional matching
+                // Loop over the found variant names
                 for( int lvs_idx = 0; lvs_idx < lvsVariantsName.size(); lvs_idx++ )
                 {
-                    //search for variants in s2
-                    for( int n = 0; n < keys.size(); n++ )    // other names in increasing frequency order
-                    {
-                        key  = (Integer)  keys.toArray()[ n ];
-                        name = (String) values.toArray()[ n ];
-                        System.out.println( "-------------------------------------------------------------------------------" );
-                        System.out.println( String.format( "match name %d-of-%d: key: %d, name: %s", n+1, keys.size(), key, name ) );
+                    System.out.println( "-------------------------------------------------------------------------------" );
+                    int var_name = lvsVariantsName .get( lvs_idx );
+                    int var_dist = lvsDistancesName.get( lvs_idx );
 
-                        if( name.equals( "ego_firstname" ) ) {
+                    // search s1 variant name in s2
+                    int offset = 0;
+                    while( true )   // there may be more hits in s2 of the given s1 variant
+                    {
+                        int s2_idx = s2_search_variant( emfp_name0, var_name, offset );
+
+                        if( s2_idx == -1 ) { break; }
+                        else
+                        {
+                            // match the other properties
+
+                            for( int n = 0; n < keys.size(); n++ )    // other names in increasing frequency order
+                            {
+                                Integer freq_key  = (Integer)  keys.toArray()[ n ];
+                                String emfp_name = (String) values.toArray()[ n ];
+                                System.out.println( "-------------------------------------------------------------------------------" );
+                                System.out.println( String.format( "match name %d-of-%d: key: %d, name: %s", n+1, keys.size(), freq_key, emfp_name ) );
+
+                                int lvs_dist = -1;
+                                if( n == 0 )
+                                {
+                                    if( emfp_name.endsWith( "_firstname" ) && recheck_firstnames  )
+                                    { lvs_dist = match_properties( s1_idx, s2_idx, emfp_name, qs ); }
+                                }
+                                else { lvs_dist = match_properties( s1_idx, s2_idx, emfp_name, qs ); }
+
+                                if( lvs_dist == -1 ) {
+                                    System.out.println( "NO Match" ); break;
+                                }
+                                else {
+                                    System.out.println( "MATCH" );
+                                    System.exit( 0 );
+                                }
+                            }
+
+                            offset = s2_idx + 1;    // offset for next search
+                        }
+                    }
+                }
+
+                /*
+                //search for variants in s2
+                for( int n = 0; n < keys.size(); n++ )    // other names in increasing frequency order
+                {
+                    freq_key  = (Integer)  keys.toArray()[ n ];
+                    emfp_name = (String) values.toArray()[ n ];
+                    System.out.println( "-------------------------------------------------------------------------------" );
+                    System.out.println( String.format( "match name %d-of-%d: key: %d, name: %s", n+1, keys.size(), freq_key, emfp_name ) );
+
+                    int s2_idx = -1;
+                    if( n == 0 )    // search for the variant name in sample 2
+                    {
+                        int offset = 0;
+                        while( true )
+                        {
+                            int s2_idx = ql.s2_ego_familyname.indexOf( s2EgoFamName, offset );      // index in s2 set
+
+                            if( s2_idx == -1 ) {            // no more occurences
+                                if( debug ) {
+                                    msg = String.format( "no more lvs variant of s1EgoFamNameInt found in s2EgoFamNameInt = %d", s2EgoFamName );
+                                    System.out.println( msg ); plog.show( msg );
+                                }
+                                break;
+                            }
+                            else                            // we got one
+                            {
+                                offset = s2_idx + 1;            // offset for next search
+                                if( offset >= ql.s2_ego_familyname.size() ) { break; }  // no more occurences
+                            }
+                        }
+                    }
+                    else    // n > 0
+                    {
+                        // match with other names
+                        if( emfp_name.equals( "ego_firstname" ) ) {
                             System.out.println( "ego_firstname" );
                             int s1_firstname = ql.s1_ego_firstname1.get( s1_idx );
 
                         }
-                        else if( name.equals( "mother_firstname" ) ) {
+
+                        else if( emfp_name.equals( "mother_firstname" ) ) {
                             System.out.println( "mother_firstname" );
                             int s1_firstname = ql.s1_mother_firstname1.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "father_firstname" ) ) {
+                        else if( emfp_name.equals( "father_firstname" ) ) {
                             System.out.println( "father_firstname" );
                             int s1_firstname = ql.s1_father_firstname1.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "partner_firstname" ) ) {
+                        else if( emfp_name.equals( "partner_firstname" ) ) {
                             System.out.println( "partner_firstname" );
                             int s1_firstname = ql.s1_partner_firstname1.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "ego_familyname" ) ) {
+                        else if( emfp_name.equals( "ego_familyname" ) ) {
                             System.out.println( "ego_familyname" );
                             int s1_familyname = ql.s1_ego_familyname.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "mother_familyname" ) ) {
+                        else if( emfp_name.equals( "mother_familyname" ) ) {
                             System.out.println( "mother_familyname" );
                             int s1_familyname = ql.s1_mother_familyname.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "father_familyname" ) ) {
+                        else if( emfp_name.equals( "father_familyname" ) ) {
                             System.out.println( "father_familyname" );
                             int s1_familyname = ql.s1_father_familyname.get( s1_idx );
 
                         }
 
-                        else if( name.equals( "partner_familyname" ) ) {
+                        else if( emfp_name.equals( "partner_familyname" ) ) {
                             System.out.println( "partner_familyname" );
                             int s1_familyname = ql.s1_partner_familyname.get( s1_idx );
 
                         }
-
                     }
-                }
 
+                }
+                */
 
                 // 3-of-3 finally min_max & gender
 
@@ -997,6 +1068,80 @@ public class MatchAsync extends Thread
         }
     } // run
 
+
+    public int s2_search_variant( String emfp_name, int var_name, int offset )
+    {
+        if( debug ) { System.out.println( String.format( "s2_search_variant: %s = %d, with offset = %d", emfp_name, var_name, offset ) ); }
+
+        int s2_idx = -1;
+
+             if( emfp_name.equals( "ego_firstname"     ) ) { s2_idx = ql.s2_ego_firstname1    .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "mother_firstname"  ) ) { s2_idx = ql.s2_mother_firstname1 .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "father_firstname"  ) ) { s2_idx = ql.s2_father_firstname1 .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "partner_firstname" ) ) { s2_idx = ql.s2_partner_firstname1.indexOf( var_name, offset ); }
+
+        else if( emfp_name.equals( "ego_familyname"     ) ) { s2_idx = ql.s2_ego_familyname    .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "mother_familyname"  ) ) { s2_idx = ql.s2_mother_familyname .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "father_familyname"  ) ) { s2_idx = ql.s2_father_familyname .indexOf( var_name, offset ); }
+        else if( emfp_name.equals( "partner_familyname" ) ) { s2_idx = ql.s2_partner_familyname.indexOf( var_name, offset ); }
+
+        if( debug ) {
+            if( s2_idx == -1 ) { System.out.println( String.format( "not found: s2_idx = %d", s2_idx ) ); }
+            else { System.out.println( String.format( "found: s2_idx = %d", s2_idx ) ); }
+        }
+
+        return s2_idx;
+    }
+
+
+    public int match_properties( int s1_idx, int s2_idx, String emfp_name, QuerySet qs )
+    {
+        System.out.println( String.format( "try match: s1_idx = %d, s2_idx = %d", s1_idx, s2_idx ) );
+
+        int lvs_dist = -1;
+
+        if( emfp_name.equals( "ego_firstname" ) ) {
+            System.out.println( "ego_firstname" );
+            lvs_dist = match_ego_firstname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "mother_firstname" ) ) {
+            System.out.println( "mother_firstname" );
+            lvs_dist = match_mother_firstname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "father_firstname" ) ) {
+            System.out.println( "father_firstname" );
+            lvs_dist = match_father_firstname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "partner_firstname" ) ) {
+            System.out.println( "partner_firstname" );
+            lvs_dist = match_partner_firstname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "ego_familyname" ) ) {
+            System.out.println( "ego_familyname" );
+            lvs_dist = match_ego_familyname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "mother_familyname" ) ) {
+            System.out.println( "mother_familyname" );
+            lvs_dist = match_mother_familyname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "father_familyname" ) ) {
+            System.out.println( "father_familyname" );
+            lvs_dist = match_father_familyname( s1_idx, s2_idx, qs );
+        }
+
+        else if( emfp_name.equals( "partner_familyname" ) ) {
+            System.out.println( "partner_familyname" );
+            lvs_dist = match_partner_familyname( s1_idx, s2_idx, qs );
+        }
+
+        return lvs_dist;
+    }
 
 
     public int match_ego_familyname( int s1_idx, int s2_idx, QuerySet qs )
