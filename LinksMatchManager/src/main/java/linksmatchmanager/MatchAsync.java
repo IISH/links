@@ -223,8 +223,8 @@ public class MatchAsync extends Thread
         ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
         threadMXB.setThreadCpuTimeEnabled( true );
 
-        boolean debugfail = false;       // debug match failures
-        boolean debugfreq = true;       // debug name frequencies
+        boolean debugfail = false;      // debug match failures
+        boolean debugfreq = false;       // debug name frequencies
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
@@ -291,6 +291,7 @@ public class MatchAsync extends Thread
             System.out.println( msg ); plog.show( msg );
 
             // variant names for s1 name from ls_ table, plus lvs distance
+            Vector< Integer > s2_idx_matches   = new Vector< Integer >();   // matches for current s1_idx
             Vector< Integer > lvsVariantsName  = new Vector< Integer >();
             Vector< Integer > lvsDistancesName = new Vector< Integer >();
             String ending_previous = "";
@@ -329,7 +330,7 @@ public class MatchAsync extends Thread
                 { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
 
-                if( n_recs > 3 ) {
+                if( n_recs > 5000 ) {
                     System.out.println( "BREAK" );
                     break;
                 }
@@ -363,14 +364,14 @@ public class MatchAsync extends Thread
                 // get the frequencies of names used for matching, ordered from low to high frequency
                 ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
 
-                System.out.println( "" );
-                System.out.println( "nameFreqMap entries: " + nameFreqMap.size() );
-
                 Multiset< Integer> keys = nameFreqMap.keys();
                 Collection< String > values = nameFreqMap.values();
 
-                System.out.println( "keys: " + keys.toString() );
-                System.out.println( "values: " + values.toString() );
+                if( debugfreq ) {
+                    System.out.println( "nameFreqMap entries: " + nameFreqMap.size() );
+                    System.out.println( "keys: " + keys.toString() );
+                    System.out.println( "values: " + values.toString() );
+                }
 
                 boolean recheck_firstnames = false;
                 if( qs.firstname_method != 2 ) { recheck_firstnames = true; }   // not only firstname1 used
@@ -384,29 +385,32 @@ public class MatchAsync extends Thread
                     int s1_firstname = -1;
 
                     if( emfp_name0.equals( "ego_firstname" ) ) {
-                        System.out.println( "ego_firstname" );
+                        if( debugfreq ) { System.out.println( "ego_firstname" ); }
                         s1_firstname = ql.s1_ego_firstname1.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "mother_firstname" ) ) {
-                        System.out.println( "mother_firstname" );
+                        if( debugfreq ) { System.out.println( "mother_firstname" ); }
                         s1_firstname = ql.s1_mother_firstname1.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "father_firstname" ) ) {
-                        System.out.println( "father_firstname" );
+                        if( debugfreq ) { System.out.println( "father_firstname" ); }
                         s1_firstname = ql.s1_father_firstname1.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "partner_firstname" ) ) {
-                        System.out.println( "partner_firstname" );
+                        if( debugfreq ) { System.out.println( "partner_firstname" ); }
                         s1_firstname = ql.s1_partner_firstname1.get( s1_idx );
                     }
 
                     // if the name or ending changed, get new s1 firstname variants
                     if( ! ( s1_firstname == name_previous && ending_previous.equals( "firstname" ) ) )
                     {
-                        System.out.println( "===============================================================================" );
-                        System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), freq_key0, emfp_name0 ) );
-                        System.out.println( "get firstname Levenshtein variants..." );
-                        System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_firstname, qs.lvs_dist_max_firstname, s1_firstname );
+                        if( debugfreq ) {
+                            System.out.println( "===============================================================================" );
+                            System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), freq_key0, emfp_name0 ) );
+                            System.out.println( "get firstname Levenshtein variants..." );
+                            System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_firstname, qs.lvs_dist_max_firstname, s1_firstname );
+                        }
+
                         name_previous = s1_firstname;
                         ending_previous = "_firstname";
                         lvsVariantsName .clear();          // Empty the previous lists
@@ -420,29 +424,32 @@ public class MatchAsync extends Thread
                     int s1_familyname = -1;
 
                     if( emfp_name0.equals( "ego_familyname" ) ) {
-                        System.out.println( "ego_familyname" );
+                        if( debugfreq ) { System.out.println( "ego_familyname" ); }
                         s1_familyname = ql.s1_ego_familyname.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "mother_familyname" ) ) {
-                        System.out.println( "mother_familyname" );
+                        if( debugfreq ) { System.out.println( "mother_familyname" ); }
                         s1_familyname = ql.s1_mother_familyname.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "father_familyname" ) ) {
-                        System.out.println( "father_familyname" );
+                        if( debugfreq ) { System.out.println( "father_familyname" ); }
                         s1_familyname = ql.s1_father_familyname.get( s1_idx );
                     }
                     else if( emfp_name0.equals( "partner_familyname" ) ) {
-                        System.out.println( "partner_familyname" );
+                        if( debugfreq ) { System.out.println( "partner_familyname" ); }
                         s1_familyname = ql.s1_partner_familyname.get( s1_idx );
                     }
 
                     // if the name or ending changed, get new s1 familyname variants
                     if( ! ( s1_familyname == name_previous && ending_previous.equals( "familyname" ) ) )
                     {
-                        System.out.println( "===============================================================================" );
-                        System.out.println( String.format( "match name 0-of-%d: key: %d, emfp_name: %s", keys.size(), freq_key0, emfp_name0 ) );
-                        System.out.println( "get familyname Levenshtein variants..." );
-                        System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_familyname, qs.lvs_dist_max_familyname, s1_familyname );
+                        if( debugfreq ) {
+                            System.out.println( "===============================================================================" );
+                            System.out.println( String.format( "match name 0-of-%d: key: %d, emfp_name: %s", keys.size(), freq_key0, emfp_name0 ) );
+                            System.out.println( "get familyname Levenshtein variants..." );
+                            System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d\n", lvs_table_familyname, qs.lvs_dist_max_familyname, s1_familyname );
+                        }
+
                         name_previous = s1_familyname;
                         ending_previous = "_familyname";
                         lvsVariantsName .clear();         // Empty the previous lists
@@ -451,10 +458,13 @@ public class MatchAsync extends Thread
                     }
                 }
 
+                s2_idx_matches.clear();
+
                 // Loop over the found variant names
                 for( int lvs_idx = 0; lvs_idx < lvsVariantsName.size(); lvs_idx++ )
                 {
-                    System.out.println( "-------------------------------------------------------------------------------" );
+                    if( debugfreq ) { System.out.println( "-------------------------------------------------------------------------------" ); }
+
                     int var_name = lvsVariantsName .get( lvs_idx );
                     int var_dist = lvsDistancesName.get( lvs_idx );
 
@@ -462,41 +472,65 @@ public class MatchAsync extends Thread
                     int offset = 0;
                     while( true )   // there may be more hits in s2 of the given s1 variant
                     {
-                        int s2_idx = s2_search_variant( emfp_name0, var_name, offset );
+                        int s2_idx = s2_search_variant( debugfreq, emfp_name0, var_name, offset );
 
                         if( s2_idx == -1 ) { break; }
                         else
                         {
-                            // match the other properties
-
+                            boolean matched = true;     // optimistic
+                            // compare the used names
                             for( int n = 0; n < keys.size(); n++ )    // other names in increasing frequency order
                             {
-                                Integer freq_key  = (Integer)  keys.toArray()[ n ];
+                                Integer freq_key = (Integer)  keys.toArray()[ n ];
                                 String emfp_name = (String) values.toArray()[ n ];
-                                System.out.println( "-------------------------------------------------------------------------------" );
-                                System.out.println( String.format( "match name %d-of-%d: key: %d, name: %s", n+1, keys.size(), freq_key, emfp_name ) );
+
+                                if( debugfreq ) {
+                                    System.out.println( "-------------------------------------------------------------------------------" );
+                                    System.out.println( String.format( "match name %d-of-%d: key: %d, name: %s", n+1, keys.size(), freq_key, emfp_name ) );
+                                }
 
                                 int lvs_dist = -1;
                                 if( n == 0 )
                                 {
                                     if( emfp_name.endsWith( "_firstname" ) && recheck_firstnames  )
-                                    { lvs_dist = match_properties( s1_idx, s2_idx, emfp_name, qs ); }
+                                    { lvs_dist = compare_name_pair( debugfreq, s1_idx, s2_idx, emfp_name, qs ); }
                                 }
-                                else { lvs_dist = match_properties( s1_idx, s2_idx, emfp_name, qs ); }
+                                else { lvs_dist = compare_name_pair( debugfreq, s1_idx, s2_idx, emfp_name, qs ); }
 
                                 if( lvs_dist == -1 ) {
-                                    System.out.println( "NO Match" ); break;
+                                    if( debugfreq ) { System.out.println( String.format( "NO Match %s", emfp_name ) ); }
+                                    matched = false;
+                                    break;
                                 }
                                 else {
-                                    System.out.println( "MATCH" );
-                                    System.exit( 0 );
+                                    if( s2_idx_matches.indexOf( s2_idx ) == -1 ) {
+                                        System.out.println( String.format( "MATCHed %s ( n = %d), s1_idx = %d, s2_idx = %d", emfp_name, n, s1_idx, s2_idx ) );
+                                    }
                                 }
+                            }
+
+                            // gender ...
+                            // min_max ...
+
+                            if( matched ) {
+                                if( s2_idx_matches.indexOf( s2_idx ) == -1 ) {
+                                    s2_idx_matches.add( s2_idx );
+                                    n_match++;              // number of matches of this thread
+                                }
+                                else {
+                                        System.out.println( "MATCH doublure; EXIT" );
+                                        System.exit( 0 );
+                                }
+
+                                System.out.println( "MATCH accepted; EXIT" );
+                                System.exit( 0 );
                             }
 
                             offset = s2_idx + 1;    // offset for next search
                         }
                     }
                 }
+
 
                 /*
                 //search for variants in s2
@@ -1069,9 +1103,9 @@ public class MatchAsync extends Thread
     } // run
 
 
-    public int s2_search_variant( String emfp_name, int var_name, int offset )
+    public int s2_search_variant( boolean debugfreq, String emfp_name, int var_name, int offset )
     {
-        if( debug ) { System.out.println( String.format( "s2_search_variant: %s = %d, with offset = %d", emfp_name, var_name, offset ) ); }
+        if( debugfreq ) { System.out.println( String.format( "s2_search_variant: %s = %d, with offset = %d", emfp_name, var_name, offset ) ); }
 
         int s2_idx = -1;
 
@@ -1085,7 +1119,7 @@ public class MatchAsync extends Thread
         else if( emfp_name.equals( "father_familyname"  ) ) { s2_idx = ql.s2_father_familyname .indexOf( var_name, offset ); }
         else if( emfp_name.equals( "partner_familyname" ) ) { s2_idx = ql.s2_partner_familyname.indexOf( var_name, offset ); }
 
-        if( debug ) {
+        if( debugfreq ) {
             if( s2_idx == -1 ) { System.out.println( String.format( "not found: s2_idx = %d", s2_idx ) ); }
             else { System.out.println( String.format( "found: s2_idx = %d", s2_idx ) ); }
         }
@@ -1094,49 +1128,49 @@ public class MatchAsync extends Thread
     }
 
 
-    public int match_properties( int s1_idx, int s2_idx, String emfp_name, QuerySet qs )
+    public int compare_name_pair( boolean debugfreq, int s1_idx, int s2_idx, String emfp_name, QuerySet qs )
     {
-        System.out.println( String.format( "try match: s1_idx = %d, s2_idx = %d", s1_idx, s2_idx ) );
+        if( debugfreq ) { System.out.println( String.format( "compare_name_pair for %s: s1_idx = %d, s2_idx = %d", emfp_name, s1_idx, s2_idx ) ); }
 
         int lvs_dist = -1;
 
         if( emfp_name.equals( "ego_firstname" ) ) {
-            System.out.println( "ego_firstname" );
+            if( debugfreq ) { System.out.println( "ego_firstname" ); }
             lvs_dist = match_ego_firstname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "mother_firstname" ) ) {
-            System.out.println( "mother_firstname" );
+            if( debugfreq ) { System.out.println( "mother_firstname" ); }
             lvs_dist = match_mother_firstname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "father_firstname" ) ) {
-            System.out.println( "father_firstname" );
+            if( debugfreq ) { System.out.println( "father_firstname" ); }
             lvs_dist = match_father_firstname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "partner_firstname" ) ) {
-            System.out.println( "partner_firstname" );
+            if( debugfreq ) { System.out.println( "partner_firstname" ); }
             lvs_dist = match_partner_firstname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "ego_familyname" ) ) {
-            System.out.println( "ego_familyname" );
+            if( debugfreq ) { System.out.println( "ego_familyname" ); }
             lvs_dist = match_ego_familyname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "mother_familyname" ) ) {
-            System.out.println( "mother_familyname" );
+            if( debugfreq ) { System.out.println( "mother_familyname" ); }
             lvs_dist = match_mother_familyname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "father_familyname" ) ) {
-            System.out.println( "father_familyname" );
+            if( debugfreq ) { System.out.println( "father_familyname" ); }
             lvs_dist = match_father_familyname( s1_idx, s2_idx, qs );
         }
 
         else if( emfp_name.equals( "partner_familyname" ) ) {
-            System.out.println( "partner_familyname" );
+            if( debugfreq ) { System.out.println( "partner_familyname" ); }
             lvs_dist = match_partner_familyname( s1_idx, s2_idx, qs );
         }
 
@@ -1366,7 +1400,7 @@ public class MatchAsync extends Thread
             }
         }
 
-        System.out.println( msg );
+        if( ! msg.isEmpty() ) { System.out.println( msg ); }
 
         return nameFreqMap;
     } // check_frequencies
