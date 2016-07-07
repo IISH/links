@@ -39,7 +39,8 @@ import linksmatchmanager.DataSet.QuerySet;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-02-JUn-2016 Latest change
+ * FL-07-Jul-2016 Match names from low to high name frequency
+ * FL-07-Jul-2016 Latest change
  */
 
 public class MatchMain
@@ -85,9 +86,10 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "21-Jun-2016 15:02";
+            String timestamp1 = "07-Jul-2016 15:09";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
+            plog.show( "Matching names from low-to-high frequency" );
             plog.show( "Start at: " + timestamp2 );
 
             String version = System.getProperty( "java.version" );
