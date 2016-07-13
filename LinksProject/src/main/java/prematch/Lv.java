@@ -25,7 +25,7 @@ import general.PrintLogger;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Also want Levenshtein value 0 (together with 1,2,3,4)
  * FL-17-Feb-2015 Add names as integers to the ls_* tables
- * FL-19-May-2016 Latest change
+ * FL-13-Jul-2016 Latest change
  */
 public class Lv extends Thread
 {
@@ -145,7 +145,7 @@ public class Lv extends Thread
             int step = 1000;
             int stepheight = step;
 
-            // process all names
+            // process all names 'horizontally'
             for( int i = 0; i < size ; i++ )
             {
                 //int id1 = id.get( i );
@@ -158,10 +158,12 @@ public class Lv extends Thread
                    //int name_int_2 = 0;
 
                 //int begin = i+1;                          // Omar
-                int begin = i;                              // starting at i: also gives Levenshtein 0 values
-                if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
+                //int begin = i;                            // starting at i: also gives Levenshtein 0 values
+                //if( ! also_exact_matches ) { begin++; }   // this prevents names being identical, i.e. Levenshtein value > 0
 
-                for( int j = begin; j < name_str.size() ; j++ )
+                // process all names 'vertically'
+              //for( int j = begin; j < size ; j++ )
+                for( int j = 0; j < size ; j++ )             // also the members of each pair swapped (table doubles in size)
                 {
                                 //id2 = id.get( j );
                     String name_str_2 = name_str.get( j );

@@ -17,8 +17,33 @@ import java.util.concurrent.TimeUnit;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
+ * The current version of creating the ls tables is: asymmetric (i.e. half-sized, also containing distance = 0.
+ *
+ * The Levenshtein tables are used for the matching phase.
+ * For a given input string, its levenshtein variants are extracted from the ls table for matching.
+ *
+ * Filling the ls tables can be done in 2 ways: asymmetric, or symmetric. The symmetric ones have double the
+ * number records.
+ * The table are filled by a nested double loop over the names of a frequency table:
+ * outer loop: i = 0...N
+ * inner loop: j = 0...N    symmetric
+ * inner loop: j = i...N    asymmetric
+ *
+ * Getting all variants from a symmetric tables is trivial, e.g.:
+ * SELECT name_str_2 AS name_str, value FROM links_prematch.ls_familyname WHERE name_str_1 = 'elfrink';
+ *
+ * Applying the same query to an asymmetric table give you only (on average) half the number of available variants.
+ * For getting all variants you can do:
+ *
+ * ( SELECT name_str_2 AS name_str, value FROM links_prematch.ls_familyname WHERE name_str_1 = 'elfrink' )
+ *   UNION ALL
+ * ( SELECT name_str_1 AS name_str, value FROM links_prematch.ls_familyname WHERE name_str_2 = 'elfrink' AND value <> 0 )
+ * ORDER BY name_str;
+ *
+ * the "value <> 0" is needed if you are creating a table that also contains distance = 0 for the strings.
+ *
  * FL-24-May-2016 Copied from Lv.java; goal: direct computation of the variants: normal, strict, first.
- * FL-26-May-2016 Latest change
+ * FL-13-Jul-2016 Latest change
  */
 public class Lvs extends Thread
 {
@@ -235,15 +260,16 @@ public class Lvs extends Thread
             int stepheight = step;
 
             // process all names
-            for( int i = 0; i < size ; i++ )
+            for( int i = 0; i < size; i++ )
             {
                 String name_str_1 = name_str.get( i );
                 int name_int_1 = id.get( i );
 
-                int begin = i;                              // starting at i: also gives Levenshtein 0 values
-                if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
+                int begin = i;                                  // starting at i: also gives Levenshtein 0 values
+                if( ! also_exact_matches ) { begin++; }         // this prevents names being identical, i.e. Levenshtein value > 0
 
-                for( int j = begin; j < name_str.size() ; j++ )
+                //for( int j = begin; j < size; j++ )  // "asymmetric"; contents of _1 & _2 columns not identical
+                for( int j = 0; j < size; j++ )      // "symmetric" ls_tables; doubles the number of records
                 {
                     String name_str_2 = name_str.get( j );
                     int name_int_2 = id.get( j );
@@ -380,7 +406,7 @@ public class Lvs extends Thread
             int stepheight = step;
 
             // process all names
-            for( int i = 0; i < size ; i++ )
+            for( int i = 0; i < size; i++ )
             {
                 String name_str_1 = name_str.get( i );
                 int name_int_1 = id.get( i );
@@ -388,7 +414,8 @@ public class Lvs extends Thread
                 int begin = i;                              // starting at i: also gives Levenshtein 0 values
                 if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
 
-                for( int j = begin; j < name_str.size() ; j++ )
+                //for( int j = begin; j < size; j++ )  // "asymmetric"; contents of _1 & _2 columns not identical
+                for( int j = 0; j < size; j++ )      // "symmetric" ls_tables; doubles the number of records
                 {
                     String name_str_2 = name_str.get( j );
                     int name_int_2 = id.get( j );
@@ -525,7 +552,7 @@ public class Lvs extends Thread
             int stepheight = step;
 
             // process all names
-            for( int i = 0; i < size ; i++ )
+            for( int i = 0; i < size; i++ )
             {
                 String name_str_1 = name_str.get( i );
                 int name_int_1 = id.get( i );
@@ -533,7 +560,8 @@ public class Lvs extends Thread
                 int begin = i;                              // starting at i: also gives Levenshtein 0 values
                 if( ! also_exact_matches ) { begin++; }     // this prevents names being identical, i.e. Levenshtein value > 0
 
-                for( int j = begin; j < name_str.size() ; j++ )
+                //for( int j = begin; j < size; j++ )  // "asymmetric"; contents of _1 & _2 columns not identical
+                for( int j = 0; j < size; j++ )      // "symmetric" ls_tables; doubles the number of records
                 {
                     String name_str_2 = name_str.get( j );
                     int name_int_2 = id.get( j );
