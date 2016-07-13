@@ -55,6 +55,9 @@ public class QueryLoader
 
     public Vector< Integer > s1_sex                  = new Vector< Integer >();
 
+    public Vector< String > s1_mother_familyname_str = new Vector< String >();
+    public Vector< String > s1_mother_firstname1_str = new Vector< String >();
+
     public Vector< Integer > s1_mother_familyname    = new Vector< Integer >();
     public Vector< Integer > s1_mother_firstname1    = new Vector< Integer >();
     public Vector< Integer > s1_mother_firstname2    = new Vector< Integer >();
@@ -112,6 +115,9 @@ public class QueryLoader
     public Vector< Integer > s2_ego_death_max        = new Vector< Integer >();
 
     public Vector< Integer > s2_sex                  = new Vector< Integer >();
+
+    public Vector< String > s2_mother_familyname_str = new Vector< String >();
+    public Vector< String > s2_mother_firstname1_str = new Vector< String >();
 
     public Vector< Integer > s2_mother_familyname    = new Vector< Integer >();
     public Vector< Integer > s2_mother_firstname1    = new Vector< Integer >();
@@ -261,6 +267,9 @@ public class QueryLoader
 
             int var_s1_sex = 0;
 
+            String var_s1_mother_familyname_str = "";
+            String var_s1_mother_firstname1_str = "";
+
             int var_s1_mother_familyname   = 0;
             int var_s1_mother_firstname1   = 0;
             int var_s1_mother_firstname2   = 0;
@@ -350,7 +359,9 @@ public class QueryLoader
             if( use_mother )
             {
                 // Family name
-                var_s1_mother_familyname = set1.getInt( "mother_familyname" );
+                var_s1_mother_familyname     = set1.getInt(    "mother_familyname" );
+                var_s1_mother_familyname_str = set1.getString( "mother_familyname_str" );
+                var_s1_mother_firstname1_str = set1.getString( "mother_firstname1_str" );
 
                 // First name
                 switch( firstname_method )      // firstname matching method:
@@ -514,6 +525,9 @@ public class QueryLoader
 
             s1_sex.add( var_s1_sex );
 
+            s1_mother_familyname_str.add( var_s1_mother_familyname_str );
+            s1_mother_firstname1_str.add( var_s1_mother_firstname1_str );
+
             s1_mother_familyname  .add( var_s1_mother_familyname );
             s1_mother_firstname1  .add( var_s1_mother_firstname1 );
             s1_mother_firstname2  .add( var_s1_mother_firstname2 );
@@ -579,6 +593,9 @@ public class QueryLoader
             int var_s2_ego_death_max    = 0;
 
             int var_s2_sex = 0;
+
+            String var_s2_mother_familyname_str = "";
+            String var_s2_mother_firstname1_str = "";
 
             int var_s2_mother_familyname   = 0;
             int var_s2_mother_firstname1   = 0;
@@ -669,7 +686,9 @@ public class QueryLoader
             if( use_mother )
             {
                 // Family Name
-                var_s2_mother_familyname = set2.getInt( "mother_familyname" );
+                var_s2_mother_familyname     = set2.getInt(    "mother_familyname" );
+                var_s2_mother_familyname_str = set2.getString( "mother_familyname_str" );
+                var_s2_mother_firstname1_str = set2.getString( "mother_firstname1_str" );
 
                 // First Names
                 switch( firstname_method )      // firstname matching method:
@@ -833,6 +852,9 @@ public class QueryLoader
 
             s2_sex.add( var_s2_sex );
 
+            s2_mother_familyname_str.add( var_s2_mother_familyname_str );
+            s2_mother_firstname1_str.add( var_s2_mother_firstname1_str );
+
             s2_mother_familyname  .add( var_s2_mother_familyname );
             s2_mother_firstname1  .add( var_s2_mother_firstname1 );
             s2_mother_firstname2  .add( var_s2_mother_firstname2 );
@@ -904,6 +926,9 @@ public class QueryLoader
 
         s1_sex                  .clear(); s1_sex                  = null;
 
+        s1_mother_familyname_str.clear(); s1_mother_familyname_str= null;
+        s1_mother_firstname1_str.clear(); s1_mother_firstname1_str= null;
+
         s1_mother_familyname    .clear(); s1_mother_familyname    = null;
         s1_mother_firstname1    .clear(); s1_mother_firstname1    = null;
         s1_mother_firstname2    .clear(); s1_mother_firstname2    = null;
@@ -961,6 +986,9 @@ public class QueryLoader
         s2_ego_death_max        .clear(); s2_ego_death_max        = null;
 
         s2_sex                  .clear(); s2_sex                  = null;
+
+        s2_mother_familyname_str.clear(); s2_mother_familyname_str= null;
+        s2_mother_firstname1_str.clear(); s2_mother_firstname1_str= null;
 
         s2_mother_familyname    .clear(); s2_mother_familyname    = null;
         s2_mother_firstname1    .clear(); s2_mother_firstname1    = null;

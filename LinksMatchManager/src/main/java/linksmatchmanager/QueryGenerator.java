@@ -26,14 +26,14 @@ import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.InputSet;
 
 /**
- * This Class generates queries that can be used to get sets to match
+ * This Class generates the sample queries for matching
  * @author Omar Azouguagh
  * @author Fons Laan
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-21-Jun-2016 Latest change
+ * FL-12-Jul-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -669,6 +669,8 @@ public class QueryGenerator
         String query;
 
         query = "SELECT id_base , id_registration , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
+
+        query += ", mother_familyname_str , mother_firstname1_str ";        // debugging
 
         if( !ignore_minmax ) {
             query += ", ego_birth_min , ego_birth_max , ego_marriage_min , ego_marriage_max , ego_death_min , ego_death_max ";
