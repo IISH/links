@@ -35,7 +35,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-21-Jun-2015 Latest change
+ * FL-14-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -242,6 +242,8 @@ public class MatchAsync extends Thread
         long n_int_firstname_f = 0;
         long n_int_firstname_p = 0;
 
+        long n_int_name = 0;    // any name
+
         long n_minmax = 0;
         long n_sex    = 0;
 
@@ -433,6 +435,10 @@ public class MatchAsync extends Thread
                         ending_previous = "_firstname";
                         lvsVariantsName .clear();          // Empty the previous lists
                         lvsDistancesName.clear();
+
+                        // 1a: asymmetric ('single-sided') ls table; SELECT UNION query
+                        // 1b: asymmetric ('single-sided') ls table; 2 SELECTs without union
+                        // 2:   symmetric ('double-sided') ls table; single SELECT
                         getLvsVariants2( s1_firstname1, lvs_table_firstname, qs.lvs_dist_max_firstname, lvsVariantsName, lvsDistancesName );
 
                         if( debugfreq ) {
@@ -482,6 +488,10 @@ public class MatchAsync extends Thread
                         ending_previous = "_familyname";
                         lvsVariantsName .clear();         // Empty the previous lists
                         lvsDistancesName.clear();
+
+                        // 1a: asymmetric ('single-sided') ls table; SELECT UNION query
+                        // 1b: asymmetric ('single-sided') ls table; 2 SELECTs without union
+                        // 2:   symmetric ('double-sided') ls table; single SELECT
                         getLvsVariants2( s1_familyname, lvs_table_familyname, qs.lvs_dist_max_familyname, lvsVariantsName, lvsDistancesName );
 
                         if( debugfreq ) {
@@ -656,6 +666,7 @@ public class MatchAsync extends Thread
                                     }
                                 } // insert
                             } // names_matched
+                            else { n_int_name++; }
                         } // match block
                     } // while loop
                 } // lvs_idx loop
@@ -680,6 +691,12 @@ public class MatchAsync extends Thread
             System.out.println( msg ); plog.show( msg );
 
             long n_fail = 0;
+
+            if( n_int_name != 0 ) {
+                n_fail += n_int_name;
+                msg = String.format( "Thread id %2d; failures n_int_name:          %10d", threadId, n_int_name );
+                System.out.println( msg ); plog.show( msg );
+            }
 
             if( n_int_familyname_e != 0 ) {
                 n_fail += n_int_familyname_e;
@@ -1238,7 +1255,7 @@ public class MatchAsync extends Thread
                 query += "ORDER BY name_str;";
             }
             else {
-                query  = "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + ")";
+                query  = "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + ") ";
                 query += "UNION ALL ";
                 query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 );";
             }
@@ -1467,13 +1484,13 @@ public class MatchAsync extends Thread
 
             // this query assumes the lvs_table is a symmetric (double-sized) lvs table
             //query += "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";   // old version
-            //query += "SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";
+            query += "SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";
 
             // this query assumes the lvs_table is an asymmetric (single-sized) lvs table
-            query += "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value )";
-            query += "UNION ALL ";
-            query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ORDER BY value );";
-
+            //query += "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
+            //query += "UNION ALL ";
+            //query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
+            //query += "ORDER BY value;";
 
             ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 

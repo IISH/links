@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-13-Jul-2016 Latest change
+ * FL-14-Jul-2016 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "13-Jul-2016 16:45";
+            String timestamp1 = "14-Jul-2016 13:31";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -111,6 +111,10 @@ public class MatchMain
                 return;
             }
 
+            //String msg = "Assuming SINGLE-SIZED (ASYMMETRIC) Levenshtein tables";
+            String msg = "Assuming DOUBLE-SIZED (SYMMETRIC) Levenshtein tables";
+            System.out.println( msg ); plog.show( msg );
+
             // cmd line args
             String url                 = args[ 0 ];
             String user                = args[ 1 ];
@@ -127,10 +131,9 @@ public class MatchMain
             //System.out.println( "debug: '" + debug + "'" );
 
 
-            String msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, s1_sample_limit: %s, s2_sample_limit: %s, debug: %s",
+            msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, s1_sample_limit: %s, s2_sample_limit: %s, debug: %s",
                 url, user, pass, max_threads_str, max_heap_table_size, s1_sample_limit, s2_sample_limit, debug );
-            System.out.println( msg );
-            plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
 
@@ -709,8 +712,7 @@ public class MatchMain
                     + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
                     + " `name_str` varchar(100) DEFAULT NULL,"
                     + " `frequency` int(10) unsigned DEFAULT NULL,"
-                    + " PRIMARY KEY (`id`),"
-                    + " KEY `name_str` (`name_str`)"
+                    + " PRIMARY KEY (`id`)"
                     + " )"
                     + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
 
@@ -784,8 +786,9 @@ public class MatchMain
                     + "  `name_int_2` int(11) DEFAULT NULL,"
                     + "  `value` tinyint(3) unsigned DEFAULT NULL,"
                     + "  PRIMARY KEY (`id`),"
-                    + "  KEY `value` (`value`),"
-                    + "  KEY `name_int_1` (`name_int_1`)"
+                    + "  KEY `name_int_1` (`name_int_1`),"
+                    + "  KEY `name_int_2` (`name_int_2`),"
+                    + "  KEY `value` (`value`)"
                     + " )"
                     + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
 
