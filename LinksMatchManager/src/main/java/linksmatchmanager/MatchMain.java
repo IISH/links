@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-14-Jul-2016 Latest change
+ * FL-18-Jul-2016 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "14-Jul-2016 13:31";
+            String timestamp1 = "18-Jul-2016 10:12";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -111,8 +111,8 @@ public class MatchMain
                 return;
             }
 
-            //String msg = "Assuming SINGLE-SIZED (ASYMMETRIC) Levenshtein tables";
-            String msg = "Assuming DOUBLE-SIZED (SYMMETRIC) Levenshtein tables";
+            String msg = "Assuming SINGLE-SIZED (ASYMMETRIC) Levenshtein tables";
+            //String msg = "Assuming DOUBLE-SIZED (SYMMETRIC) Levenshtein tables";
             System.out.println( msg ); plog.show( msg );
 
             // cmd line args
@@ -155,7 +155,6 @@ public class MatchMain
             // Create database connections
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
             dbconMatch    = General.getConnection( url, "links_match",    user, pass );
-            dbconTemp     = General.getConnection( url, "links_temp",     user, pass );
 
             try {
                 String query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size%'";
@@ -444,7 +443,6 @@ public class MatchMain
 
             dbconPrematch.close();
             dbconMatch.close();
-            dbconTemp.close();
 
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Matching was started at: " + timestamp2 );
@@ -680,7 +678,7 @@ public class MatchMain
             }
         }
         catch( Exception ex ) {
-            String err = "Exception in emtable_ls_exists(): " + ex.getMessage();
+            String err = "Exception in memtable_ls_exists(): " + ex.getMessage();
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
