@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-18-Jul-2015 Latest change
+ * FL-19-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -228,6 +228,7 @@ public class MatchAsync extends Thread
 
         boolean debugfail = false;      // debug match failures
         boolean debugfreq = false;      // debug name frequencies
+        boolean match2csv = true;       // collect all matches of current thread in csv file, and write to table in one go
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
@@ -271,12 +272,19 @@ public class MatchAsync extends Thread
             // Create database connections
             dbconMatch    = General.getConnection( url, "links_match",    user, pass );
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
-            dbconTemp     = General.getConnection( url, "links_temp",     user, pass );
 
-            // Create temp table, and csv file to collect the matches of this thread
-            createTempMatchesTable( threadId );
-            String csvFilename = "matches_threadId_" + threadId + ".csv";
-            FileWriter writerMatches = createCsvFileMatches( threadId, csvFilename );
+            dbconTemp = null;
+            String csvFilename = "";
+            FileWriter writerMatches = null;
+            if( match2csv ) {
+                csvFilename = "matches_threadId_" + threadId + ".csv";      // Create csv file to collect the matches
+                writerMatches = createCsvFileMatches( threadId, csvFilename );
+                msg = String.format( "Collecting thread matches in CSV file: %s", csvFilename );
+                System.out.println( msg ); plog.show( msg );
+
+                //dbconTemp = General.getConnection( url, "links_temp", user, pass );
+                //createTempMatchesTable( threadId );                         // Create temp table to collect the matches
+            }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
 
@@ -656,48 +664,60 @@ public class MatchAsync extends Thread
                                     int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
                                     int id_linksbase_2 = ql.s2_id_base.get( s2_idx );
 
-                                    String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
-                                        "value_firstname_ego, value_familyname_ego, " +
-                                        "value_firstname_mo , value_familyname_mo , " +
-                                        "value_firstname_fa , value_familyname_fa , " +
-                                        "value_firstname_pa , value_familyname_pa ) " +
-                                        "VALUES ( " + id_match_process + "," + id_linksbase_1 + "," + id_linksbase_2 + "," +
-                                        lvs_dist_first_ego + "," + lvs_dist_family_ego + "," +
-                                        lvs_dist_first_mot + "," + lvs_dist_family_mot + "," +
-                                        lvs_dist_first_fat + "," + lvs_dist_family_fat + "," +
-                                        lvs_dist_first_par + "," + lvs_dist_family_par + ")";
+                                    if( match2csv )
+                                    {
+                                        // trying to get NULLs for empty lvs in db table via csv (for the query we need the "null")
+                                        if( lvs_dist_first_ego == "null" ) { lvs_dist_first_ego = "\\N"; }
+                                        if( lvs_dist_first_mot == "null" ) { lvs_dist_first_mot = "\\N"; }
+                                        if( lvs_dist_first_fat == "null" ) { lvs_dist_first_fat = "\\N"; }
+                                        if( lvs_dist_first_par == "null" ) { lvs_dist_first_par = "\\N"; }
 
-                                    if( debug || debugfreq ) {
-                                        msg = String.format( "lvn_idx %2d: %s", lvn_idx, query );
-                                        System.out.println( msg ); plog.show( msg );
+                                        if( lvs_dist_family_ego == "null" ) { lvs_dist_family_ego = "\\N"; }
+                                        if( lvs_dist_family_mot == "null" ) { lvs_dist_family_mot = "\\N"; }
+                                        if( lvs_dist_family_fat == "null" ) { lvs_dist_family_fat = "\\N"; }
+                                        if( lvs_dist_family_par == "null" ) { lvs_dist_family_par = "\\N"; }
+
+                                        String flag_overlink = "\\N";   // not used in matching, but completes the csv record
+                                        String flag_quality  = "\\N";   // not used in matching, but completes the csv record
+                                        String ids           = "\\N";   // not used in matching, but completes the csv record
+
+                                        // notice: in order to let the \N properperly work, avoid leading or trailing whitespace
+                                        String str = String.format( "%d, %d, %d,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                                            id_match_process , id_linksbase_1 , id_linksbase_2 ,
+                                            lvs_dist_first_ego , lvs_dist_family_ego ,
+                                            lvs_dist_first_mot , lvs_dist_family_mot ,
+                                            lvs_dist_first_fat , lvs_dist_family_fat ,
+                                            lvs_dist_first_par , lvs_dist_family_par );
+
+                                        // String str = String.format( "%d, %d, %d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                                        // flag_overlink, flag_quality, ids );  // not used in matching
+                                        //System.out.println( str );
+
+                                        writerMatches.write( str );
                                     }
+                                    else
+                                    {
+                                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
+                                            "value_firstname_ego, value_familyname_ego, " +
+                                            "value_firstname_mo , value_familyname_mo , " +
+                                            "value_firstname_fa , value_familyname_fa , " +
+                                            "value_firstname_pa , value_familyname_pa ) " +
+                                            "VALUES ( " + id_match_process + "," + id_linksbase_1 + "," + id_linksbase_2 + "," +
+                                            lvs_dist_first_ego + "," + lvs_dist_family_ego + "," +
+                                            lvs_dist_first_mot + "," + lvs_dist_family_mot + "," +
+                                            lvs_dist_first_fat + "," + lvs_dist_family_fat + "," +
+                                            lvs_dist_first_par + "," + lvs_dist_family_par + ")";
 
-                                    if( ! dry_run ) {
-                                        dbconMatch.createStatement().execute( query );
-                                        dbconMatch.createStatement().close();
+                                        if( debug || debugfreq ) {
+                                            msg = String.format( "lvn_idx %2d: %s", lvn_idx, query );
+                                            System.out.println( msg ); plog.show( msg );
+                                        }
+
+                                        if( ! dry_run ) {
+                                            dbconMatch.createStatement().execute( query );
+                                            dbconMatch.createStatement().close();
+                                        }
                                     }
-
-                                    // trying to get NULLs for empty lvs in db table via csv (for the query we need the "null")
-                                    if( lvs_dist_first_ego == "null" ) { lvs_dist_first_ego = "\\N"; }
-                                    if( lvs_dist_first_mot == "null" ) { lvs_dist_first_mot = "\\N"; }
-                                    if( lvs_dist_first_fat == "null" ) { lvs_dist_first_fat = "\\N"; }
-                                    if( lvs_dist_first_par == "null" ) { lvs_dist_first_par = "\\N"; }
-
-                                    if( lvs_dist_family_ego == "null" ) { lvs_dist_family_ego = "\\N"; }
-                                    if( lvs_dist_family_mot == "null" ) { lvs_dist_family_mot = "\\N"; }
-                                    if( lvs_dist_family_fat == "null" ) { lvs_dist_family_fat = "\\N"; }
-                                    if( lvs_dist_family_par == "null" ) { lvs_dist_family_par = "\\N"; }
-
-                                    // notice: in order to let the \N properperly work, avoid leading or trailing whitespace
-                                    String str = String.format( "%d, %d, %d,%s,%s,%s,%s,%s,%s,%s,%s\n",
-                                        id_match_process , id_linksbase_1 , id_linksbase_2 ,
-                                        lvs_dist_first_ego , lvs_dist_family_ego ,
-                                        lvs_dist_first_mot , lvs_dist_family_mot ,
-                                        lvs_dist_first_fat , lvs_dist_family_fat ,
-                                        lvs_dist_first_par , lvs_dist_family_par );
-                                    //System.out.println( str );
-
-                                    writerMatches.write( str );
                                 } // insert
                             } // names_matched
                             else { n_int_name++; }
@@ -714,11 +734,18 @@ public class MatchAsync extends Thread
                 System.err.flush();
             } // s1_idx loop
 
-            writerMatches.close();
-            loadCsvFileToTempTable( dbconTemp, threadId, csvFilename );
-            //updateMatchesTempToMatches( dbconMatch );
-            //removeMatchesFile();
-            //removematchesTableTemp( dbconMatch );
+            if( match2csv ) {
+                writerMatches.close();
+
+                if( dbconTemp != null ) {
+                    loadCsvFileToTempTable( threadId, csvFilename );
+                    //updateMatchesTempToMatches( dbconMatch );
+                    //removematchesTableTemp( dbconMatch );
+                    dbconTemp.close();
+                }
+                else { loadCsvFileToMatchTable( threadId, csvFilename ); }
+                //removeMatchesFile();  // later
+            }
 
             sem.release();
             int npermits = sem.availablePermits();
@@ -825,7 +852,6 @@ public class MatchAsync extends Thread
 
             dbconPrematch.close();
             dbconMatch.close();
-            dbconTemp.close();
 
             msg = String.format( "Thread id %2d; clock time", threadId );
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
@@ -904,6 +930,9 @@ public class MatchAsync extends Thread
         String msg = String.format( "Thread id %02d; Creating %s table", threadId, tablename );
         plog.show( msg ); System.out.println( msg );
 
+        // the temp table does not contain the last 3 columns of the matches table,
+        // because they are not used during matching; these are:
+        // `flag_overlink`, `flag_quality`, and `ids`.
         String query = "CREATE  TABLE links_temp." + tablename
             + " ("
             + " `id_matches` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,"
@@ -926,8 +955,8 @@ public class MatchAsync extends Thread
             + " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
 
         System.out.println( query );
-        dbconTemp.createStatement().execute( query );
-        dbconTemp.createStatement().close();
+        dbconMatch.createStatement().execute( query );
+        dbconMatch.createStatement().close();
     } // createTempFamilynameTable
 
 
@@ -953,9 +982,9 @@ public class MatchAsync extends Thread
      /**
      * @throws Exception
      */
-    private void loadCsvFileToTempTable( Connection dbconTemp, long threadId, String filename ) throws Exception
+    private void loadCsvFileToTempTable( long threadId, String filename ) throws Exception
     {
-        String tablename = "links_temp.matches_threadId_" + threadId ;
+        String tablename = "links_temp.matches_threadId_" + threadId;
 
         String msg = String.format( "Thread id %02d; Loading %s into %s table", threadId, filename, tablename );
         System.out.println( msg ); plog.show( msg );
@@ -963,10 +992,10 @@ public class MatchAsync extends Thread
         String query = "LOAD DATA LOCAL INFILE '" + filename + "'"
             + " INTO TABLE " + tablename
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
-            + "( id_match_process , id_linksbase_1 , id_linksbase_2 , "
-            + " value_firstname_ego , value_familyname_ego , "
-            + " value_firstname_mo , value_familyname_mo , "
-            + " value_firstname_fa , value_familyname_fa , "
+            + "( id_match_process , id_linksbase_1 , id_linksbase_2 ,"
+            + " value_firstname_ego , value_familyname_ego ,"
+            + " value_firstname_mo , value_familyname_mo ,"
+            + " value_firstname_fa , value_familyname_fa ,"
             + " value_firstname_pa , value_familyname_pa );";
 
         System.out.println( query ); plog.show( msg );
@@ -975,6 +1004,35 @@ public class MatchAsync extends Thread
         dbconTemp.createStatement().close();
     } // loadCsvFileToTempTable
 
+
+     /**
+     * @throws Exception
+     */
+    private void loadCsvFileToMatchTable( long threadId, String filename ) throws Exception
+    {
+        String tablename = "links_match.matches";
+
+        String msg = String.format( "Thread id %02d; Loading %s into %s table", threadId, filename, tablename );
+        System.out.println( msg ); plog.show( msg );
+
+        String query = "LOAD DATA LOCAL INFILE '" + filename + "'"
+            + " INTO TABLE " + tablename
+            + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
+            + "("
+            + " id_match_process , id_linksbase_1 , id_linksbase_2"
+            + " ,value_firstname_ego , value_familyname_ego"
+            + " ,value_firstname_mo , value_familyname_mo"
+            + " ,value_firstname_fa , value_familyname_fa"
+            + " ,value_firstname_pa , value_familyname_pa"
+            + " );";
+
+            // + " ,flag_overlink, flag_quality, ids"   // not used in matching
+
+        System.out.println( query ); plog.show( msg );
+
+        dbconMatch.createStatement().execute( query );
+        dbconMatch.createStatement().close();
+    } // loadCsvFileToMatchTable
 
 
     public int search_s2_variant( boolean debugfreq, String emfp_name, int var_name, int s2_offset )
@@ -1469,7 +1527,7 @@ public class MatchAsync extends Thread
 
 
     /**
-     * getLvsVariants1b() assuming symmetric (i.e. double-sized) tables, also containing distance = 0.
+     * getLvsVariants1b() assuming asymmetric (i.e. single-sized) tables, also containing distance = 0.
      *
      * Query the Levenshtein table lvs_table for name_int_1,
      * to get the various name_int_2's as levenshtein variants for the set s2.
