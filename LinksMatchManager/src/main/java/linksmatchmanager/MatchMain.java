@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "19-Jul-2016 11:27";
+            String timestamp1 = "20-Jul-2016 09:48";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -111,8 +111,8 @@ public class MatchMain
                 return;
             }
 
-            //String msg = "Assuming SINGLE-SIZED (ASYMMETRIC) Levenshtein tables";
-            String msg = "Assuming DOUBLE-SIZED (SYMMETRIC) Levenshtein tables";
+            String msg = "Assuming SINGLE-SIZED (ASYMMETRIC) Levenshtein tables";
+            //String msg = "Assuming DOUBLE-SIZED (SYMMETRIC) Levenshtein tables";
             System.out.println( msg ); plog.show( msg );
 
             // cmd line args

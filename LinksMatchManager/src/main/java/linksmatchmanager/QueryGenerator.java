@@ -33,7 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-12-Jul-2016 Latest change
+ * FL-20-Jul-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -539,10 +539,17 @@ public class QueryGenerator
                     }
                 }
 
-                // ignore_sex
+                // sex
                 // use this parameter (only) for marriage records
-                // ...
-
+                /*
+                if( s1_maintype == 2 && s2_maintype == 2 && s1_type.equals( "h" ) && s2_type.equals( "h" ) ) {
+                    // the choice should be obtained from the match_process table
+                    qs.s1_query += " AND ego_sex = 'f'";
+                    qs.s2_query += " AND ego_sex = 'm'";
+                  //qs.s1_query += " AND ego_sex = 'm'";
+                  //qs.s2_query += " AND ego_sex = 'f'";
+                }
+                */
 
                 int from1 = qs.s1_query.indexOf( "FROM links_base" );
                 int from2 = qs.s2_query.indexOf( "FROM links_base" );
