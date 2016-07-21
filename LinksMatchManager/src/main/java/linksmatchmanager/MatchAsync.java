@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-20-Jul-2015 Latest change
+ * FL-21-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -46,6 +46,11 @@ import linksmatchmanager.DataSet.QuerySet;
 
 public class MatchAsync extends Thread
 {
+    // static final boolean false blocks removed during compilation
+    static final boolean debugfail = false;     // debug match failures
+    static final boolean debugfreq = false;     // debug name frequencies
+    static final boolean match2csv = true;      // collect all matches of current thread in csv file, and write to table in one go
+
     boolean debug;
     boolean dry_run;
 
@@ -225,10 +230,6 @@ public class MatchAsync extends Thread
         // the wall clock time then you can get this via ThreadMXBean. Basically, do this at the start:
         ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
         threadMXB.setThreadCpuTimeEnabled( true );
-
-        boolean debugfail = false;      // debug match failures
-        boolean debugfreq = false;      // debug name frequencies
-        boolean match2csv = true;       // collect all matches of current thread in csv file, and write to table in one go
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
@@ -453,10 +454,9 @@ public class MatchAsync extends Thread
                         lvsVariantsName .clear();          // Empty the previous lists
                         lvsDistancesName.clear();
 
-                        // 1a: asymmetric ('single-sided') ls table; SELECT UNION query
-                        // 1b: asymmetric ('single-sided') ls table; 2 SELECTs without union
-                        // 2:   symmetric ('double-sided') ls table; single SELECT
-                        getLvsVariants1a( s1_firstname1, lvs_table_firstname, qs.lvs_dist_max_firstname, lvsVariantsName, lvsDistancesName );
+                        // 1: asymmetric ('single-sided') ls table; SELECT UNION query
+                        // 2:  symmetric ('double-sided') ls table; single SELECT
+                        getLvsVariants1( s1_firstname1, lvs_table_firstname, qs.lvs_dist_max_firstname, lvsVariantsName, lvsDistancesName );
 
                         if( debugfreq ) {
                             System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d, count: %d\n",
@@ -506,10 +506,9 @@ public class MatchAsync extends Thread
                         lvsVariantsName .clear();         // Empty the previous lists
                         lvsDistancesName.clear();
 
-                        // 1a: asymmetric ('single-sided') ls table; SELECT UNION query
-                        // 1b: asymmetric ('single-sided') ls table; 2 SELECTs without union
-                        // 2:   symmetric ('double-sided') ls table; single SELECT
-                        getLvsVariants1a( s1_familyname, lvs_table_familyname, qs.lvs_dist_max_familyname, lvsVariantsName, lvsDistancesName );
+                        // 1: asymmetric ('single-sided') ls table; SELECT UNION query
+                        // 2:  symmetric ('double-sided') ls table; single SELECT
+                        getLvsVariants1( s1_familyname, lvs_table_familyname, qs.lvs_dist_max_familyname, lvsVariantsName, lvsDistancesName );
 
                         if( debugfreq ) {
                             System.out.printf( "lvs_table: %s, lvs_dist_max: %d, s1_name: %d, # of variants: %d\n",
@@ -633,7 +632,7 @@ public class MatchAsync extends Thread
                                 }
 
                                 // Check sex
-                                if( ! qs.ignore_sex )
+                                if( qs.ignore_sex.equals( "n" ) )
                                 {
                                     int s1_sex = ql.s1_sex.get( s1_idx );
                                     int s2_sex = ql.s2_sex.get( s2_idx );
@@ -737,14 +736,14 @@ public class MatchAsync extends Thread
             if( match2csv ) {
                 writerMatches.close();
 
+                boolean removeCsv = true;
                 if( dbconTemp != null ) {
                     loadCsvFileToTempTable( threadId, csvFilename );
                     //updateMatchesTempToMatches( dbconMatch );
                     //removematchesTableTemp( dbconMatch );
                     dbconTemp.close();
                 }
-                else { loadCsvFileToMatchTable( threadId, csvFilename ); }
-                //removeMatchesFile();  // later
+                else { loadCsvFileToMatchTable( threadId, csvFilename, removeCsv ); }
             }
 
             sem.release();
@@ -1008,14 +1007,15 @@ public class MatchAsync extends Thread
      /**
      * @throws Exception
      */
-    private void loadCsvFileToMatchTable( long threadId, String filename ) throws Exception
+    private void loadCsvFileToMatchTable( long threadId, String filenameCsv, boolean removeCsv )
+    throws Exception
     {
         String tablename = "links_match.matches";
 
-        String msg = String.format( "Thread id %02d; Loading %s into %s table", threadId, filename, tablename );
+        String msg = String.format( "Thread id %02d; Loading %s into %s table", threadId, filenameCsv, tablename );
         System.out.println( msg ); plog.show( msg );
 
-        String query = "LOAD DATA LOCAL INFILE '" + filename + "'"
+        String query = "LOAD DATA LOCAL INFILE '" + filenameCsv + "'"
             + " INTO TABLE " + tablename
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
             + "("
@@ -1028,10 +1028,17 @@ public class MatchAsync extends Thread
 
             // + " ,flag_overlink, flag_quality, ids"   // not used in matching
 
-        System.out.println( query ); plog.show( msg );
+        //System.out.println( query ); plog.show( query );
 
         dbconMatch.createStatement().execute( query );
         dbconMatch.createStatement().close();
+
+        if( removeCsv ) {
+            msg = String.format( "Thread id %02d; Deleting file %s", threadId, filenameCsv );
+            System.out.println( query ); plog.show( msg );
+            java.io.File file = new java.io.File( filenameCsv );
+            file.delete();
+        }
     } // loadCsvFileToMatchTable
 
 
@@ -1455,7 +1462,7 @@ public class MatchAsync extends Thread
 
 
     /**
-     * getLvsVariants1a() assuming asymmetric (i.e. single-sized) tables, also containing distance = 0.
+     * getLvsVariants1() assuming asymmetric (i.e. single-sized) tables, also containing distance = 0.
      *
      * Query the Levenshtein table lvs_table for name_int_1,
      * to get the various name_int_2's as levenshtein variants for the set s2.
@@ -1466,7 +1473,7 @@ public class MatchAsync extends Thread
      * @param lvsVariants       // Levenshtein variants of name
      * @param lvsDistances      // Levenshtein distances of the variants
      */
-    private void getLvsVariants1a( int name_int, String lvs_table, int lvs_dist_max, Vector< Integer > lvsVariants, Vector< Integer > lvsDistances )
+    private void getLvsVariants1( int name_int, String lvs_table, int lvs_dist_max, Vector< Integer > lvsVariants, Vector< Integer > lvsDistances )
     {
         try
         {
@@ -1523,102 +1530,7 @@ public class MatchAsync extends Thread
             System.out.println( "Abort" );
             System.exit( 1 );
         }
-    } // getLvsVariants1a
-
-
-    /**
-     * getLvsVariants1b() assuming asymmetric (i.e. single-sized) tables, also containing distance = 0.
-     *
-     * Query the Levenshtein table lvs_table for name_int_1,
-     * to get the various name_int_2's as levenshtein variants for the set s2.
-     *
-     * @param name_int          // an ego familyname from the set s1
-     * @param lvs_table         // ls_ table to use, e.g. ls_familyname
-     * @param lvs_dist_max      // max Levenshtein distance
-     * @param lvsVariants       // Levenshtein variants of name
-     * @param lvsDistances      // Levenshtein distances of the variants
-     */
-    private void getLvsVariants1b( int name_int, String lvs_table, int lvs_dist_max, Vector< Integer > lvsVariants, Vector< Integer > lvsDistances )
-    {
-        try
-        {
-            int nrecs = 0;
-
-            if( debug ) {
-                String msg = String.format( "getLvsVariants1b(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
-                System.out.println( msg ); plog.show( msg );
-            }
-
-            String query1 = "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int ;
-            ResultSet rs1 = dbconPrematch.createStatement().executeQuery( query1 );
-
-            if( debug ) { System.out.println( query1 ); plog.show( query1 ); }
-
-            while( rs1.next() )
-            {
-                int name_int_2 = rs1.getInt( "name_int_2" );
-                int lvs_dist   = rs1.getInt( "value" );
-
-                if( debug ) {
-                    String name_str_1 = rs1.getString( "name_str_1" );
-                    String name_str_2 = rs1.getString( "name_str_2" );
-
-                    if( nrecs == 0 ) {
-                        String msg = String.format( "variants for name_str_1 = %s (name_int_1 = %d): ", name_str_1, name_int );
-                        System.out.println( msg ); plog.show( msg );
-                    }
-
-                    String msg = String.format( "name_str_2: %s (name_int_2: %d), lvs_dist: %d", name_str_2, name_int_2, lvs_dist );
-                    System.out.println( msg ); plog.show( msg );
-                }
-
-                lvsVariants .add( name_int_2 );
-                lvsDistances.add( lvs_dist );
-
-                nrecs++;
-            }
-
-            // value <> 0 to avoid double entry for distance = 0
-            String query2 = "SELECT * FROM links_prematch." + lvs_table + " WHERE value <> 0 AND value <= " + lvs_dist_max + " AND name_int_2 = " + name_int ;
-            ResultSet rs2 = dbconPrematch.createStatement().executeQuery( query2 );
-
-            if( debug ) { System.out.println( query2 ); plog.show( query2 ); }
-
-            while( rs2.next() )
-            {
-                int name_int_1 = rs2.getInt( "name_int_1" );
-                int lvs_dist   = rs2.getInt( "value" );
-
-                if( debug ) {
-                    String name_str_1 = rs2.getString( "name_str_1" );
-                    String name_str_2 = rs2.getString( "name_str_2" );
-
-                    if( nrecs == 0 ) {
-                        String msg = String.format( "variants for name_str_1 = %s (name_int_1 = %d): ", name_str_2, name_int );
-                        System.out.println( msg ); plog.show( msg );
-                    }
-
-                    String msg = String.format( "name_str_1: %s (name_int_1: %d), lvs_dist: %d", name_str_1, name_int_1, lvs_dist );
-                    System.out.println( msg ); plog.show( msg );
-                }
-
-                lvsVariants .add( name_int_1 );
-                lvsDistances.add( lvs_dist );
-
-                nrecs++;
-            }
-
-            if( debug && nrecs != 0 ) {
-                String msg = String.format( "getLvsVariants1b(): # of LvsVariants = %d\n", nrecs );
-                System.out.println( msg ); plog.show( msg );
-            }
-        }
-        catch( Exception ex ) {
-            System.out.println( "Exception in getLvsVariants1b(): " + ex.getMessage() );
-            System.out.println( "Abort" );
-            System.exit( 1 );
-        }
-    } // getLvsVariants1b
+    } // getLvsVariants1
 
 
     /**

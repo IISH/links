@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
- * FL-21-Jun-2016 Latest change
+ * FL-21-Jul-2016 Latest change
  *
  * NOT FINISHED
  *
@@ -29,8 +29,9 @@ public class SampleLoader
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
-    private boolean ignore_sex;
     private boolean ignore_minmax;
+
+    private String ignore_sex;
 
     private int firstname_method;
 
@@ -112,7 +113,7 @@ public class SampleLoader
         this.use_partner      = qs.use_partner;
         this.firstname_method = qs.firstname_method;
         this.ignore_sex       = qs.ignore_sex;
-        this.ignore_minmax     = qs.ignore_minmax;
+        this.ignore_minmax    = qs.ignore_minmax;
 
         System.out.println( "SampleLoader()" );
 
@@ -393,7 +394,7 @@ public class SampleLoader
             }
 
             // convert sex to int
-            if( !ignore_sex )
+            if( ! ignore_sex.equals( "y" ) )    // TODO also deal with the new "m", "f" options
             {
                 String s = rs.getString( "ego_sex" );
 

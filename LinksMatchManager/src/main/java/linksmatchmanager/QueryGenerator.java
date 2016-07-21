@@ -33,7 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-20-Jul-2016 Latest change
+ * FL-21-Jul-2016 Latest change
  */
 public class QueryGenerator
 {
@@ -272,7 +272,9 @@ public class QueryGenerator
                 qs.use_father    = use_father   .equalsIgnoreCase( "y" ) ? true : false;
                 qs.use_partner   = use_partner  .equalsIgnoreCase( "y" ) ? true : false;
                 qs.ignore_minmax = ignore_minmax.equalsIgnoreCase( "y" ) ? true : false;
-                qs.ignore_sex    = ignore_sex   .equalsIgnoreCase( "y" ) ? true : false;
+
+              //qs.ignore_sex = ignore_sex   .equalsIgnoreCase( "y" ) ? true : false;
+                qs.ignore_sex = ignore_sex;
 
                 qs.firstname_method = firstname_method;
 
@@ -290,11 +292,11 @@ public class QueryGenerator
 
 
                 // Initial SELECT part of query to get the data from links_base
-                String queryselect = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_minmax, qs.firstname_method );
+                String queryselect = getSelectQuery( qs.use_mother, qs.use_father, qs.use_partner, qs.ignore_sex, qs.ignore_minmax, qs.firstname_method );
                 qs.s1_query = queryselect;
                 qs.s2_query = queryselect;
 
-                if( !qs.ignore_sex ) {
+                if( ! qs.ignore_sex.equals( "y" ) ) {
                     qs.s1_query += ", ego_sex ";
                     qs.s2_query += ", ego_sex ";
                 }
@@ -539,17 +541,30 @@ public class QueryGenerator
                     }
                 }
 
-                // sex
-                // use this parameter (only) for marriage records
-                /*
-                if( s1_maintype == 2 && s2_maintype == 2 && s1_type.equals( "h" ) && s2_type.equals( "h" ) ) {
-                    // the choice should be obtained from the match_process table
-                    qs.s1_query += " AND ego_sex = 'f'";
-                    qs.s2_query += " AND ego_sex = 'm'";
-                  //qs.s1_query += " AND ego_sex = 'm'";
-                  //qs.s2_query += " AND ego_sex = 'f'";
+                // sex; use this parameter (only) for marriage records
+                if( s1_maintype == 2 && s2_maintype == 2 )
+                {
+                    if( qs.ignore_sex.equals( "m" ) )
+                    {
+                        qs.s1_query += " AND ego_sex = 'm'";
+                        qs.s2_query += " AND ego_sex = 'm'";
+
+                        if( qs.use_partner ) {
+                            qs.s1_query += " AND partner_sex = 'f'";
+                            qs.s2_query += " AND partner_sex = 'f'";
+                        }
+                    }
+                    else if( qs.ignore_sex.equals( "f" ) )
+                    {
+                        qs.s1_query += " AND ego_sex = 'f'";
+                        qs.s2_query += " AND ego_sex = 'f'";
+
+                        if( qs.use_partner ) {
+                            qs.s1_query += " AND partner_sex = 'm'";
+                            qs.s2_query += " AND partner_sex = 'm'";
+                        }
+                    }
                 }
-                */
 
                 int from1 = qs.s1_query.indexOf( "FROM links_base" );
                 int from2 = qs.s2_query.indexOf( "FROM links_base" );
@@ -671,7 +686,7 @@ public class QueryGenerator
      * @param numberofFirstnames
      * @return
      */
-    private String getSelectQuery( boolean use_mother, boolean use_father, boolean use_partner, boolean ignore_minmax, int numberofFirstnames )
+    private String getSelectQuery( boolean use_mother, boolean use_father, boolean use_partner, String ignore_sex, boolean ignore_minmax, int numberofFirstnames )
     {
         String query;
 
@@ -679,7 +694,7 @@ public class QueryGenerator
 
         query += ", mother_familyname_str , mother_firstname1_str ";        // debugging
 
-        if( !ignore_minmax ) {
+        if( ! ignore_minmax ) {
             query += ", ego_birth_min , ego_birth_max , ego_marriage_min , ego_marriage_max , ego_death_min , ego_death_max ";
         }
 
@@ -706,7 +721,7 @@ public class QueryGenerator
         {
             query += ", mother_familyname ";
 
-            if( !ignore_minmax ) {
+            if( ! ignore_minmax ) {
                 query += ", mother_birth_min , mother_birth_max , mother_marriage_min , mother_marriage_max , mother_death_min , mother_death_max ";
             }
 
@@ -735,7 +750,7 @@ public class QueryGenerator
         {
             query += ", father_familyname ";
 
-            if( !ignore_minmax ) {
+            if( ! ignore_minmax ) {
                 query += ", father_birth_min , father_birth_max , father_marriage_min , father_marriage_max , father_death_min , father_death_max ";
             }
 
@@ -763,7 +778,7 @@ public class QueryGenerator
         {
             query += ", partner_familyname ";
 
-            if( !ignore_minmax ) {
+            if( ! ignore_minmax ) {
                 query += ", partner_birth_min , partner_birth_max , partner_marriage_min , partner_marriage_max , partner_death_min , partner_death_max ";
 
             }
@@ -786,7 +801,6 @@ public class QueryGenerator
                     query += ", partner_firstname1 , partner_firstname2 , partner_firstname3 , partner_firstname4 ";
                     break;
             }
-
         }
 
         return query;

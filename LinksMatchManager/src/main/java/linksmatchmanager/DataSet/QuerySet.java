@@ -21,7 +21,7 @@ package linksmatchmanager.DataSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-21-JUn-2016 Latest change
+ * FL-21-Jul-2016 Latest change
  */
 public class QuerySet
 {
@@ -45,10 +45,13 @@ public class QuerySet
     public boolean use_mother  = false;
     public boolean use_father  = false;
     public boolean use_partner = false;
+    public boolean ignore_minmax = false;
+
+    //public boolean ignore_sex    = false;
+    // "y", "n", "m", "f"; "m": Ego = "male" + Partner = "female", "f": Ego = "female" + Partner = "m"ale
+    public String ignore_sex = "y";
 
     public int     method = 0;
-    public boolean ignore_sex    = false;
-    public boolean ignore_minmax = false;
     public int     firstname_method = 0;
 
     public String prematch_familyname;

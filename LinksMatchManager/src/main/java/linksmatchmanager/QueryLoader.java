@@ -25,8 +25,10 @@ public class QueryLoader
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
-    private boolean ignore_sex;
     private boolean ignore_minmax;
+
+    //private boolean ignore_sex;
+    private String ignore_sex;
 
     private int firstname_method;
 
@@ -494,7 +496,7 @@ public class QueryLoader
             }
 
             // convert sex to int
-            if( !ignore_sex )
+            if( ! ignore_sex.equals( "y" ) )
             {
                 String s = set1.getString( "ego_sex" );
 
@@ -821,7 +823,7 @@ public class QueryLoader
             }
 
             //convert sex to int
-            if( !ignore_sex )
+            if( ! ignore_sex.equals( "y" ) )
             {
                 String s = set2.getString( "ego_sex" );
 
