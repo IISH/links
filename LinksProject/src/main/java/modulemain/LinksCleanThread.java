@@ -63,8 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-23-May-2016 Latest change
- *
+ * FL-21-Jul-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -3844,21 +3843,45 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                int age_year  = rs.getInt( "age_year" );
-                int age_month = rs.getInt( "age_month" );
-                int age_week  = rs.getInt( "age_week" );
-                int age_day   = rs.getInt( "age_day" );
 
                 String age_literal = rs.getString( "age_literal" );
-
                 if( debug ) { showMessage( "id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
+
+                int age_day   = 0;
+                int age_week  = 0;
+                int age_month = 0;
+                int age_year  = 0;
+
+                String age_day_str   = rs.getString( "age_day" );
+                String age_week_str  = rs.getString( "age_week" );
+                String age_month_str = rs.getString( "age_month" );
+                String age_year_str  = rs.getString( "age_year" );
+
+                if( ! ( age_day_str == null || age_day_str.isEmpty() ) ) {
+                    try { age_day = Integer.parseInt( age_day_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_week_str == null || age_week_str.isEmpty() ) ) {
+                    try { age_week = Integer.parseInt( age_week_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_month_str == null || age_month_str.isEmpty() ) ) {
+                    try { age_month = Integer.parseInt( age_month_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_year_str == null || age_year_str.isEmpty() ) ) {
+                    try { age_year = Integer.parseInt( age_year_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
 
                 boolean numeric = true;
                 int lit_year = 0;
 
-                if( age_literal == null ) {
-                    continue;
-                }
+                if( age_literal == null ) { continue; }
                 else
                 {
                     try {
@@ -3942,7 +3965,7 @@ public class LinksCleanThread extends Thread
 
                     if( check4 )
                     {
-                        String standard_year_str  = almmLitAge.value( "standard_year", age_literal );
+                        String standard_year_str  = almmLitAge.value( "standard_year",  age_literal );
                         String standard_month_str = almmLitAge.value( "standard_month", age_literal );
                         String standard_week_str  = almmLitAge.value( "standard_week",  age_literal );
                         String standard_day_str   = almmLitAge.value( "standard_day",   age_literal );
@@ -4029,10 +4052,37 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
-                int age_year  = rs.getInt( "age_year" );
-                int age_month = rs.getInt( "age_month" );
-                int age_week  = rs.getInt( "age_week" );
-                int age_day   = rs.getInt( "age_day" );
+
+                int age_day   = 0;
+                int age_week  = 0;
+                int age_month = 0;
+                int age_year  = 0;
+
+                String age_day_str   = rs.getString( "age_day" );
+                String age_week_str  = rs.getString( "age_week" );
+                String age_month_str = rs.getString( "age_month" );
+                String age_year_str  = rs.getString( "age_year" );
+
+                if( ! ( age_day_str == null || age_day_str.isEmpty() ) ) {
+                    try { age_day = Integer.parseInt( age_day_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_week_str == null || age_week_str.isEmpty() ) ) {
+                    try { age_week = Integer.parseInt( age_week_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_month_str == null || age_month_str.isEmpty() ) ) {
+                    try { age_month = Integer.parseInt( age_month_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
+                if( ! ( age_year_str == null || age_year_str.isEmpty() ) ) {
+                    try { age_year = Integer.parseInt( age_year_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                }
+
 
                 boolean update = false;
 
