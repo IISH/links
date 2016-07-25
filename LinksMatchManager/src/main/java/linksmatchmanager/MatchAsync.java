@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-21-Jul-2015 Latest change
+ * FL-25-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -358,7 +358,7 @@ public class MatchAsync extends Thread
                 s1_idx_cpy = s1_idx;   // copy value to display if exception occurs
 
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
-                { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
+                { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, total # of matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
                 /*
                 if( n_match > 100 ) {
