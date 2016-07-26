@@ -1,0 +1,26 @@
+FL-26-Jul-2016
+
+project: LINKS/CBG_PL_Conversion
+
+The Python script CBG_PL_Convert.py converts an input .txt file to an output .csv file. 
+
+In order to avoid encoding problems with the input file, the script tries to detect the 
+used encoding of the input file with the Python "chardet" module. 
+
+In general we use a previously created "virtualenv" python that contains all the needed 
+extra modules for a given project. 
+
+Use a previously created virtualenv python, e.g., on the Node-158 server:
+	$ source /data/links/python352/bin/activate <ENTER>
+	
+Run the conversion script; at "input filename: ", type the name of the input file:
+	$ cd /data/links/CBG_PL_Conversion <ENTER>
+	$ python CBG_PL_Convert.py <ENTER>
+	CBG_PL_Conversion
+	input filename: Resultaat 1e vier letters.txt
+	detecting input encoding...
+	encoding: ISO-8859-2, confidence: 0.849336048104954
+	output filename: Resultaat 1e vier letters.csv
+	959 lines processed
+	
+[eof]
