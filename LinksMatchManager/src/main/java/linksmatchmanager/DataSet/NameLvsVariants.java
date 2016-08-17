@@ -7,7 +7,7 @@ package linksmatchmanager.DataSet;
  * The Levenshtein variants of the name are collected, plus a bunch bookkeeping variables for matching.
  *
  * FL-09-Jun-2016 Created
- * FL-09-Jun-2016 Latest change
+ * FL-17-Aug-2016 Latest change
  */
 public class NameLvsVariants
 {
@@ -33,7 +33,7 @@ public class NameLvsVariants
     {
         long creatorId = Thread.currentThread().getId();
 
-        if( debug ) { System.out.println( String.format( "Thread id %02d; NameLvsVariants", creatorId ) ); }
+        if( debug ) { System.out.println( String.format( "Thread id %02d; NameLvsVariants()", creatorId ) ); }
 
 
     } // NameLvsVariants

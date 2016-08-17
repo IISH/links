@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-25-Jul-2016 Latest change
+ * FL-17-Aug-2016 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "25-Jul-2016 16:02";
+            String timestamp1 = "17-Aug-2016 13:32";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -273,6 +273,9 @@ public class MatchMain
             // Loop through the records from the match_process table
             for( int n_mp = 0; n_mp < isSize; n_mp++ )
             {
+                System.out.println( "" );
+                plog.show( "" );
+
                 // The VariantLoader is broken.
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
                 /*
@@ -310,7 +313,7 @@ public class MatchMain
                 }
                 */
 
-                msg = "Match process record " + (n_mp + 1) + " of " + isSize;
+                msg = String.format( "Thread id %02d;  Match process record %d of %d", mainThreadId, (n_mp + 1), isSize );
                 System.out.println( msg );
                 plog.show( msg );     // Show user the active record and total
 
@@ -326,7 +329,7 @@ public class MatchMain
 
                 int nthreads_started = 0;
                 int total_match_threads = isSize * qgs.getSize();
-                msg = String.format( "number of matching threads to be used: %d", total_match_threads );
+                msg = String.format( "Thread id %02d; Number of matching threads to be used: %d", mainThreadId, total_match_threads );
                 System.out.println( msg ); plog.show( msg );
 
                 // delete the previous matches for this QueryGroupSet;
@@ -335,7 +338,7 @@ public class MatchMain
                 int match_process_id = qgs.get( 0 ).id;
 
                 if( dry_run ) {
-                    msg = "DRY RUN: not deleting or writing matches!";
+                    msg = String.format( "Thread id %02d; DRY RUN: not deleting or writing matches!", mainThreadId );
                     System.out.println( msg ); plog.show( msg );
                 }
                 else { deleteMatches( match_process_id ); }
@@ -343,7 +346,7 @@ public class MatchMain
                 // Loop through the subsamples
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
-                    msg = String.format( "Subsample %d-of-%d", n_qs + 1, qgs.getSize() );
+                    msg = String.format( "Thread id %02d; Subsample %d-of-%d", mainThreadId, n_qs + 1, qgs.getSize() );
                     System.out.println( msg ); plog.show( msg );
 
                     QuerySet qs = qgs.get( n_qs );
@@ -354,7 +357,7 @@ public class MatchMain
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
-                    msg = String.format( "Range %d-of-%d; query loader time", n_qs+1, qgs.getSize() );
+                    msg = String.format( "Thread id %02d; Range %d-of-%d; query loader time", mainThreadId, n_qs+1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
                     /*
@@ -372,7 +375,7 @@ public class MatchMain
                     System.out.println( msg ); plog.show( msg );
 
                     if( s1_size == 0 || s2_size == 0 ) {
-                        msg = "ZERO SAMPLE SIZE for s1 and/or s2, skipping this query set\n";
+                        msg = String.format( "Thread id %02d; ZERO SAMPLE SIZE for s1 and/or s2, skipping this query set\n", mainThreadId );
                         System.out.println( msg ); plog.show( msg );
                         continue;
                     }
@@ -380,28 +383,30 @@ public class MatchMain
 
                     // Wait until semaphore gives permission
                     int npermits = sem.availablePermits();
-                    plog.show( "Semaphore: # of permits: " + npermits );
+                    msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", mainThreadId, npermits );
+                    plog.show( msg );
 
                     while( ! sem.tryAcquire( 0, TimeUnit.SECONDS ) ) {
-                        plog.show( "No permission for new thread: Waiting 60 seconds" );
+                        msg = String.format( "Thread id %02d; No permission for new thread: Waiting 60 seconds", mainThreadId );
+                        plog.show( msg );
                         Thread.sleep( 60000 );
                     }
 
                     npermits = sem.availablePermits();
-                    plog.show( "Semaphore: # of permits: " + npermits );
+                    msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", mainThreadId, npermits );
+                    plog.show( msg );
 
                     MatchAsync ma;          // Here begins threading
+                    NameLvsVariants nameLvsVariants = new NameLvsVariants();    // but no longer used
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
-                        NameLvsVariants nameLvsVariants = new NameLvsVariants();
                         ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             rootFirstName, rootFamilyName, nameLvsVariants, true );
                     }
                     else          // method == 0
                     {
-                        NameLvsVariants nameLvsVariants = new NameLvsVariants();
                         ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             variantFirstName, variantFamilyName, nameLvsVariants );
@@ -411,11 +416,11 @@ public class MatchMain
                     threads.add( ma );
 
                     long threadId = ma.getId();
-                    msg = String.format( "\nMain(): thread id %2d was started", threadId );
+                    msg = String.format( "\nThread id %02d; Main(): thread id %2d was started", mainThreadId, threadId );
                     System.out.println( msg ); plog.show( msg );
 
                     nthreads_started++;
-                    plog.show( String.format( "Started matching thread # (not id) %d-of-%d", nthreads_started, total_match_threads ) );
+                    plog.show( String.format( "Thread id %02d; Started matching thread # (not id) %d-of-%d", mainThreadId, nthreads_started, total_match_threads ) );
 
                 } // for subsamples
             } // for 'y' records

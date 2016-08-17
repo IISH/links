@@ -384,6 +384,13 @@ public class MatchAsync extends Thread
                 }
                 */
 
+                //if( ql.s1_id_base.get( s1_idx ) == 21745 ) { debugfreq = true; }
+                //else { debugfreq = false; }
+
+                // debug missing automatches for marriage registrations
+                //System.out.println( String.format( "s1_id_base: %d", ql.s1_id_base.get( s1_idx ) ) );
+
+
                 if( debug || debugfreq ) {
                     System.out.println( String.format( "s1_id_base: %d, s1_id_registration: %d, s1_ego_familyname: %s, s1_ego_firstname1: %s, s1_mother_familyname: %s, s1_mother_firstname1: %s",
                         ql.s1_id_base.get( s1_idx ), ql.s1_id_registration.get( s1_idx ),
@@ -391,9 +398,6 @@ public class MatchAsync extends Thread
                         ql.s1_mother_familyname_str.get( s1_idx ), ql.s1_mother_firstname1_str.get( s1_idx )
                     ) );
                 }
-
-                //if( ql.s1_id_base.get( s1_idx ) == 21745 ) { debugfreq = true; }
-                //else { debugfreq = false; }
 
                 // get the frequencies of names used for matching, ordered from low to high frequency
                 ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
