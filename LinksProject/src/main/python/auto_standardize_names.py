@@ -213,9 +213,9 @@ def find_in_reference( db_ref, ref_table, name_str ):
 
 
 
-def normalize_f( debug, db, db_ref, first_or_fam_name ):
-	print( "normalize_f() %s" % first_or_fam_name )
-	# _f: start with frequency table
+def normalize_freq_first( debug, db, db_ref, first_or_fam_name ):
+	print( "normalize_freq_first() %s" % first_or_fam_name )
+	# _freq_first: start with frequency table
 	
 	if first_or_fam_name == "firstname":
 		freq_table = "freq_firstname"
@@ -343,9 +343,14 @@ def normalize_f( debug, db, db_ref, first_or_fam_name ):
 
 
 
-def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
-	print( "normalize_r() %s" % first_or_fam_name )
-	# _r: start with reference table
+def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
+	"""
+	normalize_ref_first. 
+	-1- get records from (firstname or familyname) reference table where standard_code = 'x'
+	-2- 
+	"""
+	print( "normalize_ref_first() %s" % first_or_fam_name )
+	# _ref_first: start with reference table
 	
 	if first_or_fam_name == "firstname":
 		freq_table = "freq_firstname"
@@ -358,7 +363,7 @@ def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
 	else:
 		return
 
-	# get names from reference table with standard_code 'x'
+	# get records from reference table with standard_code 'x'
 	query_ref = "SELECT * FROM links_general." + ref_table + " WHERE standard_code = 'x' ORDER BY original;"
 	print( query_ref )
 
@@ -371,8 +376,9 @@ def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
 	n_accept  = 0
 	n_discard = 0
 	n_freq_0  = 0
+	n_freq_1  = 0
 	
-	# process the 'x' ref_names
+	# process the 'x' reference records
 	for n in range( nnames ):
 		if debug: print( "" )
 		
@@ -381,7 +387,7 @@ def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
 		dict_ref = resp_ref[ n ]
 		name_ori  = dict_ref[ "original" ]
 		
-		# get 'original' frequency from frequency table if frequency <= 2
+		# search 'original' frequency in frequency table
 		query_freq = "SELECT * FROM links_prematch." + freq_table + " " 
 		if double_quote in name_ori: 
 			query_freq += "WHERE name_str = \'" + name_ori + "\';"
@@ -391,14 +397,16 @@ def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
 		if debug: print( query_freq )
 		
 		resp_freq = db.query( query_freq )
-		print( resp_freq )
+		if debug: print( resp_freq )
 		
+		# check number of hits
 		freq_ori = 0
 		if len( resp_freq ) == 0:
-			print( "freq: %d, name: |%s| skipped" % ( freq_ori, name_ori ) )
+			if debug: print( "freq: %d, name: |%s| skipped" % ( freq_ori, name_ori ) )
 			n_freq_0 += 1
-			continue
+			continue		# next reference record
 		elif len( resp_freq ) == 1:
+			n_freq_1 += 1
 			dict_freq = resp_freq[ 0 ]
 			freq_ori  = dict_freq[ "frequency" ]
 		else:
@@ -414,13 +422,13 @@ def normalize_r( debug, db_links, db_ref, first_or_fam_name ):
 		"""
 		print( "freq: %d, name: %s" % ( freq_ori, name_ori ) )
 		
+		# ...
 		
-		
-		if n > limit_names:
+		if n_freq_1 > limit_names:
 			break
 
-	if n_freq_0 > 0:
-		print( "n_freq_0:", n_freq_0 )
+	print( "n_freq_0:", n_freq_0 )
+	print( "n_freq_1:", n_freq_1 )
 
 
 
@@ -558,22 +566,19 @@ if __name__ == "__main__":
 	
 #	db_check( db )
 
-#	normalize_f( debug, db, db_ref, "firstname" )
-#	normalize_f( debug, db, db_ref, "familyname" )
-
 	print( "Automatic normalization of names use frequency and Levenshtein tables." )
 	print( "Those tables must be up-to-date. If they are too old, first run pre-match." )
-	yn = input( "Continue? [N,y] " )
-	if not( yn is not None and yn.lower() == 'y' ):
+	yn = input( "Continue? [n,Y] " )
+	if yn.lower() == 'n':
 		exit( 0 )
 	
 	do_family = yn = input( "Process familynames? [N,y] " )
 	if do_family is not None and do_family.lower() == 'y':
-		normalize_r( debug, db, db_ref, "familyname" )
+		normalize_ref_first( debug, db, db_ref, "familyname" )
 	
 	do_first = yn = input( "Process firstnames? [N,y] " )
 	if do_first is not None and do_first.lower() == 'y':
-		normalize_r( debug, db, db_ref, "firstname" )
+		normalize_ref_first( debug, db, db_ref, "firstname" )
 	
 
 
