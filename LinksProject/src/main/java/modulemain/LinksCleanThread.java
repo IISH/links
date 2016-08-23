@@ -3796,7 +3796,7 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Processing standardAge for source: %s ", threadId, source );
         elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
 
-        msg =String.format( "Thread id %02d; Updating ref_age: ref_age", threadId );
+        msg = String.format( "Thread id %02d; Updating ref_age: ref_age", threadId );
         showMessage( msg, false, true );
 
         while( almmLitAge.isBusy().get() ) {
@@ -3843,6 +3843,9 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
+
+                //if(  id_person == 3258692 ) { debug = true; }
+                //else { debug = false; continue; }
 
                 String age_literal = rs.getString( "age_literal" );
                 if( debug ) { showMessage( "id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
@@ -4052,6 +4055,9 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
+
+                //if(  id_person == 3258692 ) { debug = true; }
+                //else { debug = false; continue; }
 
                 int age_day   = 0;
                 int age_week  = 0;
@@ -5910,9 +5916,9 @@ public class LinksCleanThread extends Thread
                     String query = ""
                         + "UPDATE person_c SET "
                         + "person_c." + type + "_date = '" + date_str + "' , "
-                        + "person_c." + type + "_day = " + day + " , "
+                        + "person_c." + type + "_day = "   + day + " , "
                         + "person_c." + type + "_month = " + month + " , "
-                        + "person_c." + type + "_year = " + year + " , "
+                        + "person_c." + type + "_year = "  + year + " , "
                         + "person_c." + type + "_date_valid = 1 "
                         + "WHERE person_c.id_person = " + id_person;
 
