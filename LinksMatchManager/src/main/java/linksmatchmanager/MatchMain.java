@@ -456,7 +456,10 @@ public class MatchMain
         } // try
 
         catch( Exception ex )
-        { System.out.println( "LinksMatchManager/main() Exception: " + ex.getMessage() ); }
+        {
+            String msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: ", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+        }
 
     } // main
 
@@ -830,15 +833,18 @@ public class MatchMain
      */
     private static void deleteMatches( int id_match_process )
     {
+        String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
         try {
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
-            String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
 
             dbconMatch.createStatement().execute( query );
             dbconMatch.createStatement().close();
         }
         catch( Exception ex ) {
-            String err = "LinksMatchManager/deleteMatches() Exception: " + ex.getMessage();
+            System.out.println( query ); try { plog.show( query ); } catch( Exception ex2 ) { ; }
+
+            long threadId = Thread.currentThread().getId();
+            String err = String.format( "Thread id %2d; LinksMatchManager/deleteMatches() Exception: %s", threadId, ex.getMessage() );
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
