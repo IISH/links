@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-25-Jul-2015 Latest change
+ * FL-29-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -47,9 +47,11 @@ import linksmatchmanager.DataSet.QuerySet;
 public class MatchAsync extends Thread
 {
     // static final boolean false blocks removed during compilation
-    static final boolean debugfail = false;     // debug match failures
-    static final boolean debugfreq = false;     // debug name frequencies
+    //static final boolean debugfail = false;     // debug match failures
+    //static final boolean debugfreq = false;     // debug name frequencies
     static final boolean match2csv = true;      // collect all matches of current thread in csv file, and write to table in one go
+    boolean debugfail = false;     // debug match failures
+    boolean debugfreq = false;     // debug name frequencies
 
     boolean debug;
     boolean dry_run;
@@ -337,11 +339,10 @@ public class MatchAsync extends Thread
             // Outer loop over the records of the s1 query set
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
-                //if( s1_idx == 79 ) { debug = true; debugfreq = true; debugfail = true; }
-
-                //int s1_id_base = ql.s1_id_base.get( s1_idx );
-                //if( s1_id_base == 4852 ) { debug = true; debugfreq = true; debugfail = true; }
-                //else { debugfreq = false; continue; }
+                int s1_id_base = ql.s1_id_base.get( s1_idx );
+                if( s1_id_base == 57571 || s1_id_base == 64228 || s1_id_base == 356787 || s1_id_base == 649661 || s1_id_base == 1913426 )
+                { debug = debugfreq = debugfail = true; }
+                else { debug = debugfreq = debugfail = false; continue; }
 
               //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
               //if( s1_id_registration == 1631 || s1_id_registration == 12312 ) { debug = true; debugfreq = true; debugfail = true; }
@@ -1483,9 +1484,9 @@ public class MatchAsync extends Thread
         {
             String query = "";
             if( debug ) {
-                query  = "( SELECT *, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + " ) ";
+                query  = "( SELECT *, name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + " ) ";
                 query += "UNION ALL ";
-                query += "( SELECT *, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 ) ";
+                query += "( SELECT *, name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 ) ";
                 query += "ORDER BY name_str;";
             }
             else {
@@ -1497,7 +1498,7 @@ public class MatchAsync extends Thread
             ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
             if( debug ) {
-                String msg = String.format( "getLvsVariants1a(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
+                String msg = String.format( "getLvsVariants1(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
                 System.out.println( msg ); plog.show( msg );
                 System.out.println( query ); plog.show( query );
             }
@@ -1523,14 +1524,14 @@ public class MatchAsync extends Thread
             }
 
             if( debug && nrecs != 0 ) {
-                String msg = String.format( "getLvsVariants1a(): # of LvsVariants = %d\n", nrecs );
+                String msg = String.format( "getLvsVariants1(): # of LvsVariants = %d\n", nrecs );
                 System.out.println( msg ); plog.show( msg );
             }
 
-            //System.out.println( String.format( "getLvsVariants1a(): # of LvsVariants = %d for name_int: %d\n", nrecs, name_int ) );
+            //System.out.println( String.format( "getLvsVariants1(): # of LvsVariants = %d for name_int: %d\n", nrecs, name_int ) );
         }
         catch( Exception ex ) {
-            System.out.println( "Exception in getLvsVariants1a(): " + ex.getMessage() );
+            System.out.println( "Exception in getLvsVariants1(): " + ex.getMessage() );
             System.out.println( "Abort" );
             System.exit( 1 );
         }
