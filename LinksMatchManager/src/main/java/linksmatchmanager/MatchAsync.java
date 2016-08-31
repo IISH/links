@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-30-Jul-2015 Latest change
+ * FL-31-Jul-2015 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -46,12 +46,13 @@ import linksmatchmanager.DataSet.QuerySet;
 
 public class MatchAsync extends Thread
 {
-    // static final boolean false blocks removed during compilation
-    //static final boolean debugfail = false;     // debug match failures
-    //static final boolean debugfreq = false;     // debug name frequencies
+    // efficient: static final boolean false blocks will be removed during compilation
+    static final boolean debugfail = false;     // debug match failures
+    static final boolean debugfreq = false;     // debug name frequencies
     static final boolean match2csv = true;      // collect all matches of current thread in csv file, and write to table in one go
-    boolean debugfail = false;     // debug match failures
-    boolean debugfreq = false;     // debug name frequencies
+
+    //boolean debugfail = false;     // debug match failures
+    //boolean debugfreq = false;     // debug name frequencies
 
     boolean debug;
     boolean dry_run;
@@ -339,15 +340,15 @@ public class MatchAsync extends Thread
             // Outer loop over the records of the s1 query set
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
-                int s1_id_base = ql.s1_id_base.get( s1_idx );
-                if( s1_id_base == 57571 || s1_id_base == 64228 || s1_id_base == 356787 || s1_id_base == 649661 || s1_id_base == 1913426 )
-                { debug = debugfreq = debugfail = true; }
-                else { debug = debugfreq = debugfail = false; continue; }
+                //int s1_id_base = ql.s1_id_base.get( s1_idx );
+                //if( s1_id_base == 57571 || s1_id_base == 64228 || s1_id_base == 356787 || s1_id_base == 649661 || s1_id_base == 1913426 )
+                //{ debug = debugfreq = debugfail = true; }
+                //else { debug = debugfreq = debugfail = false; continue; }
 
-              //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
-              //if( s1_id_registration == 1631 || s1_id_registration == 12312 ) { debug = true; debugfreq = true; debugfail = true; }
-              //if( s1_id_registration == 3593 || s1_id_registration == 11969 ) { debug = true; debugfreq = true; debugfail = true; }
-              //else { debugfreq = false; continue; }
+                //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
+                //if( s1_id_registration == 1631 || s1_id_registration == 12312 ) { debug = true; debugfreq = true; debugfail = true; }
+                //if( s1_id_registration == 3593 || s1_id_registration == 11969 ) { debug = true; debugfreq = true; debugfail = true; }
+                //else { debugfreq = false; continue; }
 
                 if( debug || debugfreq) {
                     System.out.println( "***< s1_idx >*******************************************************************" );
