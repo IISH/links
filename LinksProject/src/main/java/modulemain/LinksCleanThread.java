@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-29-Aug-2016 Latest change
+ * FL-31-Aug-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -4403,15 +4403,12 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        //doAge(  debug, go, source );        // required for dates, again separate call (see above)
-        //doRole( debug, go, source );        // required for dates, again separate call (see above)
-
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        //msg = "skipping untill minMaxDateMain()";
-        //showMessage( msg, false, true );
-
+        msg = "skipping untill minMaxDateMain()";
+        showMessage( msg, false, true );
+        /*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4467,7 +4464,7 @@ public class LinksCleanThread extends Thread
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
@@ -4573,7 +4570,7 @@ public class LinksCleanThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
-                //if( id_person == 3258692 ) { debug = true; }
+                //if( id_person == 14873 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )

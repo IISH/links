@@ -7,7 +7,8 @@ package dataset;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-16-Sep-2014 Latest change
+ * FL-16-Sep-2014 Changed
+ * FL-31-Aug-2015 Latest change
  */
 public final class DivideMinMaxDatumSet
 {
@@ -52,12 +53,38 @@ public final class DivideMinMaxDatumSet
 
     public void setMinMonth( int value ) { this.MinMonth = value; }
 
-    public void setMinYear(  int value ) { this.MinYear  = value; }
+    public void setMinYear(  int value )
+    {
+        if( this.MinDay == 29 && this.MinMonth == 2 )
+        {
+            // prevent that a valid 29-Feb-leap_year becomes invalid
+            if( ! isLeapYear( value ) ) {
+                this.MinDay = 28;   // 29-Feb -> 28 Feb
+            }
+        }
+        this.MinYear = value;
+    }
 
     public void setMaxDay(   int value ) { this.MaxDay   = value; }
 
     public void setMaxMonth( int value ) { this.MaxMonth = value; }
 
-    public void setMaxYear(  int value ) { this.MaxYear  = value; }
+    public void setMaxYear(  int value )
+    {
+        if( this.MaxDay == 29 && this.MaxMonth == 2 )
+        {
+            // prevent that a valid 29-Feb-leap_year becomes invalid
+            if( ! isLeapYear( value ) ) {
+                this.MaxDay   = 1;  // 29-Feb -> 1 Mar
+                this.MaxMonth = 3;
+            }
+        }
+        this.MaxYear  = value;
+    }
+
+    public boolean isLeapYear(  int y ) {
+        if( (y % 4 == 0) && ( (y % 100 != 0) || (y % 400 == 0) ) ) { return true; }
+        else { return false; }
+    }
 
 }
