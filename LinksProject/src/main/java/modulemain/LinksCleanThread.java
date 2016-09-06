@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-31-Aug-2016 Latest change
+ * FL-06-Sep-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -1428,7 +1428,7 @@ public class LinksCleanThread extends Thread
                                 // and do not let it be overwritten to '' by another prename of the same firstname
                                 if( stillbirth.isEmpty() )
                                 {
-                                    // if the firstname equals or contains 'Levenloos' the stillbirth column contains 'y'
+                                    // if the firstname equals or contains 'levenloos' the stillbirth column contains 'y'
                                     stillbirth = almmFirstname.value( "stillbirth", prename );
                                     if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
                                     if( stillbirth == null ) { stillbirth = ""; }
@@ -4406,9 +4406,9 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        msg = "skipping untill minMaxDateMain()";
-        showMessage( msg, false, true );
-        /*
+        //msg = "skipping untill minMaxDateMain()";
+        //showMessage( msg, false, true );
+        ///*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4464,7 +4464,7 @@ public class LinksCleanThread extends Thread
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
