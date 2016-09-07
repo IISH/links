@@ -1,0 +1,10 @@
+FL-06-2016
+
+mysqldump --user=usr --password=pwd --no-data db > db.schema.sql
+
+mysqldump --user=links --password=mslinks --no-data links_logs ERROR_STORE > links_logs.ERROR_STORE.schema.sql
+
+mysql --user=links --password=msmslinks links_logs < links_error_store.schema.sql
+
+
+[eof]
