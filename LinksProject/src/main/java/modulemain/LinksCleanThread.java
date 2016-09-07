@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-06-Sep-2016 Latest change
+ * FL-07-Sep-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -609,7 +609,7 @@ public class LinksCleanThread extends Thread
                 + " `reg_type`     VARCHAR(50)  NULL ,"
                 + " `date`         VARCHAR(25)  NULL ,"
                 + " `sequence`     VARCHAR(60)  NULL ,"
-                + " `role`         VARCHAR(30)  NULL ,"
+                + " `role`         VARCHAR(50)  NULL ,"
                 + " `guid`         VARCHAR(80)  NULL ,"
                 + " `reg_key`      INT UNSIGNED NULL ,"
                 + " `pers_key`     INT UNSIGNED NULL ,"
@@ -868,11 +868,14 @@ public class LinksCleanThread extends Thread
 
         // get id_registration from links_original.person_o
         String id_registration = "";
-        String selectQuery1 = "SELECT id_registration FROM person_o WHERE id_person = " + id;
+        String role      = "";
+
+        String selectQuery1 = "SELECT id_registration, role FROM person_o WHERE id_person = " + id;
         try {
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery1 );
             rs.next();
             id_registration = rs.getString( "id_registration" );
+            role            = rs.getString( "role" );
         }
         catch( Exception ex ) {
             showMessage( ex.getMessage(), false, true );
@@ -916,12 +919,13 @@ public class LinksCleanThread extends Thread
         String insertQuery = ""
             + " INSERT INTO links_logs.`" + logTableName + "`"
             + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
-            + " location , reg_type , date , sequence , reg_key , guid )"
+            + " location , reg_type , date , sequence , role, reg_key , guid )"
             + " VALUES ( "
                 + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
                 + " \"" + location + "\" ,"
                 + " '"  + reg_type + "' , '" + date + "' ,"
                 + " \"" + sequence + "\" ,"
+                + " \"" + role + "\" ,"
                 + " '"  + id_registration + "' , '" + guid + "' ) ; ";
 
         if( debug ) { showMessage( insertQuery, false, true ); }
@@ -4509,6 +4513,7 @@ public class LinksCleanThread extends Thread
             + " person_c.age_week ,"
             + " person_c.age_day ,"
             + " person_c.birth_date ,"
+            + " person_c.stillbirth ,"
             + " person_c.mar_date ,"
             + " person_c.death_date ,"
             + " person_c.birth_year ,"
@@ -4562,6 +4567,7 @@ public class LinksCleanThread extends Thread
                 int    age_week             = rsPersons.getInt(    "age_week" );
                 int    age_day              = rsPersons.getInt(    "age_day" );
                 String birth_date           = rsPersons.getString( "person_c.birth_date" );
+                String stillbirth           = rsPersons.getString( "person_c.stillbirth" );
                 String mar_date             = rsPersons.getString( "person_c.mar_date" );
                 String death_date           = rsPersons.getString( "person_c.death_date" );
                 int    birth_year           = rsPersons.getInt(    "birth_year" );
@@ -4587,6 +4593,7 @@ public class LinksCleanThread extends Thread
                     showMessage( "age_week: "             + age_week,             false, true );
                     showMessage( "age_day: "              + age_day,              false, true );
                     showMessage( "birth_date: "           + birth_date,           false, true );
+                    showMessage( "stillbirth: "           + stillbirth,           false, true );
                     showMessage( "mar_date: "             + mar_date,             false, true );
                     showMessage( "death_date: "           + death_date,           false, true );
                     showMessage( "birth_year: "           + birth_year,           false, true );
@@ -4639,7 +4646,7 @@ public class LinksCleanThread extends Thread
 
                 if( debug && mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
 
-                if( birth_date_valid != 1 )                 // invalid birth date
+                if( birth_date_valid != 1 && ! stillbirth.startsWith( "y" ) )                 // invalid birth date, but not a stillbirth
                 {
                     if( debug ) { showMessage( "invalid birth date", false, true ); }
 
@@ -5980,7 +5987,7 @@ public class LinksCleanThread extends Thread
             + "birth_day_min   = birth_day , "
             + "birth_day_max   = birth_day "
             + "WHERE "
-            + "birth_date_valid = 1 "
+            + "birth_date_valid = 1 OR LEFT(stillbirth, 1) = 'y' "
             + "AND links_cleaned.person_c.id_source = " + source;
 
         String q2 = ""
