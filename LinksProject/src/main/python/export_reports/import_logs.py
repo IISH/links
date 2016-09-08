@@ -60,87 +60,6 @@ double_quote = '"'
 # column 'type' of ref_report, where column 'content' contains 'standard_code= 'x''.
 x_codes = [ 21, 31, 41, 51, 61, 71, 81, 91, 141, 251, 1009, 1109 ]
 
-"""
-# incomplete
-full_archive_names = [ 
-	{ "id_source" : 211, "name" : "" },
-	{ "id_source" : 212, "name" : "" },
-	{ "id_source" : 213, "name" : "" },
-	{ "id_source" : 214, "name" : "" },
-	{ "id_source" : 215, "name" : "" },
-	{ "id_source" : 216, "name" : "" },
-	{ "id_source" : 217, "name" : "" },
-	{ "id_source" : 218, "name" : "" },
-	{ "id_source" : 219, "name" : "219-is-not-used" },
-	{ "id_source" : 220, "name" : "" },
-	{ "id_source" : 221, "name" : "" },
-	{ "id_source" : 222, "name" : "" },
-	{ "id_source" : 223, "name" : "" },
-	{ "id_source" : 224, "name" : "" },
-	{ "id_source" : 225, "name" : "" },
-	{ "id_source" : 226, "name" : "" },
-	{ "id_source" : 227, "name" : "" },
-	{ "id_source" : 228, "name" : "" },
-	{ "id_source" : 229, "name" : "" },
-	{ "id_source" : 230, "name" : "" },
-	{ "id_source" : 231, "name" : "Gemeentearchief Oegstgeest" },
-#	{ "id_source" : 231, "name" : "Gemeentearchief Leidschendam-Voorburg" },
-	{ "id_source" : 232, "name" : "" },
-	{ "id_source" : 233, "name" : "" },
-	{ "id_source" : 234, "name" : "" },
-	{ "id_source" : 235, "name" : "" },
-	{ "id_source" : 236, "name" : "" },
-	{ "id_source" : 237, "name" : "" },
-	{ "id_source" : 238, "name" : "" },
-	{ "id_source" : 239, "name" : "" },
-	{ "id_source" : 240, "name" : "" },
-	{ "id_source" : 241, "name" : "" },
-	{ "id_source" : 242, "name" : "Gemeentearchief Wassenaar" },
-	{ "id_source" : 243, "name" : "Regionaal Archief Leiden" },
-	{ "id_source" : 244, "name" : "" }
-]
-"""
-
-short_archive_names = {
-	"211" : "Groningen",
-	"212" : "Fri_Tresoar",
-	"213" : "Drenthe",
-	"214" : "Overijssel",
-	"215" : "Gelderland",
-	"216" : "Utrecht",
-	"217" : "N-H_Haarlem",
-	"218" : "Z-H_Nat-Archief",
-	"219" : "219-is-not-used",
-	"220" : "NBr_BHIC",
-	"221" : "Limburg",
-	"222" : "Flevoland",
-	"223" : "Z-H_Rotterdam",
-	"224" : "NBr_Breda",
-	"225" : "Zeeland",
-	"226" : "NBr_Eindhoven",
-	"227" : "Utr_Eemland",
-	"228" : "Fri_Leeuwarden",
-	"229" : "N-H_Alkmaar",
-	"230" : "Ned-Antillen",
-	"231" : "Z-H_Oegstgeest",
-	"232" : "Z-H_Dordrecht",
-	"233" : "Z-H_Voorne",
-	"234" : "Z-H_Goeree",
-	"235" : "Z-H_Rijnstreek",
-	"236" : "Z-H_Midden-Holland",
-	"237" : "Z-H_Vlaardingen",
-	"238" : "Z-H_Midden",
-	"239" : "Z-H_Gorinchem",
-	"240" : "Z-H_Westland",
-	"241" : "Z-H_Leidschendam",
-	"242" : "Z-H_Wassenaar",
-	"243" : "Z-H_Leiden",
-	"244" : "Z-H_Delft"
-}
-
-archive_names = short_archive_names
-
-
 	
 class Database:
 	def __init__( self, host, user, passwd, dbname ):
@@ -454,10 +373,7 @@ def get_date_limits():
 
 
 if __name__ == "__main__":
-#	print( "links host db: %s \tfor frequency and levenshtein tables" % HOST )
-#	print( "reference db:  %s \tfor reference tables" % HOST_REF )
-
-	print( "export_reports.py" )
+	print( "import_logs.py" )
 
 	begin_date, end_date = get_date_limits()
 	if begin_date is None or end_date is None:
