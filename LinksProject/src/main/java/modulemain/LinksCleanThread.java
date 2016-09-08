@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-07-Sep-2016 Latest change
+ * FL-08-Sep-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -4576,6 +4576,8 @@ public class LinksCleanThread extends Thread
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
                 String death                = rsPersons.getString( "person_c.death" );
 
+                if( stillbirth == null ) { stillbirth = ""; }
+
                 //if( id_person == 14873 ) { debug = true; }
                 //else { debug = false; continue; }
 
@@ -4646,7 +4648,8 @@ public class LinksCleanThread extends Thread
 
                 if( debug && mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
 
-                if( birth_date_valid != 1 && ! stillbirth.startsWith( "y" ) )                 // invalid birth date, but not a stillbirth
+                // invalid birth date, but not a stillbirth
+                if( birth_date_valid != 1 && ! stillbirth.startsWith( "y" ) )
                 {
                     if( debug ) { showMessage( "invalid birth date", false, true ); }
 
