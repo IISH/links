@@ -1,10 +1,60 @@
-FL-06-2016
+FL-06-Sep-2016 Created
+FL-12-Sep-2016 Changed
 
-mysqldump --user=usr --password=pwd --no-data db > db.schema.sql
+SELECT id_source, reg_type, COUNT(*) AS count FROM links_logs.`ERROR_STORE` WHERE flag = 2 GROUP BY id_source, reg_type;
++-----------+------------+-------+
+| id_source | reg_type   | count |
++-----------+------------+-------+
+|         0 | Geboorte   |  5815 |
+|         0 | Overlijden |    60 |
+|       225 | Geboorte   |    12 |
+|       225 | Huwelijk   |    21 |
+|       225 | null       |    10 |
+|       225 | Overlijden |   188 |
++-----------+------------+-------+
 
-mysqldump --user=links --password=mslinks --no-data links_logs ERROR_STORE > links_logs.ERROR_STORE.schema.sql
+SELECT id_source, report_type, COUNT(*) FROM links_logs.ERROR_STORE WHERE id_source = 0 GROUP BY id_source, report_type;
++-----------+-------------+----------+
+| id_source | report_type | COUNT(*) |
++-----------+-------------+----------+
+|         0 |         105 |     5784 |	minMaxCalculation() passed "0" for error 105 to addToReportPerson()
+|         0 |         266 |       91 |	minMaxCalculation() passed "0" for error 266 to addToReportPerson()
++-----------+-------------+----------+
 
-mysql --user=links --password=msmslinks links_logs < links_error_store.schema.sql
+SELECT reg_type, report_type, COUNT(*) FROM links_logs.ERROR_STORE WHERE reg_type = 'null' GROUP BY id_source, reg_type;
++----------+-------------+----------+
+| reg_type | report_type | COUNT(*) |
++----------+-------------+----------+
+| null     |         201 |       10 |	standardRegistrationDate() addToReportRegistration() 
++----------+-------------+----------+
 
+USE links_original;
+SELECT registration_maintype, registration_type, COUNT(*) FROM links_original.registration_o WHERE id_source = 225 GROUP BY registration_maintype, registration_type;
++-----------------------+-------------------+----------+
+| registration_maintype | registration_type | COUNT(*) |
++-----------------------+-------------------+----------+
+|                     1 | NULL              |        4 |
+|                     1 | Geboorte          |   698553 |
+|                     2 | Echtscheiding     |     1693 |
+|                     2 | Huwelijk          |   192288 |
+|                     3 | NULL              |        7 |
+|                     3 | Overlijden        |   666294 |
++-----------------------+-------------------+----------+
+
+
+Export reports consists of 2 Python scripts: 
+	import_logs.py		
+	Load selected cleaning log tables into the ERROR_STORE table
+	flag = 1
+	
+	export_reports.py
+	Create csv files from the ERROR_STORE table for records with flag = 2
+	flag => 3
+
+	UPDATE links_logs.ERROR_STORE SET flag = 2 WHERE flag = 1;
+	
+	
+In case the ERROR_STORE table does not exist, create an empty one:
+	mysql --user=,usr> --password=<pwd> links_logs < ERROR_STORE.schema.sql
 
 [eof]

@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 07-Sep-2016 Created
-07-Sep-2016 Changed
+12-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -27,7 +27,7 @@ from time import time
 import csv
 import MySQLdb
 
-debug = True
+debug = False
 
 # db
 HOST   = "localhost"
@@ -38,46 +38,43 @@ USER   = "links"
 PASSWD = "mslinks"
 DBNAME = ""				# be explicit in all queries
 
-"""
-# incomplete
-full_archive_names = [ 
-	{ "id_source" : 211, "name" : "" },
-	{ "id_source" : 212, "name" : "" },
-	{ "id_source" : 213, "name" : "" },
-	{ "id_source" : 214, "name" : "" },
-	{ "id_source" : 215, "name" : "" },
-	{ "id_source" : 216, "name" : "" },
-	{ "id_source" : 217, "name" : "" },
-	{ "id_source" : 218, "name" : "" },
-	{ "id_source" : 219, "name" : "219-is-not-used" },
-	{ "id_source" : 220, "name" : "" },
-	{ "id_source" : 221, "name" : "" },
-	{ "id_source" : 222, "name" : "" },
-	{ "id_source" : 223, "name" : "" },
-	{ "id_source" : 224, "name" : "" },
-	{ "id_source" : 225, "name" : "" },
-	{ "id_source" : 226, "name" : "" },
-	{ "id_source" : 227, "name" : "" },
-	{ "id_source" : 228, "name" : "" },
-	{ "id_source" : 229, "name" : "" },
-	{ "id_source" : 230, "name" : "" },
-	{ "id_source" : 231, "name" : "Gemeentearchief Oegstgeest" },
-#	{ "id_source" : 231, "name" : "Gemeentearchief Leidschendam-Voorburg" },
-	{ "id_source" : 232, "name" : "" },
-	{ "id_source" : 233, "name" : "" },
-	{ "id_source" : 234, "name" : "" },
-	{ "id_source" : 235, "name" : "" },
-	{ "id_source" : 236, "name" : "" },
-	{ "id_source" : 237, "name" : "" },
-	{ "id_source" : 238, "name" : "" },
-	{ "id_source" : 239, "name" : "" },
-	{ "id_source" : 240, "name" : "" },
-	{ "id_source" : 241, "name" : "" },
-	{ "id_source" : 242, "name" : "Gemeentearchief Wassenaar" },
-	{ "id_source" : 243, "name" : "Regionaal Archief Leiden" },
-	{ "id_source" : 244, "name" : "" }
-]
-"""
+
+long_archive_names = { 
+	"211" : "Groninger Archieven",
+	"212" : "It Tresoar Friesland",
+	"213" : "Drents Archief",
+	"214" : "Historisch Centrum Overijssel",
+	"215" : "Gelders Archief",
+	"216" : "Utrechts Archief",
+	"217" : "Noord-Hollands Archief",
+	"218" : "Nationaal Archief (Zuid-Holland)",
+	"219" : "onbekend_archief",
+	"220" : "Brabants Historisch Informatie Centrum (BHIC)",
+	"221" : "Regionaal Historisch Centrum Limburg",
+	"222" : "Nieuw Land Erfgoedcentrum",
+	"223" : "Gemeente Archief Rotterdam",
+	"224" : "Gemeente Archief Breda",
+	"225" : "Zeeuws Archief",
+	"226" : "Regionaal Archief Eindhoven",
+	"227" : "Archief Eemland",
+	"228" : "Gemeente Archief Leeuwarden",
+	"229" : "Regionaal Archief Alkmaar",
+	"230" : "Nederlandse Antillen",
+	"231" : "Gemeente Archief Oegstgeest",
+	"232" : "Stadsarchief Dordrecht",
+	"233" : "Voorne Putten en Rozenburg",
+	"234" : "Goeree Overflakkee",
+	"235" : "Streekarchief Rijnstreek",
+	"236" : "Streekarchief Midden Holland",
+	"237" : "Gemeentearchief Vlaardingen",
+	"238" : "Streekarchief Rijnlands Midden",
+	"239" : "Gemeentearchief Gorinchem",
+	"240" : "Historisch Archief Westland",
+	"241" : "Gemeentearchief Leidschendam Voorburg",
+	"242" : "Gemeentearchief Wassenaar",
+	"243" : "Regionaal Archief Leiden",
+	"244" : "Gemeentearchief Delft"
+}
 
 short_archive_names = {
 	"211" : "Groningen",
@@ -169,34 +166,51 @@ class Database:
 
 
 def none2empty( var ):
-	if var is None or var == "None":
+	if var is None or var == "None" or var == "null":
 		var = ""
 	return var
 
 
 
-def export_source_type( db, table, id_source, reg_type ):
-	if debug: print( "export_source_type() id_source: %s, reg_type: %s" % ( id_source, reg_type ) )
+def export_source_type( debug, db, table, id_source, reg_type_in ):
+	if debug: print( "export_source_type() id_source: %s, reg_type: %s" % ( id_source, reg_type_in ) )
 	
-	short_name = short_archive_names[ str(id_source) ]
+	try:
+		short_name = short_archive_names[ str(id_source) ]
+	except:
+		short_name = "no_source"
+	
+	rtype_fname = none2empty( reg_type_in )
+	if rtype_fname == '':
+		rtype_fname = "no_type"
+				
 	now = datetime.datetime.now()
 	today = now.strftime("%Y-%m-%d")
-	filename = "%s_%s_%s_%s.csv" % ( id_source, short_name, reg_type, today )
+	filename = "%s_%s_%s_%s.csv" % ( id_source, short_name, rtype_fname, today )
 	print( filename )
-	csvfile = open( filename, "w" )
+	
+	filepath =  os.path.join( os.path.dirname(__file__), 'csv', filename )
+	if not os.path.exists( os.path.dirname( filepath ) ):
+		try:
+			os.makedirs( os.path.dirname( filepath ) )
+		except: 
+			raise
+	
+	
+	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
 	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
-	query += "WHERE id_source = %d AND reg_type = '%s' AND flag = 2;" % ( id_source, reg_type )
-	print( query )
+	query += "WHERE id_source = %d AND reg_type = '%s' AND flag = 2;" % ( id_source, reg_type_in )
+	if debug: print( query )
 	resp = db.query( query )
 	if resp is not None:
-		print( resp )
+		#print( resp )
 		nrec = len( resp )
-		print( "number of records: %d" %nrec )
+		if debug: print( "number of records: %d" %nrec )
 		for r in range( nrec ):
 			rec = resp[ r ]
 			if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
@@ -206,33 +220,47 @@ def export_source_type( db, table, id_source, reg_type ):
 			id_source    = none2empty( rec[ "id_source" ] )
 			archive      = none2empty( rec[ "archive" ] )
 			location     = none2empty( rec[ "location" ] )
-			reg_type     = none2empty( rec[ "reg_type" ] )
+			reg_type_out = none2empty( rec[ "reg_type" ] )
 			date         = none2empty( rec[ "date" ] )
 			sequence     = none2empty( rec[ "sequence" ] )
 			role         = none2empty( rec[ "role" ] )
 			guid         = none2empty( rec[ "guid" ] )		
 			content      = none2empty( rec[ "content" ] )
 			
+			if archive == '':
+				try:
+					archive = long_archive_names[ str(id_source) ]
+				except:
+					archive = "missing_archive_name"
+			
 			if debug:
-				print( "id_log       = %s" % id_log )
-				print( "id_source    = %s" % id_source  )
-				print( "archive      = %s" % archive )
-				print( "location     = %s" % location )
-				print( "reg_type     = %s" % reg_type )
-				print( "date         = %s" % date )
-				print( "sequence     = %s" % sequence )
-				print( "role         = %s" % role )
-				print( "guid         = %s" % guid )
-				print( "content      = %s" % content )
-
-		line =  [ id_log, id_source, archive, location, reg_type, date, sequence, role, guid, content ]
-		writer.writerow( line )
+				print( "id_log    = %s" % id_log )
+				print( "id_source = %s" % id_source  )
+				print( "archive   = %s" % archive )
+				print( "location  = %s" % location )
+				print( "reg_type  = %s" % reg_type_out )
+				print( "date      = %s" % date )
+				print( "sequence  = %s" % sequence )
+				print( "role      = %s" % role )
+				print( "guid      = %s" % guid )
+				print( "content   = %s" % content )
+			
+			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, content ]
+			writer.writerow( line )
 
 	csvfile.close()
 
+	# update the ERROR_STORE table
+	query  = "UPDATE links_logs.ERROR_STORE SET flag = 3, date_export = '%s', destination = '%s' " % ( today, archive )
+	query += "WHERE id_source = %d AND reg_type = '%s' AND flag = 2;" % ( id_source, reg_type_in )
+	if debug: print( query )
+	resp = db.insert( query )
+	if resp is not None and len(resp) != 0:
+		print( resp )
 
 
-def export( db ):
+
+def export( debug, db ):
 	if debug: print( "export()" )
 
 	query = "USE links_logs;"
@@ -244,7 +272,7 @@ def export( db ):
 	table = "ERROR_STORE"
 	
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
-	print( query )
+	if debug: print( query )
 	resp = db.query( query )
 	if resp is not None:
 		#print( resp )
@@ -252,31 +280,32 @@ def export( db ):
 		print( "%d records in table %s" % ( count, table ) )
 
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s` WHERE flag = 2;" % table
-	print( query )
+	if debug: print( query )
 	resp = db.query( query )
 	if resp is not None:
 		#print( resp )
 		count = resp[ 0 ][ "count" ]
 		print( "%d records in table %s with flag = 2" % ( count, table ) )
+		if count == 0:
+			return
 
 	# which id_source's are involved?
-	
-	#id_sources = []
 	query  = "SELECT id_source, reg_type, COUNT(*) AS count FROM links_logs.`%s` " % table
 	query += "WHERE flag = 2 GROUP BY id_source, reg_type;"
-	print( query )
+	if debug: print( query )
 	resp = db.query( query )
-	if resp is not None:
+	if resp is not None and len(resp) != 0:
 		ndict = len( resp )
-		print( resp )
+		if debug: print( resp )
 		for n in range( ndict ):
-			count = resp[ n ][ "count" ]
-			id_source = resp[ n ][ "id_source" ]
-			reg_type  = resp[ n ][ "reg_type" ]
-			#id_sources.append( id_source )
+			rec = resp[ n ]
+			count = rec[ "count" ]
+			id_source = rec[ "id_source" ]
+			reg_type  = rec[ "reg_type" ]
+			
 			print( "\nnumber of report records for id_source %3s, reg_type %s is %s" % ( id_source, reg_type, count ) )
 	
-			export_source_type( db, table, id_source, reg_type )
+			export_source_type( debug, db, table, id_source, reg_type )
 
 
 
@@ -285,6 +314,6 @@ if __name__ == "__main__":
 	
 	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
 	
-	export( db )
+	export( debug, db )
 	
 # [eof]

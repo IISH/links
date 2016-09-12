@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-05-Sep-2016 Changed
+12-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -29,10 +29,10 @@ import MySQLdb
 
 debug = False
 
-#begin_date_default = "2015-01-01"
-#end_date_default   = "2016-12-31"
-begin_date_default = "2016-04-15"
-end_date_default   = "2016-05-12"
+#begin_date_default = "2016-04-15"
+#end_date_default   = "2016-05-12"
+begin_date_default = "2016-09-08"
+end_date_default   = "2016-09-09"
 
 # db
 HOST   = "localhost"
@@ -244,14 +244,14 @@ def select_log_names( db_logs, begin_date, end_date ):
 
 
 def none2empty( var ):
-	if var is None or var == "None":
+	if var is None or var == "None" or var == "null":
 		var = ""
 	return var
 
 
 
 def process_logs( log_names ):
-	if debug: print( "rocess_logs()" )
+	if debug: print( "process_logs()" )
 	print( "\nprocessing selected logs" )
 	nnames = len( log_names )
 	fields = "id_log, id_source, archive, location, reg_type, date, sequence, role, guid, "
@@ -275,7 +275,7 @@ def process_logs( log_names ):
 		resp = db_logs.query( query )
 		if resp is not None:
 			nrec = len( resp )
-			print( "number of records: %d" %nrec )
+			print( "number of records in table %s: %d" % ( log_name, nrec ) )
 			for r in range( nrec ):
 				rec = resp[ r ]
 				if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
@@ -296,7 +296,10 @@ def process_logs( log_names ):
 				report_type  = none2empty( rec[ "report_type" ] )
 				content      = none2empty( rec[ "content" ] )
 				date_time    = str( none2empty( rec[ "date_time" ] ) )
-
+				
+				if pers_key == '': 
+					pers_key = 0	# declared as INTEGER
+				
 				if debug:
 					print( "id_log       = %s" % id_log )
 					print( "id_source    = %s" % id_source  )
@@ -315,9 +318,13 @@ def process_logs( log_names ):
 					print( "date_time    = %s" % date_time )
 				
 				# without id_log (also pk of ERROR_STORE table)
-				er_fields = fields[ 8: ]
+				# add flag = 1
+				er_fields  = fields[ 8: ]
+				er_fields += ", flag"
+				
+				flag = 1
 				er_values = ( id_source, archive, location, reg_type, date, sequence, role, guid, 
-					reg_key, pers_key, report_class, report_type, content, date_time )
+					reg_key, pers_key, report_class, report_type, content, date_time, flag )
 				
 				# Using 'IGNORE' to ignore violations of the unique_index constraint
 				er_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
@@ -327,7 +334,17 @@ def process_logs( log_names ):
 					print( "er_resp:", er_resp )
 				
 				#input( "<Enter> to continue" )
-				
+	
+	table = "ERROR_STORE"
+	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
+	#print( query )
+	resp = db.query( query )
+	if resp is not None:
+		#print( resp )
+		count = resp[ 0 ][ "count" ]
+		print( "number of records in table %s: %d" % ( table, count ) )
+
+
 
 def validate_date( date_string ):
 	date = None
