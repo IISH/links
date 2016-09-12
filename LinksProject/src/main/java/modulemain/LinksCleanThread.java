@@ -63,7 +63,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-08-Sep-2016 Latest change
+ * FL-12-Sep-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -5213,6 +5213,8 @@ public class LinksCleanThread extends Thread
             if( role == 0 ) { showMessage( "minMaxCalculation() role = 0, id_person = " + id_person, false, true ); }
         }
 
+        String source = Integer.toString( id_source );
+
         String min_age_0 = "n";
         String max_age_0 = "n";
         String age_main_role = "nvt";
@@ -5284,7 +5286,7 @@ public class LinksCleanThread extends Thread
                 showMessage( query, false, true );
             }
 
-            addToReportPerson( id_person, "0", 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
+            addToReportPerson( id_person, source, 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
 
             MinMaxYearSet mmj = new MinMaxYearSet();
 
@@ -5364,7 +5366,7 @@ public class LinksCleanThread extends Thread
         {
             //showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
             String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " +  mmj.getMaxYear();
-            addToReportPerson( id_person, "0", 266, msg_minmax  );       // error 266 + min & max
+            addToReportPerson( id_person, source, 266, msg_minmax  );       // error 266 + min & max
 
             // KM: day & month both from registration date, so with min_year = max_year date are equal
             mmj.setMinYear( mmj.getMaxYear() );                 // min = max
