@@ -1,60 +1,33 @@
-FL-06-Sep-2016 Created
-FL-12-Sep-2016 Changed
+FL-13-Sep-2016
 
-SELECT id_source, reg_type, COUNT(*) AS count FROM links_logs.`ERROR_STORE` WHERE flag = 2 GROUP BY id_source, reg_type;
-+-----------+------------+-------+
-| id_source | reg_type   | count |
-+-----------+------------+-------+
-|         0 | Geboorte   |  5815 |
-|         0 | Overlijden |    60 |
-|       225 | Geboorte   |    12 |
-|       225 | Huwelijk   |    21 |
-|       225 | null       |    10 |
-|       225 | Overlijden |   188 |
-+-----------+------------+-------+
-
-SELECT id_source, report_type, COUNT(*) FROM links_logs.ERROR_STORE WHERE id_source = 0 GROUP BY id_source, report_type;
-+-----------+-------------+----------+
-| id_source | report_type | COUNT(*) |
-+-----------+-------------+----------+
-|         0 |         105 |     5784 |	minMaxCalculation() passed "0" for error 105 to addToReportPerson()
-|         0 |         266 |       91 |	minMaxCalculation() passed "0" for error 266 to addToReportPerson()
-+-----------+-------------+----------+
-
-SELECT reg_type, report_type, COUNT(*) FROM links_logs.ERROR_STORE WHERE reg_type = 'null' GROUP BY id_source, reg_type;
-+----------+-------------+----------+
-| reg_type | report_type | COUNT(*) |
-+----------+-------------+----------+
-| null     |         201 |       10 |	standardRegistrationDate() addToReportRegistration() 
-+----------+-------------+----------+
-
-USE links_original;
-SELECT registration_maintype, registration_type, COUNT(*) FROM links_original.registration_o WHERE id_source = 225 GROUP BY registration_maintype, registration_type;
-+-----------------------+-------------------+----------+
-| registration_maintype | registration_type | COUNT(*) |
-+-----------------------+-------------------+----------+
-|                     1 | NULL              |        4 |
-|                     1 | Geboorte          |   698553 |
-|                     2 | Echtscheiding     |     1693 |
-|                     2 | Huwelijk          |   192288 |
-|                     3 | NULL              |        7 |
-|                     3 | Overlijden        |   666294 |
-+-----------------------+-------------------+----------+
-
+The contents of selected log tables is collected in the table ERROR_STORE. 
+In order to create such a table in the links_logs db: 
+	$ mysql -u links -p links_logs < ERROR_STORE.schema.sql
+Apart from the pk, the table also contains the index: 
+	UNIQUE KEY `unique_index` (`id_source`,`location`,`reg_type`,`date`,`sequence`,`role`,`content`)
+Its role is to prevent duplicates for the combination of those 7 columns. 
 
 Export reports consists of 2 Python scripts: 
-	import_logs.py		
-	Load selected cleaning log tables into the ERROR_STORE table
-	flag = 1
+	import_logs.py
+	Based on the provided date range, The script loads selected cleaning 
+	log tables into the ERROR_STORE table. 
+	The value of 'flag' is set to 1. 
 	
 	export_reports.py
-	Create csv files from the ERROR_STORE table for records with flag = 2
-	flag => 3
+	Before running the script, 'manually' set the value of 'flag' to 2, 
+	for those records that you want to be included in csv output files. 
+	For selected records, the value of 'flag' is 'manually' set to 2. 
+	Only records with flag value 2 will be processed by the script. 
+	During running the script, the flag value is updated from 2 to 3. 
+	The generated csv files are written to the subdirectory csv. 
 
-	UPDATE links_logs.ERROR_STORE SET flag = 2 WHERE flag = 1;
-	
-	
-In case the ERROR_STORE table does not exist, create an empty one:
-	mysql --user=,usr> --password=<pwd> links_logs < ERROR_STORE.schema.sql
+The scripts require several extra python modules not present in the system python. 
+We prefer the use of 'virtual' pythons, to which we add needed modules, see 
+virtual-python-3.5.2.txt
+In order to automatically activate the virtual python, the 2 python scripts 
+are started via 2 tiny shell scripts: 
+	$ ./import_logs.sh
+and
+	$ ./export_reports.sh
 
 [eof]
