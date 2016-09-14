@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-12-Sep-2016 Changed
+14-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -28,7 +28,8 @@ from dateutil.parser import parse
 import MySQLdb
 
 debug = False
-
+chunk = 100000		# show progress in processing records
+		
 #begin_date_default = "2016-04-15"
 #end_date_default   = "2016-05-12"
 begin_date_default = "2016-09-08"
@@ -258,7 +259,7 @@ def process_logs( log_names ):
 	fields += "reg_key, pers_key, report_class, report_type, content, date_time"
 	
 	clause = ""
-	for xtype in x_codes:
+	for xtype in x_codes:		# where column 'content' contains 'standard_code= 'x'
 		if clause == "":
 			clause = "report_type = %d" % xtype
 		else:
@@ -268,15 +269,25 @@ def process_logs( log_names ):
 	for n in range( nnames ):
 		log_name = log_names[ n ]
 		print( log_name )
-			
+		
+		time1 = time()		# seconds since the epoch
 		query = "SELECT %s FROM links_logs.`%s` WHERE NOT (%s);" % ( fields, log_name, clause )
-		if debug: print( query )
+		print( query )
 		
 		resp = db_logs.query( query )
+		
+		str_elapsed = format_secs( time() - time1 )
+		print( "query took %s" % str_elapsed )
+		
 		if resp is not None:
 			nrec = len( resp )
 			print( "number of records in table %s: %d" % ( log_name, nrec ) )
+			time2 = time()		# seconds since the epoch
+			
 			for r in range( nrec ):
+				if ( r > 0 and ( r + chunk ) % chunk == 0 ):
+					print( "%d records processed" % r )
+				
 				rec = resp[ r ]
 				if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
 				if debug: print( rec )
@@ -344,6 +355,9 @@ def process_logs( log_names ):
 		count = resp[ 0 ][ "count" ]
 		print( "number of records in table %s: %d" % ( table, count ) )
 
+	str_elapsed = format_secs( time() - time2 )
+	print( "processing records took %s" % str_elapsed )
+
 
 
 def validate_date( date_string ):
@@ -386,6 +400,23 @@ def get_date_limits():
 		begin_date = end_date = None
 		
 	return begin_date, end_date
+
+
+
+def format_secs( seconds ):
+	nmin, nsec  = divmod( seconds, 60 )
+	nhour, nmin = divmod( nmin, 60 )
+
+	if nhour > 0:
+		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+	else:
+		if nmin > 0:
+			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		else:
+			str_elapsed = "%d (sec)" % nsec
+
+	return str_elapsed
+# format_secs()
 
 
 

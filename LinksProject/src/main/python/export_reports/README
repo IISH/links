@@ -1,4 +1,4 @@
-FL-13-Sep-2016
+FL-14-Sep-2016
 
 The contents of selected log tables is collected in the table ERROR_STORE. 
 In order to create such a table in the links_logs db: 
@@ -7,7 +7,7 @@ Apart from the pk, the table also contains the index:
 	UNIQUE KEY `unique_index` (`id_source`,`location`,`reg_type`,`date`,`sequence`,`role`,`content`)
 Its role is to prevent duplicates for the combination of those 7 columns. 
 
-Export reports consists of 2 Python scripts: 
+Two Python scripts are used to create the reports: 
 	import_logs.py
 	Based on the provided date range, The script loads selected cleaning 
 	log tables into the ERROR_STORE table. 
@@ -16,18 +16,21 @@ Export reports consists of 2 Python scripts:
 	export_reports.py
 	Before running the script, 'manually' set the value of 'flag' to 2, 
 	for those records that you want to be included in csv output files. 
-	For selected records, the value of 'flag' is 'manually' set to 2. 
 	Only records with flag value 2 will be processed by the script. 
 	During running the script, the flag value is updated from 2 to 3. 
 	The generated csv files are written to the subdirectory csv. 
 
 The scripts require several extra python modules not present in the system python. 
-We prefer the use of 'virtual' pythons, to which we add needed modules, see 
-virtual-python-3.5.2.txt
+We prefer the use of 'virtual' pythons, to which we added the needed modules, see 
+virtual-python-3.5.2.txt. 
 In order to automatically activate the virtual python, the 2 python scripts 
 are started via 2 tiny shell scripts: 
+	$ cd /data/links/clean/export_reports
 	$ ./import_logs.sh
 and
 	$ ./export_reports.sh
+
+In github, you can find these and other scripts in 
+links/LinksProject/src/main/python
 
 [eof]
