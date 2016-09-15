@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 07-Sep-2016 Created
-12-Sep-2016 Changed
+15-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -141,8 +141,7 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			log.write( "%s, %s\n" % ( etype, value ) )
-			exit( 1 )
+			print( "%s, %s\n" % ( etype, value ) )
 
 	def query( self, query ):
 	#	print( "\n%s" % query )
@@ -185,7 +184,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 		rtype_fname = "no_type"
 				
 	now = datetime.datetime.now()
-	today = now.strftime("%Y-%m-%d")
+	today = now.strftime( "%Y-%m-%d" )
 	filename = "%s_%s_%s_%s.csv" % ( id_source, short_name, rtype_fname, today )
 	print( filename )
 	
@@ -224,7 +223,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 			date         = none2empty( rec[ "date" ] )
 			sequence     = none2empty( rec[ "sequence" ] )
 			role         = none2empty( rec[ "role" ] )
-			guid         = none2empty( rec[ "guid" ] )		
+			guid         = none2empty( rec[ "guid" ] )
 			content      = none2empty( rec[ "content" ] )
 			
 			if archive == '':

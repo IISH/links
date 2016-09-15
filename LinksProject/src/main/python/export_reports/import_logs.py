@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-14-Sep-2016 Changed
+15-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -29,7 +29,7 @@ import MySQLdb
 
 debug = False
 chunk = 100000		# show progress in processing records
-		
+
 #begin_date_default = "2016-04-15"
 #end_date_default   = "2016-05-12"
 begin_date_default = "2016-09-08"
@@ -87,8 +87,7 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			log.write( "%s, %s\n" % ( etype, value ) )
-			exit( 1 )
+			print( "%s, %s\n" % ( etype, value ) )
 
 	def query( self, query ):
 	#	print( "\n%s" % query )
@@ -266,6 +265,7 @@ def process_logs( log_names ):
 			clause += " OR report_type = %d" % xtype
 	#print( clause )
 	
+	time0 = time()		# seconds since the epoch
 	for n in range( nnames ):
 		log_name = log_names[ n ]
 		print( log_name )
@@ -282,11 +282,10 @@ def process_logs( log_names ):
 		if resp is not None:
 			nrec = len( resp )
 			print( "number of records in table %s: %d" % ( log_name, nrec ) )
-			time2 = time()		# seconds since the epoch
 			
 			for r in range( nrec ):
 				if ( r > 0 and ( r + chunk ) % chunk == 0 ):
-					print( "%d records processed" % r )
+					print( "%d-of-%d records processed" % ( r, nrec ) )
 				
 				rec = resp[ r ]
 				if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
@@ -343,8 +342,8 @@ def process_logs( log_names ):
 				er_resp = db_logs.insert( er_query )
 				if er_resp is not None:
 					print( "er_resp:", er_resp )
-				
-				#input( "<Enter> to continue" )
+			
+			print( "%d-of-%d records processed" % ( nrec, nrec ) )
 	
 	table = "ERROR_STORE"
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
@@ -355,8 +354,8 @@ def process_logs( log_names ):
 		count = resp[ 0 ][ "count" ]
 		print( "number of records in table %s: %d" % ( table, count ) )
 
-	str_elapsed = format_secs( time() - time2 )
-	print( "processing records took %s" % str_elapsed )
+	str_elapsed = format_secs( time() - time0 )
+	print( "importing took %s" % str_elapsed )
 
 
 
