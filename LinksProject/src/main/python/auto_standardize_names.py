@@ -11,7 +11,7 @@ Goal:		Automatically standardize names by taking the closest Levenshtein variant
 			we additionally require that the first character must match. 
 
 13-Apr-2016 Created
-17-Aug-2016 Changed
+13-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -83,8 +83,7 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			log.write( "%s, %s\n" % ( etype, value ) )
-			exit( 1 )
+			print( "%s, %s\n" % ( etype, value ) )
 
 	def query( self, query ):
 	#	print( "\n%s" % query )

@@ -12,7 +12,7 @@ Goal:		Read the sql file with MySQL queries to fill the 2 table of
 
 04-Dec-2014	Created
 18-Jan-2016	Update for Python-3
-20-Feb-2016	Changed
+15-Sep-2016	Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -65,8 +65,7 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			log.write( "%s, %s\n" % ( etype, value ) )
-			exit( 1 )
+			print( "%s, %s\n" % ( etype, value ) )
 
 	def query( self, query ):
 		print( "\n%s" % query )

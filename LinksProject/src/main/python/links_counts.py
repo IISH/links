@@ -9,7 +9,7 @@ Version:	0.1
 Goal:		Count and compare links original & cleaned record counts
 
 29-Mar-2016 Created
-20-May-2016 Changed
+15-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -23,7 +23,7 @@ import datetime
 from time import time
 import MySQLdb
 
-debug = False
+debug = True
 
 # db
 HOST   = "localhost"
@@ -103,7 +103,7 @@ short_archive_names = {
 	"235" : "Z-H_Rijnstreek",
 	"236" : "Z-H_Midden-Holland",
 	"237" : "Z-H_Vlaardingen",
-	"238" : "Z-H-Midden",
+	"238" : "Z-H_Midden",
 	"239" : "Z-H_Gorinchem",
 	"240" : "Z-H_Westland",
 	"241" : "Z-H_Leidschendam",
@@ -139,8 +139,7 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			log.write( "%s, %s\n" % ( etype, value ) )
-			exit( 1 )
+			print( "%s, %s\n" % ( etype, value ) )
 
 	def query( self, query ):
 	#	print( "\n%s" % query )
@@ -199,6 +198,7 @@ def registration_counts( debug, db ):
 	
 	# get the number of registration records per source from links_original
 	table = "registration_o"
+	query_id = "query_o"
 	query_o = "SELECT id_source, COUNT(*) AS count FROM links_original." + table + " GROUP BY id_source" + ";"
 	print( query_o )
 	
@@ -215,8 +215,9 @@ def registration_counts( debug, db ):
 		if debug: print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
 		
 		entry = {}
-		entry[ "table" ]     = table
-		entry[ "count" ]     = count
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
 		
 		sources[ id_source ] = [ entry ]	# clean counts dict will be added to array
 	
@@ -225,6 +226,7 @@ def registration_counts( debug, db ):
 	
 	# get the number of registration records per source from links_cleaned
 	table = "registration_c"
+	query_id = "query_c"
 	query_c = "SELECT id_source, COUNT(*) AS count FROM links_cleaned." + table + " GROUP BY id_source" + ";"
 	print( query_c )
 	
@@ -241,8 +243,9 @@ def registration_counts( debug, db ):
 		if debug: print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
 		
 		entry = {}
-		entry[ "table" ]     = table
-		entry[ "count" ]     = count
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
 		
 		array = sources.get( id_source )
 		if array is None:
@@ -251,6 +254,7 @@ def registration_counts( debug, db ):
 			array.append( entry )
 	
 	if debug: print( sources )
+	
 	
 	now = datetime.datetime.now()
 	print( "" )
@@ -312,6 +316,7 @@ def person_counts( debug, db ):
 	
 	# get the number of person records per source from links_original
 	table = "person_o"
+	query_id = "query_o"
 	query_o = "SELECT id_source, COUNT(*) AS count FROM links_original." + table + " GROUP BY id_source" + ";"
 	print( query_o )
 	
@@ -328,8 +333,9 @@ def person_counts( debug, db ):
 		if debug: print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
 		
 		entry = {}
-		entry[ "table" ]     = table
-		entry[ "count" ]     = count
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
 		
 		sources[ id_source ] = [ entry ]	# clean counts dict will be added to array
 	
@@ -338,6 +344,7 @@ def person_counts( debug, db ):
 	
 	# get the number of person records per source from links_cleaned
 	table = "person_c"
+	query_id = "query_c"
 	query_c = "SELECT id_source, COUNT(*) AS count FROM links_cleaned." + table + " GROUP BY id_source" + ";"
 	print( query_c )
 	
@@ -352,10 +359,11 @@ def person_counts( debug, db ):
 		id_source = d.get( "id_source" )
 		count     = d.get( "count" )
 		source[ "clean" ] = count
-	#	#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
+		#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
 		
 		entry = {}
 		entry[ "table" ] = table
+		entry[ "query" ] = query_id
 		entry[ "count" ] = count
 		
 		array = sources.get( id_source )
@@ -366,50 +374,14 @@ def person_counts( debug, db ):
 		
 	if debug: print( sources )
 	
-	
-	# Get the number of records per source from links_base. 
-	# The requirements for ego_familyname and registration_days may lead to 
-	# different counts between person_c and links_base. 
-	# A too large difference indicates a potential problem with cleaning and/or prematching. 
-	table = "links_base"
-	query_b  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
-	query_b += " WHERE ego_familyname <> 0 AND registration_days IS NOT NULL AND registration_days <> 0"
-	query_b += " GROUP BY id_source" + ";"
-	print( query_b )
-	
-	resp_b = db.query( query_b )
-	if debug: print( resp_b )
-	nsources_b = len( resp_b )
-	if debug: print( "links_base: %d sources\n" % nsources_b )
-	
-	for s_b in range( nsources_b ):
-		source = {}
-		d = resp_b[ s_b ]
-		id_source = d.get( "id_source" )
-		count     = d.get( "count" )
-		source[ "base" ] = count
-	#	#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
-	
-		entry = {}
-		entry[ "table" ] = table
-		entry[ "count" ] = count
-		
-		array = sources.get( id_source )
-		if array is None:
-			sources[ id_source ] = [ entry ]
-		else:
-			array.append( entry )
-	
-	if debug: print( sources )
-
 	
 	now = datetime.datetime.now()
 	print( "" )
 	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
-	print( "======================================================================================================" )
-	print( "     id        short          person_o       person_c     -- o/c loss --   links_base   -- c/b loss --" )
-	print( " # source  archive name     record count   record count   diff   procent  record count  diff   procent" )
-	print( "------------------------------------------------------------------------------------------------------" )
+	print( "============================================================================" )
+	print( "     id        short           person_o        person_c     --- o/c loss ---" )
+	print( " # source  archive name      record count    record count   diff     procent" )
+	print( "----------------------------------------------------------------------------" )
 	
 	n = 0
 	for key in sorted( sources ):
@@ -456,10 +428,245 @@ def person_counts( debug, db ):
 		else:
 			procent_cb_str = "     "
 		
-		print( "%2d %4s   %-20s %7d        %7d  %7d  %5s    %7d  %7d  %5s" % 
-			( n, id_source_str, name, orig, clean, diff_oc, procent_oc_str, base, diff_cb, procent_cb_str ) )
+		print( "%2d %4s   %-20s %7d         %7d   %7d    %5s" % 
+			( n, id_source_str, name, orig, clean, diff_oc, procent_oc_str ) )
 			
-	print( "======================================================================================================\n" )
+	print( "============================================================================\n" )
+
+	return sources
+
+
+
+def base_counts( debug, db, sources_person ):
+	if debug: print( "base_counts" )
+	
+	sources_base = {}
+
+	
+	# Get the number of records per source from links_base.  
+	# different counts between person_c and links_base are caused role and/or registration_maintype problems. 
+	# A too large difference indicates a potential problem with cleaning and/or prematching. 
+	table = "links_base"
+	query_id = "query_b1"
+	query_b1  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
+	query_b1 += " GROUP BY id_source" + ";"
+	print( query_b1 )
+	
+	resp_b1 = db.query( query_b1 )
+	if debug: print( resp_b1 )
+	nsources_b1 = len( resp_b1 )
+	if debug: print( "links_base: %d sources\n" % nsources_b1 )
+	
+	for s_b1 in range( nsources_b1 ):
+		source = {}
+		d = resp_b1[ s_b1 ]
+		id_source = d.get( "id_source" )
+		count     = d.get( "count" )
+		source[ "base" ] = count
+		#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
+	
+		entry = {}
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
+		
+		array = sources_base.get( id_source )
+		if array is None:
+			sources_base[ id_source ] = [ entry ]
+		else:
+			array.append( entry )
+	
+	if debug: print( sources_base )
+
+	
+	# Get the number of records per source from links_base, 
+	# where the ego_familyname is missing; these are not used for matching. 
+	table = "links_base"
+	query_id = "query_be"
+	query_be  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
+	query_be += " WHERE ego_familyname IS NULL OR ego_familyname = 0"
+	query_be += " GROUP BY id_source" + ";"
+	print( query_be )
+	
+	resp_be = db.query( query_be )
+	if debug: print( resp_be )
+	nsources_be = len( resp_be )
+	if debug: print( "links_base: %d sources\n" % nsources_be )
+	
+	for s_be in range( nsources_be ):
+		source = {}
+		d = resp_be[ s_be ]
+		id_source = d.get( "id_source" )
+		count     = d.get( "count" )
+		source[ "base" ] = count
+		#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
+	
+		entry = {}
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
+		
+		array = sources_base.get( id_source )
+		if array is None:
+			sources_base[ id_source ] = [ entry ]
+		else:
+			array.append( entry )
+	
+	if debug: print( sources_base )
+	
+	
+	# Get the number of records per source from links_base, 
+	# where the registration_days is missing; these are not used for matching. 
+	table = "links_base"
+	query_id = "query_bd"
+	query_bd  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
+	query_bd += " WHERE registration_days IS NULL OR registration_days = 0"
+	query_bd += " GROUP BY id_source" + ";"
+	print( query_bd )
+	
+	resp_bd = db.query( query_bd )
+	if debug: print( resp_bd )
+	nsources_bd = len( resp_bd )
+	if debug: print( "links_base: %d sources\n" % nsources_bd )
+
+	for s_bd in range( nsources_bd ):
+		source = {}
+		d = resp_bd[ s_bd ]
+		id_source = d.get( "id_source" )
+		count     = d.get( "count" )
+		source[ "base" ] = count
+		#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
+	
+		entry = {}
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
+		
+		array = sources_base.get( id_source )
+		if array is None:
+			sources_base[ id_source ] = [ entry ]
+		else:
+			array.append( entry )
+	
+	if debug: print( sources_base )
+
+
+	# Get the number of records per source from links_base. 
+	# The requirements for ego_familyname and registration_days may lead to 
+	# different counts between person_c and links_base. 
+	# A too large difference indicates a potential problem with cleaning and/or prematching. 
+	table = "links_base"
+	query_id = "query_b2"
+	query_b2  = "SELECT id_source, COUNT(*) AS count FROM links_prematch." + table
+	query_b2 += " WHERE ego_familyname <> 0 AND registration_days IS NOT NULL AND registration_days <> 0"
+	query_b2 += " GROUP BY id_source" + ";"
+	print( query_b2 )
+
+	resp_b2 = db.query( query_b2 )
+	if debug: print( resp_b2 )
+	nsources_b2 = len( resp_b2 )
+	if debug: print( "links_base: %d sources\n" % nsources_b2 )
+
+	for s_b2 in range( nsources_b2 ):
+		source = {}
+		d = resp_b2[ s_b2 ]
+		id_source = d.get( "id_source" )
+		count     = d.get( "count" )
+		source[ "base" ] = count
+	#	#print( "# %3d id_source: %d, count: %d" % ( s+1, id_source, count ) )
+	
+		entry = {}
+		entry[ "table" ] = table
+		entry[ "query" ] = query_id
+		entry[ "count" ] = count
+		
+		array = sources_base.get( id_source )
+		if array is None:
+			sources_base[ id_source ] = [ entry ]
+		else:
+			array.append( entry )
+	
+	if debug: print( sources_base )
+
+
+	now = datetime.datetime.now()
+	print( "" )
+	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
+	print( "============================================================================================" )
+	print( "     id        short         links_base   -- c/b loss --  missing  missing  -- b/b loss --" )
+	print( " # source  archive name     record count  diff   procent  ego fam  days sb  diff   procent" )
+	print( "--------------------------------------------------------------------------------------------" )
+		
+	n = 0
+	for key in sorted( sources_base ):
+		n += 1
+		
+		tables_person = sources_person[ key ]
+		count_c = 0
+		for t in tables_person:
+			t_name = t.get( "table" )
+			if t_name == "person_c":
+				count_c = t.get( "count" )
+		clean = count_c
+		
+		queries_base = sources_base[ key ]
+		#print( key, queries_base )
+		
+		id_source = key
+		id_source_str = str( id_source )
+		
+		try:
+			name = archive_names[ id_source_str ]
+		except:
+			name = ""
+		
+		count_b1 = 0
+		for q in queries_base:
+			q_id = q.get( "query" )
+			if q_id == "query_b1":
+				count_b1 = q.get( "count" )
+		base1 = count_b1
+		
+		diff_cb = clean - base1
+		if clean != 0:
+			procent_cb = 100.0 * float( diff_cb ) / ( clean )
+			procent_cb_str = "%6.2f %%" % procent_cb
+		else:
+			procent_cb_str = "     "
+		
+		count_be = 0
+		for q in queries_base:
+			q_id = q.get( "query" )
+			if q_id == "query_be":
+				count_be = q.get( "count" )
+		ego = count_be
+		
+		count_bd = 0
+		for q in queries_base:
+			q_id = q.get( "query" )
+			if q_id == "query_bd":
+				count_bd = q.get( "count" )
+		days = count_bd
+		
+		count_b2 = 0
+		for q in queries_base:
+			q_id = q.get( "query" )
+			if q_id == "query_b2":
+				count_b2 = q.get( "count" )
+		base2 = count_b2
+		
+		# wrong: diff_bb = ego + days, because ego and days may contain overlapping records
+		diff_bb = base1 - base2
+		if base1 != 0:
+			procent_bb = 100.0 * float( diff_bb ) / ( base1 )
+			procent_bb_str = "%6.2f %%" % procent_bb
+		else:
+			procent_bb_str = "     "
+		
+		print( "%2d %4s   %-20s %7d %7d  %5s %7d %7d %7d  %5s" % 
+			( n, id_source_str, name, base1, diff_cb, procent_cb_str, ego, days, diff_bb, procent_bb_str ) )
+
+	print( "============================================================================================\n" )
 
 
 
@@ -470,6 +677,7 @@ if __name__ == "__main__":
 
 	print( "host:", HOST )
 	registration_counts( debug, db )
-	person_counts( debug, db )
+	sources_person = person_counts( debug, db )
+	base_counts( debug, db, sources_person )
 
 # [eof]
