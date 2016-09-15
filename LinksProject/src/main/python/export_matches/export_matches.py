@@ -85,8 +85,8 @@ class Database:
 
 
 
-def get_get_base_record( id_base ):
-	if debug: print( "get_get_base_record()" )
+def get_base_record( id_base ):
+	if debug: print( "get_base_record()" )
 	
 	rec = None
 	query  = "SELECT * FROM links_prematch.links_base WHERE id_base = %s;" % id_base
@@ -97,6 +97,44 @@ def get_get_base_record( id_base ):
 		rec = resp[ 0 ]
 	
 	return rec
+
+
+
+def get_2base_records( id_base1, id_base2 ):
+	if debug: print( "get_2base_records()" )
+	
+	rec_id_base1 = None
+	rec_id_base2 = None
+	
+	query  = "SELECT * FROM links_prematch.links_base WHERE id_base = %s OR id_base = %s;" % ( id_base1, id_base2 )
+	if debug: print( query )
+	resp = db.query( query )
+	if resp is not None:
+		nrec = len( resp )
+		#print( "nrec: %d" % nrec )
+		#print( resp )
+		if nrec == 1:		# OK if base values are equal (automatch)
+			if not id_base1 == id_base2:
+				print( "Got only 1 record from links_base for unequal base values; EXIT" % nrec )
+				sys.exit( 0 )
+			else:
+				rec_id_base1 = rec_id_base2 = resp[ 0 ]
+			
+		elif nrec == 2:
+			rec0 = resp[ 0 ]
+			rec1 = resp[ 1 ]
+			
+			if rec0[ "id_base" ] == id_base1: 
+				rec_id_base1 = rec0
+				rec_id_base2 = rec1
+			else:
+				rec_id_base1 = rec1
+				rec_id_base2 = rec0
+		else:
+			print( "Dit NOT get 2 records from links_base, but %d; EXIT" % nrec )
+			sys.exit( 0 )
+	
+	return rec_id_base1, rec_id_base2
 
 
 
@@ -178,8 +216,9 @@ def export( debug, db, id_match_process ):
 			value_firstname_fa  = none2zero( rec_match[ "value_firstname_fa" ] )
 			value_firstname_pa  = none2zero( rec_match[ "value_firstname_pa" ] )
 			
-			rec_linksbase_1 = get_get_base_record( id_linksbase_1 )
-			rec_linksbase_2 = get_get_base_record( id_linksbase_2 )
+			#rec_linksbase_1 = get_base_record( id_linksbase_1 )
+			#rec_linksbase_2 = get_base_record( id_linksbase_2 )
+			rec_linksbase_1, rec_linksbase_2 = get_2base_records( id_linksbase_1, id_linksbase_2 )
 			
 			GUI_1 = rec_linksbase_1[ "id_persist_registration" ]
 			GUI_2 = rec_linksbase_2[ "id_persist_registration" ]
