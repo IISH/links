@@ -1,0 +1,21 @@
+FL-15-Sep-2016
+
+The bookkeeping of the exported matches to CBG is collected in the table MATCHES_CBG_WWW. 
+In order to create such a table in the links_match db: 
+	$ mysql -u links -p links_match < MATCHES_CBG_WWW.schema.sql
+
+The Python script to export the matches for a given id_match_process value is: 
+	export_matches.py
+
+The script requires several extra python modules not present in the system python. 
+We prefer the use of 'virtual' pythons, to which we added the needed modules, see 
+virtual-python-3.5.2.txt. 
+In order to automatically activate the virtual python, the python script is 
+started via a tiny shell script: 
+	$ cd /data/links/match/export_matches
+	$ ./export_matches.sh
+
+In github, you can find these and other scripts in 
+links/LinksProject/src/main/python
+
+[eof]
