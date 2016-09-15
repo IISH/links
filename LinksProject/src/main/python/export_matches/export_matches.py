@@ -250,6 +250,23 @@ def get_id_match_process( db ):
 
 
 
+def format_secs( seconds ):
+	nmin, nsec  = divmod( seconds, 60 )
+	nhour, nmin = divmod( nmin, 60 )
+
+	if nhour > 0:
+		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+	else:
+		if nmin > 0:
+			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		else:
+			str_elapsed = "%d (sec)" % nsec
+
+	return str_elapsed
+# format_secs()
+
+
+
 if __name__ == "__main__":
 	print( "export_matches.py" )
 	
@@ -261,6 +278,8 @@ if __name__ == "__main__":
 		sys.exit( 1 )
 	"""
 	
+	time0 = time()		# seconds since the epoch
+	
 	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
 	
 	id_match_process = get_id_match_process( db )
@@ -269,4 +288,7 @@ if __name__ == "__main__":
 	
 	export( debug, db, id_match_process )
 	
+	str_elapsed = format_secs( time() - time0 )
+	print( "processing took %s" % str_elapsed )
+		
 # [eof]
