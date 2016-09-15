@@ -25,8 +25,7 @@ import csv
 import MySQLdb
 
 debug = False
-chunk = 100000		# show progress in processing records
-chunk = 1000
+chunk = 10000		# show progress in processing records
 
 # db
 HOST   = "localhost"
