@@ -63,7 +63,8 @@ import linksmanager.ManagerGui;
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
- * FL-12-Sep-2016 Latest change
+ * FL-04-Nov-2016 Small change minMaxCalculation
+ * FL-04-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -5320,11 +5321,7 @@ public class LinksCleanThread extends Thread
         // function "A" means: the contents of mmj is already OK
         // function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
 
-        if( function.equals( "A" ) )                    // function A, nothing to do
-        {
-            ;
-        }
-        else if( function.equals( "C" ) )                // function C, check by reg year
+        if( function.equals( "C" ) )                // function C, check by reg year
         {
             if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
         }
@@ -5333,7 +5330,7 @@ public class LinksCleanThread extends Thread
             if( minimum_year > (reg_year - 14) ) { mmj.setMinYear( reg_year - 14 ); }
             if( maximum_year > (reg_year - 14) ) { mmj.setMaxYear( reg_year - 14 ); }
         }
-        else if( function.equals( "E" ) )               // If E, deceased
+        else if( function.equals( "A" ) || function.equals( "E" ) )               // If E, deceased
         {
             if( minimum_year > reg_year ) { mmj.setMinYear( reg_year ); }
             if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
