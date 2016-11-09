@@ -64,7 +64,8 @@ import linksmanager.ManagerGui;
  * FL-13-May-2016 split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
  * FL-04-Nov-2016 Small change minMaxCalculation
- * FL-04-Nov-2016 Latest change
+ * FL-07-Nov-2016 Flag instead of remove registrations
+ * FL-09-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -255,11 +256,11 @@ public class LinksCleanThread extends Thread
 
                     doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagEmptyDateRegs( opts.isDbgFlagEmptyDateRegs(), opts.isDoFlagEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagEmptyRoleRegs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    doFlagDuplicateRegs( opts.isDbgFlagDuplicateRegs(), opts.isDoFlagDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
                 }
@@ -433,11 +434,11 @@ public class LinksCleanThread extends Thread
 
                     doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doRemoveEmptyDateRegs( opts.isDbgRemoveEmptyDateRegs(), opts.isDoRemoveEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagEmptyDateRegs( opts.isDbgFlagEmptyDateRegs(), opts.isDoFlagEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveEmptyRoleRegs( opts.isDbgRemoveEmptyRoleRegs(), opts.isDoRemoveEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagEmptyRoleRegs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doRemoveDuplicateRegs( opts.isDbgRemoveDuplicateRegs(), opts.isDoRemoveDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    doFlagDuplicateRegs( opts.isDbgFlagDuplicateRegs(), opts.isDoFlagDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
 
@@ -7015,6 +7016,29 @@ public class LinksCleanThread extends Thread
             dbconCleaned.runQuery( query );
         }
 
+        // stillbirth with missing birth_date -> registration_date
+        String query = "UPDATE links_cleaned.registration_c, links_cleaned.person_c "
+            + "SET "
+            + "person_c.birth_date = registration_c.registration_date, "
+            + "person_c.birth_year = registration_c.registration_year, "
+            + "person_c.birth_month = registration_c.registration_month, "
+            + "person_c.birth_day = registration_c.registration_day, "
+            + "person_c.birth_date_flag = 2 "
+            + "WHERE registration_c.id_registration = person_c.id_registration "
+            + "AND registration_date IS NOT NULL "
+            + "AND person_c.stillbirth IS NOT NULL AND person_c.stillbirth <> '' "
+            + "AND person_c.birth_date IS NULL "
+            + "AND person_c.role = 10 "
+            + "AND person_c.id_source = " + source;
+
+        if( debug ) { System.out.println( query ); }
+        System.out.println( query );
+        String msg = String.format( "Thread id %02d; running stillbirth birth_date query...", threadId  );
+        showMessage( msg, false, true );
+        int count = dbconCleaned.runQueryUpdate( query );
+        msg = String.format( "Thread id %02d; stillbirth: %d rows updated", threadId, count  );
+        showMessage( msg, false, true );
+
     } // postTasks
 
 
@@ -7025,11 +7049,11 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyDateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doFlagEmptyDateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRemoveEmptyDateRegs for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagEmptyDateRegs for source %s", threadId, source );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7037,15 +7061,15 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Removing Registrations without dates...", threadId );
+        String msg = String.format( "Thread id %02d; Flagging Registrations without dates...", threadId );
         showMessage( msg, false, true );
 
-        removeEmptyDateRegs( debug, source );      // needs only registration_c, so do this one first
+        flagEmptyDateRegs( debug, source );      // needs only registration_c, so do this one first
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
 
-    } // doRemoveEmptyDateRegs
+    } // doFlagEmptyDateRegs
 
 
     /**
@@ -7054,12 +7078,12 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyDateRegs( boolean debug, String source )
+    private void flagEmptyDateRegs( boolean debug, String source )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
         
-        showMessage( String.format( "Thread id %02d; removeEmptyDateRegs for source %s", threadId, source ), false, true );
+        showMessage( String.format( "Thread id %02d; flagEmptyDateRegs for source %s", threadId, source ), false, true );
 
         String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c  WHERE id_source = " + source;
 
@@ -7092,7 +7116,7 @@ public class LinksCleanThread extends Thread
                 {
                     nNoRegDate++;
 
-                    // Delete records with this registration
+                    // Flag records with this registration
                     String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
                     String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
 
@@ -7119,7 +7143,7 @@ public class LinksCleanThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
-    } // removeEmptyDateRegs
+    } // flagEmptyDateRegs
 
 
     /**
@@ -7127,11 +7151,11 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveEmptyRoleRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doFlagEmptyRoleRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRemoveEmptyRoleRegs for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagEmptyRoleRegs for source %s", threadId, source );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7146,7 +7170,7 @@ public class LinksCleanThread extends Thread
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doRemoveEmptyRoleRegs
+    } // doFlagEmptyRoleRegs
 
 
     /**
@@ -7247,11 +7271,11 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRemoveDuplicateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doFlagDuplicateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRemoveDuplicateRegs for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagDuplicateRegs for source %s", threadId, source );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7266,7 +7290,7 @@ public class LinksCleanThread extends Thread
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doRemoveDuplicateRegs
+    } // doFlagDuplicateRegs
 
 
     /**
