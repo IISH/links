@@ -65,7 +65,7 @@ import linksmanager.ManagerGui;
  * FL-21-May-2016 Each thread its own ref table multimaps
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
- * FL-09-Nov-2016 Latest change
+ * FL-15-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -4580,7 +4580,7 @@ public class LinksCleanThread extends Thread
 
                 if( stillbirth == null ) { stillbirth = ""; }
 
-                //if( id_person == 14873 ) { debug = true; }
+                //if( id_person == 703 || id_person == 706 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
@@ -4662,7 +4662,7 @@ public class LinksCleanThread extends Thread
                     DivideMinMaxDatumSet ddmdBirth = minMaxDate( debug, mmds );
                     ddmdBirth.nonnegative();        // is this necessary?
 
-                    if( debug ) { showMessage( ddmdBirth.getMinMaxDate(), false, true ); }
+                    if( debug ) { showMessage( "Birth.getMinMaxDate(): " + ddmdBirth.getMinMaxDate(), false, true ); }
 
                     // Min Max to table
                     String queryBirth = "UPDATE person_c"
@@ -4690,7 +4690,7 @@ public class LinksCleanThread extends Thread
                     DivideMinMaxDatumSet ddmdMarriage = minMaxDate( debug, mmds );
                     ddmdMarriage.nonnegative();        // is this necessary?
 
-                    if( debug ) { showMessage( ddmdMarriage.getMinMaxDate(), false, true ); }
+                    if( debug ) { showMessage( "Marriage.getMinMaxDate(): " + ddmdMarriage.getMinMaxDate(), false, true ); }
 
                     // Min Max to table
                     String queryMar = "UPDATE person_c"
@@ -4718,7 +4718,7 @@ public class LinksCleanThread extends Thread
                     DivideMinMaxDatumSet ddmdDeath = minMaxDate( debug, mmds );
                     ddmdDeath.nonnegative();        // is this necessary?
 
-                    if( debug ) { showMessage( ddmdDeath.getMinMaxDate(), false, true ); }
+                    if( debug ) { showMessage( "Death.getMinMaxDate(): " + ddmdDeath.getMinMaxDate(), false, true ); }
 
                     // Min Max to table
                     String queryDeath = "UPDATE person_c"
@@ -5211,7 +5211,7 @@ public class LinksCleanThread extends Thread
     throws Exception
     {
         if( debug ) {
-            showMessage( "minMaxCalculation()", false, true );
+            showMessage( "minMaxCalculation() death = " + death + ", age = " + age, false, true );
             if( role == 0 ) { showMessage( "minMaxCalculation() role = 0, id_person = " + id_person, false, true ); }
         }
 
