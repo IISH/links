@@ -3,8 +3,10 @@ package dataset;
 
 
 /**
- *
  * @author oaz
+ * @author Fons Laan
+ *
+ * FL-18-Nov-2016 Latest change
  */
 public final class MinMaxDateSet {
 
@@ -20,6 +22,8 @@ public final class MinMaxDateSet {
     private int     personAgeWeek;
     private int     personAgeDay;
     private int     personBirthYear;
+    private int     personBirthMonth;
+    private int     personBirthDay;
     private int     personId;
     private int     sourceId;
     private String  registrationDate;
@@ -81,6 +85,16 @@ public final class MinMaxDateSet {
     public void setPersonBirthYear( int personBirthYear ) {
         this.personBirthYear = personBirthYear;
     }
+
+
+    public int getPersonBirthMonth() { return personBirthMonth; }
+
+    public void setPersonBirthMonth( int personBirthMonth ) { this.personBirthMonth = personBirthMonth; }
+
+
+    public int getPersonBirthDay() { return personBirthDay; }
+
+    public void setPersonBirthDay( int personBirthDay ) { this.personBirthDay = personBirthDay; }
 
 
     public int getPersonId() {

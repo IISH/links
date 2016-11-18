@@ -9,7 +9,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.time.LocalDateTime;     // Java SE 8, based on Joda-Time
+// java.time Java SE 8, based on Joda-Time
+import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -4519,6 +4523,8 @@ public class LinksCleanThread extends Thread
             + " person_c.mar_date ,"
             + " person_c.death_date ,"
             + " person_c.birth_year ,"
+            + " person_c.birth_month ,"
+            + " person_c.birth_day ,"
             + " person_c.birth_date_valid ,"
             + " person_c.mar_date_valid ,"
             + " person_c.death_date_valid ,"
@@ -4573,6 +4579,8 @@ public class LinksCleanThread extends Thread
                 String mar_date             = rsPersons.getString( "person_c.mar_date" );
                 String death_date           = rsPersons.getString( "person_c.death_date" );
                 int    birth_year           = rsPersons.getInt(    "birth_year" );
+                int    birth_month          = rsPersons.getInt(    "birth_month" );
+                int    birth_day            = rsPersons.getInt(    "birth_day" );
                 int birth_date_valid        = rsPersons.getInt(    "birth_date_valid" );
                 int mar_date_valid          = rsPersons.getInt(    "mar_date_valid" );
                 int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
@@ -4601,6 +4609,8 @@ public class LinksCleanThread extends Thread
                     showMessage( "mar_date: "             + mar_date,             false, true );
                     showMessage( "death_date: "           + death_date,           false, true );
                     showMessage( "birth_year: "           + birth_year,           false, true );
+                    showMessage( "birth_month: "          + birth_month,          false, true );
+                    showMessage( "birth_day: "            + birth_day,            false, true );
                     showMessage( "birth_date_valid: "     + birth_date_valid,     false, true );
                     showMessage( "mar_date_valid: "       + mar_date_valid,       false, true );
                     showMessage( "death_date_valid: "     + death_date_valid,     false, true );
@@ -4620,6 +4630,8 @@ public class LinksCleanThread extends Thread
                 mmds.setPersonAgeWeek( age_week );
                 mmds.setPersonAgeDay( age_day );
                 mmds.setPersonBirthYear( birth_year );
+                mmds.setPersonBirthMonth( birth_month );
+                mmds.setPersonBirthDay( birth_day );
                 mmds.setDeathDate( death_date );
                 mmds.setDeath( death );
 
@@ -4827,10 +4839,28 @@ public class LinksCleanThread extends Thread
         {
             if( debug ) { showMessage( "birth year given: " + inputInfo.getPersonBirthYear() , false, true ); }
 
+            int birth_year  = inputInfo.getPersonBirthYear();
+            int birth_month = inputInfo.getPersonBirthMonth();
+            int birth_day   = inputInfo.getPersonBirthDay();
+
+            int regis_year  = inputregistrationYearMonthDay.getYear();
+            int regis_month = inputregistrationYearMonthDay.getMonth();
+            int regis_day   = inputregistrationYearMonthDay.getDay();
+
             // age is = regis jaar - birth year
-            int birth_year = inputInfo.getPersonBirthYear();
-            int regis_year = inputregistrationYearMonthDay.getYear();
-            int AgeInYears = regis_year - birth_year;
+            //int AgeInYears = regis_year - birth_year;
+
+            LocalDate ldBirth = LocalDate.of( birth_year, birth_month, birth_day );
+            LocalDate ldRegis = LocalDate.of( regis_year, regis_month, regis_day );
+
+            Period betweenDates = Period.between( ldBirth, ldRegis );
+
+            int ageInYears  = betweenDates.getYears();
+            int ageInMonths = betweenDates.getMonths();
+            int ageInDays   = betweenDates.getDays();
+
+            String msg = String.format( "ageInYears: %d, ageInMonths: %d, ageInDays: %d", ageInYears, ageInMonths, ageInDays );
+            if( debug ) { showMessage( msg , false, true ); }
 
             // Create new set
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -4851,7 +4881,7 @@ public class LinksCleanThread extends Thread
                 inputInfo.getTypeDate(),
                 inputInfo.getPersonRole(),
                 inputInfo.getDeath(),
-                AgeInYears );
+                ageInYears );
 
             returnSet.setMinYear( mmj.getMinYear() );
             returnSet.setMaxYear( mmj.getMaxYear() );
