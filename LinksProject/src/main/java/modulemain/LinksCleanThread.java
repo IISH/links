@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 // java.time Java SE 8, based on Joda-Time
-import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -69,7 +68,8 @@ import linksmanager.ManagerGui;
  * FL-21-May-2016 Each thread its own ref table multimaps
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
- * FL-15-Nov-2016 Latest change
+ * FL-21-Nov-2016 Old date difference bug in minMaxDate
+ * FL-21-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -4588,7 +4588,7 @@ public class LinksCleanThread extends Thread
 
                 if( stillbirth == null ) { stillbirth = ""; }
 
-                //if( id_person == 703 || id_person == 706 ) { debug = true; }
+                //if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
