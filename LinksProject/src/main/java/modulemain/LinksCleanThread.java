@@ -4416,9 +4416,9 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        //msg = "skipping untill minMaxDateMain()";
-        //showMessage( msg, false, true );
-        ///*
+        msg = "skipping untill minMaxDateMain()";
+        showMessage( msg, false, true );
+        /*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4474,7 +4474,7 @@ public class LinksCleanThread extends Thread
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
@@ -4589,6 +4589,7 @@ public class LinksCleanThread extends Thread
                 if( stillbirth == null ) { stillbirth = ""; }
 
                 //if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
+                //if( id_person == 35243117 || id_person == 35243285 || id_person == 35243396 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
@@ -4839,28 +4840,33 @@ public class LinksCleanThread extends Thread
         {
             if( debug ) { showMessage( "birth year given: " + inputInfo.getPersonBirthYear() , false, true ); }
 
-            int birth_year  = inputInfo.getPersonBirthYear();
-            int birth_month = inputInfo.getPersonBirthMonth();
-            int birth_day   = inputInfo.getPersonBirthDay();
-
+            int ageInYears = 0;     // use 0 for birth certificates
             int regis_year  = inputregistrationYearMonthDay.getYear();
-            int regis_month = inputregistrationYearMonthDay.getMonth();
-            int regis_day   = inputregistrationYearMonthDay.getDay();
 
-            // age is = regis jaar - birth year
-            //int AgeInYears = regis_year - birth_year;
+            if( inputInfo.getRegistrationMainType() != 1 )  // not a birth certificate
+            {
+                int birth_year  = inputInfo.getPersonBirthYear();
+                int birth_month = inputInfo.getPersonBirthMonth();
+                int birth_day   = inputInfo.getPersonBirthDay();
 
-            LocalDate ldBirth = LocalDate.of( birth_year, birth_month, birth_day );
-            LocalDate ldRegis = LocalDate.of( regis_year, regis_month, regis_day );
+                int regis_month = inputregistrationYearMonthDay.getMonth();
+                int regis_day   = inputregistrationYearMonthDay.getDay();
 
-            Period betweenDates = Period.between( ldBirth, ldRegis );
+                // age is = regis jaar - birth year             // old code
+                //int AgeInYears = regis_year - birth_year;     // old code
 
-            int ageInYears  = betweenDates.getYears();
-            int ageInMonths = betweenDates.getMonths();
-            int ageInDays   = betweenDates.getDays();
+                LocalDate ldBirth = LocalDate.of( birth_year, birth_month, birth_day );
+                LocalDate ldRegis = LocalDate.of( regis_year, regis_month, regis_day );
 
-            String msg = String.format( "ageInYears: %d, ageInMonths: %d, ageInDays: %d", ageInYears, ageInMonths, ageInDays );
-            if( debug ) { showMessage( msg , false, true ); }
+                Period betweenDates = Period.between( ldBirth, ldRegis );
+
+                    ageInYears  = betweenDates.getYears();      // overwrite the initial ageInYears = 0
+                int ageInMonths = betweenDates.getMonths();
+                int ageInDays   = betweenDates.getDays();
+
+                String msg = String.format( "ageInYears: %d, ageInMonths: %d, ageInDays: %d", ageInYears, ageInMonths, ageInDays );
+                if( debug ) { showMessage( msg , false, true ); }
+            }
 
             // Create new set
             DivideMinMaxDatumSet returnSet = new DivideMinMaxDatumSet();
@@ -5142,7 +5148,7 @@ public class LinksCleanThread extends Thread
             // new date -> date - (days - 1)
 
             int mindays = (days + 4) * -1;
-            //int maxdays = (days - 4) * -1;    //NO, set to registration date (below)
+            //int maxdays = (days - 4) * -1;    // NO, set to registration date (below)
 
             // min date
             String minDate = addTimeToDate(
@@ -5349,10 +5355,13 @@ public class LinksCleanThread extends Thread
         mmj.setMinYear( minimum_year );
         mmj.setMaxYear( maximum_year );
 
-        // function "A" means: the contents of mmj is already OK
         // function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
 
-        if( function.equals( "C" ) )                // function C, check by reg year
+        if( function.equals( "A" ) )                    // function A, the contents of mmj is already OK
+        {
+            ;
+        }
+        else if( function.equals( "C" ) )               // function C, check by reg year
         {
             if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
         }
@@ -5361,7 +5370,7 @@ public class LinksCleanThread extends Thread
             if( minimum_year > (reg_year - 14) ) { mmj.setMinYear( reg_year - 14 ); }
             if( maximum_year > (reg_year - 14) ) { mmj.setMaxYear( reg_year - 14 ); }
         }
-        else if( function.equals( "A" ) || function.equals( "E" ) )               // If E, deceased
+        else if( function.equals( "E" ) )               // If E, deceased
         {
             if( minimum_year > reg_year ) { mmj.setMinYear( reg_year ); }
             if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
@@ -5656,9 +5665,9 @@ public class LinksCleanThread extends Thread
                 int registration_maintype = rs_r.getInt( "registration_maintype" );
                 String registration_date  = rs_r.getString( "registration_date" );
 
-                int regist_day      = rs_r.getInt( "registration_day" );
-                int regist_month    = rs_r.getInt( "registration_month" );
-                int regist_year     = rs_r.getInt( "registration_year" );
+                int regist_day   = rs_r.getInt( "registration_day" );
+                int regist_month = rs_r.getInt( "registration_month" );
+                int regist_year  = rs_r.getInt( "registration_year" );
 
                 //if( id_registration == 7117706 ) { debug = true; }
                 //else { debug = false; continue; }
