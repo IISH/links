@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-21-Nov-2016 Latest change
+ * FL-23-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -3839,7 +3839,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , age_literal, age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_person , role, age_literal, age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
             if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -3852,23 +3852,54 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person = rs.getInt( "id_person" );
+                int id_person        = rs.getInt( "id_person" );
+
+                String age_literal   = rs.getString( "age_literal" );
+                String role          = rs.getString( "role" );
+                String age_day_str   = rs.getString( "age_day" );
+                String age_week_str  = rs.getString( "age_week" );
+                String age_month_str = rs.getString( "age_month" );
+                String age_year_str  = rs.getString( "age_year" );
 
                 //if(  id_person == 3258692 ) { debug = true; }
                 //else { debug = false; continue; }
 
-                String age_literal = rs.getString( "age_literal" );
+                // birth certificate with role = Kind must have empty age_literal
+                if( ! ( age_literal == null || age_literal.isEmpty() ) && role.equalsIgnoreCase( "kind" ) )
+                {
+                    String msg = String.format( "id_person: %d, role: %s, age_literal: %s", id_person, role, age_literal );
+                    showMessage( msg, false, true );
+
+                    addToReportPerson( id_person, source, 267, age_literal + " Not empty" );    // warning 267
+
+                    // zero destination fields
+                    String value = "0";
+                    String query = "";
+
+                    query = PersonC.updateQuery( "age_literal", value, id_person );
+                    dbconCleaned.runQuery( query );
+
+                    query = PersonC.updateQuery( "age_year",    value, id_person );
+                    dbconCleaned.runQuery( query );
+
+                    query = PersonC.updateQuery( "age_month",   value, id_person );
+                    dbconCleaned.runQuery( query );
+
+                    query = PersonC.updateQuery( "age_week",    value, id_person );
+                    dbconCleaned.runQuery( query );
+
+                    query = PersonC.updateQuery( "age_day",     value, id_person );
+                    dbconCleaned.runQuery( query );
+
+                    continue;
+                }
+
                 if( debug ) { showMessage( "id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
 
                 int age_day   = 0;
                 int age_week  = 0;
                 int age_month = 0;
                 int age_year  = 0;
-
-                String age_day_str   = rs.getString( "age_day" );
-                String age_week_str  = rs.getString( "age_week" );
-                String age_month_str = rs.getString( "age_month" );
-                String age_year_str  = rs.getString( "age_year" );
 
                 if( ! ( age_day_str == null || age_day_str.isEmpty() ) ) {
                     try { age_day = Integer.parseInt( age_day_str ); }
@@ -4416,9 +4447,9 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        msg = "skipping untill minMaxDateMain()";
-        showMessage( msg, false, true );
-        /*
+        //msg = "skipping untill minMaxDateMain()";
+        //showMessage( msg, false, true );
+        ///*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
@@ -4474,7 +4505,7 @@ public class LinksCleanThread extends Thread
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
@@ -4590,6 +4621,7 @@ public class LinksCleanThread extends Thread
 
                 //if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
                 //if( id_person == 35243117 || id_person == 35243285 || id_person == 35243396 ) { debug = true; }
+                //if( id_person == 35366306 || id_person == 35418132 || id_person == 35573087 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
