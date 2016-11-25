@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-23-Nov-2016 Latest change
+ * FL-25-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -4622,6 +4622,13 @@ public class LinksCleanThread extends Thread
                 //if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
                 //if( id_person == 35243117 || id_person == 35243285 || id_person == 35243396 ) { debug = true; }
                 //if( id_person == 35366306 || id_person == 35418132 || id_person == 35573087 ) { debug = true; }
+                /*
+                if( id_person == 37337615 || id_person == 37337618 || id_person == 37338875 || id_person == 37338878
+                 || id_person == 37338905 || id_person == 37338908 || id_person == 37339391 || id_person == 37339394
+                 || id_person == 37339799 || id_person == 37339802 || id_person == 37340293 || id_person == 37340296 )
+                { debug = true; }
+                */
+                //if( id_person == 37336505 || id_person == 37336508 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
@@ -5739,12 +5746,15 @@ public class LinksCleanThread extends Thread
                 DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
                 if( debug ) { System.out.println( "dymd_comp.isValidDate(): " + dymd_comp.isValidDate() ); }
 
+                int registration_flag = -1;
+
                 // compare the string date and the components date
                 boolean use_event_date = false;
 
                 // divideCheckDate() fucks up with additional hyphens!
                 if( nhyphens == 2 && dymd.isValidDate() )   // valid registration_date
                 {
+                    registration_flag = 0;
                     if( dymd_comp.isValidDate() )           // valid components date
                     {
                         if( ! ( dymd.getDay() == regist_day && dymd.getMonth() == regist_month && dymd.getYear() == regist_year ) )
@@ -5774,16 +5784,11 @@ public class LinksCleanThread extends Thread
                     else { use_event_date = true; }         // both invalid, try to use event_date
                 }
 
-                // replace registration date with event date
-                int registration_flag = 0;
-
                 if( use_event_date )
                 {
                     if( debug ) { System.out.println( "try to use event_date" ); }
                     // try to replace invalid registration date with birth-/marriage-/death- date
                     nInvalidRegDates++;
-
-                    registration_flag = 1;
 
                     if( nhyphens > 2 ) {
                         String msg = String.format( "Thread id %02d; id_registration: %d, registration_date: %s", threadId, id_registration, registration_date );
@@ -5804,10 +5809,12 @@ public class LinksCleanThread extends Thread
 
                         dymd_event = LinksSpecific.divideCheckDate( event_date );
 
-                        if( dymd_event.isValidDate() ) {
+                        if( dymd_event.isValidDate() )
+                        {
                             // we have a valid event date; skip the remaining reg persons
-                            if( debug ) { System.out.println( "valid event_date: " + event_date ); }
                             registration_date = event_date;
+                            registration_flag = 1;
+                            if( debug ) { System.out.println( "valid event_date: " + event_date ); }
                             break;
                         }
                         else
@@ -5919,8 +5926,7 @@ public class LinksCleanThread extends Thread
                     + "registration_c.registration_month = " + regist_month + " , "
                     + "registration_c.registration_year = "  + regist_year  + " ";
 
-                if( use_event_date && registration_flag != 0 )  // invalid registration date: set registration_flag to 1 or 2
-                { query += ", registration_c.registration_flag = " + registration_flag + " "; }
+                query += ", registration_c.registration_flag = " + registration_flag + " ";
 
                 query += "WHERE registration_c.id_registration = "  + id_registration;
                 if( debug ) { System.out.println( "query: " + query ); }
@@ -6232,7 +6238,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 1"
                 + " AND person_c.birth_date_valid = 0"
                 + " AND person_c.role = 1"
-                + " AND registration_c.registration_flag <> 0"
+                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6256,7 +6262,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 1"
                 + " AND ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6272,7 +6278,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.birth_date_valid = 0"
                 + " AND NOT ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
@@ -6306,7 +6312,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 2"
                 + " AND person_c.mar_date_valid = 0"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND registration_c.registration_flag <> 0"
+                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6330,7 +6336,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 2"
                 + " AND ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6346,7 +6352,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.mar_date_valid = 0"
                 + " AND NOT ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
@@ -6380,7 +6386,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 3"
                 + " AND person_c.death_date_valid = 0"
                 + " AND person_c.role = 10"
-                + " AND registration_c.registration_flag <> 0"
+                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c "
@@ -6404,7 +6410,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 3"
                 + " AND ( person_c.death_date IS NULL OR person_c.death_date = '' )"
                 + " AND person_c.role = 10"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c "
@@ -6420,7 +6426,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.death_date_valid = 0"
                 + " AND NOT ( person_c.death_date IS NULL OR person_c.death_date = '' )"
                 + " AND person_c.role = 10"
-                + " AND registration_c.registration_flag = 0"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
