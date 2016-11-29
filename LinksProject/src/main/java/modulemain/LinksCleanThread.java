@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-25-Nov-2016 Latest change
+ * FL-29-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -3867,8 +3867,10 @@ public class LinksCleanThread extends Thread
                 // birth certificate with role = Kind must have empty age_literal
                 if( ! ( age_literal == null || age_literal.isEmpty() ) && role.equalsIgnoreCase( "kind" ) )
                 {
-                    String msg = String.format( "id_person: %d, role: %s, age_literal: %s", id_person, role, age_literal );
-                    showMessage( msg, false, true );
+                    if( debug ) {
+                        String msg = String.format( "id_person: %d, role: %s, age_literal: %s", id_person, role, age_literal );
+                        showMessage( msg, false, true );
+                    }
 
                     addToReportPerson( id_person, source, 267, age_literal + " Not empty" );    // warning 267
 
@@ -4448,6 +4450,7 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         //msg = "skipping untill minMaxDateMain()";
+        //msg = "ONLY flag functions";
         //showMessage( msg, false, true );
         ///*
         ts = System.currentTimeMillis();
@@ -4481,24 +4484,26 @@ public class LinksCleanThread extends Thread
         standardRegistrationDate( debug, source );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+        //*/
 
         //msg = "skipping remaining date functions";
         //showMessage( msg, false, true );
         ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Flagging empty birth dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s...", threadId, source );
         showMessage( msg, false, true );
         flagBirthDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging empty marriage dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s...", threadId, source );
         showMessage( msg, false, true );
         flagMarriageDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging empty death dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s...", threadId, source );
         showMessage( msg, false, true );
         flagDeathDate( debug, source );
         msg = String.format( "Thread id %02d; Flagging empty dates ", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
+        ///*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxValidDate for source: %s...", threadId, source );
         showMessage( msg, false, true );
@@ -4507,6 +4512,7 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
+        ///*
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
@@ -5735,6 +5741,7 @@ public class LinksCleanThread extends Thread
                 // Then we will try to use the source fields day-month-year,
                 // and all 3 data components must be numeric and > 0.
                 // Otherwise we try to replace the date by the event date.
+                int registration_flag = -2;                 // undefined, to-be-replaced
 
                 // date object from links_original date string
                 // -1- FIRST dymd
@@ -5746,15 +5753,14 @@ public class LinksCleanThread extends Thread
                 DateYearMonthDaySet dymd_comp = LinksSpecific.divideCheckDate( regist_comp );
                 if( debug ) { System.out.println( "dymd_comp.isValidDate(): " + dymd_comp.isValidDate() ); }
 
-                int registration_flag = -1;
-
                 // compare the string date and the components date
                 boolean use_event_date = false;
 
                 // divideCheckDate() fucks up with additional hyphens!
                 if( nhyphens == 2 && dymd.isValidDate() )   // valid registration_date
                 {
-                    registration_flag = 0;
+                    registration_flag = 0;                  // 0 = valid registration_date
+
                     if( dymd_comp.isValidDate() )           // valid components date
                     {
                         if( ! ( dymd.getDay() == regist_day && dymd.getMonth() == regist_month && dymd.getYear() == regist_year ) )
@@ -5779,12 +5785,13 @@ public class LinksCleanThread extends Thread
                         //{ addToReportRegistration( id_registration, source + "", 203, dymd.getReports() ); }    // EC 203
                         // -2- REPLACE dymd with comp values
                         dymd = dymd_comp;                   // use components date
+                        registration_flag = 2;              // 2 =  registration_date components used
                         registration_date = String.format( "%02d-%02d-%04d", regist_day, regist_month, regist_year );
                     }
                     else { use_event_date = true; }         // both invalid, try to use event_date
                 }
 
-                if( use_event_date )
+                if( use_event_date )    // no valid registratiodate; try to use event_date
                 {
                     if( debug ) { System.out.println( "try to use event_date" ); }
                     // try to replace invalid registration date with birth-/marriage-/death- date
@@ -5813,17 +5820,19 @@ public class LinksCleanThread extends Thread
                         {
                             // we have a valid event date; skip the remaining reg persons
                             registration_date = event_date;
-                            registration_flag = 1;
                             if( debug ) { System.out.println( "valid event_date: " + event_date ); }
                             break;
                         }
                         else
-                        if( debug ) { System.out.println( "invalid event_date: " + event_date ); }
+                        if( debug ) {
+                            System.out.println( "invalid event_date: " + event_date );
+                        }
                     }
 
                     if( dymd_event != null && dymd_event.isValidDate() )
                     {
                         // -3- REPLACE registration_date with event_date
+                        registration_flag = 1;
                         dymd = dymd_event;
                         int event_day   = dymd.getDay();
                         int event_month = dymd.getMonth();
@@ -5840,6 +5849,7 @@ public class LinksCleanThread extends Thread
                         // Notice: (HSN date) components may be negative if registration_date contains those
 
                         // -4- conditionally REPLACE dymd components of registration_date
+                        registration_flag = 2;
                         int day   = dymd_comp.getDay();
                         int month = dymd_comp.getMonth();
                         int year  = dymd_comp.getYear();
@@ -5854,8 +5864,6 @@ public class LinksCleanThread extends Thread
                             // death    -> registration_date = 31-12-yyyy
 
                             addToReportRegistration( id_registration, source, 202, dymd.getReports() ); // EC 202
-
-                            registration_flag = 2;
 
                             if( registration_maintype == 1 ) {
                                 day   = 1;
@@ -5913,6 +5921,7 @@ public class LinksCleanThread extends Thread
                 }
                 else    // could not get a valid registration_date; avoid confusing garbage
                 {
+                    registration_flag = -1;
                     registration_date  = "";
                     regist_day   = 0;
                     regist_month = 0;
@@ -6238,7 +6247,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 1"
                 + " AND person_c.birth_date_valid = 0"
                 + " AND person_c.role = 1"
-                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
+                + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6282,9 +6291,17 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
+        int nq = 0;
         for( String query : queries )
         {
-            try { dbconCleaned.runQuery( query ); }
+            try {
+                long ts = System.currentTimeMillis();
+                int flag = nq;
+                nq++;
+                int nrec = dbconCleaned.runQueryUpdate( query );
+                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+            }
             catch( Exception ex ) {
                 showMessage( query, false, true );
                 showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
@@ -6312,7 +6329,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 2"
                 + " AND person_c.mar_date_valid = 0"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
+                + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c"
@@ -6356,9 +6373,17 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
+        int nq = 0;
         for( String query : queries )
         {
-            try { dbconCleaned.runQuery( query ); }
+            try {
+                long ts = System.currentTimeMillis();
+                int flag = nq;
+                nq++;
+                int nrec = dbconCleaned.runQueryUpdate( query );
+                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+            }
             catch( Exception ex ) {
                 showMessage( query, false, true );
                 showMessage( "Exception while flagging Marriage date: " + ex.getMessage(), false, true );
@@ -6386,7 +6411,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 3"
                 + " AND person_c.death_date_valid = 0"
                 + " AND person_c.role = 10"
-                + " AND registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0"
+                + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
                 + " AND person_c.id_registration = registration_c.id_registration;",
 
             "UPDATE person_c, registration_c "
@@ -6430,9 +6455,17 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.id_registration = registration_c.id_registration;"
         };
 
+        int nq = 0;
         for( String query : queries )
         {
-            try { dbconCleaned.runQuery( query ); }
+            try {
+                long ts = System.currentTimeMillis();
+                int flag = nq;
+                nq++;
+                int nrec = dbconCleaned.runQueryUpdate( query );
+                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+            }
             catch( Exception ex ) {
                 showMessage( query, false, true );
                 showMessage( "Exception while flagging Death date: " + ex.getMessage(), false, true );
