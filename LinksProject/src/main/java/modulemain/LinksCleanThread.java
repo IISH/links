@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-29-Nov-2016 Latest change
+ * FL-30-Nov-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -6043,7 +6043,8 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            String msg = String.format( "Thread id %02d; Number of %s records: %d, empty dates: %d, invalid dates: %d", threadId, type, count, count_empty, count_invalid );
+          //String msg = String.format( "Thread id %02d; Number of %s records: %d, empty dates: %d, invalid dates: %d", threadId, type, count, count_empty, count_invalid );
+            String msg = String.format( "Thread id %02d; Number of records: %d, empty dates: %d, invalid dates: %d", threadId, count, count_empty, count_invalid );
             showMessage( msg, false, true );
             rs = null;
         }
