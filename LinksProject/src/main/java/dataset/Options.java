@@ -33,7 +33,7 @@ import general.PrintLogger;
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
  * FL-07-Nov-2016 Remove -> Flag
- * FL-07-Nov-2016 Latest change
+ * FL-06-Dec-2016 Latest change
  */
 public class Options
 {
@@ -100,14 +100,14 @@ public class Options
     private boolean doPostTasks;
     private boolean dbgPostTasks;
 
-    private boolean doFlagEmptyDateRegs;
-    private boolean dbgFlagEmptyDateRegs;
+    private boolean doFlagRegistrations;
+    private boolean dbgFlagRegistrations;
 
-    private boolean doFlagEmptyRoleRegs;
-    private boolean dbgFlagEmptyRoleRegs;
+    private boolean doFlagPersons;
+    private boolean dbgFlagPersons;
 
-    private boolean doFlagDuplicateRegs;
-    private boolean dbgFlagDuplicateRegs;
+    //private boolean doFlagEmptyRoleRegs;
+    //private boolean dbgFlagEmptyRoleRegs;
 
     private boolean doScanRemarks;
     private boolean dbgScanRemarks;
@@ -280,25 +280,25 @@ public class Options
     public void setDbgPostTasks( boolean dbgPostTasks ) { this.dbgPostTasks = dbgPostTasks; }
 
 
-    public boolean  isDoFlagEmptyDateRegs() { return doFlagEmptyDateRegs; }
-    public boolean isDbgFlagEmptyDateRegs() { return dbgFlagEmptyDateRegs; }
+    public boolean  isDoFlagRegistrations() { return doFlagRegistrations; }
+    public boolean isDbgFlagRegistrations() { return dbgFlagRegistrations; }
 
-    public void setDoFlagEmptyDateRegs(  boolean  doFlagEmptyDateRegs ) { this.doFlagEmptyDateRegs  = doFlagEmptyDateRegs; }
-    public void setDbgFlagEmptyDateRegs( boolean dbgFlagEmptyDateRegs ) { this.dbgFlagEmptyDateRegs = dbgFlagEmptyDateRegs; }
-
-
-    public boolean  isDoFlagEmptyRoleRegs() { return doFlagEmptyRoleRegs; }
-    public boolean isDbgFlagEmptyRoleRegs() { return dbgFlagEmptyRoleRegs; }
-
-    public void setDoFlagEmptyRoleRegs(  boolean  doFlagEmptyRoleRegs ) { this.doFlagEmptyRoleRegs  = doFlagEmptyRoleRegs; }
-    public void setDbgFlagEmptyRoleRegs( boolean dbgFlagEmptyRoleRegs ) { this.dbgFlagEmptyRoleRegs = dbgFlagEmptyRoleRegs; }
+    public void setDoFlagRegistrations(  boolean  doFlagRegistrations ) { this.doFlagRegistrations  = doFlagRegistrations; }
+    public void setDbgFlagRegistrations( boolean dbgFlagRegistrations ) { this.dbgFlagRegistrations = dbgFlagRegistrations; }
 
 
-    public boolean  isDoFlagDuplicateRegs() { return doFlagDuplicateRegs; }
-    public boolean isDbgFlagDuplicateRegs() { return dbgFlagDuplicateRegs; }
+    public boolean  isDoFlagPersons() { return doFlagPersons; }
+    public boolean isDbgFlagPersons() { return dbgFlagPersons; }
 
-    public void setDoFlagDuplicateRegs(  boolean  doFlagDuplicateRegs ) { this.doFlagDuplicateRegs  = doFlagDuplicateRegs; }
-    public void setDbgFlagDuplicateRegs( boolean dbgFlagDuplicateRegs ) { this.dbgFlagDuplicateRegs = dbgFlagDuplicateRegs; }
+    public void setDoFlagPersons(  boolean  doFlagPersons ) { this.doFlagPersons  = doFlagPersons; }
+    public void setDbgFlagPersons( boolean dbgFlagPersons ) { this.dbgFlagPersons = dbgFlagPersons; }
+
+
+    //public boolean  isDoFlagEmptyRoleRegs() { return doFlagEmptyRoleRegs; }
+    //public boolean isDbgFlagEmptyRoleRegs() { return dbgFlagEmptyRoleRegs; }
+
+    //public void setDoFlagEmptyRoleRegs(  boolean  doFlagEmptyRoleRegs ) { this.doFlagEmptyRoleRegs  = doFlagEmptyRoleRegs; }
+    //public void setDbgFlagEmptyRoleRegs( boolean dbgFlagEmptyRoleRegs ) { this.dbgFlagEmptyRoleRegs = dbgFlagEmptyRoleRegs; }
 
 
     public boolean  isDoScanRemarks() { return doScanRemarks; }

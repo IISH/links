@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-30-Nov-2016 Latest change
+ * FL-06-Dec-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -260,11 +260,11 @@ public class LinksCleanThread extends Thread
 
                     doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doFlagEmptyDateRegs( opts.isDbgFlagEmptyDateRegs(), opts.isDoFlagEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
-                    doFlagEmptyRoleRegs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doFlagDuplicateRegs( opts.isDbgFlagDuplicateRegs(), opts.isDoFlagDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    //doFlagEmptyRoleRecs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
                 }
@@ -438,11 +438,11 @@ public class LinksCleanThread extends Thread
 
                     doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
 
-                    doFlagEmptyDateRegs( opts.isDbgFlagEmptyDateRegs(), opts.isDoFlagEmptyDateRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
-                    doFlagEmptyRoleRegs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
-                    doFlagDuplicateRegs( opts.isDbgFlagDuplicateRegs(), opts.isDoFlagDuplicateRegs(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    //doFlagEmptyRoleRecs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
 
@@ -7153,13 +7153,88 @@ public class LinksCleanThread extends Thread
     } // postTasks
 
 
-    /*---< Remove Bad Registrations >-----------------------------------------*/
+    /*---< Flag Bad Registrations >-----------------------------------------*/
 
     /**
      * @param debug
      * @param go
      * @throws Exception
      */
+    private void doFlagRegistrations( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String funcname = String.format( "Thread id %02d; doFlagRegistrations for source %s", threadId, source );
+
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+
+        String msg = String.format( "Thread id %02d; Clear Previous Registration Flags...", threadId );
+        showMessage( msg, false, true );
+        clearFlagDuplicateRegs( debug, source );
+
+        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations...", threadId );
+        showMessage( msg, false, true );
+        flagDuplicateRegs( debug, source );
+
+        msg = String.format( "Thread id %02d; Flagging Empty Date Registrations...", threadId );
+        showMessage( msg, false, true );
+        flagEmptyDateRegs( debug, source );
+
+        msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs...", threadId );
+        showMessage( msg, false, true );
+        flagEmptyDaysSinceBegin( debug, source );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doFlagRegistrations
+
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    private void doFlagPersonRecs( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String funcname = String.format( "Thread id %02d; doFlagPersonRecs for source %s", threadId, source );
+
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+
+        String msg = String.format( "Thread id %02d; Clear Previous Person Flags...", threadId );
+        showMessage( msg, false, true );
+        clearPersonFlags( debug, source );
+
+        msg = String.format( "Thread id %02d; Flagging Person recs without familynames...", threadId );
+        showMessage( msg, false, true );
+        flagEmptyFamilynameRecs( debug, source );
+
+        msg = String.format( "Thread id %02d; Flagging Person recs without role...", threadId );
+        showMessage( msg, false, true );
+        flagEmptyRoleRecs( debug, source );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doFlagPersonRecs
+
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    /*
     private void doFlagEmptyDateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7175,28 +7250,32 @@ public class LinksCleanThread extends Thread
         String msg = String.format( "Thread id %02d; Flagging Registrations without dates...", threadId );
         showMessage( msg, false, true );
 
-        flagEmptyDateRegs( debug, source );      // needs only registration_c, so do this one first
+        flagEmptyDateRegs( debug, source );
+
+        flagEmptyDaysSinceBegin( debug, source );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
 
     } // doFlagEmptyDateRegs
-
+    */
 
     /**
-     * Delete registrations with empty registration dates from links_cleaned
+     * Flag registrations with empty registration dates from links_cleaned
      *
      * @param debug
      * @throws Exception
      */
     private void flagEmptyDateRegs( boolean debug, String source )
-    throws Exception
+        throws Exception
     {
         long threadId = Thread.currentThread().getId();
-        
+
         showMessage( String.format( "Thread id %02d; flagEmptyDateRegs for source %s", threadId, source ), false, true );
 
-        String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c  WHERE id_source = " + source;
+        String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c"
+            + " WHERE id_source = " + source
+            + " AND ( registration_date IS NULL OR registration_date = '' );";
 
         if( debug ) { showMessage( query_r, false, true ); }
 
@@ -7211,6 +7290,7 @@ public class LinksCleanThread extends Thread
 
             while( rs_r.next() )        // process all results
             {
+                /*
                 row++;
                 if( row == stepstate ) {
                     showMessage( "" + row, true, true );
@@ -7243,8 +7323,45 @@ public class LinksCleanThread extends Thread
                     dbconCleaned.runQuery( deleteRegist );
                     dbconCleaned.runQuery( deletePerson );
                 }
+                */
+
+                int id_regist = rs_r.getInt( "id_registration" );
+
+                // get current flags string
+                String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
+                ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                String old_flags = "";
+                while( rs.next() )
+                { old_flags = rs.getString( "not_linksbase" ); }
+
+                int countRegist = 0;
+                String new_flags = "";
+
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0010"; }
+                else
+                {
+                    // is the flag already set?
+                    int flag_idx = 2;       // 3rd position for the flag
+                    if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                    {
+                        // preserve other flags, and set new flag
+                        StringBuilder sb = new StringBuilder( old_flags );
+                        sb.setCharAt( flag_idx,'1' );
+                        new_flags = sb.toString();
+                    }
+                }
+
+                if( ! new_flags.isEmpty() )
+                {
+                    String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                    flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+                    if( debug ) { System.out.println(flagQuery_r); }
+
+                    countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                    nNoRegDate += countRegist;
+                }
             }
-            
+
             String msg =  String.format( "Thread id %02d; Number of registrations without date: %d", threadId, nNoRegDate );
             showMessage( msg, false, true );
         }
@@ -7258,50 +7375,123 @@ public class LinksCleanThread extends Thread
 
 
     /**
-     * @param debug
-     * @param go
-     * @throws Exception
-     */
-    private void doFlagEmptyRoleRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String funcname = String.format( "Thread id %02d; doFlagEmptyRoleRegs for source %s", threadId, source );
-
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Removing Registrations without roles...", threadId );
-        showMessage( msg, false, true );
-
-        removeEmptyRoleRegs( debug, source );    // needs registration_c plus person_c
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doFlagEmptyRoleRegs
-
-
-    /**
-     * Delete registrations with empty person roles from links_cleaned
+     * Flag registrations with empty registration days since begin from links_cleaned
      *
      * @param debug
      * @throws Exception
      */
-    private void removeEmptyRoleRegs( boolean debug, String source )
-    throws Exception
+    private void flagEmptyDaysSinceBegin( boolean debug, String source )
+        throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; removeEmptyRoleRegs for source %s", threadId, source ), false, true );
+        showMessage( String.format( "Thread id %02d; flagEmptyDaysSinceBegin for source %s", threadId, source ), false, true );
 
-        String query_r = "SELECT id_registration, id_source, registration_maintype FROM registration_c WHERE id_source = " + source;
+        String query_r = "SELECT id_registration, id_source, registration_days FROM registration_c"
+            + " WHERE id_source = " + source
+            + " AND ( registration_days IS NULL OR registration_days = '' );";
+
+        if( debug ) { showMessage( query_r, false, true ); }
+
+        int nNoRegDate = 0;
+        //int stepstate = count_step;
+
+        try
+        {
+            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+
+            int row = 0;
+
+            while( rs_r.next() )        // process all results
+            {
+                int id_regist = rs_r.getInt( "id_registration" );
+
+                // get current flags string
+                String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
+                ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                String old_flags = "";
+                while( rs.next() )
+                { old_flags = rs.getString( "not_linksbase" ); }
+
+                int countRegist = 0;
+                String new_flags = "";
+
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0001"; }
+                else
+                {
+                    // is the flag already set?
+                    int flag_idx = 3;       // 4th position for the flag
+                    if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                    {
+                        // preserve other flags, and set new flag
+                        StringBuilder sb = new StringBuilder( old_flags );
+                        sb.setCharAt( flag_idx,'1' );
+                        new_flags = sb.toString();
+                    }
+                }
+
+                if( ! new_flags.isEmpty() )
+                {
+                    String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                    flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+                    if( debug ) { System.out.println(flagQuery_r); }
+
+                    countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                    nNoRegDate += countRegist;
+                }
+            }
+
+            String msg =  String.format( "Thread id %02d; Number of registrations without days since begin: %d", threadId, nNoRegDate );
+            showMessage( msg, false, true );
+        }
+        catch( Exception ex ) {
+            if( ex.getMessage() != "After end of result set" ) {
+                System.out.printf("'%s'\n", ex.getMessage());
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagEmptyDaysSinceBegin
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    private void clearPersonFlags( boolean debug, String source )
+        throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        // Clear previous flag values for given source
+        String clearQuery_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + ";";
+        int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
+
+        String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
+        showMessage( msg, false, true );
+    } // clearPersonFlags
+
+
+    /**
+     * Flag person_c records with empty familynames
+     *
+     * @param debug
+     * @throws Exception
+     */
+    private void flagEmptyFamilynameRecs( boolean debug, String source )
+        throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        showMessage( String.format( "Thread id %02d; flagEmptyFamilynameRecs for source %s", threadId, source ), false, true );
+
+        String query_r = "SELECT id_person, role FROM person_c"
+            + " WHERE id_source = " + source
+            + " AND ( familyname IS NULL OR familyname = '' );";
+
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRole = 0;
-        int stepstate = count_step;
+        //int stepstate = count_step;
 
         try
         {
@@ -7311,6 +7501,84 @@ public class LinksCleanThread extends Thread
 
             while( rs_r.next() )        // process all registrations
             {
+                int id_person = rs_r.getInt( "id_person" );
+
+                // get current flags string
+                String getFlagQuery_r = "SELECT not_linksbase_p FROM person_c WHERE id_person = " + id_person;
+                ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                String old_flags = "";
+                while( rs.next() )
+                { old_flags = rs.getString( "not_linksbase_p" ); }
+
+                int countRegist = 0;
+                String new_flags = "";
+
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "10"; }
+                else
+                {
+                    // is the flag already set?
+                    int flag_idx = 0;       // 1st position for the flag
+                    if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                    {
+                        // preserve other flags, and set new flag
+                        StringBuilder sb = new StringBuilder( old_flags );
+                        sb.setCharAt( flag_idx,'1' );
+                        new_flags = sb.toString();
+                    }
+                }
+
+                if( ! new_flags.isEmpty() )
+                {
+                    String flagQuery_r = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
+                    flagQuery_r += " WHERE id_person = " + id_person + ";";
+                    if( debug ) { System.out.println(flagQuery_r); }
+
+                    countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                    nNoRole += countRegist;
+                }
+            }
+
+            String msg = String.format( "Thread id %02d; Number of person records with missing familyname flagged: %d", threadId, nNoRole );
+            showMessage( msg, false, true );
+        }
+        catch( Exception ex ) {
+            System.out.printf("'%s'\n", ex.getMessage());
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // flagEmptyFamilynameRecs
+
+
+    /**
+     * Flag person_c records with empty person roles from links_cleaned
+     *
+     * @param debug
+     * @throws Exception
+     */
+    private void flagEmptyRoleRecs( boolean debug, String source )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        showMessage( String.format( "Thread id %02d; FlagEmptyRoleRecs for source %s", threadId, source ), false, true );
+
+        String query_r = "SELECT id_person, role FROM person_c"
+            + " WHERE id_source = " + source
+            + " AND ( role IS NULL OR role = 0 );";
+
+        if( debug ) { showMessage( query_r, false, true ); }
+
+        int nNoRole = 0;
+        //int stepstate = count_step;
+
+        try
+        {
+            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+
+            int row = 0;
+
+            while( rs_r.next() )        // process all registrations
+            {
+                /*
                 row++;
                 if( row == stepstate ) {
                     showMessage( "" + row, true, true );
@@ -7344,7 +7612,8 @@ public class LinksCleanThread extends Thread
                         break;  // Kees: all persons of a registration must have a role, so we are done for this reg
                     }
                 }
-
+                */
+                /*
                 if( norole )
                 {
                     nNoRole++;
@@ -7365,55 +7634,84 @@ public class LinksCleanThread extends Thread
                     dbconCleaned.runQuery( deleteRegist );
                     dbconCleaned.runQuery( deletePerson );
                 }
+                */
+
+                int id_person = rs_r.getInt( "id_person" );
+
+                // get current flags string
+                String getFlagQuery_r = "SELECT not_linksbase_p FROM person_c WHERE id_person = " + id_person;
+                ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                String old_flags = "";
+                while( rs.next() )
+                { old_flags = rs.getString( "not_linksbase_p" ); }
+
+                int countRegist = 0;
+                String new_flags = "";
+
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "01"; }
+                else
+                {
+                    // is the flag already set?
+                    int flag_idx = 1;       // 2nd position for the flag
+                    if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                    {
+                        // preserve other flags, and set new flag
+                        StringBuilder sb = new StringBuilder( old_flags );
+                        sb.setCharAt( flag_idx,'1' );
+                        new_flags = sb.toString();
+                    }
+                }
+
+                if( ! new_flags.isEmpty() )
+                {
+                    String flagQuery_r = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
+                    flagQuery_r += " WHERE id_person = " + id_person + ";";
+                    if( debug ) { System.out.println(flagQuery_r); }
+
+                    countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                    nNoRole += countRegist;
+                }
             }
 
-            String msg = String.format( "Thread id %02d; Number of registrations with missing role(s) removed: %d", threadId, nNoRole );
+            String msg = String.format( "Thread id %02d; Number of person records with missing role flagged: %d", threadId, nNoRole );
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             System.out.printf("'%s'\n", ex.getMessage());
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // removeEmptyRoleRegs
-
-
-    /**
-     * @param debug
-     * @param go
-     * @throws Exception
-     */
-    private void doFlagDuplicateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String funcname = String.format( "Thread id %02d; doFlagDuplicateRegs for source %s", threadId, source );
-
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Removing Duplicate Registrations...", threadId );
-        showMessage( msg, false, true );
-
-        removeDuplicateRegs( debug, source );
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doFlagDuplicateRegs
+    } // flagEmptyRoleRecs
 
 
     /**
      * @param debug
      * @throws Exception
      */
-    private void removeDuplicateRegs( boolean debug, String source )
+    private void clearFlagDuplicateRegs( boolean debug, String source )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; removeDuplicateRegs for source %s", threadId, source ), false, true );
+        // Clear previous flag values for given source
+        String clearQuery_r = "UPDATE registration_c SET not_linksbase = NULL WHERE id_source = " + source + ";";
+        //String clearQuery_r = "UPDATE registration_c SET not_linksbase = '0001' WHERE id_source = " + source + ";";   // test updates
+        int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
+
+        String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
+        showMessage( msg, false, true );
+    } // clearFlagDuplicateRegs
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    private void flagDuplicateRegs( boolean debug, String source )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        showMessage( String.format( "Thread id %02d; flagDuplicateRegs for source %s", threadId, source ), false, true );
         showMessage( String.format( "Thread id %02d; Notice: the familyname prefix is not used for comparisons", threadId ), false , true );
 
         int min_cnt = 2;    // in practice we see double, triples and quadruples
@@ -7439,8 +7737,8 @@ public class LinksCleanThread extends Thread
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
 
-            int ndeleteRegist = 0;
-            int ndeletePerson = 0;
+            int nflagRegist = 0;
+            //int ndeletePerson = 0;
 
             int row = 0;
             while( rs_r.next() )        // process all groups
@@ -7474,10 +7772,12 @@ public class LinksCleanThread extends Thread
                     showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
                 }
 
-                if( registrationIds.size() > 2 )   // useless registrations, remove them all
+                if( registrationIds.size() > 2 )   // useless registrations, flag them all
                 {
                     for( int id_regist : registrationIds )
                     {
+                        /*
+                        TODO to-be-removed
                         String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_regist;
                         String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_regist;
 
@@ -7492,10 +7792,55 @@ public class LinksCleanThread extends Thread
                         int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
                         ndeleteRegist += countRegist;
                         ndeletePerson += countPerson;
+                        */
+
+                        /*
+                        String flag = "01";
+                        String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + flag + "'";
+                        flagQuery_r += " WHERE id_registration = " + id_regist;
+                        flagQuery_r += " AND not_linksbase IS NULL;";
+
+                        // if the flag was already set to this value, the count will be 0
+                        int countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                        nflagRegist += countRegist;
 
                         if( countRegist != 1 ) {
-                            String msg = String.format( "removeDuplicateRegs() id_registration: %d already removed", id_regist );
+                            String msg = String.format( "flagDuplicateRegs() id_registration: %d already flagged", id_regist );
                             showMessage( msg, false, true );
+                        }
+                        */
+
+                        // get current flags string
+                        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
+                        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                        String old_flags = "";
+                        while( rs.next() )
+                        { old_flags = rs.getString( "not_linksbase" ); }
+
+                        int countRegist = 0;
+                        String new_flags = "";
+
+                        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0100"; }
+                        else
+                        {
+                            // is the flag already set?
+                            int flag_idx = 1;       // 2nd position for the flag
+                            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                            {
+                                // preserve other flags, and set new flag
+                                StringBuilder sb = new StringBuilder( old_flags );
+                                sb.setCharAt( flag_idx,'1' );
+                                new_flags = sb.toString();
+                            }
+                        }
+
+                        if( ! new_flags.isEmpty() )
+                        {
+                            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                            flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+                            //System.out.println(flagQuery_r);
+
+                            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
                         }
                     }
                 }
@@ -7506,7 +7851,7 @@ public class LinksCleanThread extends Thread
                     boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
                     if( isDuplicate ) { nDuplicates++; }
                 }
-                /*
+
                 for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
                 {
                     for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
@@ -7515,24 +7860,24 @@ public class LinksCleanThread extends Thread
                         if( isDuplicate ) { nDuplicates++; }
                     }
                 }
-                */
+
 
                 // free
                 registrationIds.clear();
                 registrationIds = null;
             }
 
-            String msg = String.format( "Thread id %02d; Number of duplicate regs removed from duplicate tuples: %d", threadId, ndeleteRegist );
+            String msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate tuples: %d", threadId, nflagRegist );
             showMessage( msg, false, true );
 
-            msg = String.format( "Thread id %02d; Number of duplicate regs removed from duplicate pairs: %d", threadId, nDuplicates );
+            msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate pairs: %d", threadId, nDuplicates );
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             System.out.printf("'%s'\n", ex.getMessage());
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    } // removeDuplicateRegs
+    } // flagDuplicateRegs
 
 
     /**
@@ -7547,8 +7892,6 @@ public class LinksCleanThread extends Thread
     private boolean compare2Registrations( boolean debug, int rid1, int rid2, Vector< Integer > registrationIds, int registration_maintype )
     throws Exception
     {
-        boolean isDeleted = false;
-
         if( debug ) {
             System.out.println( String.format( "rid1: %d, rid2: %d", rid1, rid2 ) );
             System.out.println( String.format( "registrationIds.size(): %d", registrationIds.size() ) );
@@ -7631,7 +7974,7 @@ public class LinksCleanThread extends Thread
                     showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
                 }
 
-                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 if( delcnt > 0 ) { return true; }
             }
         }
@@ -7751,7 +8094,7 @@ public class LinksCleanThread extends Thread
                     showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
                 }
 
-                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 if( delcnt > 0 ) { return true; }
             }
         }
@@ -7823,7 +8166,7 @@ public class LinksCleanThread extends Thread
                     showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
                 }
 
-                int delcnt = removeDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
                 if( delcnt > 0 ) { return true; }
             }
         }
@@ -7837,7 +8180,7 @@ public class LinksCleanThread extends Thread
      *
      * @throws Exception
      */
-    private int removeDuplicate( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
+    private int flagDuplicate( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
         int id_registration1, int id_registration2, int registration_maintype )
     throws Exception
     {
@@ -7847,67 +8190,106 @@ public class LinksCleanThread extends Thread
         }
 
         int id_reg_keep = 0;
-        int id_reg_remove = 0;
-        String id_source_remove = "";
+        int id_reg_flag = 0;
+        String id_source_flag = "";
 
         // keep the smallest id_reg
         if( id_registration2 > id_registration1 )
         {
-            id_reg_keep      = id_registration1;
-            id_reg_remove    = id_registration2;
-            id_source_remove = id_source2;
+            id_reg_keep    = id_registration1;
+            id_reg_flag    = id_registration2;
+            id_source_flag = id_source2;
         }
         else
         {
-            id_reg_keep      = id_registration2;
-            id_reg_remove    = id_registration1;
-            id_source_remove = id_source1;
+            id_reg_keep    = id_registration2;
+            id_reg_flag    = id_registration1;
+            id_source_flag = id_source1;
         }
 
         //String msgt = "TEST RUN; NOT DELETING";
         //System.out.println( msgt ); showMessage( msgt, false, true );
 
         if( debug ) {
-            String msg = "keep id: " + id_reg_keep + ", delete: " + id_reg_remove + " (registration_maintype: " + registration_maintype + ")";
+            String msg = "keep id: " + id_reg_keep + ", flag: " + id_reg_flag + " (registration_maintype: " + registration_maintype + ")";
             //System.out.println( msg );
             showMessage( msg, false, true );
         }
 
         // write error msg with EC=1
-        if( id_source_remove.isEmpty() ) { id_source_remove = "0"; }    // it must be a valid integer string for the log table
+        if( id_source_flag.isEmpty() ) { id_source_flag = "0"; }    // it must be a valid integer string for the log table
         String value = "";      // nothing to add
-        addToReportRegistration( id_reg_remove, id_source_remove, 1, value );       // warning 1
+        addToReportRegistration( id_reg_flag, id_source_flag, 1, value );       // warning 1
 
-        // remove second member of duplicates from registration_c and person_c
-        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_remove;
-        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_remove;
+        /*
+        TODO to-be-deleted
+        // Delete second member of duplicates from registration_c and person_c
+        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_flag;
+        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_flag;
 
         if( debug ) {
-            showMessage( "Deleting duplicate registration: " + id_reg_remove, false, true );
-            showMessage( queryDeleteRegist, false, true );
-            showMessage( queryDeletePerson, false, true );
+            showMessage( "Flagging duplicate registration: " + id_reg_flag,false,true );
+            showMessage( queryDeleteRegist,false,true );
+            showMessage( queryDeletePerson,false,true );
         }
 
         int countRegist = dbconCleaned.runQueryUpdate( queryDeleteRegist );
         int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
+        */
 
-        // we expect regist_count == 1, otherwise complain
-        if( countRegist != 1 )
+        // get current flags string
+        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
+        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+        String old_flags = "";
+        while( rs.next() )
+        { old_flags = rs.getString( "not_linksbase" ); }
+
+        int countRegist = 0;
+        String new_flags = "";
+
+        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "1000"; }
+        else
         {
-            String msg = String.format( "removeDuplicate() id_registration: %d already removed", id_reg_remove );
-            showMessage( msg, false, true );
+            // is the flag already set?
+            int flag_idx = 0;       // 1st position for the flag
+            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+            {
+                // preserve other flags, and set new flag
+                StringBuilder sb = new StringBuilder( old_flags );
+                sb.setCharAt( flag_idx,'1' );
+                new_flags = sb.toString();
+            }
+        }
 
-            //showMessage( deleteRegist, false, true );
-            //msg = String.format( "removeDuplicate() countRegist: %d", countRegist );
-            //showMessage( msg, false, true );
+        if( ! new_flags.isEmpty() )
+        {
+            // Flag second member of duplicate pair from registration_c
+            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+            flagQuery_r += " WHERE id_registration = " + id_reg_flag + ";";
+            //System.out.println(flagQuery_r);
 
-            //showMessage( deletePerson, false, true );
-            //msg = String.format( "removeDuplicate() countPerson: %d", countPerson );
-            //showMessage( msg, false, true );
+            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+
+            /*
+            if( countRegist != 1 )
+            {
+                String msg = String.format( "flagDuplicate() id_registration: %d already flagged", id_reg_flag );
+                showMessage( msg, false, true );
+
+                // TODO to-be-deleted
+                //showMessage( deleteRegist, false, true );
+                //msg = String.format( "flagDuplicate() countRegist: %d", countRegist );
+                //showMessage( msg, false, true );
+
+                //showMessage( deletePerson, false, true );
+                //msg = String.format( "flagDuplicate() countPerson: %d", countPerson );
+                //showMessage( msg, false, true );
+            }
+            */
         }
 
         return countRegist;
-    } // removeDuplicate
+    } // flagDuplicate
 
 
     /**

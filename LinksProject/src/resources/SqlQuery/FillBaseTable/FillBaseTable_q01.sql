@@ -63,7 +63,10 @@ links_cleaned.person_c.death_max_days ,
 links_cleaned.person_c.death_location , 
 links_cleaned.person_c.role 
 FROM links_cleaned.registration_c , links_cleaned.person_c
-WHERE links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration AND (
+WHERE links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration 
+AND links_cleaned.registration_c.not_linksbase IS NULL 
+AND links_cleaned.person_c.not_linksbase_p IS NULL 
+AND (
  ( links_cleaned.registration_c.registration_maintype = 1 AND ( 
     links_cleaned.person_c.role = 1 OR 
     links_cleaned.person_c.role = 2 OR 
