@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-06-Dec-2016 Latest change
+ * FL-20-Dec-2016 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -826,7 +826,7 @@ public class LinksCleanThread extends Thread
             System.out.println( "report_class: " + cla.toUpperCase() );
             System.out.println( "report_type : " + errorCode );
             System.out.println( "content     : " + con );
-            System.out.println( "date_time:  : " + "NOW()" );
+            System.out.println( "date_time   : " + "NOW()" );
             System.out.println( "location    : " + location );
             System.out.println( "reg_type    : " + reg_type );
             System.out.println( "date        : " + date );
@@ -874,7 +874,7 @@ public class LinksCleanThread extends Thread
 
         // get id_registration from links_original.person_o
         String id_registration = "";
-        String role      = "";
+        String role            = "";
 
         String selectQuery1 = "SELECT id_registration, role FROM person_o WHERE id_person = " + id;
         try {
@@ -922,6 +922,7 @@ public class LinksCleanThread extends Thread
         { sequence = sequence.substring( 0, 20 ); }
 
         // save to links_logs
+        /*
         String insertQuery = ""
             + " INSERT INTO links_logs.`" + logTableName + "`"
             + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
@@ -933,8 +934,60 @@ public class LinksCleanThread extends Thread
                 + " \"" + sequence + "\" ,"
                 + " \"" + role + "\" ,"
                 + " '"  + id_registration + "' , '" + guid + "' ) ; ";
+        */
 
-        if( debug ) { showMessage( insertQuery, false, true ); }
+        // not robust, for the time being it works
+        String s = "";
+        if( location != null && location.contains( "\"") )      // also in content; e.g. ss "Maasdam"
+        {
+            s = "INSERT INTO links_logs.`" + logTableName + "`"
+                + " ( pers_key , id_source , report_class , report_type , content ,"
+                + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
+                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \'%s\' , NOW() , \'%s\' , \"%s\" , \"%s\" , \"%s\" , \"%s\" , %s , \"%s\" ) ;";
+        }
+        else
+        {
+            s = "INSERT INTO links_logs.`" + logTableName + "`"
+                + " ( reg_key , id_source , report_class , report_type , content ,"
+                + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
+                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , %s , \"%s\" ) ;";
+        }
+
+        if( debug ) {
+            System.out.println( s );
+            showMessage( s, false, true );
+        }
+
+        String insertQuery = "";
+        try {
+            insertQuery = String.format ( s,
+                id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, role, id_registration, guid );
+            if( debug ) {
+                System.out.println( insertQuery );
+                showMessage( insertQuery, false, true );
+            }
+        }
+        catch( Exception ex )
+        {
+            System.out.println( "pers_key        : " + id );
+            System.out.println( "id_source       : " + id_source );
+            System.out.println( "report_class    : " + cla.toUpperCase() );
+            System.out.println( "report_type     : " + errorCode );
+            System.out.println( "content         : " + con );
+            System.out.println( "date_time       : " + "NOW()" );
+            System.out.println( "location        : " + location );
+            System.out.println( "reg_type        : " + reg_type );
+            System.out.println( "date            : " + date );
+            System.out.println( "sequence        : " + sequence );
+            System.out.println( "role            : " + role );
+            System.out.println( "id_registration : " + id_registration );
+            System.out.println( "guid            : " + guid );
+
+            showMessage( s, false, true );
+            showMessage( insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
 
         dbconLog.runQuery( insertQuery );
     } // addToReportPerson
@@ -3839,7 +3892,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , role, age_literal, age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_person , id_registration , role, age_literal , age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
             if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
@@ -3853,6 +3906,7 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person        = rs.getInt( "id_person" );
+                int id_registration  = rs.getInt( "id_registration" );
 
                 String age_literal   = rs.getString( "age_literal" );
                 String role          = rs.getString( "role" );
@@ -3861,11 +3915,17 @@ public class LinksCleanThread extends Thread
                 String age_month_str = rs.getString( "age_month" );
                 String age_year_str  = rs.getString( "age_year" );
 
+                if( age_literal == null ) { age_literal = ""; }
+                if( role == null ) { role = ""; }
+
                 //if(  id_person == 3258692 ) { debug = true; }
                 //else { debug = false; continue; }
 
-                // birth certificate with role = Kind must have empty age_literal
-                if( ! ( age_literal == null || age_literal.isEmpty() ) && role.equalsIgnoreCase( "kind" ) )
+                //if(  id_registration == 3517195 ) { debug = true; }
+                //else { debug = false; continue; }
+
+                // birth certificates with role = Kind must have empty age_literal
+                if( ! ( age_literal.isEmpty() ) && role.equalsIgnoreCase( "kind" ) )
                 {
                     if( debug ) {
                         String msg = String.format( "id_person: %d, role: %s, age_literal: %s", id_person, role, age_literal );
