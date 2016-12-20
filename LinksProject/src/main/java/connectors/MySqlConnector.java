@@ -34,7 +34,7 @@ import java.sql.Statement;
  *
  * FL-30-Jun-2014 Imported from OA backup
  * FL-01-Feb-2016 runQueryUpdate()
- * FL-14-Apr-2016 Latest change
+ * FL-20-Dec-2016 autoReconnect=true
  */
 public class MySqlConnector
 {
@@ -58,8 +58,7 @@ public class MySqlConnector
     }
 
     /**
-     * This method returns a connection object
-     * for further tasks
+     * This method returns a connection object for further tasks
      * @param url Database Location
      * @param db Database Name
      * @param user Database Username
@@ -72,8 +71,9 @@ public class MySqlConnector
     {
         String driver = "org.gjt.mm.mysql.Driver";
 
-        String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
       //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&connectTimeout=0&socketTimeout=0";
+      //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
+        String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&autoReconnect=true";
 
         String username = user;
         String password = pass;
