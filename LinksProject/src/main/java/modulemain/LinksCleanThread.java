@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-20-Dec-2016 Latest change
+ * FL-09-Jan-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -718,7 +718,6 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void addToReportRegistration( int id, String id_source, int errorCode, String value )
-    throws Exception
     {
         boolean debug = false;
         if( debug ) { showMessage( "addToReportRegistration()", false, true ); }
@@ -765,6 +764,7 @@ public class LinksCleanThread extends Thread
             guid     = rs.getString( "id_persist_registration" );
         }
         catch( Exception ex ) {
+            showMessage( selectQuery, false, true );
             showMessage( ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
@@ -839,7 +839,12 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace();
         }
 
-        dbconLog.runQuery( insertQuery );
+        try { dbconLog.runQuery( insertQuery ); }
+        catch( Exception ex ) {
+            showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
     } // addToReportRegistration
 
 
@@ -851,7 +856,6 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void addToReportPerson( int id, String id_source, int errorCode, String value )
-    throws Exception
     {
         boolean debug = false;
         if( debug ) { showMessage( "addToReportPerson()", false, true ); }
@@ -912,6 +916,7 @@ public class LinksCleanThread extends Thread
                 guid     = rs.getString( "id_persist_registration" );
             }
             catch( Exception ex ) {
+                showMessage( "source: " + id_source + "query: " + selectQuery2, false, true );
                 showMessage( ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
@@ -948,7 +953,7 @@ public class LinksCleanThread extends Thread
         else
         {
             s = "INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( reg_key , id_source , report_class , report_type , content ,"
+                + " ( pers_key , id_source , report_class , report_type , content ,"
                 + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
                 + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , %s , \"%s\" ) ;";
         }
@@ -989,7 +994,12 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace();
         }
 
-        dbconLog.runQuery( insertQuery );
+        try { dbconLog.runQuery( insertQuery ); }
+        catch( Exception ex ) {
+            showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
     } // addToReportPerson
 
     /*---< End Helper functions >---------------------------------------------*/
