@@ -8409,6 +8409,8 @@ public class LinksCleanThread extends Thread
         String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source + ";";
         dbconCleaned.runQuery( clearQuery_p2 );
 
+        String clearQuery_p3 = "UPDATE person_c SET divorce_text = NULL, divorce_day = NULL, divorce_month = NULL, divorce_year = NULL, divorce_location = NULL WHERE id_source = " + source + ";";
+        dbconCleaned.runQuery( clearQuery_p3 );
 
         // load the table data from links_general.scan_remarks
         String selectQuery_r = "SELECT * FROM scan_remarks ORDER BY id_scan";
@@ -8417,7 +8419,7 @@ public class LinksCleanThread extends Thread
             showMessage( selectQuery_r, false, true );
         }
 
-        Vector< Remarks > remarksVec = new Vector();
+        Vector< Remarks > ref_remarksVec = new Vector();    // Remarks class from dataset
 
         try
         {
@@ -8446,20 +8448,20 @@ public class LinksCleanThread extends Thread
                 if( name_field != null ) { name_field = name_field.toLowerCase(); }
                 if( value      != null ) { value      = value     .toLowerCase(); }
 
-                Remarks remarks = new Remarks();
+                Remarks ref_remarks = new Remarks();
 
-                remarks.setIdScan(id_scan);
-                remarks.setMaintype(  maintype );
-                remarks.setRole(      role );
-                remarks.setString_1(  string_1 );
-                remarks.setString_2(  string_2 );
-                remarks.setString_3(  string_3 );
-                remarks.setNotString( not_string );
-                remarks.setNameTable( name_table );
-                remarks.setNameField( name_field );
-                remarks.setValue(     value );
+                ref_remarks.setIdScan(    id_scan );
+                ref_remarks.setMaintype(  maintype );
+                ref_remarks.setRole(      role );
+                ref_remarks.setString_1(  string_1 );
+                ref_remarks.setString_2(  string_2 );
+                ref_remarks.setString_3(  string_3 );
+                ref_remarks.setNotString( not_string );
+                ref_remarks.setNameTable( name_table );
+                ref_remarks.setNameField( name_field );
+                ref_remarks.setValue(     value );
 
-                remarksVec.add( remarks  );
+                ref_remarksVec.add( ref_remarks  );
 
                 if( debug ) { System.out.printf( "%2d, id_scan: %3d, maintype: %d, role : %2d,  string_1: %s,  string_2: %s,  string_3: %s,  not_string: %s,  name_table: %s, name_field: %s, value: %s\n",
                         nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value ); }
@@ -8474,7 +8476,7 @@ public class LinksCleanThread extends Thread
         }
 
 
-        // loop through the registration remarks
+        // loop through the remarks from registration_o
         String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o WHERE id_source = " + source + " ORDER BY id_registration";
         if( debug ) {
             System.out.printf( "%s\n\n", selectQuery_o );
@@ -8485,7 +8487,8 @@ public class LinksCleanThread extends Thread
         {
             ResultSet rs_o = dbconOriginal.runQueryWithResult( selectQuery_o );
 
-            int nupdates = 0;
+            int nupdates  = 0;
+            int ndivorces = 0;
 
             while( rs_o.next() )
             {
@@ -8500,30 +8503,41 @@ public class LinksCleanThread extends Thread
                 //System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
                 //    id_registration, registration_maintype, remarks_str );
 
-                // compare against remarks table
+                if( remarks_str.contains( "echtscheiding" ) ) {
+                    debug = true;
+                    String msg = String.format( "\nid_reg: %d, rm_type: %d, remarks: %s", id_registration, registration_maintype, remarks_str );
+                    showMessage( msg, false, true );
+                } else { debug = false; }
+
                 int record = 0;
 
-                for( Remarks remarks : remarksVec )
+                // loop through all remark entries from the ref table
+                for( Remarks ref_remarks : ref_remarksVec )
                 {
+                    int id_scan  = ref_remarks.getIdScan();                         // only for debugging purposes
+                    int maintype = ref_remarks.getMaintype();
+                    int role     = ref_remarks.getRole();
+
+                    String string_1   = ref_remarks.getString_1();
+                    String string_2   = ref_remarks.getString_2();
+                    String string_3   = ref_remarks.getString_3();
+                    String not_string = ref_remarks.getNotString();
+                    String name_table = ref_remarks.getNameTable();
+                    String name_field = ref_remarks.getNameField();
+                    String value      = ref_remarks.getValue();
+
+                    //if( id_scan >= 224) {
+                    //    String msg = String.format( "id_scan: %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s",
+                    //        id_scan, string_1, string_2, string_3, not_string );
+                    //    showMessage( msg, false, true );
+                    //}
+
                     boolean found = false;
-
-                    int id_scan   = remarks.getIdScan();
-                    int maintype  = remarks.getMaintype();
-                    int role      = remarks.getRole();
-
-                    String string_1   = remarks.getString_1();
-                    String string_2   = remarks.getString_2();
-                    String string_3   = remarks.getString_3();
-                    String not_string = remarks.getNotString();
-                    String name_table = remarks.getNameTable();
-                    String name_field = remarks.getNameField();
-                    String value      = remarks.getValue();
-
-                    if( registration_maintype ==  maintype )
+                    if( registration_maintype ==  maintype )                    // maintype should match
                     {
                         if( string_2 == null || string_2.isEmpty() )
                         {
-                            if( remarks_str.indexOf( string_1 ) != -1 )     // string_1 found in remarks
+                            if( remarks_str.indexOf( string_1 ) != -1 )         // string_1 found in remarks
                             { found = true; }
                         }
                         else        // string_2 not empty
@@ -8544,11 +8558,33 @@ public class LinksCleanThread extends Thread
                         }
                     }
 
+                    if( debug && id_scan >= 224 ) {
+                        String msg = String.format( "id_scan: %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s",
+                            id_scan, string_1, string_2, string_3, not_string );
+                        showMessage( msg, false, true );
+                    }
+
                     if( found )
                     {
-                        if( not_string == null || not_string.isEmpty() || remarks_str.indexOf( not_string ) == -1 ) {
+                        if( not_string == null || not_string.isEmpty() || remarks_str.indexOf( not_string ) == -1 )
+                        {
                             nupdates++;
-                            scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value );
+
+                            if( string_1.equals( "echtscheiding" ) )
+                            {
+                                ndivorces++;
+                                int p = remarks_str.indexOf( "echtscheiding" );
+                                String divorce_str = remarks_str.substring( p + 13 );
+                                // Notice: single & double quote chars in divorce_str are escaped in function scanRemarksDivorce()
+                                /*
+                                showMessage( "1 '" + remarks_str + "'", false, true );
+                                showMessage( "2 '" + remarks_str.substring( p ) + "'", false, true );
+                                showMessage( "3 '" + divorce_str + "'", false, true );
+                                */
+
+                                scanRemarksDivorce( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, divorce_str );
+                            }
+                            else { scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
                         }
                         /*
                         else    // not_string not empty
@@ -8561,7 +8597,7 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            String msg = String.format( "Thread id %02d; scanRemarks: Number of updates: %d", threadId, nupdates );
+            String msg = String.format( "Thread id %02d; scanRemarks: Number of updates: %d, of which divorces: %d", threadId, nupdates, ndivorces );
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
@@ -8575,8 +8611,47 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
+    private void scanRemarksDivorce( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
+    {
+        debug = true;
+        long threadId = Thread.currentThread().getId();
+        String query_u = "";
+
+        if( name_table.equals( "person_c" ) )
+        {
+            value = value.replace( "'",  "\\'" );       // escape single quotes
+            value = value.replace( "\"", "\\\"" );      // escape quotes quotes
+
+            query_u = String.format( "UPDATE links_cleaned.person_c SET %s = '%s' WHERE id_registration = %d AND role = %d",
+                name_field, value, id_registration, role );
+
+            if( debug ) { showMessage( query_u, false, true ); }
+
+            try { dbconCleaned.runQuery( query_u ); }
+            catch( Exception ex ) {
+                showMessage( "Query: " + query_u, false, true );
+                String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                System.out.println( query_u );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+
+            // write the date fields only if we can extract a valid divorce date, and
+            // if the divorce year exceeds the marruage year
+
+            // TODO write fields
+            // divorce_day, divorce_month, divorce_year
+
+            // TODO ? try to extract the divorce location
+        }
+    } // scanRemarksDivorce
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
     private void scanRemarksUpdate( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
-    //throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -8596,14 +8671,14 @@ public class LinksCleanThread extends Thread
             System.out.printf("%s\n", query_u);
         }
 
-        try {  dbconCleaned.runQuery( query_u ); }
+        try { dbconCleaned.runQuery( query_u ); }
         catch( Exception ex ) {
             showMessage( "Query: " + query_u, false, true );
             String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
             showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-    }
+    } // scanRemarksUpdate
 
 
     /*---< Run PreMatch >-----------------------------------------------------*/
