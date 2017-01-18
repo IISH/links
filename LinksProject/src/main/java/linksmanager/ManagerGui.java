@@ -66,7 +66,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-20-Dec-2016 Latest change
+ * FL-18-Jan-2017 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -3002,7 +3002,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "09-Jan-2017 13:44";
+            String timestamp1 = "18-Jan-2017 14:19";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try

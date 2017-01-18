@@ -69,7 +69,7 @@ import linksmanager.ManagerGui;
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
- * FL-09-Jan-2017 Latest change
+ * FL-18-Jan-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -736,7 +736,9 @@ public class LinksCleanThread extends Thread
         value = value.replaceAll( "\\*", "" );
 
         con = con.replaceAll( "<.*>", value );
-        con = LinksSpecific.prepareForMysql( con );
+        //con = LinksSpecific.prepareForMysql( con );
+        con = con.replace( "'",  "\\'" );             // escape single quotes
+        con = con.replace( "\"", "\\\"" );            // escape quotes quotes
 
         // get registration values from links_original.registration_o
         String location  = "";
@@ -769,41 +771,31 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
-        // save to links_logs
-        /*
-        String insertQuery = ""
-            + " INSERT INTO links_logs.`" + logTableName + "`"
-            + " ( reg_key , id_source , report_class , report_type , content , date_time ,"
-            + " location , reg_type , date , sequence , guid )"
-            + " VALUES ( "
-                + id + " , "
-                        + id_source + " , "
-                + "'"   + cla.toUpperCase() + "' , "
-                        + errorCode + " , "
-                + "'"   + con + "' , NOW() ,"
-                + " \"" + location + "\" ,"
-                + " '"  + reg_type + "' , '"
-                        + date     + "' , '"
-                        + sequence + "' , '"
-                        + guid     + "' ) ; ";
-        */
+        if( location == null) { location = ""; }
+        if( reg_type == null) { reg_type = ""; }
+        if( date     == null) { date     = ""; }
+        if( sequence == null) { sequence = ""; }
+        if( guid     == null) { guid     = ""; }
 
-        // not robust, for the time being it works
-        String s = "";
-        if( location != null && location.contains( "\"") )      // also in content; e.g. ss "Maasdam"
-        {
-            s = "INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( reg_key , id_source , report_class , report_type , content ,"
-                + " date_time , location , reg_type , date , sequence , guid )"
-                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \'%s\' , NOW() , \'%s\' , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
-        }
-        else
-        {
-            s = "INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( reg_key , id_source , report_class , report_type , content ,"
-                + " date_time , location , reg_type , date , sequence , guid )"
-                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
-        }
+        location = location.replace( "'",  "\\'" );     // escape single quotes
+        location = location.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        reg_type = reg_type.replace( "'",  "\\'" );     // escape single quotes
+        reg_type = reg_type.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        date = date.replace( "'",  "\\'" );             // escape single quotes
+        date = date.replace( "\"", "\\\"" );            // escape quotes quotes
+
+        sequence = sequence.replace( "'",  "\\'" );     // escape single quotes
+        sequence = sequence.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        guid = guid.replace( "'",  "\\'" );             // escape single quotes
+        guid = guid.replace( "\"", "\\\"" );            // escape quotes quotes
+
+        String s = "INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( reg_key , id_source , report_class , report_type , content ,"
+            + " date_time , location , reg_type , date , sequence , guid )"
+            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
 
         if( debug ) {
             System.out.println( s );
@@ -874,7 +866,9 @@ public class LinksCleanThread extends Thread
         value = value.replaceAll( "\\*", "" );
 
         con = con.replaceAll( "<.*>", value );
-        con = LinksSpecific.prepareForMysql( con );
+        //con = LinksSpecific.prepareForMysql( con );
+        con = con.replace( "'",  "\\'" );             // escape single quotes
+        con = con.replace( "\"", "\\\"" );            // escape quotes quotes
 
         // get id_registration from links_original.person_o
         String id_registration = "";
@@ -922,41 +916,35 @@ public class LinksCleanThread extends Thread
             }
         }
 
+        if( location == null) { location = ""; }
+        if( reg_type == null) { reg_type = ""; }
+        if( date     == null) { date     = ""; }
+        if( sequence == null) { sequence = ""; }
+        if( guid     == null) { guid     = ""; }
+
+        location = location.replace( "'",  "\\'" );     // escape single quotes
+        location = location.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        reg_type = reg_type.replace( "'",  "\\'" );     // escape single quotes
+        reg_type = reg_type.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        date = date.replace( "'",  "\\'" );             // escape single quotes
+        date = date.replace( "\"", "\\\"" );            // escape quotes quotes
+
+        sequence = sequence.replace( "'",  "\\'" );     // escape single quotes
+        sequence = sequence.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        guid = guid.replace( "'",  "\\'" );             // escape single quotes
+        guid = guid.replace( "\"", "\\\"" );            // escape quotes quotes
+
         // to prevent: Data truncation: Data too long for column 'sequence'
         if( sequence != null && sequence.length() > 20 )
         { sequence = sequence.substring( 0, 20 ); }
 
-        // save to links_logs
-        /*
-        String insertQuery = ""
-            + " INSERT INTO links_logs.`" + logTableName + "`"
-            + " ( pers_key , id_source , report_class , report_type , content , date_time ,"
-            + " location , reg_type , date , sequence , role, reg_key , guid )"
-            + " VALUES ( "
-                + id + " , " + id_source + " , '" + cla.toUpperCase() + "' , " + errorCode + " , '" + con + "' , NOW() ,"
-                + " \"" + location + "\" ,"
-                + " '"  + reg_type + "' , '" + date + "' ,"
-                + " \"" + sequence + "\" ,"
-                + " \"" + role + "\" ,"
-                + " '"  + id_registration + "' , '" + guid + "' ) ; ";
-        */
-
-        // not robust, for the time being it works
-        String s = "";
-        if( location != null && location.contains( "\"") )      // also in content; e.g. ss "Maasdam"
-        {
-            s = "INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( pers_key , id_source , report_class , report_type , content ,"
-                + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
-                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \'%s\' , NOW() , \'%s\' , \"%s\" , \"%s\" , \"%s\" , \"%s\" , %s , \"%s\" ) ;";
-        }
-        else
-        {
-            s = "INSERT INTO links_logs.`" + logTableName + "`"
-                + " ( pers_key , id_source , report_class , report_type , content ,"
-                + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
-                + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , %s , \"%s\" ) ;";
-        }
+        String s = "INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( pers_key , id_source , report_class , report_type , content ,"
+            + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
+            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
 
         if( debug ) {
             System.out.println( s );
