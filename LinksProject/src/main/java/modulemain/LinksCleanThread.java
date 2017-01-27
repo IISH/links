@@ -10,20 +10,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 // java.time Java SE 8, based on Joda-Time
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
+import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.time.ZoneId;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
@@ -77,7 +72,7 @@ import linksmanager.ManagerGui;
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
- * FL-25-Jan-2017 Latest change
+ * FL-27-Jan-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -8496,17 +8491,15 @@ public class LinksCleanThread extends Thread
                 if( remarks_str == null || remarks_str.isEmpty() ) { continue; }
                 else { remarks_str = remarks_str.toLowerCase(); }
 
-                //System.out.printf( "id_registration: %d, registration_maintype: %d, remarks: %s\n" ,
-                //    id_registration, registration_maintype, remarks_str );
-
+                /*
                 if( remarks_str.contains( "echtscheiding" ) ) {
                     debug = true;
                     String msg = String.format( "\nid_reg: %d, rm_type: %d, remarks: %s", id_registration, registration_maintype, remarks_str );
                     showMessage( msg, false, true );
                 } else { debug = false; }
+                */
 
                 int record = 0;
-
                 // loop through all remark entries from the ref table
                 for( Remarks ref_remarks : ref_remarksVec )
                 {
@@ -8521,12 +8514,6 @@ public class LinksCleanThread extends Thread
                     String name_table = ref_remarks.getNameTable();
                     String name_field = ref_remarks.getNameField();
                     String value      = ref_remarks.getValue();
-
-                    //if( id_scan >= 224) {
-                    //    String msg = String.format( "id_scan: %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s",
-                    //        id_scan, string_1, string_2, string_3, not_string );
-                    //    showMessage( msg, false, true );
-                    //}
 
                     boolean found = false;
                     if( registration_maintype ==  maintype )                    // maintype should match
@@ -8554,12 +8541,6 @@ public class LinksCleanThread extends Thread
                         }
                     }
 
-                    //if( debug && id_scan >= 224 ) {
-                    //    String msg = String.format( "id_scan: %d, string_1: %s, string_2: %s, string_3: %s, not_string: %s",
-                    //        id_scan, string_1, string_2, string_3, not_string );
-                    //    showMessage( msg, false, true );
-                    //}
-
                     if( found )
                     {
                         if( not_string == null || not_string.isEmpty() || remarks_str.indexOf( not_string ) == -1 )
@@ -8573,15 +8554,8 @@ public class LinksCleanThread extends Thread
 
                                 if( p != -1 )
                                 {
-                                    System.out.println( String.format("%d: '%s'", id_registration, remarks_str ));
+                                    if( debug ) { System.out.println( String.format("%d: '%s'", id_registration, remarks_str )); }
                                     String divorce_str = remarks_str.substring( p );    // skip until "echtscheiding"
-                                    // Notice: single & double quote chars in divorce_str are escaped in function scanRemarksDivorce()
-                                    /*
-                                    showMessage( "1 '" + remarks_str + "'", false, true );
-                                    showMessage( "2 '" + remarks_str.substring( p ) + "'", false, true );
-                                    showMessage( "3 '" + divorce_str + "'", false, true );
-                                    */
-
                                     scanRemarksDivorce( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, divorce_str );
                                 }
                             }
@@ -8610,7 +8584,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void scanRemarksDivorce( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String divorce_str )
+    private void scanRemarksDivorce( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String divorceStr )
     {
         long threadId = Thread.currentThread().getId();
         String query_u = "";
@@ -8619,11 +8593,12 @@ public class LinksCleanThread extends Thread
 
         if( name_table.equals( "person_c" ) )
         {
-            divorce_str = divorce_str.replace( "'",  "\\'" );       // escape single quotes
-            divorce_str = divorce_str.replace( "\"", "\\\"" );      // escape quotes quotes
+            String mysqlStr = divorceStr;
+            mysqlStr = mysqlStr.replace( "'",  "\\'" );       // escape single quotes
+            mysqlStr = mysqlStr.replace( "\"", "\\\"" );      // escape quotes quotes
 
             query_u = String.format( "UPDATE links_cleaned.person_c SET %s = '%s' WHERE id_registration = %d AND role = %d",
-                name_field, divorce_str, id_registration, role );
+                name_field, mysqlStr, id_registration, role );
 
             try {
                 int rowsAffected = dbconCleaned.runQueryUpdate( query_u );
@@ -8637,44 +8612,73 @@ public class LinksCleanThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
 
-            // write the date fields only if we can extract a valid divorce date, and
-            // if the divorce year exceeds the marriage year
-            DateFormat dateFormat = new SimpleDateFormat( "ddMMyyyy" ) ;
-            String dateString = divorce_str.replaceAll( "[^0-9]", "" );
-            if( ! dateString.isEmpty() )
+
+            // The divorce string may contain 0, 1 or 2 dates of the form "dd%MM%yyyy" where % can be ' ', '-' or '/',
+            // but "dd" may also be "d", and "MM" may also be "M". We want the first date.
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(""
+                + "[dd MM yyyy]"
+                + "[d MM yyyy]"
+                + "[dd M yyyy]"
+                + "[d M yyyy]"
+
+                + "[dd-MM-yyyy]"
+                + "[d-MM-yyyy]"
+                + "[dd-M-yyyy]"
+                + "[d-M-yyyy]"
+
+                + "[dd/MM/yyyy]"
+                + "[d/MM/yyyy]"
+                + "[dd/M/yyyy]"
+                + "[d/M/yyyy]"
+            );
+            // so, e.g., "dd MM yy" will give an exception
+
+            String divorceStrClean = divorceStr.replaceAll( "[^0-9 -/]", "" );    // keep digits plus separators
+            // somehow the regexp keeps more than we want??
+            divorceStrClean = divorceStrClean.replaceAll( "['.,()]", "" );
+
+            divorceStrClean = divorceStrClean.trim();       // zap leading and trailing spaces
+            // there can be 2 dates, also marriage, we use the first
+            if( divorceStrClean.length() > 10 ) { divorceStrClean = divorceStrClean.substring( 0, 10 ); }
+
+            if( ! divorceStrClean.isEmpty() && divorceStrClean.length() >= 8 && divorceStrClean.length() <= 10 )
             {
-                if( debug ) { System.out.println( dateString ); }
-                // there can be 2 dates, also marriage, we use the first
-                if( dateString.length() > 8 ) {
-                    dateString = dateString.substring( 0, 8 );
-                    if( debug ) { System.out.println( dateString ); }
-                }
-                if( dateString.length() == 8 )
+                int day = 0, month = 0, year = 0;
+                try
                 {
-                    try {
-                        Date divorceDate = dateFormat.parse( dateString );
-                        if( debug ) { System.out.println( "string: " + divorceDate.toString() ); }
+                    LocalDate localDate = LocalDate.parse( divorceStrClean, dateFormatter );
 
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern( "ddMMyyyy" );
-                        LocalDate localDate = LocalDate.parse( dateString, formatter );
+                    day   = localDate.getDayOfMonth();
+                    month = localDate.getMonthValue();
+                    year  = localDate.getYear();
+                    if( debug ) { System.out.println( String.format( "day: %d, month: %d, year: %d", day, month, year ) ); }
 
-                        int day   = localDate.getDayOfMonth();
-                        int month = localDate.getMonthValue();
-                        int year  = localDate.getYear();
-                        if( debug ) { System.out.println( String.format( "day: %d, month: %d, year: %d", day, month, year ) ); }
-                        // TODO try to extract the divorce location
+                    // TODO try to extract the divorce location
+                }
+                catch( DateTimeParseException ex )
+                {
+                    /*
+                    String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+                    System.out.println( msg );
+                    System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr) );
+                    System.out.println( String.format( "id_registration: %d, divorceStrClean: |%s|", id_registration, divorceStrClean) );
+                    */
+                    return;
+                }
 
-                        query_u = String.format( "UPDATE links_cleaned.person_c SET divorce_day = %d, divorce_month = %d, divorce_year = %d WHERE id_registration = %d AND role = %d AND mar_year IS NOT NULL AND %d > mar_year;",
-                            day, month, year, id_registration, role, year );
-                        if( debug ) { System.out.println( query_u ); }
-                        int rowsAffected = dbconCleaned.runQueryUpdate( query_u );
-                    }
-                    catch( Exception ex )  {
-                        showMessage( "Query: " + query_u, false, true );
-                        String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
-                        showMessage( msg, false, true );
-                        ex.printStackTrace( new PrintStream( System.out ) );
-                    }
+                try
+                {
+                    // divorce year must be grater than marriage year
+                    query_u = String.format( "UPDATE links_cleaned.person_c SET divorce_day = %d, divorce_month = %d, divorce_year = %d WHERE id_registration = %d AND role = %d AND mar_year IS NOT NULL AND %d > mar_year;",
+                        day, month, year, id_registration, role, year );
+                    if( debug ) { System.out.println( query_u ); }
+                    int rowsAffected = dbconCleaned.runQueryUpdate( query_u );
+                }
+                catch( Exception ex )  {
+                    showMessage( "Query: " + query_u, false, true );
+                    String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+                    showMessage( msg, false, true );
+                    ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
         }
