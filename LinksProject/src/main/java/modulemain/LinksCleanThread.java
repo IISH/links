@@ -29,6 +29,8 @@ import javax.swing.JTextField;
 
 import com.google.common.base.Splitter;
 
+import com.joestelmach.natty.Parser;    // NLP date parser
+
 import dataset.DateYearMonthDaySet;
 import dataset.DivideMinMaxDatumSet;
 import dataset.MinMaxMainAgeSet;
@@ -8391,15 +8393,19 @@ public class LinksCleanThread extends Thread
         showMessage( String.format( "Thread id %02d; scanRemarks()", threadId ), false, true );
 
         // Clear previous values for given source
+        showMessage( String.format( "Thread id %02d; clear previous remarks values: extract", threadId ), false, true );
         String clearQuery_r = "UPDATE registration_c SET extract = NULL WHERE id_source = " + source + ";";
         dbconCleaned.runQuery( clearQuery_r );
 
+        showMessage( String.format( "Thread id %02d; clear previous remarks values: status_mother", threadId ), false, true );
         String clearQuery_p1 = "UPDATE person_c SET status_mother = NULL WHERE id_source = " + source + ";";
         dbconCleaned.runQuery( clearQuery_p1 );
 
+        showMessage( String.format( "Thread id %02d; clear previous remarks values: stillbirth", threadId ), false, true );
         String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source + ";";
         dbconCleaned.runQuery( clearQuery_p2 );
 
+        showMessage( String.format( "Thread id %02d; clear previous remarks values: divorce", threadId ), false, true );
         String clearQuery_p3 = "UPDATE person_c SET divorce_text = NULL, divorce_day = NULL, divorce_month = NULL, divorce_year = NULL, divorce_location = NULL WHERE id_source = " + source + ";";
         dbconCleaned.runQuery( clearQuery_p3 );
 
@@ -8414,6 +8420,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
+            showMessage( String.format( "Thread id %02d; loading remarks reference table", threadId ), false, true );
             ResultSet rs_r = dbconRefRead.runQueryWithResult( selectQuery_r );
 
             int nrecord = 0;
@@ -8455,7 +8462,7 @@ public class LinksCleanThread extends Thread
                 ref_remarksVec.add( ref_remarks  );
 
                 if( debug ) { System.out.printf( "%2d, id_scan: %3d, maintype: %d, role : %2d,  string_1: %s,  string_2: %s,  string_3: %s,  not_string: %s,  name_table: %s, name_field: %s, value: %s\n",
-                        nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value ); }
+                    nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string, name_table, name_field, value ); }
 
                 nrecord++;
             }
@@ -8490,6 +8497,9 @@ public class LinksCleanThread extends Thread
 
                 if( remarks_str == null || remarks_str.isEmpty() ) { continue; }
                 else { remarks_str = remarks_str.toLowerCase(); }
+
+                //if( id_registration == 8244748 ) { debug = true; }
+                //else { debug = false; continue; }
 
                 /*
                 if( remarks_str.contains( "echtscheiding" ) ) {
@@ -8630,16 +8640,33 @@ public class LinksCleanThread extends Thread
                 + "[d/MM/yyyy]"
                 + "[dd/M/yyyy]"
                 + "[d/M/yyyy]"
+
+                + "[dd.MM.yyyy]"
+                + "[d.MM.yyyy]"
+                + "[dd.M.yyyy]"
+                + "[d.M.yyyy]"
             );
             // so, e.g., "dd MM yy" will give an exception
 
+            if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr) ); }
             String divorceStrClean = divorceStr.replaceAll( "[^0-9 -/]", "" );    // keep digits plus separators
+            if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean rep1: |%s|", id_registration, divorceStrClean) ); }
+
             // somehow the regexp keeps more than we want??
-            divorceStrClean = divorceStrClean.replaceAll( "['.,()]", "" );
+            divorceStrClean = divorceStrClean.replaceAll( "[',()]", "" );
+            if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean rep2: |%s|", id_registration, divorceStrClean) ); }
 
             divorceStrClean = divorceStrClean.trim();       // zap leading and trailing spaces
+            if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean trim: |%s|", id_registration, divorceStrClean) ); }
+
             // there can be 2 dates, also marriage, we use the first
-            if( divorceStrClean.length() > 10 ) { divorceStrClean = divorceStrClean.substring( 0, 10 ); }
+            if( divorceStrClean.length() > 10 ) {
+                divorceStrClean = divorceStrClean.substring( 0, 10 );
+                if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean chop: |%s|", id_registration, divorceStrClean) ); }
+
+                divorceStrClean = divorceStrClean.trim();   // zap leading and trailing spaces
+                if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean trim: |%s|", id_registration, divorceStrClean) ); }
+            }
 
             if( ! divorceStrClean.isEmpty() && divorceStrClean.length() >= 8 && divorceStrClean.length() <= 10 )
             {
@@ -8657,12 +8684,12 @@ public class LinksCleanThread extends Thread
                 }
                 catch( DateTimeParseException ex )
                 {
-                    /*
                     String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
                     System.out.println( msg );
-                    System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr) );
-                    System.out.println( String.format( "id_registration: %d, divorceStrClean: |%s|", id_registration, divorceStrClean) );
-                    */
+                    System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr ) );
+                    System.out.println( String.format( "id_registration: %d, divorceStrClean: |%s|", id_registration, divorceStrClean ) );
+
+                    nattyDateParser( debug, divorceStr );       // give it a try
                     return;
                 }
 
@@ -8683,6 +8710,19 @@ public class LinksCleanThread extends Thread
             }
         }
     } // scanRemarksDivorce
+
+
+    /**
+     * @param debug
+     * @param inputStr
+     * @throws Exception
+     */
+    private void nattyDateParser( boolean debug, String inputStr )
+    {
+        java.util.List<java.util.Date> dates = new Parser().parse( inputStr ).get( 0 ).getDates();
+        int ndates = dates.size();
+        for( int i = 0; i < ndates; i++ ) { System.out.println( "Natty date: " + dates.get( i ) ); }
+    }
 
 
     /**
