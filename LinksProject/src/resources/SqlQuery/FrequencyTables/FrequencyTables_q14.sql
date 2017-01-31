@@ -1,5 +1,5 @@
 -- query 14 
 INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex ) 
-SELECT firstname3 , sex 
+SELECT firstname1 , sex 
 FROM links_cleaned.person_c 
-WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ;
+WHERE firstname1 IS NOT NULL AND firstname1 <> 'null' AND firstname1 <> '' ;

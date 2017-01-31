@@ -1,5 +1,5 @@
 -- query 16 
-INSERT INTO links_prematch.freq_firstname ( name_str , frequency )
-SELECT name_str , COUNT(*) AS frequency 
-FROM links_prematch.freq_firstname_sex_tmp 
-GROUP BY name_str ;
+INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex ) 
+SELECT firstname3 , sex 
+FROM links_cleaned.person_c 
+WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ;
