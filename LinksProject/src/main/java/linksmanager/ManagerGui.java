@@ -3002,7 +3002,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "31-Jan-2017 13:23";
+            String timestamp1 = "01-Feb-2017 13:23";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try

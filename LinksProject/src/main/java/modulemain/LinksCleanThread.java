@@ -74,7 +74,8 @@ import linksmanager.ManagerGui;
  * FL-07-Nov-2016 Flag instead of remove registrations
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
- * FL-27-Jan-2017 Latest change
+ * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
+ * FL-01-Feb-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -2413,10 +2414,10 @@ public class LinksCleanThread extends Thread
 
         showMessage( String.format( "Thread id %02d; Creating %s table", threadId, tablename  ), false, true );
 
-        String query = "CREATE  TABLE links_temp." + tablename + " ("
+        String query = "CREATE TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " familyname VARCHAR(110) NULL ,"
-            + " PRIMARY KEY (person_id) );";
+            + " PRIMARY KEY (person_id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
 
         dbconTemp.runQuery( query );
 
@@ -2522,7 +2523,7 @@ public class LinksCleanThread extends Thread
         showMessage( String.format( "Thread id %02d; Creating %s", threadId, tablename + " table" ), false, true );
 
         // Notice: the stillbirth column is not yet used
-        String query = "CREATE  TABLE links_temp." + tablename + " ("
+        String query = "CREATE TABLE links_temp." + tablename + " ("
             + " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " firstname VARCHAR(100) NULL ,"
             + " firstname1 VARCHAR(30) NULL ,"
@@ -2530,7 +2531,7 @@ public class LinksCleanThread extends Thread
             + " firstname3 VARCHAR(30) NULL ,"
             + " firstname4 VARCHAR(30) NULL ,"
             + " stillbirth VARCHAR(3) NULL ,"
-            + " PRIMARY KEY (person_id) );";
+            + " PRIMARY KEY (person_id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
 
         dbconTemp.runQuery( query );
     } // createTempFirstnameTable
