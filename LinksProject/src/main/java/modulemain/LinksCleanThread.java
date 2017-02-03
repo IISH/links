@@ -21,6 +21,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.Vector;
 
@@ -75,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-01-Feb-2017 Latest change
+ * FL-03-Feb-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -7157,8 +7159,8 @@ public class LinksCleanThread extends Thread
             "DROP TABLE IF EXISTS " + table_male   + ";",
             "DROP TABLE IF EXISTS " + table_female + ";",
 
-            "CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
-            "CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) );",
+            "CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
+            "CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
 
             "INSERT INTO " + table_male   + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
                 + "WHERE role = 10 AND sex = 'm' AND id_source = " + source,
@@ -8623,6 +8625,33 @@ public class LinksCleanThread extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
 
+            // input may contain 0, 1 or 2 dates; we want the first, determined by finding the first year: 4 digits in a row.
+            String patternStr = "\\d{4}";                       // 4 digits in a row: year
+            Pattern pattern = Pattern.compile( patternStr );    // create a Pattern object
+            Matcher matcher = pattern.matcher( divorceStr );    // create Matcher object.
+
+            String dateStr = "";
+            if( matcher.find() ) {
+                String year = matcher.group(0);
+                int pos = divorceStr.indexOf( year );
+                String dateStrLong = divorceStr.substring( pos-6, pos+4 );
+
+                char c0 = dateStrLong.charAt(0);
+                char c1 = dateStrLong.charAt(1);
+                char c2 = dateStrLong.charAt(2);
+
+                if( ! Character.isDigit( c2 ) ) { return; } // unusable
+                else
+                {
+                    if( ! Character.isDigit( c0 ) ) {
+                        if( ! Character.isDigit( c1 ) ) { dateStr = dateStrLong.substring( 2 ); }  //skip 2
+                        else { dateStr = dateStrLong.substring( 1 ); } // skip 1
+                    }
+                    else { dateStr = dateStrLong; }    // skip 0
+                }
+
+                if( debug ) { System.out.println(String.format("year: %s, dateStr: |%s|", year, dateStr )); }
+            } else { return; }  // unusable
 
             // The divorce string may contain 0, 1 or 2 dates of the form "dd%MM%yyyy" where % can be ' ', '-' or '/',
             // but "dd" may also be "d", and "MM" may also be "M". We want the first date.
@@ -8649,6 +8678,7 @@ public class LinksCleanThread extends Thread
             );
             // so, e.g., "dd MM yy" will give an exception
 
+            /*
             if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr) ); }
             String divorceStrClean = divorceStr.replaceAll( "[^0-9 -/]", "" );    // keep digits plus separators
             if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean rep1: |%s|", id_registration, divorceStrClean) ); }
@@ -8668,13 +8698,15 @@ public class LinksCleanThread extends Thread
                 divorceStrClean = divorceStrClean.trim();   // zap leading and trailing spaces
                 if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStrClean trim: |%s|", id_registration, divorceStrClean) ); }
             }
+            dateStr = divorceStrClean;
+            */
 
-            if( ! divorceStrClean.isEmpty() && divorceStrClean.length() >= 8 && divorceStrClean.length() <= 10 )
+            if( ! dateStr.isEmpty() && dateStr.length() >= 8 && dateStr.length() <= 10 )
             {
                 int day = 0, month = 0, year = 0;
                 try
                 {
-                    LocalDate localDate = LocalDate.parse( divorceStrClean, dateFormatter );
+                    LocalDate localDate = LocalDate.parse( dateStr, dateFormatter );
 
                     day   = localDate.getDayOfMonth();
                     month = localDate.getMonthValue();
@@ -8685,19 +8717,21 @@ public class LinksCleanThread extends Thread
                 }
                 catch( DateTimeParseException ex )
                 {
+                    /*
                     String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
                     System.out.println( msg );
                     System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr ) );
-                    System.out.println( String.format( "id_registration: %d, divorceStrClean: |%s|", id_registration, divorceStrClean ) );
+                    System.out.println( String.format( "id_registration: %d, dateStr: |%s|", id_registration, dateStr ) );
 
                     nattyDateParser( debug, divorceStr );       // give it a try
-                    return;
+                    */
+                    return;     // forget it
                 }
 
                 try
                 {
                     // divorce year must be grater than marriage year
-                    query_u = String.format( "UPDATE links_cleaned.person_c SET divorce_day = %d, divorce_month = %d, divorce_year = %d WHERE id_registration = %d AND role = %d AND mar_year IS NOT NULL AND %d > mar_year;",
+                    query_u = String.format( "UPDATE links_cleaned.person_c SET divorce_day = %d, divorce_month = %d, divorce_year = %d WHERE id_registration = %d AND role = %d AND mar_year IS NOT NULL AND mar_year <> 0 AND %d > mar_year;",
                         day, month, year, id_registration, role, year );
                     if( debug ) { System.out.println( query_u ); }
                     int rowsAffected = dbconCleaned.runQueryUpdate( query_u );
