@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-03-Feb-2017 Latest change
+ * FL-06-Feb-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -8501,7 +8501,7 @@ public class LinksCleanThread extends Thread
                 if( remarks_str == null || remarks_str.isEmpty() ) { continue; }
                 else { remarks_str = remarks_str.toLowerCase(); }
 
-                //if( id_registration == 8244748 ) { debug = true; }
+                //if( id_registration == 8244763 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 /*
@@ -8556,6 +8556,8 @@ public class LinksCleanThread extends Thread
 
                     if( found )
                     {
+                        if( debug ) { System.out.println( String.format("id_registration: %d: 1:|%s| 2:|%s| 3:|%s| ~:|%s|", id_registration, string_1, string_2, string_3, not_string )); }
+
                         if( not_string == null || not_string.isEmpty() || remarks_str.indexOf( not_string ) == -1 )
                         {
                             nupdates++;
@@ -8564,6 +8566,7 @@ public class LinksCleanThread extends Thread
                             {
                                 ndivorces++;
                                 int p = remarks_str.indexOf( "echtscheiding" );
+                                //if( debug ) { System.out.println( "p: " + p ); }
 
                                 if( p != -1 )
                                 {
@@ -8631,27 +8634,28 @@ public class LinksCleanThread extends Thread
             Matcher matcher = pattern.matcher( divorceStr );    // create Matcher object.
 
             String dateStr = "";
-            if( matcher.find() ) {
+            if( matcher.find() )
+            {
                 String year = matcher.group(0);
                 int pos = divorceStr.indexOf( year );
                 String dateStrLong = divorceStr.substring( pos-6, pos+4 );
+                //if( debug ) { System.out.println( String.format( "dateStrLong: %s", dateStrLong ) ); }
 
                 char c0 = dateStrLong.charAt(0);
                 char c1 = dateStrLong.charAt(1);
-                char c2 = dateStrLong.charAt(2);
 
-                if( ! Character.isDigit( c2 ) ) { return; } // unusable
-                else
-                {
-                    if( ! Character.isDigit( c0 ) ) {
-                        if( ! Character.isDigit( c1 ) ) { dateStr = dateStrLong.substring( 2 ); }  //skip 2
-                        else { dateStr = dateStrLong.substring( 1 ); } // skip 1
-                    }
-                    else { dateStr = dateStrLong; }    // skip 0
+                if( ! Character.isDigit( c0 ) ) {
+                    if( ! Character.isDigit( c1 ) ) { dateStr = dateStrLong.substring( 2 ); }   //skip 2
+                    else { dateStr = dateStrLong.substring( 1 ); }  // skip 1
                 }
+                else { dateStr = dateStrLong; }     // skip 0
 
-                if( debug ) { System.out.println(String.format("year: %s, dateStr: |%s|", year, dateStr )); }
-            } else { return; }  // unusable
+                //if( debug ) { System.out.println(String.format("year: %s, dateStr: |%s|", year, dateStr )); }
+            }
+            else {      // unusable
+                //if( debug ) { System.out.println( String.format( "matcher.find() false" ) ); }
+                return;
+            }
 
             // The divorce string may contain 0, 1 or 2 dates of the form "dd%MM%yyyy" where % can be ' ', '-' or '/',
             // but "dd" may also be "d", and "MM" may also be "M". We want the first date.
