@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-06-Feb-2017 Latest change
+ * FL-10-Feb-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -352,7 +352,7 @@ public class LinksCleanThread extends Thread
                 long timeStart = System.currentTimeMillis();
 
                 /*
-                msg = String.format( "Thread id %02d; Pre-loading all reference tables...", mainThreadId );   // with multi-threaded they are not explicitly freed
+                msg = String.format( "Thread id %02d; Pre-loading all reference tables ...", mainThreadId );   // with multi-threaded they are not explicitly freed
                 plog.show( msg ); showMessage( msg, false, true );
 
                 almmPrepiece     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
@@ -1023,7 +1023,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
 
         // Delete cleaned data for given source
@@ -1126,7 +1126,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -1192,7 +1192,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
 
@@ -1234,7 +1234,7 @@ public class LinksCleanThread extends Thread
 
         //if( ! multithreaded ) { showTimingMessage( msg, start ); }
 
-        msg = String.format( "Thread id %02d; standardFirstname...", threadId );
+        msg = String.format( "Thread id %02d; standardFirstname ...", threadId );
         showMessage( msg, false, true );
         standardFirstname( debug, almmPrepiece, almmSuffix, almmAlias, almmFirstname, writerFirstname, source );
         msg = String.format( "Thread id %02d; standardFirstname ", threadId );
@@ -1267,7 +1267,7 @@ public class LinksCleanThread extends Thread
 
         // Firstnames to lowercase
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Converting firstnames to lowercase...", threadId );
+        msg = String.format( "Thread id %02d; Converting firstnames to lowercase ...", threadId );
         showMessage( msg, false, true );
         String qLower = "UPDATE links_cleaned.person_c SET firstname = LOWER( firstname ) WHERE id_source = " +  source + ";";
         dbconCleaned.runQuery( qLower );
@@ -1306,7 +1306,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
 
@@ -1348,13 +1348,13 @@ public class LinksCleanThread extends Thread
         //if( ! multithreaded ) { showTimingMessage( msg, start ); }
 
         msg = String.format( "Thread id %02d; standardFamilyname", threadId );
-        showMessage( msg + "...", false, true );
+        showMessage( msg + " ...", false, true );
         standardFamilyname( debug, almmPrepiece, almmSuffix, almmAlias, almmFamilyname, writerFamilyname, source );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; remains Familyname", threadId );
-        showMessage( msg + "...", false, true );
+        showMessage( msg + " ...", false, true );
 
         while( almmFamilyname.isBusy().get() ) {
             plog.show( String.format( "Thread id %02d; No permission to update ref_familyname: Waiting 60 seconds", threadId ) );
@@ -1379,7 +1379,7 @@ public class LinksCleanThread extends Thread
 
         // Familynames to lowercase
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Converting familynames to lowercase...", threadId );
+        msg = String.format( "Thread id %02d; Converting familynames to lowercase ...", threadId );
         showMessage( msg, false, true );
         String qLower = "UPDATE links_cleaned.person_c SET familyname = LOWER( familyname ) WHERE id_source = " + source + ";";
         dbconCleaned.runQuery( qLower );
@@ -1745,10 +1745,11 @@ public class LinksCleanThread extends Thread
             else if( count_still == 1 ) { strStill = "1 stillbirth"; }
             else { strStill = "" + count_still + " stillbirths"; }
 
-            showMessage( String.format( "Thread id %02d; %d firstname records, %d without a firstname, %s, %s", threadId, count, count_empty, strNew, strStill ), false, true );
+            showMessage( String.format( "Thread id %02d; %d firstname records, %d without a Firstname, %s, %s", threadId, count, count_empty, strNew, strStill ), false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Firstname: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Firstname: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardFirstname
@@ -1934,10 +1935,11 @@ public class LinksCleanThread extends Thread
             else if( count_new == 1 ) { strNew = "1 new familyname"; }
             else { strNew = "" + count_new + " new familynames"; }
 
-            showMessage( String.format( "Thread id %02d; %d familyname records, %d without a familyname, %s", threadId, count, count_empty, strNew ), false, true );
+            showMessage( String.format( "Thread id %02d; %d familyname records, %d without a Familyname, %s", threadId, count, count_empty, strNew ), false, true );
         }
         catch( Exception ex) {
-            showMessage( "count: " + count + " Exception while cleaning familyname: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Familyname: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardFamilyname
@@ -2034,6 +2036,7 @@ public class LinksCleanThread extends Thread
      */
     public void standardPrepiece( boolean debug, TableToArrayListMultimap almmPrepiece, String source )
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -2154,7 +2157,8 @@ public class LinksCleanThread extends Thread
             con.close();
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Prepiece: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Prepiece: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardPrepiece
@@ -2165,6 +2169,7 @@ public class LinksCleanThread extends Thread
      */
     public void standardSuffix( boolean debug, TableToArrayListMultimap almmSuffix, String source )
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -2246,7 +2251,8 @@ public class LinksCleanThread extends Thread
 
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Suffix: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Suffix: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardSuffix
@@ -2587,7 +2593,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; Moving first names from temp table to person_c...", threadId ), false, true );
+        showMessage( String.format( "Thread id %02d; Moving first names from temp table to person_c ...", threadId ), false, true );
 
         String tablename = "firstname_t_" + source;
 
@@ -2695,7 +2701,7 @@ public class LinksCleanThread extends Thread
         }
 
         long funcStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -2712,42 +2718,42 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardRegistrationLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardRegistrationLocation ...", threadId );
         showMessage( msg, false, true );
         standardRegistrationLocation( debug, almmLocation, source );
         msg = String.format( "Thread id %02d; standardRegistrationLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardBirthLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardBirthLocation ...", threadId );
         showMessage( msg, false, true );
         standardBirthLocation( debug, almmLocation, source );
         msg = String.format( "Thread id %02d; standardBirthLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardMarriageLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardMarriageLocation ...", threadId );
         showMessage( msg, false, true );
         standardMarriageLocation( debug, almmLocation, source );
         msg = String.format( "Thread id %02d; standardMarriageLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardDivorceLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardDivorceLocation ...", threadId );
         showMessage( msg, false, true );
         standardDivorceLocation( debug, almmLocation, source );
         msg = String.format( "Thread id %02d; standardDivorceLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardLivingLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardLivingLocation ...", threadId );
         showMessage( msg, false, true );
         standardLivingLocation( debug, almmLocation, source );
         msg = String.format( "Thread id %02d; standardLivingLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; standardDeathLocation...", threadId );
+        msg = String.format( "Thread id %02d; standardDeathLocation ...", threadId );
         showMessage( msg, false, true );
         standardDeathLocation( debug,  almmLocation, source );
         msg = String.format( "Thread id %02d; standardDeathLocation ", threadId );
@@ -2917,7 +2923,9 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; %d %s records, %d without location, %s", threadId, count, locationFieldO, count_empty, strNew ), false, true );
         }
         catch( Exception ex ) {
-            throw new Exception( "count: " + count + " Exception while cleaning Location: " + ex.getMessage() );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Location: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardLocation
 
@@ -2928,6 +2936,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardRegistrationLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
         if( debug ) { showMessage( "standardRegistrationLocation: " + selectQuery, false, true ); }
 
@@ -2937,7 +2947,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning registration_location: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationLocation
@@ -2949,6 +2960,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardBirthLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
         if( debug ) { showMessage( "standardBirthLocation: " + selectQuery, false, true ); }
 
@@ -2958,7 +2971,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning standardBirthLocation: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardBirthLocation
@@ -2970,6 +2984,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardMarriageLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
         if( debug ) { showMessage( "standardMarLocation: " + selectQuery, false, true ); }
 
@@ -2978,7 +2994,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning mar_location: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardMarriageLocation
@@ -2990,6 +3007,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardDivorceLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_person , divorce_location FROM person_o WHERE id_source = " + source + " AND divorce_location <> ''";
         if( debug ) { showMessage( "standardDivorceLocation: " + selectQuery, false, true ); }
 
@@ -2998,7 +3017,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_person", "divorce_location", "divorce_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning divorce_location: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDivorceLocation
@@ -3010,6 +3030,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardLivingLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
         if( debug ) { showMessage( "standardLivingLocation: " + selectQuery, false, true ); }
 
@@ -3018,7 +3040,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning living_location: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardLivingLocation
@@ -3030,6 +3053,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardDeathLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
     {
+        long threadId = Thread.currentThread().getId();
+
         String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
         if( debug ) { showMessage( "standardDeathLocation: " + selectQuery, false, true ); }
 
@@ -3038,7 +3063,8 @@ public class LinksCleanThread extends Thread
             standardLocation( debug, almmLocation, rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception while cleaning death_location: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDeathLocation
@@ -3090,8 +3116,9 @@ public class LinksCleanThread extends Thread
                 n++;
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagBirthLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception in flagBirthLocation(): " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -3144,8 +3171,9 @@ public class LinksCleanThread extends Thread
                 n++;
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagMarriageLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception in flagMarriageLocation(): " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -3198,8 +3226,9 @@ public class LinksCleanThread extends Thread
                 n++;
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagDeathLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception in flagDeathLocation(): " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -3225,7 +3254,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -3359,7 +3388,8 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; %d gender records, %d without gender, %s", threadId, count, count_empty, strNew ), false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Sex: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardSex: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardSex
@@ -3481,7 +3511,8 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; %d civil status records, %d without civil status, %s", threadId, count, count_empty, strNew ), false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Civil Status: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardCivilstatus: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardCivilstatus
@@ -3506,12 +3537,12 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         /*
         long start = System.currentTimeMillis();
         String msg = "Loading reference table: ref_registration";
-        showMessage( msg + "...", false, true );
+        showMessage( msg + " ...", false, true );
         if( ! multithreaded ) { almmRegisType = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" ); }
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
         */
@@ -3536,6 +3567,7 @@ public class LinksCleanThread extends Thread
      */
     public void standardRegistrationType( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -3615,7 +3647,8 @@ public class LinksCleanThread extends Thread
             }
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + ", Exception while cleaning Registration Type: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardRegistrationType: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationType
@@ -3640,7 +3673,7 @@ public class LinksCleanThread extends Thread
         }
 
         long funcstart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -3726,13 +3759,10 @@ public class LinksCleanThread extends Thread
 
             showMessage( String.format( "Thread id %02d; %d occupation records, %d without occupation, %s", threadId, count, count_empty, strNew ), false, true );
         }
-        catch( SQLException sex ) {
-            showMessage( "count: " + count + " SQLException while cleaning Occupation: " + sex.getMessage(), false, true );
-            sex.printStackTrace( new PrintStream( System.out ) );
-        }
-        catch( Exception jex ) {
-            showMessage( "count: " + count + " Exception while cleaning Occupation: " + jex.getMessage(), false, true );
-            jex.printStackTrace( new PrintStream( System.out ) );
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardOccupation: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
 
     } // standardOccupation
@@ -3745,6 +3775,8 @@ public class LinksCleanThread extends Thread
      */
     public void standardOccupationRecord( boolean debug, TableToArrayListMultimap almmOccupation, int count, String source, int id_person, String occupation )
     {
+        long threadId = Thread.currentThread().getId();
+
         try
         {
             if( !occupation.isEmpty() )                 // check presence of the occupation
@@ -3811,9 +3843,10 @@ public class LinksCleanThread extends Thread
                 }
             }
         }
-        catch( Exception ex3 ) {
-            showMessage( "count: " + count + " Exception while cleaning Occupation: " + ex3.getMessage(), false, true );
-            ex3.printStackTrace( new PrintStream( System.out ) );
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardOccupationRecord: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardOccupationRecord
 
@@ -3839,7 +3872,7 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -3852,14 +3885,14 @@ public class LinksCleanThread extends Thread
         showMessage( msg, false, true );
 
         long timeSAL = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         standardAgeLiteral( debug, almmLitAge, source );
         msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s ", threadId, source );
         elapsedShowMessage( msg, timeSAL, System.currentTimeMillis() );
 
         long timeSA = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardAge for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardAge for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         standardAge( debug, source );
         msg = String.format( "Thread id %02d; Processing standardAge for source: %s ", threadId, source );
@@ -3893,6 +3926,7 @@ public class LinksCleanThread extends Thread
      */
     public void standardAgeLiteral( boolean debug, TableToArrayListMultimap almmLitAge, String source )
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -4133,7 +4167,8 @@ public class LinksCleanThread extends Thread
             }
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception during standardAgeLiteral: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardAgeLiteral: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAgeLiteral
@@ -4145,6 +4180,7 @@ public class LinksCleanThread extends Thread
      */
     public void standardAge( boolean debug, String source )
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -4240,7 +4276,8 @@ public class LinksCleanThread extends Thread
             //showMessage( count + " person records", false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception during standardAge: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardAge: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAge
@@ -4263,7 +4300,7 @@ public class LinksCleanThread extends Thread
             return;
         }
 
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         long timeStart = System.currentTimeMillis();
 
@@ -4277,7 +4314,7 @@ public class LinksCleanThread extends Thread
         String msg = String.format( "Thread id %02d; Reference table: ref_role [%d records]", threadId, size );
         showMessage( msg, false, true );
 
-        msg = String.format( "Thread id %02d; Processing standardRole for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardRole for source: %s ...", threadId, source );
         showMessage( msg, false, true );
 
         standardRole( debug, almmRole, source );
@@ -4296,7 +4333,7 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; Freed almmRole", threadId ), false, true );
         //}
 
-        msg = String.format( "Thread id %02d; Processing standardAlive for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardAlive for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         standardAlive( debug, source );
 
@@ -4406,7 +4443,8 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; %d person records, %d without a role, and %d without a standard role", threadId, count, count_empty, count_noref ), false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Role: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardRole: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRole
@@ -4487,7 +4525,8 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; %d person records, %d without alive specification", threadId, count, count_empty ), false, true );
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Alive: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning standardAlive: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardAlive
@@ -4510,7 +4549,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         long ts = System.currentTimeMillis();
         String msg = "";
@@ -4521,7 +4560,7 @@ public class LinksCleanThread extends Thread
         ///*
         ts = System.currentTimeMillis();
         String type = "birth";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
         msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
@@ -4529,7 +4568,7 @@ public class LinksCleanThread extends Thread
 
         ts = System.currentTimeMillis();
         type = "mar";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
         msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
@@ -4537,7 +4576,7 @@ public class LinksCleanThread extends Thread
 
         ts = System.currentTimeMillis();
         type = "death";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
         showMessage( msg, false, true );
         standardDate( debug, source, type );
         msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
@@ -4545,7 +4584,7 @@ public class LinksCleanThread extends Thread
 
 
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate ", threadId );
@@ -4557,13 +4596,13 @@ public class LinksCleanThread extends Thread
         ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         flagBirthDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         flagMarriageDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         flagDeathDate( debug, source );
         msg = String.format( "Thread id %02d; Flagging empty dates ", threadId );
@@ -4571,7 +4610,7 @@ public class LinksCleanThread extends Thread
 
         ///*
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing minMaxValidDate for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing minMaxValidDate for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         minMaxValidDate( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
@@ -4582,7 +4621,7 @@ public class LinksCleanThread extends Thread
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing minMaxDateMain for source: %s...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing minMaxDateMain for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         minMaxDateMain( debug, source );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain ", threadId );
@@ -4861,7 +4900,8 @@ public class LinksCleanThread extends Thread
             }
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception in minMaxDateMain(): " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in minMaxDateMain: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             showMessage( "id_registration: " + id_registration + ", id_person: " + id_person, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
@@ -6015,7 +6055,8 @@ public class LinksCleanThread extends Thread
             { showMessage( String.format( "Thread id %02d; Number of registrations with too many hyphens in reg date: %s", threadId, nTooManyHyphens ), false, true ); }
         }
         catch( Exception ex ) {
-            showMessage( "count: " + count + " Exception while cleaning Registration date: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardRegistrationDate: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationDate
@@ -6115,6 +6156,8 @@ public class LinksCleanThread extends Thread
             rs = null;
         }
         catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; count: %d, Exception in standardDate: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
             showMessage( "count: " + count + " Exception while cleaning " + type + " date: " + ex.getMessage(), false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
@@ -6305,6 +6348,8 @@ public class LinksCleanThread extends Thread
         // birth_date_flag is not used elsewhere in the cleaning.
         // In standardDate() birth_date_valid is set to either 1 (valid birth date) or 0 (invalid birth date)
 
+        long threadId = Thread.currentThread().getId();
+
         String[] queries =
         {
             "UPDATE person_c, registration_c"
@@ -6370,8 +6415,9 @@ public class LinksCleanThread extends Thread
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagBirthDate: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception while flagging Birth date: " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -6385,7 +6431,9 @@ public class LinksCleanThread extends Thread
     public void flagMarriageDate( boolean debug, String source )
     {
         // mar_date_flag is not used elsewhere in the cleaning.
-        // // In standardDate() mar_date_valid is set to either 1 (valid mar date) or 0 (invalid mar date)
+        // In standardDate() mar_date_valid is set to either 1 (valid mar date) or 0 (invalid mar date)
+
+        long threadId = Thread.currentThread().getId();
 
         String[] queries =
         {
@@ -6452,8 +6500,9 @@ public class LinksCleanThread extends Thread
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagMarriageDate: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception while flagging Marriage date: " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -6468,6 +6517,8 @@ public class LinksCleanThread extends Thread
     {
         // death_date_flag is not used elsewhere in the cleaning.
         // In standardDate() death_date_valid is set to either 1 (valid death date) or 0 (invalid death date)
+
+        long threadId = Thread.currentThread().getId();
 
         String[] queries =
         {
@@ -6534,8 +6585,9 @@ public class LinksCleanThread extends Thread
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagDeathDate: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 showMessage( query, false, true );
-                showMessage( "Exception while flagging Death date: " + ex.getMessage(), false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -6561,7 +6613,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
         //if( ! multithreaded ) {
             long start = System.currentTimeMillis();
@@ -6589,6 +6641,7 @@ public class LinksCleanThread extends Thread
     private void minMaxMarriageYear( boolean debug, TableToArrayListMultimap almmMarriageYear, String source )
     throws Exception
     {
+        long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
@@ -6766,7 +6819,11 @@ public class LinksCleanThread extends Thread
                 }
             }
         }
-        catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; count: %d, Exception in minMaxMarriageYear: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
 
     } // minMaxMarriageYear
 
@@ -6832,9 +6889,9 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing partsToFullDate for source: %s...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing partsToFullDate for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         partsToFullDate(source);
 
@@ -6868,6 +6925,8 @@ public class LinksCleanThread extends Thread
         The MySQL date/time functions are not rock solid, we maybe be we should avoid them, and use Java Joda-time.
         */
 
+        long threadId = Thread.currentThread().getId();
+
         String query = "UPDATE links_cleaned.person_c SET "
                 + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
                 + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
@@ -6879,7 +6938,8 @@ public class LinksCleanThread extends Thread
 
         try { dbconCleaned.runQuery( query ); }
         catch( Exception ex ) {
-            showMessage( "Exception while Creating full dates from parts: " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception in partsToFullDate: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // partsToFullDate
@@ -6904,9 +6964,9 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing daysSinceBegin for source: %s...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing daysSinceBegin for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         daysSinceBegin( debug, source );
 
@@ -6932,7 +6992,8 @@ public class LinksCleanThread extends Thread
 
         try { dbconCleaned.runQuery( qRclean ); }
         catch( Exception ex ) {
-            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception 1 in daysSinceBegin: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -6999,7 +7060,7 @@ public class LinksCleanThread extends Thread
             dbconCleaned.runQuery( queryP6 );
 
             /*
-            // sometimes exceptions for invalid dates...
+            // sometimes exceptions for invalid dates ...
             if( debug ) { showMessage( queryR, false, true ); }
             else { showMessage( String.format( "Thread id %02d; 7-of-7: registration_days", threadId ), false, true ); }
             int rowsAffected = dbconCleaned.runQueryUpdate( queryR );
@@ -7007,7 +7068,8 @@ public class LinksCleanThread extends Thread
             */
         }
         catch( Exception ex ) {
-            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception 2 in daysSinceBegin: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -7052,15 +7114,17 @@ public class LinksCleanThread extends Thread
                     //System.out.println( "registration_days rows affected: " + rowsAffected );
                 }
                 catch( Exception ex ) {
-                    showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
-                    ex.printStackTrace( new PrintStream( System.out ) );
+                    String msg = String.format( "Thread id %02d; Exception 3 in daysSinceBegin: %s", threadId, ex.getMessage() );
+                    showMessage( msg, false, true );
                     System.out.println( "count: " + count + ", id_registration: " + id_registration + ", registration_date: " + registration_date );
+                    ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
             //System.out.println( "end count: " + count );
         }
         catch( Exception ex ) {
-            showMessage( "Exception in daysSinceBegin(): " + ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception 4 in daysSinceBegin: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -7087,9 +7151,9 @@ public class LinksCleanThread extends Thread
         }
 
         long start = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing postTasks for source: %s...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing postTasks for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         postTasks( debug, source );
 
@@ -7101,21 +7165,21 @@ public class LinksCleanThread extends Thread
         // doRole() has been run. The calling of these functions has been (temporarily?) moved from doLocations() to
         // here in doPostTasks(). (The function bodies were left in the Locations segment.)
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagBirthLocation for source %s...", threadId, source );
+        msg = String.format( "Thread id %02d; flagBirthLocation for source %s ...", threadId, source );
         showMessage( msg, false, true );
         flagBirthLocation( debug, source );
         msg = String.format( "Thread id %02d; flagBirthLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagMarriageLocation for source %s...", threadId, source );
+        msg = String.format( "Thread id %02d; flagMarriageLocation for source %s ...", threadId, source );
         showMessage( msg, false, true );
         flagMarriageLocation( debug, source );
         msg = String.format( "Thread id %02d; flagMarriageLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagDeathLocation for source %s...", threadId, source );
+        msg = String.format( "Thread id %02d; flagDeathLocation for source %s ...", threadId, source );
         showMessage( msg, false, true );
         flagDeathLocation( debug, source );
         msg = String.format( "Thread id %02d; flagDeathLocation ", threadId );
@@ -7210,7 +7274,7 @@ public class LinksCleanThread extends Thread
 
         if( debug ) { System.out.println( query ); }
         System.out.println( query );
-        String msg = String.format( "Thread id %02d; running stillbirth birth_date query...", threadId  );
+        String msg = String.format( "Thread id %02d; running stillbirth birth_date query ...", threadId  );
         showMessage( msg, false, true );
         int count = dbconCleaned.runQueryUpdate( query );
         msg = String.format( "Thread id %02d; stillbirth: %d rows updated", threadId, count  );
@@ -7239,19 +7303,19 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        String msg = String.format( "Thread id %02d; Clear Previous Registration Flags...", threadId );
+        String msg = String.format( "Thread id %02d; Clear Previous Registration Flags ...", threadId );
         showMessage( msg, false, true );
         clearFlagDuplicateRegs( debug, source );
 
-        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations ...", threadId );
         showMessage( msg, false, true );
         flagDuplicateRegs( debug, source );
 
-        msg = String.format( "Thread id %02d; Flagging Empty Date Registrations...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Empty Date Registrations ...", threadId );
         showMessage( msg, false, true );
         flagEmptyDateRegs( debug, source );
 
-        msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs ...", threadId );
         showMessage( msg, false, true );
         flagEmptyDaysSinceBegin( debug, source );
 
@@ -7278,15 +7342,15 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        String msg = String.format( "Thread id %02d; Clear Previous Person Flags...", threadId );
+        String msg = String.format( "Thread id %02d; Clear Previous Person Flags ...", threadId );
         showMessage( msg, false, true );
         clearPersonFlags( debug, source );
 
-        msg = String.format( "Thread id %02d; Flagging Person recs without familynames...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Person recs without familynames ...", threadId );
         showMessage( msg, false, true );
         flagEmptyFamilynameRecs( debug, source );
 
-        msg = String.format( "Thread id %02d; Flagging Person recs without role...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Person recs without role ...", threadId );
         showMessage( msg, false, true );
         flagEmptyRoleRecs( debug, source );
 
@@ -7313,7 +7377,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Flagging Registrations without dates...", threadId );
+        String msg = String.format( "Thread id %02d; Flagging Registrations without dates ...", threadId );
         showMessage( msg, false, true );
 
         flagEmptyDateRegs( debug, source );
@@ -7333,7 +7397,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void flagEmptyDateRegs( boolean debug, String source )
-        throws Exception
+    throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -7433,7 +7497,8 @@ public class LinksCleanThread extends Thread
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
-                System.out.printf("'%s'\n", ex.getMessage());
+                String msg = String.format( "Thread id %02d; Exception in flagEmptyDateRegs: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -7447,7 +7512,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void flagEmptyDaysSinceBegin( boolean debug, String source )
-        throws Exception
+    throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -7512,7 +7577,8 @@ public class LinksCleanThread extends Thread
         }
         catch( Exception ex ) {
             if( ex.getMessage() != "After end of result set" ) {
-                System.out.printf("'%s'\n", ex.getMessage());
+                String msg = String.format( "Thread id %02d; Exception in flagEmptyDaysSinceBegin: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
         }
@@ -7524,7 +7590,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void clearPersonFlags( boolean debug, String source )
-        throws Exception
+    throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -7544,7 +7610,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void flagEmptyFamilynameRecs( boolean debug, String source )
-        throws Exception
+    throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -7608,7 +7674,8 @@ public class LinksCleanThread extends Thread
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
-            System.out.printf("'%s'\n", ex.getMessage());
+            String msg = String.format( "Thread id %02d; Exception in flagEmptyFamilynameRecs: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagEmptyFamilynameRecs
@@ -7743,7 +7810,8 @@ public class LinksCleanThread extends Thread
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
-            System.out.printf("'%s'\n", ex.getMessage());
+            String msg = String.format( "Thread id %02d; Exception in flagEmptyRoleRecs: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagEmptyRoleRecs
@@ -7940,7 +8008,8 @@ public class LinksCleanThread extends Thread
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
-            System.out.printf("'%s'\n", ex.getMessage());
+            String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegs: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagDuplicateRegs
@@ -8375,7 +8444,7 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        String msg = funcname + "...";
+        String msg = funcname + " ...";
         showMessage( msg, false, true );
 
         scanRemarks( debug, source );
@@ -8472,7 +8541,8 @@ public class LinksCleanThread extends Thread
             if( debug ) { System.out.println( "" ); }
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception 1 in scanRemarks: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
@@ -8590,7 +8660,8 @@ public class LinksCleanThread extends Thread
             showMessage( msg, false, true );
         }
         catch( Exception ex ) {
-            showMessage( ex.getMessage(), false, true );
+            String msg = String.format( "Thread id %02d; Exception 2 in scanRemarks: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // scanRemarks
@@ -8621,10 +8692,9 @@ public class LinksCleanThread extends Thread
                 if( debug ) { System.out.println( String.format( "%d %s", rowsAffected, query_u ) ); }
             }
             catch( Exception ex ) {
-                showMessage( "Query: " + query_u, false, true );
-                String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+                String msg = String.format( "Thread id %02d; Exception 1 in scanRemarksDivorce: %s", threadId, ex.getMessage() );
                 showMessage( msg, false, true );
-                System.out.println( query_u );
+                showMessage( "Query: " + query_u, false, true );
                 ex.printStackTrace( new PrintStream( System.out ) );
             }
 
@@ -8741,9 +8811,9 @@ public class LinksCleanThread extends Thread
                     int rowsAffected = dbconCleaned.runQueryUpdate( query_u );
                 }
                 catch( Exception ex )  {
-                    showMessage( "Query: " + query_u, false, true );
-                    String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+                    String msg = String.format( "Thread id %02d; Exception 2 in scanRemarksDivorce: %s", threadId, ex.getMessage() );
                     showMessage( msg, false, true );
+                    showMessage( "Query: " + query_u, false, true );
                     ex.printStackTrace( new PrintStream( System.out ) );
                 }
             }
@@ -8790,9 +8860,9 @@ public class LinksCleanThread extends Thread
 
         try { dbconCleaned.runQuery( query_u ); }
         catch( Exception ex ) {
-            showMessage( "Query: " + query_u, false, true );
-            String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
+            String msg = String.format( "Thread id %02d; Exception 2 in scanRemarksUpdate: %s", threadId, ex.getMessage() );
             showMessage( msg, false, true );
+            showMessage( "Query: " + query_u, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // scanRemarksUpdate
@@ -8814,9 +8884,9 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-        showMessage( funcname + "...", false, true );
+        showMessage( funcname + " ...", false, true );
 
-        showMessage( "Running PREMATCH...", false, false );
+        showMessage( "Running PREMATCH ...", false, false );
         mg.firePrematch();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
