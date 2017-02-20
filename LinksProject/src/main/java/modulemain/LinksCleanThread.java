@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-10-Feb-2017 Latest change
+ * FL-20-Feb-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -6411,7 +6411,7 @@ public class LinksCleanThread extends Thread
                 int flag = nq;
                 nq++;
                 int nrec = dbconCleaned.runQueryUpdate( query );
-                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                String msg = String.format( "Thread id %02d; query %d-of-%d, %d flags set to %d", threadId, nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
