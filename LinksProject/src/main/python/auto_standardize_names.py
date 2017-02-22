@@ -6,22 +6,31 @@ Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		auto_standardize_names.py
 Version:	0.1
-Goal:		Automatically standardize names by taking the closest Levenshtein variant. 
-			Notice: for standard names from GBA (Gemeentelijke BasisAdministratie persoonsgegevens) 
-			we additionally require that the first character must match. 
+Goal:		Automatically standardize names by taking the Levenshtein variant 
+			with highest frequency. 
+
+Algorithm:
+-1- Loop over table {ref_firstname|ref_familyname}, getting the records with standard_code = 'x'. 
+-2- Search for the original in {freq_firstname|freq_familyname}, accepting frequenties of 1 and 2, 
+	because only those low frequencies will be automatically normalized. 
+-3- Search for the accepted names in {ls_firstname_first|ls_familyname_first}, 
+	require an lvs value of 1. 
+-4- Search for names in {freq_firstname|freq_familyname} ordered by frequency high to low
+	Accept a name from the highest frequency > 1 names. 
+
 
 class Database:
 def db_check( db_links ):
 def order_by_freq( debug, resp_lvs, freq_table ):
 def find_in_reference( db_ref, ref_table, name_str ):
 def normalize_freq_first( debug, db, db_ref, first_or_fam_name ):
-def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
+def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 def inspect( debug, db, db_ref, freq_table, ref_table ):
 def names_with_space( debug, db, db_ref, freq_table, ref_table ):
 def compare_first_family( debug, db, db_ref ):
 
 13-Apr-2016 Created
-20-Feb-2017 Changed
+22-Feb-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -42,7 +51,13 @@ from time import time
 
 debug = False
 
-limit_names = 20
+#ls_table_extension = ""				# test
+ls_table_extension = "_first"		# production 
+
+#freq_ori_limit = 2					# test
+freq_ori_limit = 1					# production 
+
+limit_names = 5
 #limit_names = 100
 #limit_names = 250
 #limit_names = 1000
@@ -234,11 +249,11 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 	
 	if first_or_fam_name == "firstname":
 		freq_table = "freq_firstname"
-		ls_table   = "ls_firstname"
+		ls_table   = "ls_firstname" + ls_table_extension
 		ref_table  = "ref_firstname"
 	elif first_or_fam_name == "familyname":
 		freq_table = "freq_familyname"
-		ls_table   = "ls_familyname"
+		ls_table   = "ls_familyname" + ls_table_extension
 		ref_table  = "ref_familyname"
 	else:
 		return
@@ -355,23 +370,93 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 
 
 
-def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
+def get_lvs_alternatives( lvs_table, name ):
+	# find in Levenshtein table, for lvs = 1
+	#query_lvs  = "SELECT * FROM links_prematch." + lvs_table + " WHERE value = 1 "
+	#query_lvs += "AND name_str_1 = \'" + name + "\' ORDER BY name_str_2;"
+	
+	# this query assumes the lvs_table is an asymmetric (single-sized) lvs table
+	query_lvs  = "( SELECT name_int_2 AS name_int, name_str_2 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_1 = '" + name + "' ) ";
+	query_lvs += "UNION ALL ";
+	query_lvs += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_2 = '" + name + "' ) ";
+	query_lvs += "ORDER BY name_int;";
+
+	logging.info( "query_lvs: %s", query_lvs )
+#	return 0
+		
+	resp_lvs = db_links.query( query_lvs )
+	nalts = len( resp_lvs )
+	
+	if nalts > 0:
+		logging.info( "lvs nalts: %d" % nalts )
+	
+	alts = []
+	for n in range( nalts ):
+		dict_lvs = resp_lvs[ n ]
+		name_str = dict_lvs[ "name_str" ]
+		alts.append( name_str )
+		logging.debug( "name: %s -> name_str: %s" % ( name, name_str ) )
+	
+	return alts
+
+
+
+def get_preferred_alt( alts, freq_table ):
+	# choose alternative of highest frequency
+	
+	name_max = ""
+	freq_max = 0
+	
+	for alt in alts:
+		# search frequency of alt in frequency table
+		query_freq = "SELECT * FROM links_prematch." + freq_table + " " 
+		query_freq += "WHERE name_str = \"" + alt + "\";"
+		logging.debug( query_freq )
+
+		resp_freq = db_links.query( query_freq )
+		logging.debug( resp_freq )
+		
+		# check number of hits
+		freq_ori = 0
+		if len( resp_freq ) == 0:
+			logging.debug( "freq: %d, name: |%s| skipped" % ( freq_alt, alt ) )
+			continue		# next alt
+		elif len( resp_freq ) == 1:
+			dict_freq = resp_freq[ 0 ]
+			freq_alt  = dict_freq[ "frequency" ]
+			logging.info( "freq: %d, name: %s" % ( freq_alt, alt ) )
+			
+			if freq_alt > freq_max:
+				freq_max = freq_alt
+				name_max = alt
+			
+		else:
+			logging.warning( "more than 1 hit from %s?" % freq_table )
+			logging.warning( resp_freq )
+			logging.warning( "EXIT" )
+			sys.exit( 1 )
+
+	return name_max, freq_max
+
+
+
+def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 	"""
-	normalize_ref_first. 
+	normalize_ref_name. 
 	-1- get records from (firstname or familyname) reference table where standard_code = 'x'
 	-2- 
 	"""
-	logging.info( "normalize_ref_first() %s" % first_or_fam_name )
+	logging.info( "normalize_ref_name() %s" % first_or_fam_name )
 	# _ref_first: start with reference table
 	
 	if first_or_fam_name == "firstname":
-		freq_table = "freq_firstname"
-		ls_table   = "ls_firstname"
 		ref_table  = "ref_firstname"
+		freq_table = "freq_firstname"
+		ls_table   = "ls_firstname" + ls_table_extension
 	elif first_or_fam_name == "familyname":
-		freq_table = "freq_familyname"
-		ls_table   = "ls_familyname"
 		ref_table  = "ref_familyname"
+		freq_table = "freq_familyname"
+		ls_table   = "ls_familyname" + ls_table_extension
 	else:
 		return
 
@@ -384,13 +469,16 @@ def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
 	logging.debug( resp_ref )
 	logging.info( "# of names in %s that have standard_code 'x': %d" % ( ref_table, nnames ) )
 	
-
-	n_accept  = 0
-	n_discard = 0
-	n_freq_0  = 0
-	n_freq_1  = 0
+	n_freq_missing = 0	# not present in frequency table
+	n_freq_found   = 0	# found in frequency table
+	n_freq_1       = 0	# frequency = 1 in frequency table
+	n_freq_2       = 0	# frequency = 2 in frequency table
+	n_freq_x       = 0	# frequency > 2 in frequency table
 	
-	# process the 'x' reference records
+	n_lvs_missing = 0	# not present in levenshtein table
+	n_lvs_found   = 0	# found in levenshtein table
+	
+	# process the 'x' reference records from the reference table
 	for n in range( nnames ):
 		if debug: logging.debug( "" )
 		
@@ -431,10 +519,10 @@ def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
 		freq_ori = 0
 		if len( resp_freq ) == 0:
 			logging.debug( "freq: %d, name: |%s| skipped" % ( freq_ori, name_ori ) )
-			n_freq_0 += 1
+			n_freq_missing += 1
 			continue		# next reference record
 		elif len( resp_freq ) == 1:
-			n_freq_1 += 1
+			n_freq_found += 1
 			dict_freq = resp_freq[ 0 ]
 			freq_ori  = dict_freq[ "frequency" ]
 		else:
@@ -448,15 +536,47 @@ def normalize_ref_first( debug, db_links, db_ref, first_or_fam_name ):
 			logging.debug( "- freq: %d, name: %s" % ( freq_ori, name_ori ) )
 			continue
 		"""
-		logging.info( "freq: %d, name: %s" % ( freq_ori, name_ori ) )
 		
-		# ...
+		if freq_ori <= freq_ori_limit:
+			logging.debug( "freq: %d, name: %s" % ( freq_ori, name_ori ) )
+			if freq_ori == 1:
+				n_freq_1 += 1
+			elif freq_ori == 2:
+				n_freq_2 += 1
+			
+			alts = get_lvs_alternatives( ls_table, name_ori_esc )
+			logging.info( str( alts ) )
+			
+			nalts = len( alts )
+			if nalts <= 0:
+				n_lvs_missing += 1
+			else:
+				n_lvs_found += 1
+			
+			name_alt, freq_alt = get_preferred_alt( alts, freq_table )
+			if freq_alt == 0:
+				logging.info( "no_alt: name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
+			elif freq_alt > freq_ori:
+				logging.info( "update: name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
+				# ...
+			else:
+				logging.info( "skip:   name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
+			
+		else:
+			n_freq_x += 1
 		
-		if n_freq_1 > limit_names:
+	#	if n_freq_found > limit_names:
+		if n_lvs_found > limit_names:
 			break
 
-	logging.info( "n_freq_0: %d" % n_freq_0 )
+	logging.info( "n_freq_missing: %d" % n_freq_missing )
+	logging.info( "n_freq_found: %d" % n_freq_found )
 	logging.info( "n_freq_1: %d" % n_freq_1 )
+	logging.info( "n_freq_2: %d" % n_freq_2 )
+	logging.info( "n_freq_x: %d" % n_freq_x )
+	
+	logging.info( "n_lvs_missing: %d" % n_lvs_missing )
+	logging.info( "n_lvs_found: %d" % n_lvs_found )
 
 
 
@@ -619,11 +739,11 @@ if __name__ == "__main__":
 	
 	do_first = input( "Process firstnames? [N,y] " )
 	if do_first is not None and do_first.lower() == 'y':
-		normalize_ref_first( debug, db_links, db_ref, "firstname" )
+		normalize_ref_name( debug, db_links, db_ref, "firstname" )
 	
 	do_family = input( "Process familynames? [N,y] " )
 	if do_family is not None and do_family.lower() == 'y':
-		normalize_ref_first( debug, db_links, db_ref, "familyname" )
+		normalize_ref_name( debug, db_links, db_ref, "familyname" )
 	
 
 #	inspect( debug, db_links, db_ref, "freq_firstname",  "ref_firstname" )
