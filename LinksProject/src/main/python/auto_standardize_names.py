@@ -8,29 +8,35 @@ Name:		auto_standardize_names.py
 Version:	0.1
 Goal:		Automatically standardize names by taking the Levenshtein variant 
 			with highest frequency. 
+Compatibility:	I used Python-3.6.0; for Py2, csv stuff needs encoding changes
 
 Algorithm:
 -1- Loop over table {ref_firstname|ref_familyname}, getting the records with standard_code = 'x'. 
 -2- Search for the original in {freq_firstname|freq_familyname}, accepting frequenties of 1 and 2, 
 	because only those low frequencies will be automatically normalized. 
 -3- Search for the accepted names in {ls_firstname_first|ls_familyname_first}, 
-	require an lvs value of 1. 
--4- Search for names in {freq_firstname|freq_familyname} ordered by frequency high to low
-	Accept a name from the highest frequency > 1 names. 
-
+	so obtaining alternative names, require an lvs value of 1. 
+-4- Search for the alternative names in {freq_firstname|freq_familyname}, 
+	find the name[s] with the highest frequency. Accept the first alternative if 
+	its frequency is higher than the frequency of the original. 
 
 class Database:
 def db_check( db_links ):
-def order_by_freq( debug, resp_lvs, freq_table ):
+def order_by_freq( resp_lvs, freq_table ):
 def find_in_reference( db_ref, ref_table, name_str ):
-def normalize_freq_first( debug, db, db_ref, first_or_fam_name ):
-def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
-def inspect( debug, db, db_ref, freq_table, ref_table ):
-def names_with_space( debug, db, db_ref, freq_table, ref_table ):
-def compare_first_family( debug, db, db_ref ):
+def normalize_freq_first( db, db_ref, first_or_fam_name ):
+def get_lvs_alternatives( lvs_table, name ):
+def get_preferred_alt( alts, freq_table ):
+def normalize_ref_name( db_links, db_ref, first_or_fam_name ):
+def inspect( db, db_ref, freq_table, ref_table ):
+def names_with_space( db, db_ref, freq_table, ref_table ):
+def compare_first_family( db, db_ref ):
+def clear_ref_previous( first_or_fam_name ):
+def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
+def format_secs( seconds ):
 
 13-Apr-2016 Created
-22-Feb-2017 Changed
+28-Feb-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -38,61 +44,54 @@ from __future__ import ( absolute_import, division, print_function, unicode_lite
 from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
 	next, object, oct, open, pow, range, round, super, str, zip )
 
-#from sys import stderr, exc_info, version
-
+import csv
 import datetime
 import logging
 import MySQLdb
 import os
 import sys
+import yaml
 
 from collections import Counter
 from time import time
 
-debug = False
 
-#ls_table_extension = ""				# test
-ls_table_extension = "_first"		# production 
+log_file = True
 
-#freq_ori_limit = 2					# test
-freq_ori_limit = 1					# production 
+# production
+ls_table_ext = "_first"			# 
+freq_ori_limit = 2				# labtop: firstnames: 1651, familynames: 1386
 
-limit_names = 5
-#limit_names = 100
-#limit_names = 250
-#limit_names = 1000
-#limit_names = 3000
+# test
+#ls_table_ext = ""				# 
+#freq_ori_limit = 1				# labtop: firstnames: 827, familynames: 829
 
-# host
-HOST   = "localhost"
-#HOST   = "194.171.4.70"	# "10.24.64.154"
-#HOST   = "194.171.4.74"	# "10.24.64.158"
+limit_names = None
 
-# db_links
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""					# be explicit in all queries
+# settings, read from config file
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
-# db_ref
-"""
-HOST_REF   = "194.171.4.71"	# "10.24.64.30"
-USER_REF   = "hsnref"
-PASSWD_REF = "refhsn"
-DBNAME_REF = ""				# be explicit in all queries
-"""
+HOST_REF   = ""
+USER_REF   = ""
+PASSWD_REF = ""
+DBNAME_REF = ""
 
-HOST_REF   = "localhost"
-USER_REF   = "links"
-PASSWD_REF = "mslinks"
-DBNAME_REF = ""				# be explicit in all queries
-
+CREATE_CSV = False
 
 single_quote = "'"
 double_quote = '"'
 
-	
+
 class Database:
 	def __init__( self, host, user, passwd, dbname ):
+	#	print( "host:   %s" % host )
+	#	print( "user:   %s" % user )
+	#	print( "passwd: %s" % passwd )
+	#	print( "dbname: %s" % dbname )
+		
 		self.host   = host
 		self.user   = user
 		self.passwd = passwd
@@ -109,15 +108,20 @@ class Database:
 		self.cursor = self.connection.cursor()
 
 	def insert( self, query ):
+		affected_count = None
 		try:
-			resp = self.cursor.execute( query )
+			affected_count = self.cursor.execute( query )
 			self.connection.commit()
 		except:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
 			logging.error( "%s, %s\n" % ( etype, value ) )
-
+		return affected_count
+	
+	def update( self, query ):
+		return self.insert( query )
+	
 	def query( self, query ):
 		logging.debug( "\n%s" % query )
 		cursor = self.connection.cursor( MySQLdb.cursors.DictCursor )
@@ -168,7 +172,7 @@ def db_check( db_links ):
 
 
 
-def order_by_freq( debug, resp_lvs, freq_table ):
+def order_by_freq( resp_lvs, freq_table ):
 	logging.debug( "order_by_freq()" )
 	names_freqs = {}
 	
@@ -188,7 +192,7 @@ def order_by_freq( debug, resp_lvs, freq_table ):
 		
 		nitems = len( resp_freq_tup )
 		if nitems == 0:
-			logging.info( "order_by_freq() name_str not in %s: %s" % ( freq_table, name_str ) )
+			logging.debug( "order_by_freq() name_str not in %s: %s" % ( freq_table, name_str ) )
 		elif nitems == 1:
 			resp_freq = resp_freq_tup[ 0 ]
 			names_freqs[ name_str ] = resp_freq[ "frequency" ]
@@ -244,28 +248,28 @@ def find_in_reference( db_ref, ref_table, name_str ):
 
 
 def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
-	logging.info( "normalize_freq_first() %s" % first_or_fam_name )
+	logging.debug( "normalize_freq_first() %s" % first_or_fam_name )
 	# _freq_first: start with frequency table
 	
 	if first_or_fam_name == "firstname":
 		freq_table = "freq_firstname"
-		ls_table   = "ls_firstname" + ls_table_extension
+		ls_table   = "ls_firstname" + ls_table_ext
 		ref_table  = "ref_firstname"
 	elif first_or_fam_name == "familyname":
 		freq_table = "freq_familyname"
-		ls_table   = "ls_familyname" + ls_table_extension
+		ls_table   = "ls_familyname" + ls_table_ext
 		ref_table  = "ref_familyname"
 	else:
 		return
 	
 	# get names from frequency table that occur only once
 	query_freq = "SELECT * FROM links_prematch." + freq_table + " WHERE frequency <= 2 ORDER BY name_str;"
-	logging.info( query_freq )
+	logging.debug( query_freq )
 
 	resp_freq = db_links.query( query_freq )
 	nnames = len( resp_freq )
 	logging.debug( resp_freq )
-	logging.info( "# of names in %s that occur at most twice: %d" % ( freq_table, nnames ) )
+	logging.debug( "# of names in %s that occur at most twice: %d" % ( freq_table, nnames ) )
 	
 	skip_list = []
 	
@@ -286,7 +290,7 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 		logging.debug( "name_ori: %s, freq_ori: %d" % ( name_ori, freq_ori ) )
 		
 		if single_quote in name_ori and double_quote in name_ori:
-			logging.info( "skipping: %s" % name_ori )
+			logging.debug( "skipping: %s" % name_ori )
 			skip_list.appen( name_ori )
 			continue	# hmm, skip this one for the moment
 		
@@ -339,7 +343,7 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 					
 					logging.debug( query_ref )
 					
-					resp_ref = db_ref.query( query_ref )
+					resp_ref = db_ref.update( query_ref )
 					# check response...
 					
 					accept = True
@@ -359,8 +363,11 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 		if ( n + 1000 ) % 1000 == 0:
 			logging.info( "processed # of names:", n )
 		
-		#if n > limit_names:
-		#	break
+		if limit_names is not None and n > limit_names:
+			msg = "break at %d limit_names:  %d" % limit_names
+			logging.info( msg )
+			if log_file: print( msg )
+			break
 
 	logging.info( "# of names accepted:  %d" % n_accept )
 	logging.info( "# of names discarded: %d" % n_discard )
@@ -372,23 +379,26 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 
 def get_lvs_alternatives( lvs_table, name ):
 	# find in Levenshtein table, for lvs = 1
+	logging.debug( "get_lvs_alternatives()" )
+	
 	#query_lvs  = "SELECT * FROM links_prematch." + lvs_table + " WHERE value = 1 "
 	#query_lvs += "AND name_str_1 = \'" + name + "\' ORDER BY name_str_2;"
 	
 	# this query assumes the lvs_table is an asymmetric (single-sized) lvs table
-	query_lvs  = "( SELECT name_int_2 AS name_int, name_str_2 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_1 = '" + name + "' ) ";
-	query_lvs += "UNION ALL ";
-	query_lvs += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_2 = '" + name + "' ) ";
-	query_lvs += "ORDER BY name_int;";
+	query_lvs  = "( SELECT name_int_2 AS name_int, name_str_2 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_1 = '" + name + "' ) "
+	query_lvs += "UNION ALL "
+	query_lvs += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str FROM links_prematch." + lvs_table + " WHERE value = 1" + " AND name_str_2 = '" + name + "' ) "
+	query_lvs += "ORDER BY name_int;"
+#	query_lvs += "ORDER BY name_str;"
 
-	logging.info( "query_lvs: %s", query_lvs )
+	logging.debug( "query_lvs: %s", query_lvs )
 #	return 0
 		
 	resp_lvs = db_links.query( query_lvs )
 	nalts = len( resp_lvs )
 	
 	if nalts > 0:
-		logging.info( "lvs nalts: %d" % nalts )
+		logging.debug( "lvs nalts: %d" % nalts )
 	
 	alts = []
 	for n in range( nalts ):
@@ -402,7 +412,8 @@ def get_lvs_alternatives( lvs_table, name ):
 
 
 def get_preferred_alt( alts, freq_table ):
-	# choose alternative of highest frequency
+	# choose alternative with highest frequency
+	logging.debug( "get_preferred_alt()" )
 	
 	name_max = ""
 	freq_max = 0
@@ -424,7 +435,7 @@ def get_preferred_alt( alts, freq_table ):
 		elif len( resp_freq ) == 1:
 			dict_freq = resp_freq[ 0 ]
 			freq_alt  = dict_freq[ "frequency" ]
-			logging.info( "freq: %d, name: %s" % ( freq_alt, alt ) )
+			logging.debug( "freq: %d, name: %s" % ( freq_alt, alt ) )
 			
 			if freq_alt > freq_max:
 				freq_max = freq_alt
@@ -440,23 +451,28 @@ def get_preferred_alt( alts, freq_table ):
 
 
 
-def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
+def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 	"""
 	normalize_ref_name. 
 	-1- get records from (firstname or familyname) reference table where standard_code = 'x'
-	-2- 
+	-2- get alternative names from levenshtein table with value = 1
+	-3- use the alternative with highest value > 1
 	"""
-	logging.info( "normalize_ref_name() %s" % first_or_fam_name )
-	# _ref_first: start with reference table
+	
+	msg = "normalize_ref_name() %s" % first_or_fam_name
+	logging.info( msg )
+	if log_file: print( msg )
 	
 	if first_or_fam_name == "firstname":
+		id_name    = "id_firstname"
 		ref_table  = "ref_firstname"
 		freq_table = "freq_firstname"
-		ls_table   = "ls_firstname" + ls_table_extension
+		ls_table   = "ls_firstname" + ls_table_ext
 	elif first_or_fam_name == "familyname":
+		id_name    = "id_familyname"
 		ref_table  = "ref_familyname"
 		freq_table = "freq_familyname"
-		ls_table   = "ls_familyname" + ls_table_extension
+		ls_table   = "ls_familyname" + ls_table_ext
 	else:
 		return
 
@@ -467,7 +483,21 @@ def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 	resp_ref = db_ref.query( query_ref )
 	nnames = len( resp_ref )
 	logging.debug( resp_ref )
-	logging.info( "# of names in %s that have standard_code 'x': %d" % ( ref_table, nnames ) )
+	msg = "# of names in %s that have standard_code 'x': %d" % ( ref_table, nnames )
+	logging.info( msg )
+	if log_file: print( msg )
+	
+	chunk = None
+	nchunks = 1
+	if nnames is not None:
+		if nnames < 1000:
+			nchunks = 1
+		elif nnames < 100000:
+			nchunks = 10
+		else:
+			nchunks = 100
+		chunk = int( nnames / nchunks )
+	print( "nchunks: %d, chunk: %d" % ( nchunks, chunk ) )
 	
 	n_freq_missing = 0	# not present in frequency table
 	n_freq_found   = 0	# found in frequency table
@@ -478,20 +508,33 @@ def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 	n_lvs_missing = 0	# not present in levenshtein table
 	n_lvs_found   = 0	# found in levenshtein table
 	
+	n_cnt_auto    = 0	# number of ref names set to LINKS_AUTO
+		
 	# process the 'x' reference records from the reference table
 	for n in range( nnames ):
-		if debug: logging.debug( "" )
-		
+		logging.debug( "" )
 		accept = False
 		
+		#print( ( n + chunk ) % chunk )
+		if n > 0 and ( n + chunk ) % chunk == 0:
+			msg = "processed # of names: %d" % n
+			logging.debug( msg )
+			if log_file: print( msg )
+		
 		dict_ref = resp_ref[ n ]
+		id_      = dict_ref[ id_name ]
 		name_ori = dict_ref[ "original" ]
-		logging.debug( "name_ori: %s" % name_ori )
+		
+		logging.debug( "%s: %d, name_ori: %s" % ( id_name, id_, name_ori ) )
 		#logging.debug( "escaped:  %s" % str( name_ori ).encode( 'string_escape' ) )
+		
 		name_ori_esc = name_ori
 		name_ori_esc = name_ori_esc.replace( '\\', '\\\\' )
-		name_ori_esc = name_ori_esc.replace( "'", "\'" )
-		name_ori_esc = name_ori_esc.replace( '"', '\\"' )
+		name_ori_esc = name_ori_esc.replace( "'",  "\\'" )
+		name_ori_esc = name_ori_esc.replace( '"',  '\\"' )
+		
+		if name_ori.find( "'" ) != -1:
+			logging.info( "ori: %s, esc: %s" % ( name_ori, name_ori_esc ) )
 		
 		"""
 		if double_quote in name_ori: 
@@ -545,7 +588,7 @@ def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 				n_freq_2 += 1
 			
 			alts = get_lvs_alternatives( ls_table, name_ori_esc )
-			logging.info( str( alts ) )
+			logging.debug( str( alts ) )
 			
 			nalts = len( alts )
 			if nalts <= 0:
@@ -554,21 +597,32 @@ def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 				n_lvs_found += 1
 			
 			name_alt, freq_alt = get_preferred_alt( alts, freq_table )
+			
 			if freq_alt == 0:
-				logging.info( "no_alt: name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
+				logging.debug( "no_alt: name_ori: %s; name_alt: %s, freq_alt: %d" % ( name_ori, name_alt, freq_alt ) )
 			elif freq_alt > freq_ori:
-				logging.info( "update: name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
-				# ...
+				n_cnt_auto += 1
+				logging.info( "update: name_ori: %s; name_alt: %s, freq_alt: %d" % ( name_ori, name_alt, freq_alt ) )
+				if CREATE_CSV:
+					csv_writer.writerow( [ name_ori, freq_ori, name_alt, freq_alt, nalts ] )
+				# update ref table: 
+				ref_update( first_or_fam_name, name_ori_esc, name_alt )
 			else:
-				logging.info( "skip:   name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
+				logging.debug( "skip:   name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
 			
 		else:
 			n_freq_x += 1
-		
-	#	if n_freq_found > limit_names:
-		if n_lvs_found > limit_names:
+			
+		if limit_names is not None and n_lvs_found > limit_names:
+			msg = "break at %d limit_names:  %d" % limit_names
+			logging.debug( msg )
+			if log_file: print( msg )
 			break
-
+	
+	msg = "processed # of names: %d" % nnames 
+	logging.info( msg )
+	if log_file: print( msg )
+	
 	logging.info( "n_freq_missing: %d" % n_freq_missing )
 	logging.info( "n_freq_found: %d" % n_freq_found )
 	logging.info( "n_freq_1: %d" % n_freq_1 )
@@ -578,13 +632,18 @@ def normalize_ref_name( debug, db_links, db_ref, first_or_fam_name ):
 	logging.info( "n_lvs_missing: %d" % n_lvs_missing )
 	logging.info( "n_lvs_found: %d" % n_lvs_found )
 
+	logging.info( "n_cnt_auto: %d" % n_cnt_auto )
+
+	return n_cnt_auto 
 
 
-def inspect( debug, db, db_ref, freq_table, ref_table ):
+
+def inspect( db, db_ref, freq_table, ref_table ):
 	logging.debug( "inspect()" )
 	
-	query_freq  = "SELECT name_str, frequency FROM links_prematch." + freq_table + " ORDER BY frequency DESC LIMIT "
-	query_freq += str( limit_names ) + ";"
+	query_freq  = "SELECT name_str, frequency FROM links_prematch." + freq_table + " ORDER BY frequency DESC"
+	if limit_names is not None:
+		query_freq += " LIMIT str( %d );" % limit_names
 	logging.info( query_freq )
 	
 	resp_freq = db_links.query( query_freq )
@@ -605,7 +664,7 @@ def inspect( debug, db, db_ref, freq_table, ref_table ):
 
 
 
-def names_with_space( debug, db, db_ref, freq_table, ref_table ):
+def names_with_space( db, db_ref, freq_table, ref_table ):
 	logging.debug( "names_with_space()" )
 	
 	query_freq  = "SELECT COUNT(*) AS count FROM links_prematch." + freq_table 
@@ -623,11 +682,11 @@ def names_with_space( debug, db, db_ref, freq_table, ref_table ):
 	if count == 0:
 		return
 	
-	
 	query_freq  = "SELECT name_str, frequency FROM links_prematch." + freq_table 
 	query_freq += " WHERE INSTR( name_str, ' ' ) > 0"
-	query_freq += " ORDER BY frequency DESC LIMIT "
-	query_freq += str( limit_names ) + ";"
+	query_freq += " ORDER BY frequency DESC"
+	if limit_names is not None:
+		query_freq += " LIMIT str( %d );" % limit_names
 	logging.info( query_freq )
 
 	resp_freq = db_links.query( query_freq )
@@ -648,7 +707,7 @@ def names_with_space( debug, db, db_ref, freq_table, ref_table ):
 
 
 
-def compare_first_family( debug, db, db_ref ):
+def compare_first_family( db, db_ref ):
 	logging.debug( "compare_first_family()" )
 
 	# ref_familyname is about 5 times as large that ref_firstname
@@ -703,31 +762,140 @@ def compare_first_family( debug, db, db_ref ):
 
 
 
-if __name__ == "__main__":
-	log_file = False
+def clear_ref_previous( first_or_fam_name ):
+	logging.info( "clear_ref_previous() %s" % first_or_fam_name )
 	
+	if first_or_fam_name == "firstname":
+		ref_table  = "ref_firstname"
+	elif first_or_fam_name == "familyname":
+		ref_table  = "ref_familyname"
+	else:
+		return
+
+	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s " % ref_table
+	query_cnt += "WHERE standard_source = 'LINKS_AUTO' "
+	query_cnt += ";"
+	print( query_cnt )
+	
+	resp_cnt = db_ref.query( query_cnt )
+	dict_cnt = resp_cnt[ 0 ]
+	count = dict_cnt[ "count" ]
+	if count == 0:
+		print( "No LINKS_AUTO records to clear" )
+	else:
+		print( "Clearing %d %s LINKS_AUTO records" % ( count, first_or_fam_name ) )
+
+		# clear previous automatic normalization: 
+		# standard -> NULL, standard_code -> 'x', standard_source -> NULL
+		query_clear  = "UPDATE links_general.%s " % ref_table
+		query_clear += "SET standard = NULL, standard_code = 'x', standard_source = NULL "
+		query_clear += "WHERE standard_source = 'LINKS_AUTO' "
+		query_clear += ";"
+		
+		logging.info( query_clear )
+		if log_file: print( query_clear )
+		
+		affected_count = db_ref.update( query_clear )
+		msg = "%d records updated" % affected_count
+		logging.info( msg )
+		if log_file: print( msg )
+
+
+
+def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
+	logging.debug( "ref_update() %s" % first_or_fam_name )
+	
+	if first_or_fam_name == "firstname":
+		ref_table  = "ref_firstname"
+	elif first_or_fam_name == "familyname":
+		ref_table  = "ref_familyname"
+	else:
+		return
+
+	name_alt_esc = name_alt
+	name_alt_esc = name_alt_esc.replace( '\\', '\\\\' )
+	name_alt_esc = name_alt_esc.replace( "'",  "\\'" )
+	name_alt_esc = name_alt_esc.replace( '"',  '\\"' )
+
+	# update query of reference table
+	query_update  = "UPDATE links_general.%s " % ref_table
+	query_update += "SET standard = '%s', " % name_alt_esc
+	query_update += "standard_code = 'y', "
+	query_update += "standard_source = 'LINKS_AUTO' "
+	query_update += "WHERE original = '%s' " % name_ori_esc
+	query_update += ";"
+	logging.debug( query_update )
+
+	affected_count = db_ref.update( query_update )
+	if affected_count != 1:
+		msg = "%d records updated" % affected_count
+		logging.info( msg )
+		if log_file: print( msg )
+
+
+
+def format_secs( seconds ):
+	nmin, nsec  = divmod( seconds, 60 )
+	nhour, nmin = divmod( nmin, 60 )
+
+	if nhour > 0:
+		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+	else:
+		if nmin > 0:
+			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		else:
+			str_elapsed = "%d (sec)" % nsec
+
+	return str_elapsed
+
+
+
+if __name__ == "__main__":
 	#log_level = logging.DEBUG
-	log_level = logging.INFO
-	#log_level = logging.WARNING
+	#log_level = logging.INFO
+	log_level = logging.WARNING
 	#log_level = logging.ERROR
 	#log_level = logging.CRITICAL
 	
-	 
 	if log_file:
 		logging_filename = "auto_standardize_names.log"
 		logging.basicConfig( filename = logging_filename, filemode = 'w', level = log_level )
 	else:
 		logging.basicConfig( level = log_level )
 	
-	logging.info( "start: %s" % datetime.datetime.now() )
+	time0 = time()		# seconds since the epoch
+	msg = "Start: %s" % datetime.datetime.now()
+	logging.info( msg )
+	if log_file:
+		print( msg )
+		print( "logging to: %s" % logging_filename )
+	
 	logging.info( __file__ )
 	
-	logging.info( "links host db: %s \tfor frequency and levenshtein tables" % HOST )
-	logging.info( "reference db:  %s \tfor reference tables" % HOST_REF )
+	config_path = os.path.join( os.getcwd(), "auto_standardize_names.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
 	
-	db_links = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
-
-	db_ref = Database( host = HOST_REF, user = USER_REF, passwd = PASSWD_REF, dbname = DBNAME_REF )
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	HOST_REF   = config.get( "HOST_REF" )
+	USER_REF   = config.get( "USER_REF" )
+	PASSWD_REF = config.get( "PASSWD_REF" )
+	
+	CREATE_CSV = config.get( "CREATE_CSV" )
+	
+	msg_links = "links host db: %s \tfor frequency and levenshtein tables" % HOST_LINKS
+	msg_ref   = "reference db:  %s \tfor reference tables" % HOST_REF
+	logging.info( msg_links )
+	logging.info( msg_ref )
+	if log_file:
+		print( msg_links )
+		print( msg_ref )
+	
+	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
+	db_ref   = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
 	
 #	db_check( db_links )
 
@@ -737,23 +905,68 @@ if __name__ == "__main__":
 	if yn.lower() == 'n':
 		exit( 0 )
 	
-	do_first = input( "Process firstnames? [N,y] " )
-	if do_first is not None and do_first.lower() == 'y':
-		normalize_ref_name( debug, db_links, db_ref, "firstname" )
-	
+	do_first  = input( "Process firstnames? [N,y] " )
 	do_family = input( "Process familynames? [N,y] " )
-	if do_family is not None and do_family.lower() == 'y':
-		normalize_ref_name( debug, db_links, db_ref, "familyname" )
 	
+#	delimiter = str( ',' ).encode( "utf-8" )	# Py2
+#	quotechar = str( '"' ).encode( "utf-8" )	# Py2
+	delimiter = ','		# Py3
+	quotechar = '"'		# Py3
+#	quoting   = csv.QUOTE_MINIMAL
+	quoting   = csv.QUOTE_NONNUMERIC
+	
+	if do_first is not None and do_first.lower() == 'y':
+		if CREATE_CSV:
+			csvname_firstname = "firstname"  + ls_table_ext + ".csv"
+			msg = "Creating %s ..." % csvname_firstname
+			logging.info( msg )
+			if log_file: print( msg )
+	
+			csvfile_firstname = open( csvname_firstname,  'w', newline = '' )
+			writer_firstname  = csv.writer( csvfile_firstname,  delimiter = delimiter, quotechar = quotechar, quoting = quoting )
+			writer_firstname.writerow( [ "name_ori", "freq_ori", "name_alt", "freq_alt", "num_alts" ] )
+		else:
+			writer_firstname = None
+		
+		clear_ref_previous( "firstname" )
+		n_cnt_auto = normalize_ref_name( db_links, db_ref, writer_firstname, "firstname" )
+		if log_file: print( "%d ref_firstname records set to LINKS_AUTO" % n_cnt_auto )
+		
+		if CREATE_CSV: csvfile_firstname .close()
+		
+	if do_family is not None and do_family.lower() == 'y':
+		if CREATE_CSV:
+			csvname_familyname = "familyname" + ls_table_ext + ".csv"
+			msg = "Creating %s ..." % csvname_familyname
+			logging.info( msg )
+			if log_file: print( msg )
+		
+			csvfile_familyname = open( csvname_familyname, 'w', newline = '' )
+			writer_familyname  = csv.writer( csvfile_familyname, delimiter = delimiter, quotechar = quotechar, quoting = quoting )
+			writer_familyname.writerow( [ "ori", "alt", "freq" ] )
+		else:
+			writer_familyname = None
+		
+		clear_ref_previous( "familyname" )
+		n_cnt_auto = normalize_ref_name( db_links, db_ref, writer_familyname, "familyname" )
+		if log_file: print( "%d ref_familyname records set to LINKS_AUTO" % n_cnt_auto )
+		
+		if CREATE_CSV: csvfile_familyname.close()
 
-#	inspect( debug, db_links, db_ref, "freq_firstname",  "ref_firstname" )
-#	inspect( debug, db_links, db_ref, "freq_familyname", "ref_familyname" )
+#	inspect( db_links, db_ref, "freq_firstname",  "ref_firstname" )
+#	inspect( db_links, db_ref, "freq_familyname", "ref_familyname" )
 
-#	names_with_space( debug, db_links, db_ref, "freq_firstname",  "ref_firstname" )
-#	names_with_space( debug, db_links, db_ref, "freq_familyname", "ref_familyname" )
+#	names_with_space( db_links, db_ref, "freq_firstname",  "ref_firstname" )
+#	names_with_space( db_links, db_ref, "freq_familyname", "ref_familyname" )
 
-#	compare_first_family( debug, db_links, db_ref )
+#	compare_first_family( db_links, db_ref )
 
-	logging.info( "stop: %s" % datetime.datetime.now() )
-
+	msg = "Stop: %s" % datetime.datetime.now()
+	
+	logging.info( msg )
+	if log_file: print( msg )
+	
+	str_elapsed = format_secs( time() - time0 )
+	print( "Normalization took %s" % str_elapsed )
+	
 # [eof]
