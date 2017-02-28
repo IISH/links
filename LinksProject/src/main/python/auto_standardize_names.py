@@ -943,7 +943,7 @@ if __name__ == "__main__":
 		
 			csvfile_familyname = open( csvname_familyname, 'w', newline = '' )
 			writer_familyname  = csv.writer( csvfile_familyname, delimiter = delimiter, quotechar = quotechar, quoting = quoting )
-			writer_familyname.writerow( [ "ori", "alt", "freq" ] )
+			writer_familyname.writerow( [ "name_ori", "freq_ori", "name_alt", "freq_alt", "num_alts" ] )
 		else:
 			writer_familyname = None
 		
