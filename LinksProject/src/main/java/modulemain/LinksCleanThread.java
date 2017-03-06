@@ -87,6 +87,7 @@ import linksmanager.ManagerGui;
 public class LinksCleanThread extends Thread
 {
     boolean multithreaded = false;
+    boolean use_links_logs = true;
 
     // Reference Table -> ArrayListMultiMap
     //private TableToArrayListMultimap almmPrepiece     = null;   // Names
@@ -162,6 +163,8 @@ public class LinksCleanThread extends Thread
     )
     {
         this.opts = opts;
+
+        this.use_links_logs = opts.getUseLinksLogs();
 
         this.plog = opts.getLogger();
         this.sourceIdsGui = opts.getSourceIds();
@@ -309,16 +312,21 @@ public class LinksCleanThread extends Thread
             String msg = "";
             if( dbconref_single ) { msg = String.format( "Thread id %02d; Using the same reference db for reading and writing", mainThreadId ); }
             else { msg = String.format( "Thread id %02d; Reference db: reading locally, writing to remote db", mainThreadId ); }
-            plog.show( msg );
-            showMessage( msg, false, true );
-
-            logTableName = LinksSpecific.getLogTableName();
+            plog.show( msg ); showMessage( msg, false, true );
 
             outputLine.setText( "" );
             outputArea.setText( "" );
 
             connectToDatabases();                                       // Create databases connectors
-            createLogTable();                                           // Create log table with timestamp
+
+            System.out.println( "Using links_logs for error logging: " + use_links_logs );
+            msg = String.format( "Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs );
+            plog.show( msg ); showMessage( msg, false, true );
+
+            if( use_links_logs ) {
+                logTableName = LinksSpecific.getLogTableName();
+                createLogTable();                                           // Create log table with timestamp
+            }
 
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
             sourceList = createSourceList( sourceIdsGui, sourceListAvail );
@@ -727,6 +735,8 @@ public class LinksCleanThread extends Thread
      */
     private void addToReportRegistration( int id, String id_source, int errorCode, String value )
     {
+        if( ! use_links_logs ) { return; }
+
         boolean debug = false;
         if( debug ) { showMessage( "addToReportRegistration()", false, true ); }
 
@@ -857,6 +867,8 @@ public class LinksCleanThread extends Thread
      */
     private void addToReportPerson( int id, String id_source, int errorCode, String value )
     {
+        if( ! use_links_logs ) { return; }
+
         boolean debug = false;
         if( debug ) { showMessage( "addToReportPerson()", false, true ); }
 

@@ -33,11 +33,13 @@ import general.PrintLogger;
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
  * FL-07-Nov-2016 Remove -> Flag
- * FL-06-Dec-2016 Latest change
+ * FL-06-Mar-2017 Latest change
  */
 public class Options
 {
     PrintLogger plog;
+
+    private boolean use_links_logs = true;
 
     private int max_threads_simul = 1;
 
@@ -122,6 +124,8 @@ public class Options
     public void setMaxThreadsSimul( int max_threads_simul ) { this.max_threads_simul = max_threads_simul; }
     public int getMaxThreadsSimul() { return max_threads_simul; }
 
+    public void setUseLinksLogs( boolean use_links_logs ) { this.use_links_logs = use_links_logs; }
+    public boolean getUseLinksLogs() { return use_links_logs; }
 
     public void setLogger( PrintLogger plog ) { this.plog = plog; }
 

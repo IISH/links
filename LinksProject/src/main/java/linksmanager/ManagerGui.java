@@ -66,7 +66,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-20-Feb-2017 Latest change
+ * FL-06-Mar-2017 Latest change
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -82,6 +82,8 @@ public class ManagerGui extends javax.swing.JFrame
     private Options opts;
 
     // strings read from property file
+	private boolean use_links_logs = true;
+
     private String max_threads_simul = "";
     private String rmtype = "";
 
@@ -2122,6 +2124,11 @@ public class ManagerGui extends javax.swing.JFrame
         // max number of simultaneous cleaning threads
         max_threads_simul = properties.getProperty( "max_threads_simul" );
 
+        String use_links_logs_str = properties.getProperty( "use_links_logs" );
+        if( use_links_logs_str == null || use_links_logs_str.isEmpty() ) { use_links_logs_str = "true"; }
+        if( use_links_logs_str.equals( "true" ) ) { use_links_logs = true; }
+        else { use_links_logs = false; }
+
         String sourceId = properties.getProperty( "tbLOLCSourceId" );
         if( sourceId == null ) { sourceId = ""; }
         if( sourceId.isEmpty() ) { System.out.println( "sourceId not specified" ); }
@@ -2675,7 +2682,7 @@ public class ManagerGui extends javax.swing.JFrame
             opts.setMaxThreadsSimul( max_threads_simul_int );
         }
 
-
+		opts.setUseLinksLogs( use_links_logs );
 
         if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData( true ); }
         else { opts.setDoRenewData( false ); }
@@ -3002,7 +3009,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "20-Feb-2017 11:23";
+            String timestamp1 = "06-Mar-2017 15:26";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try
