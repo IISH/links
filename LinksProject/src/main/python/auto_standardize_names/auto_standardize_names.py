@@ -33,10 +33,12 @@ def names_with_space( db, db_ref, freq_table, ref_table ):
 def compare_first_family( db, db_ref ):
 def clear_ref_previous( first_or_fam_name ):
 def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
+def strip_accents( first_or_fam_name ):
+def normalize_ck( first_or_fam_name ):
 def format_secs( seconds ):
 
 13-Apr-2016 Created
-28-Feb-2017 Changed
+07-Mar-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -50,6 +52,7 @@ import logging
 import MySQLdb
 import os
 import sys
+import unicodedata
 import yaml
 
 from collections import Counter
@@ -834,6 +837,102 @@ def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
 
 
 
+def strip_accents( first_or_fam_name ):
+	logging.debug( "strip_accents() %s" % first_or_fam_name )
+
+	if first_or_fam_name == "firstname":
+		ref_table  = "ref_firstname"
+	elif first_or_fam_name == "familyname":
+		ref_table  = "ref_familyname"
+	else:
+		return
+
+	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s;" % ref_table
+	logging.info( query_cnt )
+	
+	resp_cnt = db_ref.query( query_cnt )
+	dict_cnt = resp_cnt[ 0 ]
+	count = dict_cnt[ "count" ]
+	if count == 0:
+		logging.info( "No records in %s" % ref_table )
+	else:
+		logging.info( "Processing %d records from %s;" % ( count, ref_table ) )
+		
+	limit = None
+	query_sel  = "SELECT * FROM links_general.%s" % ref_table
+	if limit is not None:
+		query_sel += " LIMIT %d" % limit
+	query_sel += ";"
+	logging.info( query_cnt )
+
+	resp_sel = db_ref.query( query_sel )
+	nrec = len( resp_sel )
+	ndia = 0
+
+	for n in range( nrec ):
+		dict_sel = resp_sel[ n ]
+		#print( dict_sel )
+		standard = dict_sel[ "standard" ]
+		if standard is not None:
+			nfkd_form = unicodedata.normalize( "NFKD", standard )
+			ascii = str( nfkd_form.encode( "ASCII", "ignore" ), 'utf-8' )
+			
+			if standard != ascii:			# accented word
+				ndia += 1
+				logging.info( "standard: |%s| => |%s|" % ( standard, ascii ) )
+			
+	logging.info( "\nnames with diacritics: %d (of total %d)" % ( ndia, nrec ) )
+
+
+
+def normalize_ck( first_or_fam_name ):
+	logging.debug( "strip_accents() %s" % first_or_fam_name )
+
+	if first_or_fam_name == "firstname":
+		ref_table  = "ref_firstname"
+	elif first_or_fam_name == "familyname":
+		ref_table  = "ref_familyname"
+	else:
+		return
+
+	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s;" % ref_table
+	logging.info( query_cnt )
+	
+	resp_cnt = db_ref.query( query_cnt )
+	dict_cnt = resp_cnt[ 0 ]
+	count = dict_cnt[ "count" ]
+	if count == 0:
+		logging.info( "No records in %s" % ref_table )
+	else:
+		logging.info( "Processing %d records from %s" % ( count, ref_table ) )
+
+	limit = 10
+	query_sel  = "SELECT * FROM links_general.%s" % ref_table
+	if limit is not None:
+		query_sel += " LIMIT %d" % limit
+	query_sel += ";"
+	logging.info( query_cnt )
+
+	resp_sel = db_ref.query( query_sel )
+	nrec = len( resp_sel )
+	ndia = 0
+
+	for n in range( nrec ):
+		dict_sel = resp_sel[ n ]
+		#print( dict_sel )
+		standard = dict_sel[ "standard" ]
+		if standard is not None:
+			nfkd_form = unicodedata.normalize( "NFKD", standard )
+			ascii = str( nfkd_form.encode( "ASCII", "ignore" ),'utf-8' )
+			
+			if standard != ascii:			# accented word
+				ndia += 1
+				logging.info( "standard: |%s| => |%s|" % ( standard, ascii ) )
+
+	logging.info( "\nnames with diacritics: %d (of total %d)" % ( ndia, nrec ) )
+
+
+
 def format_secs( seconds ):
 	nmin, nsec  = divmod( seconds, 60 )
 	nhour, nmin = divmod( nmin, 60 )
@@ -852,8 +951,8 @@ def format_secs( seconds ):
 
 if __name__ == "__main__":
 	#log_level = logging.DEBUG
-	#log_level = logging.INFO
-	log_level = logging.WARNING
+	log_level = logging.INFO
+	#log_level = logging.WARNING
 	#log_level = logging.ERROR
 	#log_level = logging.CRITICAL
 	
@@ -905,8 +1004,10 @@ if __name__ == "__main__":
 	if yn.lower() == 'n':
 		exit( 0 )
 	
-	do_first  = input( "Process firstnames? [N,y] " )
-	do_family = input( "Process familynames? [N,y] " )
+	do_first   = input( "Process firstnames? [N,y] " )
+	do_family  = input( "Process familynames? [N,y] " )
+	do_accents = input( "Process diacritics? [N,y] " )
+	do_ckstuff = input( "Process ck stuff? [N,y] " )
 	
 #	delimiter = str( ',' ).encode( "utf-8" )	# Py2
 #	quotechar = str( '"' ).encode( "utf-8" )	# Py2
@@ -921,7 +1022,7 @@ if __name__ == "__main__":
 			msg = "Creating %s ..." % csvname_firstname
 			logging.info( msg )
 			if log_file: print( msg )
-	
+            
 			csvfile_firstname = open( csvname_firstname,  'w', newline = '' )
 			writer_firstname  = csv.writer( csvfile_firstname,  delimiter = delimiter, quotechar = quotechar, quoting = quoting )
 			writer_firstname.writerow( [ "name_ori", "freq_ori", "name_alt", "freq_alt", "num_alts" ] )
@@ -933,14 +1034,14 @@ if __name__ == "__main__":
 		if log_file: print( "%d ref_firstname records set to LINKS_AUTO" % n_cnt_auto )
 		
 		if CREATE_CSV: csvfile_firstname .close()
-		
+
 	if do_family is not None and do_family.lower() == 'y':
 		if CREATE_CSV:
 			csvname_familyname = "familyname" + ls_table_ext + ".csv"
 			msg = "Creating %s ..." % csvname_familyname
 			logging.info( msg )
 			if log_file: print( msg )
-		
+            
 			csvfile_familyname = open( csvname_familyname, 'w', newline = '' )
 			writer_familyname  = csv.writer( csvfile_familyname, delimiter = delimiter, quotechar = quotechar, quoting = quoting )
 			writer_familyname.writerow( [ "name_ori", "freq_ori", "name_alt", "freq_alt", "num_alts" ] )
@@ -952,6 +1053,15 @@ if __name__ == "__main__":
 		if log_file: print( "%d ref_familyname records set to LINKS_AUTO" % n_cnt_auto )
 		
 		if CREATE_CSV: csvfile_familyname.close()
+
+
+	if do_accents is not None and do_accents.lower() == 'y':
+		strip_accents( "firstname" )
+		strip_accents( "familyname" )
+
+	if do_ckstuff is not None and do_ckstuff.lower() == 'y':
+		normalize_ck( "firstname" )
+		normalize_ck( "familyname" )
 
 #	inspect( db_links, db_ref, "freq_firstname",  "ref_firstname" )
 #	inspect( db_links, db_ref, "freq_familyname", "ref_familyname" )
