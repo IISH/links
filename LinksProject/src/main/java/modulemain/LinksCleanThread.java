@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-20-Feb-2017 Latest change
+ * FL-14-Mar-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -1454,11 +1454,14 @@ public class LinksCleanThread extends Thread
                 int id_person    = rsFirstName.getInt( "id_person" );
                 String firstname = rsFirstName.getString( "firstname" );
 
+                //if( id_person == 1 ) { debug = true; }
+                //else { debug = false; continue; }
+
                 // currently never filled in person_o, but flagged by having a firstname 'Levenloos'
                 //String stillbirth = rsFirstName.getString( "stillbirth" );
 
                 // Is firstname empty?
-                if( firstname != null && !firstname.isEmpty() )
+                if( firstname != null && ! firstname.isEmpty() )
                 {
                     if( debug ) { System.out.println( "firstname: " + firstname ); }
                     firstname = cleanFirstname( debug, source, id_person, firstname );
@@ -1470,7 +1473,7 @@ public class LinksCleanThread extends Thread
                     // Check name on aliases
                     String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, firstname, 1107 );
 
-                    // Check on serried spaces; split name on spaces
+                    // split name on spaces
                     String[] names = nameNoAlias.split( " " );
 
                     ArrayList< String > preList  = new ArrayList< String >();
@@ -1482,7 +1485,7 @@ public class LinksCleanThread extends Thread
                         else { preList.add( name ); }       // add to list
                     }
 
-                    if( empty_name ) { addToReportPerson( id_person, source, 1103, "" ); }  // EC 1103
+                    if( empty_name ) { addToReportPerson( id_person, source, 1101, "" ); }  // EC 1101
 
                     String stillbirth = "";
                     // loop through the pieces of the name
@@ -1538,7 +1541,7 @@ public class LinksCleanThread extends Thread
                                 postList.add(preList.get(i));
                             }
                             else {
-                                addToReportPerson( id_person, source, 1100, prename );           // EC 1100
+                                addToReportPerson( id_person, source, 1110, prename );           // EC 1110
                             }
                         }
                         else    // name part does not exist in ref_firstname
@@ -1576,8 +1579,8 @@ public class LinksCleanThread extends Thread
                                         addToReportPerson(id_person, source, 1109, nameNoInvalidChars);      // EC 1109
                                         postList.add( nameNoInvalidChars );
                                     }
-                                    else { // EC 1100, standard_code not invalid
-                                        addToReportPerson(id_person, source, 1100, nameNoInvalidChars);      // EC 1100
+                                    else { // EC 1110, standard_code not valid
+                                        addToReportPerson(id_person, source, 1110, nameNoInvalidChars);      // EC 1110
                                     }
 
                                     continue;
@@ -1602,7 +1605,7 @@ public class LinksCleanThread extends Thread
                                 // check ref_prepiece
                                 String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
 
-                                if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
+                                if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
                                     addToReportPerson( id_person, source, 1107, nameNoInvalidChars );  // EC 1107
                                 }
 
@@ -1630,8 +1633,8 @@ public class LinksCleanThread extends Thread
                                         addToReportPerson( id_person, source, 1109, nameNoPieces );   // EC 1109
                                         postList.add( nameNoPieces );
                                     }
-                                    else { // EC 1100, standard_code not invalid
-                                        addToReportPerson( id_person, source, 1100, nameNoPieces );    // EC 1100
+                                    else { // EC 1110, standard_code not valid
+                                        addToReportPerson( id_person, source, 1110, nameNoPieces );    // EC 1110
                                     }
                                 }
                                 else {
@@ -1661,8 +1664,8 @@ public class LinksCleanThread extends Thread
                                 // check ref_prepiece
                                 String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
 
-                                if( !nameNoPieces.equals( nameNoInvalidChars ) ) {
-                                    addToReportPerson(id_person, source, 1107, nameNoInvalidChars);   // EC 1107
+                                if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
+                                    addToReportPerson(id_person, source, 1108, nameNoInvalidChars);   // EC 1108
                                 }
 
                                 // last check on ref
@@ -1689,8 +1692,8 @@ public class LinksCleanThread extends Thread
                                         addToReportPerson( id_person, source, 1109, nameNoPieces );     // EC 1109
                                         postList.add( nameNoPieces );
                                     }
-                                    else { // EC 1100, standard_code not invalid
-                                        addToReportPerson( id_person, source, 1100, nameNoPieces );     // EC 1100
+                                    else { // EC 1110, standard_code not valid
+                                        addToReportPerson( id_person, source, 1110, nameNoPieces );     // EC 1110
                                     }
                                 }
                                 else {
@@ -1721,7 +1724,7 @@ public class LinksCleanThread extends Thread
                     }
 
                     // if firstnames not empty write to csv
-                    if( !firstnames.isEmpty() ) {
+                    if( ! firstnames.isEmpty() ) {
                         //String query = PersonC.updateQuery("firstname", vn, id_person);
                         //dbconCleaned.runQuery(query);
 
@@ -2316,7 +2319,7 @@ public class LinksCleanThread extends Thread
     private String cleanName( boolean debug, String id_source, int id_person, String name )
     throws Exception
     {
-        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-\\.,èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáÀÂÁÄçÇ]+", "" );
 
         if( ! clean.contains( " " ) && clean.length() > 18 ) {
             if( debug ) { System.out.println( "cleanName() long name: " + clean ); }
@@ -2381,7 +2384,7 @@ public class LinksCleanThread extends Thread
         if( debug && ! name.equals( new_name ) ) { System.out.println( " -> " + new_name ); }
         name = new_name;
 
-        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "" );
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáÀÂÁÄçÇ]+", "" );
 
 
         if( clean.contains( " " ) ) {
@@ -2412,7 +2415,7 @@ public class LinksCleanThread extends Thread
     private String cleanFamilyname( boolean debug, String id_source, int id_person, String name )
     throws Exception
     {
-        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáöÀÂÁÄçÇ]+", "").replaceAll("\\-", " " );
+        String clean = name.replaceAll( "[^A-Za-z0-9 '\\-èêéëÈÊÉËùûúüÙÛÚÜiìîíïÌÎÍÏòôóöÒÔÓÖàâáÀÂÁÄçÇ]+", "").replaceAll("\\-", " " );
 
         if( ! clean.contains( " " ) && clean.length() > 18 ) {
             if( debug ) { System.out.println( "cleanFamilyname() long familyname: " + clean ); }
