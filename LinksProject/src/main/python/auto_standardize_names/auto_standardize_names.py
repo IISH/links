@@ -31,16 +31,15 @@ def normalize_ref_name( db_links, db_ref, first_or_fam_name ):
 def inspect( db, db_ref, freq_table, ref_table ):
 def names_with_space( db, db_ref, freq_table, ref_table ):
 def compare_first_family( db, db_ref ):
-def clear_ref_previous( first_or_fam_name ):
-def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
-def strip_accents( first_or_fam_name ):
-def normalize_ckzsijy( first_or_fam_name ):
+def clear_ref_previous( db_ref, first_or_fam_name ):
+def ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt ):
+def strip_accents( db_ref, first_or_fam_name ):
+def normalize_ckphfijyzs( db_ref, first_or_fam_name ):
+def update_standards( db_ref, first_or_fam_name ):
 def format_secs( seconds ):
 
-TODO Check standard names for remaining non-names like: "--" etc.
-
 13-Apr-2016 Created
-15-Mar-2017 Changed
+17-Mar-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -62,6 +61,7 @@ from time import time
 
 
 log_file = True
+dry_run  = False				# True: read only, do not write to db
 
 # production
 ls_table_ext = "_first"			# 
@@ -84,7 +84,7 @@ USER_REF   = ""
 PASSWD_REF = ""
 DBNAME_REF = ""
 
-CREATE_CSV = False
+CREATE_CSV = None
 
 single_quote = "'"
 double_quote = '"'
@@ -177,7 +177,7 @@ def db_check( db_links ):
 
 
 
-def order_by_freq( resp_lvs, freq_table ):
+def order_by_freq( db_links, resp_lvs, freq_table ):
 	logging.debug( "order_by_freq()" )
 	names_freqs = {}
 	
@@ -348,8 +348,8 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 					
 					logging.debug( query_ref )
 					
-					resp_ref = db_ref.update( query_ref )
-					# check response...
+					if not dry_run:
+						affected_count = db_ref.update( query_ref )
 					
 					accept = True
 					break	# done, because accepted, skip further lower freq alternatives
@@ -382,7 +382,7 @@ def normalize_freq_first( debug, db_links, db_ref, first_or_fam_name ):
 
 
 
-def get_lvs_alternatives( lvs_table, name ):
+def get_lvs_alternatives( db_links, lvs_table, name ):
 	# find in Levenshtein table, for lvs = 1
 	logging.debug( "get_lvs_alternatives()" )
 	
@@ -416,7 +416,7 @@ def get_lvs_alternatives( lvs_table, name ):
 
 
 
-def get_preferred_alt( alts, freq_table ):
+def get_preferred_alt( db_links, alts, freq_table ):
 	# choose alternative with highest frequency
 	logging.debug( "get_preferred_alt()" )
 	
@@ -611,7 +611,7 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 				if CREATE_CSV:
 					csv_writer.writerow( [ name_ori, freq_ori, name_alt, freq_alt, nalts ] )
 				# update ref table: 
-				ref_update( first_or_fam_name, name_ori_esc, name_alt )
+				ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt )
 			else:
 				logging.debug( "skip:   name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
 			
@@ -643,7 +643,7 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 
 
 
-def inspect( db, db_ref, freq_table, ref_table ):
+def inspect( db_links, db_ref, freq_table, ref_table ):
 	logging.debug( "inspect()" )
 	
 	query_freq  = "SELECT name_str, frequency FROM links_prematch." + freq_table + " ORDER BY frequency DESC"
@@ -669,7 +669,7 @@ def inspect( db, db_ref, freq_table, ref_table ):
 
 
 
-def names_with_space( db, db_ref, freq_table, ref_table ):
+def names_with_space( db_links, db_ref, freq_table, ref_table ):
 	logging.debug( "names_with_space()" )
 	
 	query_freq  = "SELECT COUNT(*) AS count FROM links_prematch." + freq_table 
@@ -712,7 +712,7 @@ def names_with_space( db, db_ref, freq_table, ref_table ):
 
 
 
-def compare_first_family( db, db_ref ):
+def compare_first_family( db_links, db_ref ):
 	logging.debug( "compare_first_family()" )
 
 	# ref_familyname is about 5 times as large that ref_firstname
@@ -767,7 +767,7 @@ def compare_first_family( db, db_ref ):
 
 
 
-def clear_ref_previous( first_or_fam_name ):
+def clear_ref_previous( db_ref, first_or_fam_name ):
 	logging.info( "clear_ref_previous() %s" % first_or_fam_name )
 	
 	if first_or_fam_name == "firstname":
@@ -800,14 +800,15 @@ def clear_ref_previous( first_or_fam_name ):
 		logging.info( query_clear )
 		if log_file: print( query_clear )
 		
-		affected_count = db_ref.update( query_clear )
-		msg = "%d records updated" % affected_count
-		logging.info( msg )
-		if log_file: print( msg )
+		if not dry_run:
+			affected_count = db_ref.update( query_clear )
+			msg = "%d records updated" % affected_count
+			logging.info( msg )
+			if log_file: print( msg )
 
 
 
-def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
+def ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt ):
 	logging.debug( "ref_update() %s" % first_or_fam_name )
 	
 	if first_or_fam_name == "firstname":
@@ -831,22 +832,23 @@ def ref_update( first_or_fam_name, name_ori_esc, name_alt ):
 	query_update += ";"
 	logging.debug( query_update )
 
-	affected_count = db_ref.update( query_update )
-	if affected_count != 1:
-		msg = "%d records updated" % affected_count
-		logging.info( msg )
-		if log_file: print( msg )
+	if not dry_run:
+		affected_count = db_ref.update( query_update )
+		if affected_count != 1:
+			msg = "%d records updated" % affected_count
+			logging.info( msg )
+			if log_file: print( msg )
 
 
 
-def strip_accents( first_or_fam_name ):
+def strip_accents( db_ref, first_or_fam_name ):
 	logging.debug( "strip_accents() %s" % first_or_fam_name )
 
 	if first_or_fam_name == "firstname":
-		ref_table  = "ref_firstname"
+		ref_table   = "ref_firstname"
 		id_name_str = "id_firstname"
 	elif first_or_fam_name == "familyname":
-		ref_table  = "ref_familyname"
+		ref_table   = "ref_familyname"
 		id_name_str = "id_familyname"
 	else:
 		return
@@ -882,7 +884,8 @@ def strip_accents( first_or_fam_name ):
 	nrec = len( resp_sel )
 	naccents = 0
 
-	wierdos = []
+	squotes = []	# single quotes ' in word
+	wierdos = []	# chars not yet accounted for
 	
 	accents_ok  = []
 	accents_ok += [ "-" ]					# double firstnames, but sometimes linebreak -
@@ -898,35 +901,20 @@ def strip_accents( first_or_fam_name ):
 	if first_or_fam_name == "familyname":
 		accents_ok += [ " " ]	# space acceptable in double familyname
 
-	accents_replace = {
+	special_replace = {
 		"Æ" : "AE", 
 		"æ" : "ae", 
-		"ø" : "eu", 
-		"Ú" : "é", 
-		"Ù" : "ë"
+		"ø" : "eu"
 	}
-
-	zap_list = [
-		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-		"#", "?", "@", "/", "´", "," 
-	#	"÷", "¹", "³", "¾", "¶", "Þ", "¸", "╔"	# autozapped by => ascii
-	]
 	
 	for n in range( nrec ):
 		dict_sel = resp_sel[ n ]
-		id_name = dict_sel[ id_name_str ]
+		
+		id_name  = dict_sel[ id_name_str ]
 		standard = dict_sel[ "standard" ]
+		code     = dict_sel[ "standard_code" ]
+		
 		if standard is not None:
-			
-			
-			# zap unwanted chars
-			old_standard = standard
-			for ch in zap_list:
-				standard = standard.replace( ch, "" )
-			
-			if len( old_standard ) != len( standard ):
-				logging.info( "zapped: |%s| => |%s|" % ( old_standard, standard ) )
-			
 			nfkd_form = unicodedata.normalize( "NFKD", standard )
 			ascii = str( nfkd_form.encode( "ASCII", "ignore" ), "utf-8" )
 			
@@ -935,11 +923,10 @@ def strip_accents( first_or_fam_name ):
 				#logging.info( "standard: |%s| => |%s|" % ( standard, ascii ) )
 				norm_file.write( "%s\n" % "standard: |%s| => |%s|" % ( standard, ascii ) )
 				
-				
 				# check lengths, some chars are zapped!
 				if len( standard ) != len( ascii ):
-					for key in accents_replace:
-						nfkd_form = nfkd_form.replace( key, accents_replace[ key] )
+					for key in special_replace:
+						nfkd_form = nfkd_form.replace( key, special_replace[ key] )
 					ascii = str( nfkd_form.encode( "ASCII", "ignore" ), "utf-8" )
 					logging.info( "replaced: |%s| => |%s|" % ( standard, ascii ) )
 				
@@ -955,11 +942,22 @@ def strip_accents( first_or_fam_name ):
 					logging.info( "wierdo: |%s| => |%s|" % ( standard, ascii ) )
 			
 			ascii = ascii.strip()	# remove leading and trailing whitespace
+			
+			if code not in [ 'n', 'u' ]:	# keep 'n' & 'u' from previous filtering: 
+				code = 'y'
 			if standard != ascii:
 				if ascii == '':
 					code = 'n'
 				else:
-					code = 'y'
+					if "'" in ascii:
+						ascii = ascii.replace( "'",  "\\'" )
+						code = 'u'
+						if ascii not in squotes:
+							squotes.append( ascii )
+					
+					if wierdo:
+						code = 'u'
+				
 				# write ascii as new standard
 				query_update  = "UPDATE links_general.%s " % ref_table
 				query_update += "SET standard = '%s', " % ascii
@@ -967,22 +965,26 @@ def strip_accents( first_or_fam_name ):
 				query_update += "standard_source = 'LINKS_DIACRITIC' "
 				query_update += "WHERE %s = %d;" % ( id_name_str, id_name )
 				logging.debug( query_update )
-
-				affected_count = db_ref.update( query_update )
+				
+				if not dry_run:
+					affected_count = db_ref.update( query_update )
 		
 	logging.info( "\nnames with diacritics: %d (of total %d)" % ( naccents, nrec ) )
-	logging.info( "wierdo characters: %s" % str( wierdos ) )
+	logging.info( "%d single quotes in names: %s" % ( len( squotes ), str( squotes ) ) )
+	logging.info( "%d wierdo characters: %s" % ( len( wierdos ), str( wierdos ) ) )
 	norm_file.close()
 
 
 
-def normalize_ckzsijy( first_or_fam_name ):
-	logging.debug( "normalize_ckzsijy() %s" % first_or_fam_name )
+def normalize_ckphfijyzs( db_ref, first_or_fam_name ):
+	logging.debug( "normalize_ckphfijyzs() %s" % first_or_fam_name )
 
 	if first_or_fam_name == "firstname":
-		ref_table  = "ref_firstname"
+		ref_table   = "ref_firstname"
+		id_name_str = "id_firstname"
 	elif first_or_fam_name == "familyname":
 		ref_table  = "ref_familyname"
+		id_name_str = "id_familyname"
 	else:
 		return
 
@@ -1006,31 +1008,71 @@ def normalize_ckzsijy( first_or_fam_name ):
 
 	resp_sel = db_ref.query( query_sel )
 	nrec = len( resp_sel )
-	nksy = 0
+	
+	n_f = 0
+	n_k = 0
+	n_s = 0
+	n_y = 0
+	
+	n_ckphfijyzs = 0
 
 	for n in range( nrec ):
 		dict_sel = resp_sel[ n ]
-		#print( dict_sel )
+		
+		id_name  = dict_sel[ id_name_str ]
 		standard = dict_sel[ "standard" ]
+		code     = dict_sel[ "standard_code" ]
+		
 		if standard is not None:
-			standard_ksy = standard
-			standard_ksy = standard_ksy.replace( "c", "k" )
-			standard_ksy = standard_ksy.replace( "z", "s" )
-			standard_ksy = standard_ksy.replace( "ij", "y" )
+			standard_ckphfijyzs = standard
 			
-			if standard != standard_ksy:			# ckzsijy stuff
-				nksy += 1
-				logging.info( "standard: |%s| => |%s|" % ( standard, standard_ksy ) )
-
-
-
-	logging.info( "\nnames with new standard_ksy: %d (of total %d)" % ( nksy, nrec ) )
+			if standard.find( "ph" ) != -1:
+				n_f += 1
+				standard_ckphfijyzs = standard_ckphfijyzs.replace( "ph", "f" )
+			
+			if standard.find( "c" ) != -1:
+				n_k += 1
+				standard_ckphfijyzs = standard_ckphfijyzs.replace( "c",  "k" )
+				
+			if standard.find( "z" ) != -1:
+				n_s += 1
+				standard_ckphfijyzs = standard_ckphfijyzs.replace( "z",  "s" )
+				
+			if standard.find( "ij" ) != -1:
+				n_y += 1
+				standard_ckphfijyzs = standard_ckphfijyzs.replace( "ij", "y" )
+			
+			if standard != standard_ckphfijyzs:			# ckphfijyzs stuff
+				n_ckphfijyzs += 1
+				logging.info( "standard: |%s| => |%s|" % ( standard, standard_ckphfijyzs ) )
+				
+				standard = standard_ckphfijyzs
+				
+			#	if code not in [ 'n', 'u' ]:	# keep 'n' & 'u' from previous filtering: 
+			#		code = 'y'
+				
+				if "'" in standard:
+					standard = standard.replace( "'",  "\\'" )
+					
+				# write new standard
+				query_update  = "UPDATE links_general.%s " % ref_table
+				query_update += "SET standard = '%s', " % standard
+			#	query_update += "standard_code = '%s', " % code			# no change in the code, so no need to write it
+				query_update += "standard_source = 'LINKS_CHARACTER' "
+				query_update += "WHERE %s = %d;" % ( id_name_str, id_name )
+				logging.debug( query_update )
+				
+				if not dry_run:
+					affected_count = db_ref.update( query_update )
+	
+	logging.info( "\nnames with new standard: %d (of total %d)" % ( n_ckphfijyzs, nrec ) )
+	logging.info( "ph => f: %d, c => k: %d, z => s: %d, ij => y: %d, " % ( n_f, n_k, n_s, n_y ) )
 
 
 
 def update_standards( db_ref, first_or_fam_name ):
 	"""
-	Update standard from original
+	Update standard from original, with garbage filtering
 	"""
 	logging.info( "update_standards() %s" % first_or_fam_name )
 
@@ -1051,6 +1093,7 @@ def update_standards( db_ref, first_or_fam_name ):
 	count = dict_cnt[ "count" ]
 	if count == 0:
 		logging.info( "No records in %s with standard_code = 'x'" % ref_table )
+		return		# nothing to do
 	else:
 		logging.info( "Updating standard for %d 'x' records from %s" % ( count, ref_table ) )
 
@@ -1182,13 +1225,14 @@ def update_standards( db_ref, first_or_fam_name ):
 		query_update += "WHERE %s = %d;" % ( id_name_str, id_name )
 		logging.debug( query_update )
 		
-		affected_count = db_ref.update( query_update )
-		if affected_count is None:
-			logging.warning( query_update )
-			logging.info( "nothing updated" )
-		elif affected_count != 1:
-			logging.warning( query_update )
-			logging.info( "%d records updated" % affected_count )
+		if not dry_run:
+			affected_count = db_ref.update( query_update )
+			if affected_count is None:
+				logging.warning( query_update )
+				logging.info( "nothing updated" )
+			elif affected_count != 1:
+				logging.warning( query_update )
+				logging.info( "%d records updated" % affected_count )
 	
 	msg = "update_standards %s zapped chars: %s" % ( first_or_fam_name, zapped )
 	logging.info( msg ); print( msg )
@@ -1206,9 +1250,10 @@ def update_standards( db_ref, first_or_fam_name ):
 	query_update += "WHERE standard_code = 'x' AND original <> '';"
 	logging.info( query_update )
 	
-	affected_count = db_ref.update( query_update )
-	msg = "%d records updated" % affected_count
-	logging.info( msg )
+	if not dry_run:
+		affected_count = db_ref.update( query_update )
+		msg = "%d records updated" % affected_count
+		logging.info( msg )
 
 	# Give empty originals a 'n' code
 	query_update  = "UPDATE links_general.%s " % ref_table
@@ -1216,9 +1261,10 @@ def update_standards( db_ref, first_or_fam_name ):
 	query_update += "WHERE standard_code = 'x' AND original = '';"
 	logging.info( query_update )
 	
-	affected_count = db_ref.update( query_update )
-	msg = "%d records updated" % affected_count
-	logging.info( msg )
+	if not dry_run:
+		affected_count = db_ref.update( query_update )
+		msg = "%d records updated" % affected_count
+		logging.info( msg )
 	"""
 
 
@@ -1240,8 +1286,8 @@ def format_secs( seconds ):
 
 
 if __name__ == "__main__":
-	#log_level = logging.DEBUG
-	log_level = logging.INFO
+	log_level = logging.DEBUG
+	#log_level = logging.INFO
 	#log_level = logging.WARNING
 	#log_level = logging.ERROR
 	#log_level = logging.CRITICAL
@@ -1313,7 +1359,7 @@ if __name__ == "__main__":
 	
 	if do_first or do_family:
 		do_accents = input( "Process diacritics? [N,y] " )
-		do_ckzsijy_stuff = input( "Process ckzsijy stuff? [N,y] " )
+		do_ckphfijyzs_stuff = input( "Process ckphfijyzs stuff? [N,y] " )
 		do_lowfreq = input( "Process low freqs? [N,y] " )
 	
 	if do_accents is None:
@@ -1323,12 +1369,12 @@ if __name__ == "__main__":
 	else:
 		do_accents = False
 	
-	if do_ckzsijy_stuff is None:
-		do_ckzsijy_stuff = False
-	elif do_ckzsijy_stuff.lower() == 'y':
-		do_ckzsijy_stuff = True
+	if do_ckphfijyzs_stuff is None:
+		do_ckphfijyzs_stuff = False
+	elif do_ckphfijyzs_stuff.lower() == 'y':
+		do_ckphfijyzs_stuff = True
 	else:
-		do_ckzsijy_stuff = False
+		do_ckphfijyzs_stuff = False
 		
 	if do_lowfreq is None:
 		do_lowfreq = False
@@ -1351,11 +1397,11 @@ if __name__ == "__main__":
 		
 		if do_accents:
 			print( "strip_accents..." )
-			strip_accents( "firstname" )
+			strip_accents( db_ref, "firstname" )
 		
-		if do_ckzsijy_stuff:
-			print( "normalize_ckzsijy..." )
-			normalize_ckzsijy( "firstname" )
+		if do_ckphfijyzs_stuff:
+			print( "normalize_ckphfijyzs..." )
+			normalize_ckphfijyzs( db_ref, "firstname" )
 			
 		if do_lowfreq:
 			print( "do_lowfreq..." )
@@ -1371,7 +1417,7 @@ if __name__ == "__main__":
 			else:
 				writer_firstname = None
 			
-			clear_ref_previous( "firstname" )
+			clear_ref_previous( db_ref, "firstname" )
 			n_cnt_auto = normalize_ref_name( db_links, db_ref, writer_firstname, "firstname" )
 			if log_file: print( "%d ref_firstname records set to LINKS_AUTO" % n_cnt_auto )
 			
@@ -1384,11 +1430,11 @@ if __name__ == "__main__":
 		
 		if do_accents:
 			print( "strip_accents..." )
-			strip_accents( "familyname" )
+			strip_accents( db_ref, "familyname" )
 		
-		if do_ckzsijy_stuff:
-			print( "normalize_ckzsijy..." )
-			normalize_ckzsijy( "familyname" )
+		if do_ckphfijyzs_stuff:
+			print( "normalize_ckphfijyzs..." )
+			normalize_ckphfijyzs( db_ref, "familyname" )
 		
 		if do_lowfreq:
 			print( "do_lowfreq..." )
@@ -1404,7 +1450,7 @@ if __name__ == "__main__":
 			else:
 				writer_familyname = None
 			
-			clear_ref_previous( "familyname" )
+			clear_ref_previous( db_ref, "familyname" )
 			n_cnt_auto = normalize_ref_name( db_links, db_ref, writer_familyname, "familyname" )
 			if log_file: print( "%d ref_familyname records set to LINKS_AUTO" % n_cnt_auto )
 			
