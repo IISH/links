@@ -1,0 +1,57 @@
+FL-28-Feb-2017 Created
+FL-08-Mar-2017 Changed
+
+Procedure for firstnames & familynames: 
+-1- run this script for diacritics & z -> z, etc.
+
+-2- clean names
+-3- run prematch to update frequency & levenshtein tables
+-4- run this script to normalize names with freq 1 & 2
+
+-5- clean names
+-6- run prematch to update frequency & levenshtein tables
+-7- run this script to normalize names with freq 1 & 2
+
+? repeat till nothing changes anymore ?
+
+--------------------------------------------------------------------------------
+Automatically standardize the names in: 
+	links_general.ref_firstname
+	links_general.ref_familyname
+that have standard_code = 'x', and that have a frequency of 1 or 2 in their
+(links_prematch.freq_firstname or links_prematch.freq_familyname) frequency table. 
+Check those names for Levenshtein alternatives with value = 1. 
+Accept the (first) alternative with the highest frequency, if that frequency 
+is higher than the frequency of the original name. 
+
+Check the configuration file: auto_standardize_names.yaml
+
+You could backup the HSN links_general before starting the procedure, e.g: 
+Notice that the URLs have recently changed: 
+	194.171.4.71 node-030.dev.socialhistoryservices.org node-030 node-071
+	194.171.4.72 node-152.dev.socialhistoryservices.org node-152 node-072
+	194.171.4.70 node-154.dev.socialhistoryservices.org node-154 node-070
+	194.171.4.73 node-155.dev.socialhistoryservices.org node-155 node-073
+	194.171.4.74 node-158.dev.socialhistoryservices.org node-158 node-074
+
+	$ mysqldump -h 194.171.4.71 -u hsnref -p links_general > links_general.data-node030-2017.02.28.sql
+
+auto_standardize_names.py is made with Python-3.6.0
+
+Activate the virtual Python:
+	$ cd ~/projects/links
+	$ python360/bin/activate
+
+Run the script: 
+	$ cd ~/projects/links/clean/auto_standardize_names
+	check the configuration file: auto_standardize_names.yaml
+	$ python auto_standardize_names.py
+
+--------------------------------------------------------------------------------
+Extra modules needed for a fresh virtual Python:
+	pip install future
+	pip install mysqlclient
+	pip install pyyaml
+	pip install unicodedata
+
+[eof]

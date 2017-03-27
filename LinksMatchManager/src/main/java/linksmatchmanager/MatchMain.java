@@ -152,12 +152,16 @@ public class MatchMain
             msg = String.format( "Currently active threads: %d", nthreads_active );
             System.out.println( msg ); plog.show( msg );
 
-            // Create database connections
-            dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
-            dbconMatch    = General.getConnection( url, "links_match",    user, pass );
+            System.out.println( "Create database connections" );
+            try {
+                dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
+                dbconMatch    = General.getConnection( url, "links_match",    user, pass );
+            }
+            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
 
             try {
                 String query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size%'";
+                System.out.println( query );
                 ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
                 rs.first();
                 OLD_max_heap_table_size = rs.getString( "Value" );
@@ -170,6 +174,7 @@ public class MatchMain
             System.out.println( msg ); plog.show( msg );
             try {
                 String query = "SET max_heap_table_size = " + max_heap_table_size;
+                System.out.println( query );
                 dbconPrematch.createStatement().execute( query );
             }
             catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
