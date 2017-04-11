@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-14-Mar-2017 Latest change
+ * FL-11-Apr-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -7288,7 +7288,6 @@ public class LinksCleanThread extends Thread
             + "AND person_c.id_source = " + source;
 
         if( debug ) { System.out.println( query ); }
-        System.out.println( query );
         String msg = String.format( "Thread id %02d; running stillbirth birth_date query ...", threadId  );
         showMessage( msg, false, true );
         int count = dbconCleaned.runQueryUpdate( query );
