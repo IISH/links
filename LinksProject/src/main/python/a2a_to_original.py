@@ -5,35 +5,38 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		a2a_to_original.py
-Version:	0.3
+Version:	0.4
 Goal:		Read the sql file with MySQL queries to fill the 2 table of 
 			links_original from the links_a2a tables. 
 			Show progress by showing the queries one-by-one. 
 
 04-Dec-2014	Created
 18-Jan-2016	Update for Python-3
-15-Sep-2016	Changed
+10-Apr-2017	Get sources/rmtypes from links_a2a, and delete them accordingly from links_original
+11-Apr-2017	Changed
 """
 
-# python-future for Python 2/3 compatibility
+# future-0.16.0 imports for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
-from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
-	oct, open, pow, range, round, str, super, zip )
+from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
+	next, object, oct, open, pow, range, round, super, str, zip )
 
+import datetime
+import MySQLdb
 import os
 import sys
-import datetime
+import yaml
+
 from time import time
-import MySQLdb
 
 debug = False
 keep_comments = False
 
 # db
-HOST   = "localhost"
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = "links_a2a"
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
 sql_dirname  = os.path.dirname( os.path.realpath( __file__ ) )
 sql_filename = "a2a_to_original.sql"
@@ -58,15 +61,23 @@ class Database:
 		self.cursor = self.connection.cursor()
 
 	def insert( self, query ):
+		affected_count = None
 		try:
-			resp = self.cursor.execute( query )
+			affected_count = self.cursor.execute( query )
 			self.connection.commit()
 		except:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
 			print( "%s, %s\n" % ( etype, value ) )
-
+		return affected_count
+	
+	def update( self, query ):
+		return self.insert( query )
+	
+	def delete( self, query ):
+		return self.insert( query )
+	
 	def query( self, query ):
 		print( "\n%s" % query )
 		cursor = self.connection.cursor( MySQLdb.cursors.DictCursor )
@@ -113,7 +124,8 @@ def db_check( db ):
 
 
 
-def queries( log ):
+def queries( db, log ):
+	log.write( "queries()\n" )
 	try:
 		sql_file = open( sql_path, 'r' )
 		if debug: print( sql_path )
@@ -188,6 +200,53 @@ def queries( log ):
 
 
 
+def sources_from_a2a( db, log ):
+	log.write( "sources_from_a2a()\n" )
+	# links_a2a.source.archive    => id_source
+	# links_a2a.source.collection => registration_maintype
+	
+	db_name = "links_a2a"
+	table = "source"
+	query_sel  = "SELECT archive AS source, collection AS rmtype, COUNT(*) AS count FROM %s.%s " % ( db_name, table )
+	query_sel += "GROUP BY source, rmtype ORDER BY source, rmtype;"
+#	query_sel += "GROUP BY archive, collection ORDER BY archive, collection;"
+	log.write( "%s\n" % query_sel )
+	resp_sel = db.query( query_sel )
+	
+	rmtypes = []	# source + rmtype pairs
+	for dict_sel in resp_sel:
+		log.write( "%s\n" % str( dict_sel )  )
+		rmtypes.append( dict_sel )
+	
+	return rmtypes
+
+
+
+def delete_from_orig( db, log, rmtypes ):
+	log.write( "delete_from_orig()\n" )
+	
+	db_name = "links_original"
+	
+	for dict_src in rmtypes:
+		source = int( dict_src[ "source" ] )
+		rmtype = int( dict_src[ "rmtype" ] )
+		
+		table = "registration_o"
+		query_r  = "DELETE * FROM %s.%s " % ( db_name, table )
+		query_r += "WHERE id_source = %d AND registration_maintype = %d;" % ( source, rmtype )
+		log.write("%s\n" % query_r )
+		count = db.delete( query_r )
+		log.write("%d records deleted\n" % count )
+		
+		table = "person_o"
+		query_p  = "DELETE * FROM %s.%s " % ( db_name, table )
+		query_p += "WHERE id_source = %d AND registration_maintype = %d;" % ( source, rmtype )
+		log.write("%s\n" % query_p )
+		count = db.delete( query_p )
+		log.write("%d records deleted\n" % count )
+
+
+
 def format_secs( seconds ):
 	nmin, nsec  = divmod( seconds, 60 )
 	nhour, nmin = divmod( nmin, 60 )
@@ -229,11 +288,24 @@ if __name__ == "__main__":
 		exit( 1 )
 
 	t1 = time()
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	
+	config_path = os.path.join( os.getcwd(), "a2a_to_original.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
+	
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 
-	db_check( db )
+#	db_check( db_links )
 
-	queries( log )
+	rmtypes = sources_from_a2a( db_links, log )
+	delete_from_orig( db_links, log, rmtypes )
+
+#	queries( db_links, log )		# queries from existing sql file
+	
 	str_elapsed = format_secs( time() - t1 )
 	log.write( "Done in %s\n" % str_elapsed )
 
