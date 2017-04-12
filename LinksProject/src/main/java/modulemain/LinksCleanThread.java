@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-11-Apr-2017 Latest change
+ * FL-12-Apr-2017 Latest change
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -5007,9 +5007,10 @@ public class LinksCleanThread extends Thread
             if( debug ) { showMessage( "birth year given: " + inputInfo.getPersonBirthYear() , false, true ); }
 
             int ageInYears = 0;     // use 0 for birth certificates
-            int regis_year  = inputregistrationYearMonthDay.getYear();
+            int regis_year = inputregistrationYearMonthDay.getYear();
 
-            if( inputInfo.getRegistrationMainType() != 1 )  // not a birth certificate
+            // need a registration year, and must not be a birth certificate
+            if( regis_year > 0 && inputInfo.getRegistrationMainType() != 1 )
             {
                 int birth_year  = inputInfo.getPersonBirthYear();
                 int birth_month = inputInfo.getPersonBirthMonth();
@@ -5017,6 +5018,13 @@ public class LinksCleanThread extends Thread
 
                 int regis_month = inputregistrationYearMonthDay.getMonth();
                 int regis_day   = inputregistrationYearMonthDay.getDay();
+
+                // need valid components for LocalDate
+                if( birth_month <= 0 ) { birth_month = 6; }
+                if( regis_month <= 0 ) { regis_month = 6; }
+
+                if( birth_day <= 0 ) { birth_day = 15; }
+                if( regis_day <= 0 ) { regis_day = 15; }
 
                 // age is = regis jaar - birth year             // old code
                 //int AgeInYears = regis_year - birth_year;     // old code
@@ -5026,12 +5034,15 @@ public class LinksCleanThread extends Thread
 
                 Period betweenDates = Period.between( ldBirth, ldRegis );
 
-                    ageInYears  = betweenDates.getYears();      // overwrite the initial ageInYears = 0
-                int ageInMonths = betweenDates.getMonths();
-                int ageInDays   = betweenDates.getDays();
+                ageInYears  = betweenDates.getYears();      // overwrite the initial ageInYears = 0
 
-                String msg = String.format( "ageInYears: %d, ageInMonths: %d, ageInDays: %d", ageInYears, ageInMonths, ageInDays );
-                if( debug ) { showMessage( msg , false, true ); }
+                if( debug ) {
+                    int ageInMonths = betweenDates.getMonths();
+                    int ageInDays   = betweenDates.getDays();
+
+                    String msg = String.format( "ageInYears: %d, ageInMonths: %d, ageInDays: %d", ageInYears, ageInMonths, ageInDays );
+                    showMessage( msg , false, true );
+                }
             }
 
             // Create new set
