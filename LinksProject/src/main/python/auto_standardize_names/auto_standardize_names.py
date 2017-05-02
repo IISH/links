@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		auto_standardize_names.py
-Version:	0.1
+Version:	0.2
 Goal:		Automatically standardize names by taking the Levenshtein variant 
 			with highest frequency. 
 Compatibility:	I used Python-3.6.0; for Py2, csv stuff needs encoding changes
@@ -20,13 +20,21 @@ Algorithm:
 	find the name[s] with the highest frequency. Accept the first alternative if 
 	its frequency is higher than the frequency of the original. 
 
+Question about function normalize_ref_name(), that processes 'x' records to set 
+the LINKS_AUTO flag. Before that function runs, function update_standards() 
+processes the 'x' records to set the LINKS flag and 'x' => 'y'. 
+So normalize_ref_name() only receives its previous LINKS_AUTO records, because 
+those are cleared. 
+Should we always run normalize_ref_name() a second time on the LINKS 'y' records, 
+because now the number of LINKS_AUTO records is very low (in comparison with LINKS). 
+
 class Database:
 def db_check( db_links ):
 def order_by_freq( resp_lvs, freq_table ):
 def find_in_reference( db_ref, ref_table, name_str ):
 def normalize_freq_first( db, db_ref, first_or_fam_name ):
-def get_lvs_alternatives( lvs_table, name ):
-def get_preferred_alt( alts, freq_table ):
+def get_lvs_alternatives( db_links, lvs_table, name ):
+def get_preferred_alt( db_links, alts, freq_table ):
 def normalize_ref_name( db_links, db_ref, first_or_fam_name ):
 def inspect( db, db_ref, freq_table, ref_table ):
 def names_with_space( db, db_ref, freq_table, ref_table ):
@@ -39,7 +47,7 @@ def update_standards( db_ref, first_or_fam_name ):
 def format_secs( seconds ):
 
 13-Apr-2016 Created
-17-Mar-2017 Changed
+02-May-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -502,7 +510,9 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 		else:
 			nchunks = 100
 		chunk = int( nnames / nchunks )
-	print( "nchunks: %d, chunk: %d" % ( nchunks, chunk ) )
+	
+	msg = "nchunks: %d, chunk: %d" % ( nchunks, chunk )
+	logging.info( msg ); print( msg )
 	
 	n_freq_missing = 0	# not present in frequency table
 	n_freq_found   = 0	# found in frequency table
@@ -592,7 +602,7 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 			elif freq_ori == 2:
 				n_freq_2 += 1
 			
-			alts = get_lvs_alternatives( ls_table, name_ori_esc )
+			alts = get_lvs_alternatives( db_links, ls_table, name_ori_esc )
 			logging.debug( str( alts ) )
 			
 			nalts = len( alts )
@@ -601,7 +611,7 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 			else:
 				n_lvs_found += 1
 			
-			name_alt, freq_alt = get_preferred_alt( alts, freq_table )
+			name_alt, freq_alt = get_preferred_alt( db_links, alts, freq_table )
 			
 			if freq_alt == 0:
 				logging.debug( "no_alt: name_ori: %s; name_alt: %s, freq_alt: %d" % ( name_ori, name_alt, freq_alt ) )
@@ -610,8 +620,8 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 				logging.info( "update: name_ori: %s; name_alt: %s, freq_alt: %d" % ( name_ori, name_alt, freq_alt ) )
 				if CREATE_CSV:
 					csv_writer.writerow( [ name_ori, freq_ori, name_alt, freq_alt, nalts ] )
-				# update ref table: 
-				ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt )
+				if not dry_run:		# update ref table: 
+					ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt )
 			else:
 				logging.debug( "skip:   name_ori: %s; freq_alt: %d, name_alt: %s" % ( name_ori, freq_alt, name_alt ) )
 			
@@ -768,7 +778,8 @@ def compare_first_family( db_links, db_ref ):
 
 
 def clear_ref_previous( db_ref, first_or_fam_name ):
-	logging.info( "clear_ref_previous() %s" % first_or_fam_name )
+	msg = "clear_ref_previous() %s" % first_or_fam_name
+	logging.info( msg ); print( msg )
 	
 	if first_or_fam_name == "firstname":
 		ref_table  = "ref_firstname"
@@ -780,15 +791,17 @@ def clear_ref_previous( db_ref, first_or_fam_name ):
 	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s " % ref_table
 	query_cnt += "WHERE standard_source = 'LINKS_AUTO' "
 	query_cnt += ";"
-	print( query_cnt )
+	logging.info( query_cnt ); print( query_cnt )
 	
 	resp_cnt = db_ref.query( query_cnt )
 	dict_cnt = resp_cnt[ 0 ]
 	count = dict_cnt[ "count" ]
 	if count == 0:
-		print( "No LINKS_AUTO records to clear" )
+		msg = "No LINKS_AUTO records to clear"
+		logging.info( msg ); print( msg )
 	else:
-		print( "Clearing %d %s LINKS_AUTO records" % ( count, first_or_fam_name ) )
+		msg = "Clearing %d %s LINKS_AUTO records" % ( count, first_or_fam_name )
+		logging.info( msg ); print( msg )
 
 		# clear previous automatic normalization: 
 		# standard -> NULL, standard_code -> 'x', standard_source -> NULL
@@ -842,7 +855,8 @@ def ref_update( db_ref, first_or_fam_name, name_ori_esc, name_alt ):
 
 
 def strip_accents( db_ref, first_or_fam_name ):
-	logging.debug( "strip_accents() %s" % first_or_fam_name )
+	msg = "strip_accents() %s" % first_or_fam_name
+	logging.info( msg ); print( msg )
 
 	if first_or_fam_name == "firstname":
 		ref_table   = "ref_firstname"
@@ -860,15 +874,17 @@ def strip_accents( db_ref, first_or_fam_name ):
 	norm_file = open( pathname, 'w' )
 	
 	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s;" % ref_table
-	logging.info( query_cnt )
+	logging.info( query_cnt ); print( query_cnt )
 	
 	resp_cnt = db_ref.query( query_cnt )
 	dict_cnt = resp_cnt[ 0 ]
 	count = dict_cnt[ "count" ]
 	if count == 0:
-		logging.info( "No records in %s" % ref_table )
+		msg = "No records in %s" % ref_table
+		logging.info( msg ); print( msg )
 	else:
-		logging.info( "Processing %d records from %s;" % ( count, ref_table ) )
+		msg = "Processing %d records from %s;" % ( count, ref_table )
+		logging.info( msg ); print( msg )
 		
 	limit = None
 	query_sel  = "SELECT * FROM links_general.%s " % ref_table
@@ -878,10 +894,12 @@ def strip_accents( db_ref, first_or_fam_name ):
 	if limit is not None:
 		query_sel += " LIMIT %d" % limit
 	query_sel += ";"
-	logging.info( query_cnt )
+	logging.info( query_cnt ); print( query_cnt )
 
 	resp_sel = db_ref.query( query_sel )
 	nrec = len( resp_sel )
+	
+	
 	naccents = 0
 
 	squotes = []	# single quotes ' in word
@@ -968,16 +986,21 @@ def strip_accents( db_ref, first_or_fam_name ):
 				
 				if not dry_run:
 					affected_count = db_ref.update( query_update )
-		
-	logging.info( "\nnames with diacritics: %d (of total %d)" % ( naccents, nrec ) )
-	logging.info( "%d single quotes in names: %s" % ( len( squotes ), str( squotes ) ) )
-	logging.info( "%d wierdo characters: %s" % ( len( wierdos ), str( wierdos ) ) )
+	
+	msg = "\nnames with diacritics: %d (of total %d)" % ( naccents, nrec )
+	logging.info( msg ); print( msg )
+	msg = "%d single quotes in names: %s" % ( len( squotes ), str( squotes ) )
+	logging.info( msg ); print( msg )
+	msg = "%d wierdo characters: %s" % ( len( wierdos ), str( wierdos ) )
+	logging.info( msg ); print( msg )
+	
 	norm_file.close()
 
 
 
 def normalize_ckphfijyzs( db_ref, first_or_fam_name ):
-	logging.debug( "normalize_ckphfijyzs() %s" % first_or_fam_name )
+	msg = "normalize_ckphfijyzs() %s" % first_or_fam_name
+	logging.info( msg ); print( msg )
 
 	if first_or_fam_name == "firstname":
 		ref_table   = "ref_firstname"
@@ -989,15 +1012,17 @@ def normalize_ckphfijyzs( db_ref, first_or_fam_name ):
 		return
 
 	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s;" % ref_table
-	logging.info( query_cnt )
+	logging.info( query_cnt ); print( query_cnt )
 	
 	resp_cnt = db_ref.query( query_cnt )
 	dict_cnt = resp_cnt[ 0 ]
 	count = dict_cnt[ "count" ]
 	if count == 0:
-		logging.info( "No records in %s" % ref_table )
+		msg = "No records in %s" % ref_table
+		logging.info( msg ); print( msg )
 	else:
-		logging.info( "Processing %d records from %s" % ( count, ref_table ) )
+		msg = "Processing %d records from %s" % ( count, ref_table )
+		logging.info( msg ); print( msg )
 
 	limit = None
 	query_sel  = "SELECT * FROM links_general.%s ORDER BY standard" % ref_table
@@ -1064,18 +1089,20 @@ def normalize_ckphfijyzs( db_ref, first_or_fam_name ):
 				
 				if not dry_run:
 					affected_count = db_ref.update( query_update )
-	
-	logging.info( "\nnames with new standard: %d (of total %d)" % ( n_ckphfijyzs, nrec ) )
-	logging.info( "ph => f: %d, c => k: %d, z => s: %d, ij => y: %d, " % ( n_f, n_k, n_s, n_y ) )
+	msg = "\nnames with new standard: %d (of total %d)" % ( n_ckphfijyzs, nrec )
+	logging.info( msg ); print( msg )
+	msg = "ph => f: %d, c => k: %d, z => s: %d, ij => y: %d, " % ( n_f, n_k, n_s, n_y )
+	logging.info( msg ); print( msg )
 
 
 
 def update_standards( db_ref, first_or_fam_name ):
-	"""
-	Update standard from original, with garbage filtering
-	"""
-	logging.info( "update_standards() %s" % first_or_fam_name )
+	msg = "update_standards() %s" % first_or_fam_name
+	logging.info( msg ); print( msg )
 
+	msg = "Update original to standard for 'x' records, set to LINKS, with garbage filtering"
+	logging.info( msg ); print( msg )
+	
 	if first_or_fam_name == "firstname":
 		ref_table  = "ref_firstname"
 		id_name_str = "id_firstname"
@@ -1086,16 +1113,18 @@ def update_standards( db_ref, first_or_fam_name ):
 		return
 
 	query_cnt  = "SELECT COUNT(*) as count FROM links_general.%s WHERE standard_code = 'x';" % ref_table
-	logging.info( query_cnt )
+	logging.info( query_cnt ); print( query_cnt )
 	
 	resp_cnt = db_ref.query( query_cnt )
 	dict_cnt = resp_cnt[ 0 ]
 	count = dict_cnt[ "count" ]
 	if count == 0:
-		logging.info( "No records in %s with standard_code = 'x'" % ref_table )
+		msg = "No records in %s with standard_code = 'x'" % ref_table
+		logging.info( msg ); print( msg ); 
 		return		# nothing to do
 	else:
-		logging.info( "Updating standard for %d 'x' records from %s" % ( count, ref_table ) )
+		msg = "Updating standard for %d 'x' records from %s" % ( count, ref_table )
+		logging.info( msg ); print( msg ); 
 
 	zap_list = [
 		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
@@ -1236,9 +1265,9 @@ def update_standards( db_ref, first_or_fam_name ):
 	
 	msg = "update_standards %s zapped chars: %s" % ( first_or_fam_name, zapped )
 	logging.info( msg ); print( msg )
-	msg = "update_standards %s counts: zapped: %d, spaces: %d" % ( first_or_fam_name, nzapped, nspaces )
+	msg = "update_standards %s counts: zapped count: %d, spaces count: %d" % ( first_or_fam_name, nzapped, nspaces )
 	logging.info( msg ); print( msg )
-	msg = "update_standards %s counts: n: %d, u: %d, y: %d" % ( first_or_fam_name, n_count, u_count, y_count )
+	msg = "update_standards %s standard_code counts: n: %d, u: %d, y: %d" % ( first_or_fam_name, n_count, u_count, y_count )
 	logging.info( msg ); print( msg )
 		
 		
