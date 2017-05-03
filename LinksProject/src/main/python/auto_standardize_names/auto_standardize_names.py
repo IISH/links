@@ -47,7 +47,7 @@ def update_standards( db_ref, first_or_fam_name ):
 def format_secs( seconds ):
 
 13-Apr-2016 Created
-02-May-2017 Changed
+03-May-2017 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -467,7 +467,8 @@ def get_preferred_alt( db_links, alts, freq_table ):
 def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 	"""
 	normalize_ref_name. 
-	-1- get records from (firstname or familyname) reference table where standard_code = 'x'
+	-1- get records from (firstname or familyname) reference table where 
+        standard_code = 'x' OR ( standard_source = 'LINKS' AND standard_code = 'y' )
 	-2- get alternative names from levenshtein table with value = 1
 	-3- use the alternative with highest value > 1
 	"""
@@ -489,14 +490,18 @@ def normalize_ref_name( db_links, db_ref, csv_writer, first_or_fam_name ):
 	else:
 		return
 
-	# get records from reference table with standard_code 'x'
-	query_ref = "SELECT * FROM links_general." + ref_table + " WHERE standard_code = 'x' ORDER BY original;"
-	logging.info( query_ref )
+	# get records from reference table with standard_code 'x' OR LINKS 'y'
+	query_ref  = "SELECT * FROM links_general." + ref_table
+	query_ref += " WHERE standard_code = 'x'"
+#	query_ref += " OR ( standard_source = 'LINKS' AND standard_code = 'y' )"
+	query_ref += " OR standard_code = 'y'"
+	query_ref += " ORDER BY original;"
+	logging.info( query_ref ); print( query_ref )
 
 	resp_ref = db_ref.query( query_ref )
 	nnames = len( resp_ref )
 	logging.debug( resp_ref )
-	msg = "# of names in %s that have standard_code 'x': %d" % ( ref_table, nnames )
+	msg = "# of names in %s to normalize: %d" % ( ref_table, nnames )
 	logging.info( msg )
 	if log_file: print( msg )
 	
