@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-22-Feb-2017 Latest change
+ * FL-15-May-2017 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "22-Feb-2017 17:36";
+            String timestamp1 = "15-May-2017 10:27";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -157,7 +157,10 @@ public class MatchMain
                 dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
                 dbconMatch    = General.getConnection( url, "links_match",    user, pass );
             }
-            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
+            catch( Exception ex ) {
+                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                System.out.println( msg );
+            }
 
             try {
                 String query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size%'";
@@ -168,7 +171,10 @@ public class MatchMain
                 msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
                 System.out.println( msg ); plog.show( msg );
             }
-            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
+            catch( Exception ex ) {
+                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                System.out.println( msg );
+            }
 
             msg = String.format( "Setting MySQL max_heap_table_size to: %s", max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
@@ -177,7 +183,10 @@ public class MatchMain
                 System.out.println( query );
                 dbconPrematch.createStatement().execute( query );
             }
-            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
+            catch( Exception ex ) {
+                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                System.out.println( msg );
+            }
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
@@ -449,7 +458,10 @@ public class MatchMain
                 String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
                 dbconPrematch.createStatement().execute( query );
             }
-            catch( Exception ex ) { System.out.println( "Exception in main(): " + ex.getMessage() ); }
+            catch( Exception ex ) {
+                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                System.out.println( msg );
+            }
 
             dbconPrematch.close();
             dbconMatch.close();
@@ -460,9 +472,8 @@ public class MatchMain
 
         } // try
 
-        catch( Exception ex )
-        {
-            String msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: ", mainThreadId, ex.getMessage() );
+        catch( Exception ex ) {
+            String msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
             System.out.println( msg );
         }
 
