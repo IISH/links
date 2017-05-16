@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-15-May-2017 Latest change
+ * FL-16-May-2017 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "15-May-2017 10:27";
+            String timestamp1 = "16-May-2017 10:12";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -360,18 +360,19 @@ public class MatchMain
                 // Loop through the subsamples
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
-                    msg = String.format( "Thread id %02d; Subsample %d-of-%d", mainThreadId, n_qs + 1, qgs.getSize() );
+                    QuerySet qs = qgs.get( n_qs );
+                    int mp_id = qs.id;
+                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     System.out.println( msg ); plog.show( msg );
 
-                    QuerySet qs = qgs.get( n_qs );
-                    showQuerySet( qs );
+                    showQuerySet( qs );     // show match_process record parameters
 
                     long qlStart = System.currentTimeMillis();
                     // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
-                    msg = String.format( "Thread id %02d; Range %d-of-%d; query loader time", mainThreadId, n_qs+1, qgs.getSize() );
+                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
                     /*
