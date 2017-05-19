@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-16-May-2017 Latest change
+ * FL-19-May-2017 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "16-May-2017 10:12";
+            String timestamp1 = "19-May-2017 10:01";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -284,6 +284,14 @@ public class MatchMain
 
             show_memory();   // show some memory stats
 
+            int skipped_threads = 0;            // zero sample size(s)
+            int total_match_threads = 0;        // total number of threads
+            for( int n_mp = 0; n_mp < isSize; n_mp++ )
+            {
+                QueryGroupSet qgs = inputSet.get( n_mp );
+                total_match_threads += qgs.getSize();
+            }
+
             // Loop through the records from the match_process table
             for( int n_mp = 0; n_mp < isSize; n_mp++ )
             {
@@ -327,7 +335,7 @@ public class MatchMain
                 }
                 */
 
-                msg = String.format( "Thread id %02d;  Match process record %d of %d", mainThreadId, (n_mp + 1), isSize );
+                msg = String.format( "Thread id %02d; Match process record %d of %d", mainThreadId, (n_mp + 1), isSize );
                 System.out.println( msg );
                 plog.show( msg );     // Show user the active record and total
 
@@ -342,7 +350,7 @@ public class MatchMain
                 QueryGroupSet qgs = inputSet.get( n_mp );
 
                 int nthreads_started = 0;
-                int total_match_threads = isSize * qgs.getSize();
+                //int total_match_threads = isSize * qgs.getSize();
                 msg = String.format( "Thread id %02d; Number of matching threads to be used: %d", mainThreadId, total_match_threads );
                 System.out.println( msg ); plog.show( msg );
 
@@ -390,6 +398,7 @@ public class MatchMain
                     System.out.println( msg ); plog.show( msg );
 
                     if( s1_size == 0 || s2_size == 0 ) {
+                        skipped_threads++;
                         msg = String.format( "Thread id %02d; ZERO SAMPLE SIZE for s1 and/or s2, skipping this query set\n", mainThreadId );
                         System.out.println( msg ); plog.show( msg );
                         continue;
@@ -435,7 +444,9 @@ public class MatchMain
                     System.out.println( msg ); plog.show( msg );
 
                     nthreads_started++;
-                    plog.show( String.format( "Thread id %02d; Started matching thread # (not id) %d-of-%d", mainThreadId, nthreads_started, total_match_threads ) );
+                    msg = String.format( "Thread id %02d; Started matching thread # (not id) %d-of-%d (skipped: %d)",
+                        mainThreadId, nthreads_started, total_match_threads, skipped_threads );
+                    plog.show( msg );
 
                 } // for subsamples
             } // for 'y' records
