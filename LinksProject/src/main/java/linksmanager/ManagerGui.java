@@ -381,6 +381,34 @@ public class ManagerGui extends javax.swing.JFrame
 		tfBILODeleteSource = new JTextField();
 		jLabel33 = new JLabel();
 		cbOrunCleaned = new JCheckBox();
+		pPrematch = new JPanel();
+		cbPdoFrequencyTables = new JCheckBox();
+		cbPdoLevenshtein = new JCheckBox();
+		cbPdoCreateBaseTable = new JCheckBox();
+		cbPdoSplitFirstnames = new JCheckBox();
+		btnStartProcessPrematch = new JButton();
+		jScrollPane7 = new JScrollPane();
+		taPresult = new JTextArea();
+		cbPdoNamesToNos = new JCheckBox();
+		taPinfo = new JTextField();
+		cbPdoStandardization = new JCheckBox();
+		cbPdoExactmatches = new JCheckBox();
+		pMatch = new JPanel();
+		scrollPane1 = new JScrollPane();
+		matchTextArea = new JTextArea();
+		btnStartProcessMatch = new JButton();
+		matchdir = new JLabel();
+		matchDirectory = new JTextField();
+		matchsh = new JLabel();
+		matchScript = new JTextField();
+		pIDS = new JPanel();
+		scrollPane2 = new JScrollPane();
+		idsTextArea = new JTextArea();
+		btnStartProcessIds = new JButton();
+		idsdir = new JLabel();
+		idsDirectory = new JTextField();
+		idssh = new JLabel();
+		idsScript = new JTextField();
 		pLOLC = new JPanel();
 		tbLOLCurl = new JTextField();
 		jLabel4 = new JLabel();
@@ -423,34 +451,8 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoScanRemarks = new JCheckBox();
 		cbCdoRole = new JCheckBox();
 		cbCdoDates = new JCheckBox();
-		pPrematch = new JPanel();
-		cbPdoFrequencyTables = new JCheckBox();
-		cbPdoLevenshtein = new JCheckBox();
-		cbPdoCreateBaseTable = new JCheckBox();
-		cbPdoSplitFirstnames = new JCheckBox();
-		btnStartProcessPrematch = new JButton();
-		jScrollPane7 = new JScrollPane();
-		taPresult = new JTextArea();
-		cbPdoNamesToNos = new JCheckBox();
-		taPinfo = new JTextField();
-		cbPdoStandardization = new JCheckBox();
-		cbPdoExactmatches = new JCheckBox();
-		pMatch = new JPanel();
-		scrollPane1 = new JScrollPane();
-		matchTextArea = new JTextArea();
-		btnStartProcessMatch = new JButton();
-		matchdir = new JLabel();
-		matchDirectory = new JTextField();
-		matchsh = new JLabel();
-		matchScript = new JTextField();
-		pIDS = new JPanel();
-		scrollPane2 = new JScrollPane();
-		idsTextArea = new JTextArea();
-		btnStartProcessIds = new JButton();
-		idsdir = new JLabel();
-		idsDirectory = new JTextField();
-		idssh = new JLabel();
-		idsScript = new JTextField();
+		label5 = new JLabel();
+		tblOLCrmtype = new JTextField();
 
 		//======== this ========
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -1449,352 +1451,6 @@ public class ManagerGui extends javax.swing.JFrame
 			}
 			tpMain.addTab("ORIGINAL", pBronInternToLinksOrigineel);
 
-			//======== pLOLC ========
-			{
-				pLOLC.setName("pLOLC");
-
-				//---- tbLOLCurl ----
-				tbLOLCurl.setName("tbLOLCurl");
-
-				//---- jLabel4 ----
-				jLabel4.setText("Links Databases URL:");
-				jLabel4.setName("jLabel4");
-
-				//---- tbLOLCuser ----
-				tbLOLCuser.setName("tbLOLCuser");
-
-				//---- tbLOLCpass ----
-				tbLOLCpass.setName("tbLOLCpass");
-
-				//---- jLabel42 ----
-				jLabel42.setText("Links DBs Username:");
-				jLabel42.setName("jLabel42");
-
-				//---- jLabel43 ----
-				jLabel43.setText("Links DBs Password:");
-				jLabel43.setName("jLabel43");
-
-				//---- tbLOLCSourceId ----
-				tbLOLCSourceId.setName("tbLOLCBronNr");
-
-				//---- jLabel44 ----
-				jLabel44.setText("Source Id:");
-				jLabel44.setName("jLabel44");
-
-				//---- btnStartProcessClean ----
-				btnStartProcessClean.setText("Start Cleaning");
-				btnStartProcessClean.setName("bnLOLCstartProcess");
-				btnStartProcessClean.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						bnLOLCstartProcessActionPerformed(e);
-					}
-				});
-
-				//======== jScrollPane6 ========
-				{
-					jScrollPane6.setName("jScrollPane6");
-
-					//---- taLOLCoutput ----
-					taLOLCoutput.setColumns(20);
-					taLOLCoutput.setRows(5);
-					taLOLCoutput.setName("taLOLCoutput");
-					jScrollPane6.setViewportView(taLOLCoutput);
-				}
-
-				//---- jLabel45 ----
-				jLabel45.setFont(new Font("Tahoma", Font.BOLD, 11));
-				jLabel45.setText(" Latest information and Log (below)");
-				jLabel45.setName("jLabel45");
-
-				//---- tbLOLClatestOutput ----
-				tbLOLClatestOutput.setName("tbLOLClatestOutput");
-
-				//---- jLabel51 ----
-				jLabel51.setText("Cleaning Tasks:");
-				jLabel51.setName("jLabel51");
-
-				//---- cbCdoFamilynames ----
-				cbCdoFamilynames.setText("Familynames");
-				cbCdoFamilynames.setName("cbCdoNames");
-
-				//---- cbCdoStatusSex ----
-				cbCdoStatusSex.setText("Civil Status and Sex");
-				cbCdoStatusSex.setName("cbCdoStaatSex");
-
-				//---- cbCdoAge ----
-				cbCdoAge.setText("Age, ARD-1");
-				cbCdoAge.setName("cbCdoAge");
-
-				//---- cbCdoRefreshData ----
-				cbCdoRefreshData.setText("Remove Cleaned Data");
-				cbCdoRefreshData.setName("cbCdoVernieuwen");
-
-				//---- cbCdoRegType ----
-				cbCdoRegType.setText("Registration Type");
-				cbCdoRegType.setName("cbCdoType");
-
-				//---- cbCdoLocations ----
-				cbCdoLocations.setText("Locations");
-				cbCdoLocations.setName("cbCdoLocations");
-
-				//---- cbCdoMinMaxMarriage ----
-				cbCdoMinMaxMarriage.setText("Min Max Marriage");
-				cbCdoMinMaxMarriage.setName("cbLOLCdoMinMaxMarriage");
-
-				//---- cbCdoPartsToFullDate ----
-				cbCdoPartsToFullDate.setText("Parts to Full Date");
-				cbCdoPartsToFullDate.setName("cbLOLCdoPartsToFullDate");
-
-				//---- cbCdoDaysSinceBegin ----
-				cbCdoDaysSinceBegin.setText("Days Since Begin");
-				cbCdoDaysSinceBegin.setName("cbCdoDaysSinceBegin");
-
-				//---- cbCdoPostTasks ----
-				cbCdoPostTasks.setText("Post Tasks");
-				cbCdoPostTasks.setName("cbLOLCdoPostTasks");
-
-				//---- tbLOLCrefurl ----
-				tbLOLCrefurl.setName("tbLOLCrefurl");
-
-				//---- tbLOLCrefuser ----
-				tbLOLCrefuser.setName("tbLOLCrefuser");
-
-				//---- tbLOLCrefpass ----
-				tbLOLCrefpass.setName("tbLOLCrefpass");
-
-				//---- label1 ----
-				label1.setText("Reference Database URL:");
-				label1.setName("label1");
-
-				//---- label2 ----
-				label2.setText("Reference DB Username:");
-				label2.setName("label2");
-
-				//---- label3 ----
-				label3.setText("Reference DB Password:");
-				label3.setName("label3");
-
-				//---- label4 ----
-				label4.setText("Reference DB Name");
-				label4.setName("label4");
-
-				//---- tbLOLCrefdb ----
-				tbLOLCrefdb.setName("tbLOLCrefdb");
-
-				//---- cbCdoOccupation ----
-				cbCdoOccupation.setText("Occupation");
-				cbCdoOccupation.setName("cbCdoOccupation");
-
-				//---- cbCdoFirstnames ----
-				cbCdoFirstnames.setText("Firstnames");
-				cbCdoFirstnames.setName("cbCdoFirstnames");
-
-				//---- cbCdoPrepieceSuffix ----
-				cbCdoPrepieceSuffix.setText("Prepiece, Suffix");
-				cbCdoPrepieceSuffix.setName("cbCdoPrepieceSuffix");
-
-				//---- cbCdoFlagEmptyRoleRegs ----
-				cbCdoFlagEmptyRoleRegs.setText("Flag Empty Role Reg's");
-				cbCdoFlagEmptyRoleRegs.setEnabled(false);
-				cbCdoFlagEmptyRoleRegs.setVisible(false);
-				cbCdoFlagEmptyRoleRegs.setName("cbCdoFlagEmptyRoleRegs");
-
-				//---- cbCdoFlagPersons ----
-				cbCdoFlagPersons.setText("Flag Person Recs for linksbase");
-				cbCdoFlagPersons.setName("cbCdoFlagPersons");
-
-				//---- cbCdoFlagRegistrations ----
-				cbCdoFlagRegistrations.setText("Flag Registrations for linksbase");
-				cbCdoFlagRegistrations.setName("cbCdoFlagRegistrations");
-
-				//---- cbCdoScanRemarks ----
-				cbCdoScanRemarks.setText("Scan Remarks");
-				cbCdoScanRemarks.setName("cbCdoScanRemarks");
-
-				//---- cbCdoRole ----
-				cbCdoRole.setText("Role, ARD-2");
-				cbCdoRole.setName("cbCdoRole");
-
-				//---- cbCdoDates ----
-				cbCdoDates.setText("Dates, ARD-3");
-				cbCdoDates.setName("cbCdoDates");
-
-				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
-				pLOLC.setLayout(pLOLCLayout);
-				pLOLCLayout.setHorizontalGroup(
-					pLOLCLayout.createParallelGroup()
-						.addGroup(pLOLCLayout.createSequentialGroup()
-							.addContainerGap()
-							.addGroup(pLOLCLayout.createParallelGroup()
-								.addComponent(btnStartProcessClean, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-										.addGroup(pLOLCLayout.createSequentialGroup()
-											.addGroup(pLOLCLayout.createParallelGroup()
-												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-													.addComponent(label3, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-													.addComponent(label1, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-													.addComponent(label2, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-												.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
-												.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-													.addComponent(jLabel42, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-													.addComponent(jLabel43, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-											.addGap(42, 42, 42)
-											.addGroup(pLOLCLayout.createParallelGroup()
-												.addComponent(tbLOLCrefpass, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-												.addComponent(tbLOLCrefuser, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-												.addComponent(tbLOLCrefurl, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-												.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-												.addComponent(tbLOLCpass, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)))
-										.addGroup(pLOLCLayout.createSequentialGroup()
-											.addGap(0, 0, Short.MAX_VALUE)
-											.addComponent(tbLOLCuser, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE))
-										.addGroup(pLOLCLayout.createSequentialGroup()
-											.addGroup(pLOLCLayout.createParallelGroup()
-												.addGroup(pLOLCLayout.createSequentialGroup()
-													.addComponent(jLabel44, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
-													.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-												.addGroup(pLOLCLayout.createSequentialGroup()
-													.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-													.addGap(77, 77, 77)))
-											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-												.addComponent(tbLOLCurl, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-												.addComponent(tbLOLCSourceId, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE))))
-									.addGap(20, 20, 20))
-								.addComponent(jLabel51, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-										.addComponent(cbCdoFamilynames, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoLocations, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoStatusSex, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoRegType, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoAge, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoOccupation, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoPrepieceSuffix)
-										.addComponent(cbCdoRefreshData, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-										.addComponent(cbCdoFirstnames, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-										.addComponent(cbCdoRole, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
-										.addComponent(cbCdoMinMaxMarriage, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(cbCdoDates, GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
-									.addGap(29, 29, 29)
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-											.addComponent(cbCdoFlagEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1, Short.MAX_VALUE)
-											.addComponent(cbCdoScanRemarks, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
-										.addComponent(cbCdoPartsToFullDate, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbCdoDaysSinceBegin, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbCdoFlagPersons, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE)
-										.addComponent(cbCdoFlagRegistrations, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE))
-									.addGap(0, 0, Short.MAX_VALUE)))
-							.addGroup(pLOLCLayout.createParallelGroup()
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addGap(6, 6, 6)
-									.addComponent(jLabel45))
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-										.addComponent(jScrollPane6, GroupLayout.DEFAULT_SIZE, 578, Short.MAX_VALUE)
-										.addComponent(tbLOLClatestOutput, GroupLayout.DEFAULT_SIZE, 578, Short.MAX_VALUE))))
-							.addGap(15, 15, 15))
-				);
-				pLOLCLayout.setVerticalGroup(
-					pLOLCLayout.createParallelGroup()
-						.addGroup(pLOLCLayout.createSequentialGroup()
-							.addContainerGap()
-							.addGroup(pLOLCLayout.createParallelGroup()
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addGap(1, 1, 1)
-									.addComponent(jLabel45))
-								.addComponent(tbLOLCSourceId, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
-								.addComponent(jLabel44))
-							.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-									.addComponent(jScrollPane6, GroupLayout.PREFERRED_SIZE, 568, GroupLayout.PREFERRED_SIZE))
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addGroup(pLOLCLayout.createSequentialGroup()
-											.addGap(14, 14, 14)
-											.addComponent(jLabel4)
-											.addGap(8, 8, 8))
-										.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-											.addComponent(tbLOLCurl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)))
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(jLabel42)
-										.addComponent(tbLOLCuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addComponent(jLabel43, GroupLayout.PREFERRED_SIZE, 17, GroupLayout.PREFERRED_SIZE)
-										.addComponent(tbLOLCpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(label1)
-										.addComponent(tbLOLCrefurl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(label2)
-										.addComponent(tbLOLCrefuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addComponent(label3)
-										.addComponent(tbLOLCrefpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addComponent(label4)
-										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-									.addGap(18, 18, 18)
-									.addComponent(jLabel51)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoRefreshData)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoPrepieceSuffix)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoFirstnames)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoFamilynames)
-										.addComponent(cbCdoPartsToFullDate))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoLocations)
-										.addComponent(cbCdoDaysSinceBegin))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoStatusSex)
-										.addComponent(cbCdoPostTasks))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoRegType)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoOccupation)
-										.addComponent(cbCdoFlagRegistrations))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoAge)
-										.addComponent(cbCdoFlagPersons))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoFlagEmptyRoleRegs)
-										.addComponent(cbCdoRole))
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addComponent(cbCdoDates)
-									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(cbCdoScanRemarks)
-										.addComponent(cbCdoMinMaxMarriage))
-									.addGap(35, 35, 35)
-									.addComponent(btnStartProcessClean)))
-							.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-				);
-			}
-			tpMain.addTab("CLEAN", pLOLC);
-
 			//======== pPrematch ========
 			{
 				pPrematch.setName("jPanel1");
@@ -2068,6 +1724,364 @@ public class ManagerGui extends javax.swing.JFrame
 				);
 			}
 			tpMain.addTab("IDS", pIDS);
+
+			//======== pLOLC ========
+			{
+				pLOLC.setName("pLOLC");
+
+				//---- tbLOLCurl ----
+				tbLOLCurl.setName("tbLOLCurl");
+
+				//---- jLabel4 ----
+				jLabel4.setText("Links Databases URL:");
+				jLabel4.setName("jLabel4");
+
+				//---- tbLOLCuser ----
+				tbLOLCuser.setName("tbLOLCuser");
+
+				//---- tbLOLCpass ----
+				tbLOLCpass.setName("tbLOLCpass");
+
+				//---- jLabel42 ----
+				jLabel42.setText("Links DBs Username:");
+				jLabel42.setName("jLabel42");
+
+				//---- jLabel43 ----
+				jLabel43.setText("Links DBs Password:");
+				jLabel43.setName("jLabel43");
+
+				//---- tbLOLCSourceId ----
+				tbLOLCSourceId.setName("tbLOLCBronNr");
+
+				//---- jLabel44 ----
+				jLabel44.setText("Source Id:");
+				jLabel44.setName("jLabel44");
+
+				//---- btnStartProcessClean ----
+				btnStartProcessClean.setText("Start Cleaning");
+				btnStartProcessClean.setName("bnLOLCstartProcess");
+				btnStartProcessClean.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						bnLOLCstartProcessActionPerformed(e);
+					}
+				});
+
+				//======== jScrollPane6 ========
+				{
+					jScrollPane6.setName("jScrollPane6");
+
+					//---- taLOLCoutput ----
+					taLOLCoutput.setColumns(20);
+					taLOLCoutput.setRows(5);
+					taLOLCoutput.setName("taLOLCoutput");
+					jScrollPane6.setViewportView(taLOLCoutput);
+				}
+
+				//---- jLabel45 ----
+				jLabel45.setFont(new Font("Tahoma", Font.BOLD, 11));
+				jLabel45.setText(" Latest information and Log (below)");
+				jLabel45.setName("jLabel45");
+
+				//---- tbLOLClatestOutput ----
+				tbLOLClatestOutput.setName("tbLOLClatestOutput");
+
+				//---- jLabel51 ----
+				jLabel51.setText("Cleaning Tasks:");
+				jLabel51.setName("jLabel51");
+
+				//---- cbCdoFamilynames ----
+				cbCdoFamilynames.setText("Familynames");
+				cbCdoFamilynames.setName("cbCdoNames");
+
+				//---- cbCdoStatusSex ----
+				cbCdoStatusSex.setText("Civil Status and Sex");
+				cbCdoStatusSex.setName("cbCdoStaatSex");
+
+				//---- cbCdoAge ----
+				cbCdoAge.setText("Age, ARD-1");
+				cbCdoAge.setName("cbCdoAge");
+
+				//---- cbCdoRefreshData ----
+				cbCdoRefreshData.setText("Remove Cleaned Data");
+				cbCdoRefreshData.setName("cbCdoVernieuwen");
+
+				//---- cbCdoRegType ----
+				cbCdoRegType.setText("Registration Type");
+				cbCdoRegType.setName("cbCdoType");
+
+				//---- cbCdoLocations ----
+				cbCdoLocations.setText("Locations");
+				cbCdoLocations.setName("cbCdoLocations");
+
+				//---- cbCdoMinMaxMarriage ----
+				cbCdoMinMaxMarriage.setText("Min Max Marriage");
+				cbCdoMinMaxMarriage.setName("cbLOLCdoMinMaxMarriage");
+
+				//---- cbCdoPartsToFullDate ----
+				cbCdoPartsToFullDate.setText("Parts to Full Date");
+				cbCdoPartsToFullDate.setName("cbLOLCdoPartsToFullDate");
+
+				//---- cbCdoDaysSinceBegin ----
+				cbCdoDaysSinceBegin.setText("Days Since Begin");
+				cbCdoDaysSinceBegin.setName("cbCdoDaysSinceBegin");
+
+				//---- cbCdoPostTasks ----
+				cbCdoPostTasks.setText("Post Tasks");
+				cbCdoPostTasks.setName("cbLOLCdoPostTasks");
+
+				//---- tbLOLCrefurl ----
+				tbLOLCrefurl.setName("tbLOLCrefurl");
+
+				//---- tbLOLCrefuser ----
+				tbLOLCrefuser.setName("tbLOLCrefuser");
+
+				//---- tbLOLCrefpass ----
+				tbLOLCrefpass.setName("tbLOLCrefpass");
+
+				//---- label1 ----
+				label1.setText("Reference Database URL:");
+				label1.setName("label1");
+
+				//---- label2 ----
+				label2.setText("Reference DB Username:");
+				label2.setName("label2");
+
+				//---- label3 ----
+				label3.setText("Reference DB Password:");
+				label3.setName("label3");
+
+				//---- label4 ----
+				label4.setText("Reference DB Name:");
+				label4.setName("label4");
+
+				//---- tbLOLCrefdb ----
+				tbLOLCrefdb.setName("tbLOLCrefdb");
+
+				//---- cbCdoOccupation ----
+				cbCdoOccupation.setText("Occupation");
+				cbCdoOccupation.setName("cbCdoOccupation");
+
+				//---- cbCdoFirstnames ----
+				cbCdoFirstnames.setText("Firstnames");
+				cbCdoFirstnames.setName("cbCdoFirstnames");
+
+				//---- cbCdoPrepieceSuffix ----
+				cbCdoPrepieceSuffix.setText("Prepiece, Suffix");
+				cbCdoPrepieceSuffix.setName("cbCdoPrepieceSuffix");
+
+				//---- cbCdoFlagEmptyRoleRegs ----
+				cbCdoFlagEmptyRoleRegs.setText("Flag Empty Role Reg's");
+				cbCdoFlagEmptyRoleRegs.setEnabled(false);
+				cbCdoFlagEmptyRoleRegs.setVisible(false);
+				cbCdoFlagEmptyRoleRegs.setName("cbCdoFlagEmptyRoleRegs");
+
+				//---- cbCdoFlagPersons ----
+				cbCdoFlagPersons.setText("Flag Person Recs for linksbase");
+				cbCdoFlagPersons.setName("cbCdoFlagPersons");
+
+				//---- cbCdoFlagRegistrations ----
+				cbCdoFlagRegistrations.setText("Flag Registrations for linksbase");
+				cbCdoFlagRegistrations.setName("cbCdoFlagRegistrations");
+
+				//---- cbCdoScanRemarks ----
+				cbCdoScanRemarks.setText("Scan Remarks");
+				cbCdoScanRemarks.setName("cbCdoScanRemarks");
+
+				//---- cbCdoRole ----
+				cbCdoRole.setText("Role, ARD-2");
+				cbCdoRole.setName("cbCdoRole");
+
+				//---- cbCdoDates ----
+				cbCdoDates.setText("Dates, ARD-3");
+				cbCdoDates.setName("cbCdoDates");
+
+				//---- label5 ----
+				label5.setText("Registration maintype:");
+				label5.setName("label5");
+
+				//---- tblOLCrmtype ----
+				tblOLCrmtype.setName("tblOLCrmtype");
+
+				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
+				pLOLC.setLayout(pLOLCLayout);
+				pLOLCLayout.setHorizontalGroup(
+					pLOLCLayout.createParallelGroup()
+						.addGroup(pLOLCLayout.createSequentialGroup()
+							.addContainerGap()
+							.addGroup(pLOLCLayout.createParallelGroup()
+								.addComponent(btnStartProcessClean, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addComponent(cbCdoDates, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoAge, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoOccupation, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoRegType, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoLocations, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoFamilynames, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoFirstnames, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoRefreshData, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE))
+									.addGap(29, 40, Short.MAX_VALUE)
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+											.addComponent(cbCdoFlagEmptyRoleRegs, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
+											.addComponent(cbCdoScanRemarks, GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+										.addComponent(cbCdoPartsToFullDate, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoDaysSinceBegin, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoPostTasks, GroupLayout.PREFERRED_SIZE, 160, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoFlagPersons, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoFlagRegistrations, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoMinMaxMarriage, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)))
+								.addComponent(jLabel51, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+								.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addGroup(pLOLCLayout.createSequentialGroup()
+											.addComponent(label4, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+											.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE))
+										.addGroup(GroupLayout.Alignment.TRAILING, pLOLCLayout.createSequentialGroup()
+											.addGroup(pLOLCLayout.createParallelGroup()
+												.addGroup(pLOLCLayout.createParallelGroup()
+													.addGroup(pLOLCLayout.createSequentialGroup()
+														.addGroup(pLOLCLayout.createParallelGroup()
+															.addComponent(jLabel42, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+															.addComponent(label1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+															.addComponent(label2, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+															.addComponent(label3, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+															.addComponent(jLabel43, GroupLayout.Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+														.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED))
+													.addGroup(pLOLCLayout.createSequentialGroup()
+														.addComponent(jLabel4, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+														.addGap(77, 77, 77))
+													.addGroup(pLOLCLayout.createSequentialGroup()
+														.addComponent(label5, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+														.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)))
+												.addGroup(pLOLCLayout.createSequentialGroup()
+													.addComponent(jLabel44, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
+													.addGap(29, 29, 29)))
+											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+												.addComponent(tblOLCrmtype, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCurl, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCrefurl, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCuser, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCpass, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCSourceId, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE))))
+									.addGap(20, 20, 20))
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addComponent(cbCdoRole, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoStatusSex, GroupLayout.PREFERRED_SIZE, 200, GroupLayout.PREFERRED_SIZE)
+										.addComponent(cbCdoPrepieceSuffix))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 304, Short.MAX_VALUE)))
+							.addGap(6, 6, 6)
+							.addGroup(pLOLCLayout.createParallelGroup()
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, 590, GroupLayout.PREFERRED_SIZE)
+										.addComponent(jLabel45))
+									.addGap(0, 0, Short.MAX_VALUE))
+								.addComponent(jScrollPane6))
+							.addContainerGap())
+				);
+				pLOLCLayout.setVerticalGroup(
+					pLOLCLayout.createParallelGroup()
+						.addGroup(pLOLCLayout.createSequentialGroup()
+							.addGroup(pLOLCLayout.createParallelGroup()
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addGap(13, 13, 13)
+									.addComponent(jLabel45)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addComponent(jScrollPane6, GroupLayout.PREFERRED_SIZE, 568, GroupLayout.PREFERRED_SIZE))
+								.addGroup(pLOLCLayout.createSequentialGroup()
+									.addGap(17, 17, 17)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(jLabel44)
+										.addComponent(tbLOLCSourceId, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(label5)
+										.addComponent(tblOLCrmtype, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(jLabel4)
+										.addComponent(tbLOLCurl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(jLabel42)
+										.addComponent(tbLOLCuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(tbLOLCpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(jLabel43, GroupLayout.PREFERRED_SIZE, 17, GroupLayout.PREFERRED_SIZE))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+										.addComponent(tbLOLCrefurl, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(label1))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(tbLOLCrefuser, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(label2))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(tbLOLCrefpass, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(label3))
+									.addGap(8, 8, 8)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(label4)
+										.addComponent(tbLOLCrefdb, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+									.addGap(18, 18, 18)
+									.addComponent(jLabel51)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoMinMaxMarriage)
+										.addComponent(cbCdoRefreshData))
+									.addGap(7, 7, 7)
+									.addComponent(cbCdoPrepieceSuffix)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoPartsToFullDate)
+										.addComponent(cbCdoFirstnames))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoDaysSinceBegin)
+										.addComponent(cbCdoFamilynames))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoPostTasks)
+										.addComponent(cbCdoLocations))
+									.addGap(7, 7, 7)
+									.addComponent(cbCdoStatusSex)
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoFlagRegistrations)
+										.addComponent(cbCdoRegType))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addComponent(cbCdoFlagPersons)
+										.addComponent(cbCdoOccupation))
+									.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+									.addComponent(cbCdoFlagEmptyRoleRegs)
+									.addGroup(pLOLCLayout.createParallelGroup()
+										.addGroup(pLOLCLayout.createSequentialGroup()
+											.addGap(26, 26, 26)
+											.addComponent(cbCdoRole)
+											.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(cbCdoScanRemarks)
+												.addComponent(cbCdoDates))
+											.addGap(35, 35, 35)
+											.addComponent(btnStartProcessClean))
+										.addGroup(pLOLCLayout.createSequentialGroup()
+											.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+											.addComponent(cbCdoAge)))))
+							.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+				);
+			}
+			tpMain.addTab("CLEAN", pLOLC);
 		}
 
 		GroupLayout contentPaneLayout = new GroupLayout(contentPane);
@@ -3147,6 +3161,34 @@ public class ManagerGui extends javax.swing.JFrame
 	private JTextField tfBILODeleteSource;
 	private JLabel jLabel33;
 	private JCheckBox cbOrunCleaned;
+	private JPanel pPrematch;
+	private JCheckBox cbPdoFrequencyTables;
+	private JCheckBox cbPdoLevenshtein;
+	private JCheckBox cbPdoCreateBaseTable;
+	private JCheckBox cbPdoSplitFirstnames;
+	private JButton btnStartProcessPrematch;
+	private JScrollPane jScrollPane7;
+	private JTextArea taPresult;
+	private JCheckBox cbPdoNamesToNos;
+	private JTextField taPinfo;
+	private JCheckBox cbPdoStandardization;
+	private JCheckBox cbPdoExactmatches;
+	private JPanel pMatch;
+	private JScrollPane scrollPane1;
+	private JTextArea matchTextArea;
+	private JButton btnStartProcessMatch;
+	private JLabel matchdir;
+	private JTextField matchDirectory;
+	private JLabel matchsh;
+	private JTextField matchScript;
+	private JPanel pIDS;
+	private JScrollPane scrollPane2;
+	private JTextArea idsTextArea;
+	private JButton btnStartProcessIds;
+	private JLabel idsdir;
+	private JTextField idsDirectory;
+	private JLabel idssh;
+	private JTextField idsScript;
 	private JPanel pLOLC;
 	private JTextField tbLOLCurl;
 	private JLabel jLabel4;
@@ -3189,33 +3231,7 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoScanRemarks;
 	private JCheckBox cbCdoRole;
 	private JCheckBox cbCdoDates;
-	private JPanel pPrematch;
-	private JCheckBox cbPdoFrequencyTables;
-	private JCheckBox cbPdoLevenshtein;
-	private JCheckBox cbPdoCreateBaseTable;
-	private JCheckBox cbPdoSplitFirstnames;
-	private JButton btnStartProcessPrematch;
-	private JScrollPane jScrollPane7;
-	private JTextArea taPresult;
-	private JCheckBox cbPdoNamesToNos;
-	private JTextField taPinfo;
-	private JCheckBox cbPdoStandardization;
-	private JCheckBox cbPdoExactmatches;
-	private JPanel pMatch;
-	private JScrollPane scrollPane1;
-	private JTextArea matchTextArea;
-	private JButton btnStartProcessMatch;
-	private JLabel matchdir;
-	private JTextField matchDirectory;
-	private JLabel matchsh;
-	private JTextField matchScript;
-	private JPanel pIDS;
-	private JScrollPane scrollPane2;
-	private JTextArea idsTextArea;
-	private JButton btnStartProcessIds;
-	private JLabel idsdir;
-	private JTextField idsDirectory;
-	private JLabel idssh;
-	private JTextField idsScript;
+	private JLabel label5;
+	private JTextField tblOLCrmtype;
     // End of variables declaration//GEN-END:variables
 }
