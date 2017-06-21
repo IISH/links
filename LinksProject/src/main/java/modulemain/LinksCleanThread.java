@@ -136,8 +136,11 @@ public class LinksCleanThread extends Thread
     private String pass = "";
 
     private String sourceIdsGui;
+    private String RMtypesGui;
+    private String RMtype_str;
 
     private int[] sourceList;                   // either sourceListAvail, or [sourceId] from GUI
+    private int   RMtype;                       // a list is currently not supported
 
     private String endl = ". OK.";              // ".";
 
@@ -168,6 +171,7 @@ public class LinksCleanThread extends Thread
 
         this.plog = opts.getLogger();
         this.sourceIdsGui = opts.getSourceIds();
+        this.RMtypesGui   = opts.getRMtypes();
 
         this.ref_url  = opts.getDb_ref_url();
         this.ref_user = opts.getDb_ref_user();
@@ -238,7 +242,7 @@ public class LinksCleanThread extends Thread
                 {
                     //elapsedShowMessage( String.format( "Thread id %02d; Pre-loading all reference tables", threadId ), threadStart, System.currentTimeMillis() );
 
-                    String msg = String.format( "Thread id %02d; CleaningThread/run(): running for source %s", threadId, source );
+                    String msg = String.format( "Thread id %02d; CleaningThread/run(): running for source %s, rmtype %s", threadId, source, rmtype  );
                     plog.show( msg ); showMessage( msg, false, true );
 
                     doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
@@ -274,8 +278,6 @@ public class LinksCleanThread extends Thread
                     doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
                     doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
-
-                    //doFlagEmptyRoleRecs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
                 }
@@ -343,6 +345,20 @@ public class LinksCleanThread extends Thread
             for( int i : sourceList ) { s = s + i + " "; }
             showMessage( s, false, true );
 
+            // we currently only support a single rmtype, not a list
+            try {
+                int rmtype_int = Integer.parseInt( RMtypesGui );
+                rmtype = RMtypesGui;
+            }
+            catch( Exception ex ) {
+                rmtype = "";
+                msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+            msg = String.format( "Thread id %02d; rmtype: %s", mainThreadId, rmtype );
+            showMessage( msg, false, true );
+
             // links_general.ref_report contains about 75 error definitions,
             // to be used when the normalization encounters errors
             showMessage( String.format( "Thread id %02d; Loading report table", mainThreadId ), false, true );
@@ -371,7 +387,7 @@ public class LinksCleanThread extends Thread
                 almmLocation     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
               //almmRegisType    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
                 almmOccupation   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
-              // almmReport  : see above, also loaded for single-threaded
+              //almmReport  : see above, also loaded for single-threaded
                 almmRole         = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
                 almmCivilstatus  = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
                 almmSex          = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
@@ -457,8 +473,6 @@ public class LinksCleanThread extends Thread
                     doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
 
                     doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
-
-                    //doFlagEmptyRoleRecs( opts.isDbgFlagEmptyRoleRegs(), opts.isDoFlagEmptyRoleRegs(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
 
                     doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
 
@@ -1027,7 +1041,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRenewData for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doRenewData for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -1130,7 +1144,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doPrepieceSuffix for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doPrepieceSuffix for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -1196,7 +1210,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doFirstnames for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFirstnames for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -1310,7 +1324,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doFamilynames for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFamilynames for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -1438,7 +1452,6 @@ public class LinksCleanThread extends Thread
             ResultSet rsFirstName = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // get total
             rsFirstName.last();
             int total = rsFirstName.getRow();
             rsFirstName.beforeFirst();
@@ -1447,7 +1460,7 @@ public class LinksCleanThread extends Thread
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + " of " + total, true, true );
+                    showMessage( count + "-of-" + total, true, true );
                     stepstate += count_step;
                 }
 
@@ -1794,7 +1807,6 @@ public class LinksCleanThread extends Thread
             ResultSet rsFamilyname = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // get total
             rsFamilyname.last();
             int total = rsFamilyname.getRow();
             rsFamilyname.beforeFirst();
@@ -1803,7 +1815,7 @@ public class LinksCleanThread extends Thread
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + " of " + total, true, true );
+                    showMessage( count + "-of-" + total, true, true );
                     stepstate += count_step;
                 }
 
@@ -2067,7 +2079,6 @@ public class LinksCleanThread extends Thread
             ResultSet rsPrepiece = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // get total
             rsPrepiece.last();
             int total = rsPrepiece.getRow();
             rsPrepiece.beforeFirst();
@@ -2082,7 +2093,7 @@ public class LinksCleanThread extends Thread
                 count++;
 
                 if( count == stepstate ) {
-                    showMessage( count + " of " + total, true, true );
+                    showMessage( count + "-of-" + total, true, true );
                     stepstate += count_step;
                 }
 
@@ -2199,7 +2210,6 @@ public class LinksCleanThread extends Thread
             ResultSet rsSuffix = con.createStatement().executeQuery( selectQuery );
             con.createStatement().close();
 
-            // get total
             rsSuffix.last();
             int total = rsSuffix.getRow();
             rsSuffix.beforeFirst();
@@ -2208,7 +2218,7 @@ public class LinksCleanThread extends Thread
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + " of " + total, true, true );
+                    showMessage( count + "-of-" + total, true, true );
                     stepstate += count_step;
                 }
 
@@ -2708,7 +2718,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doLocations for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doLocations for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -3261,7 +3271,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doStatusSex for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doStatusSex for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -3544,7 +3554,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRegistrationType for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doRegistrationType for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -3680,7 +3690,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doOccupation for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doOccupation for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -3878,7 +3888,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doAge for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doAge for source %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -3900,17 +3910,17 @@ public class LinksCleanThread extends Thread
         showMessage( msg, false, true );
 
         long timeSAL = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        standardAgeLiteral( debug, almmLitAge, source );
-        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s ", threadId, source );
+        standardAgeLiteral( debug, almmLitAge, source, rmtype );
+        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s, rmtype: %s ", threadId, source, rmtype );
         elapsedShowMessage( msg, timeSAL, System.currentTimeMillis() );
 
         long timeSA = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardAge for source: %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardAge for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        standardAge( debug, source );
-        msg = String.format( "Thread id %02d; Processing standardAge for source: %s ", threadId, source );
+        standardAge( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Processing standardAge for source: %s, rmtype: %s ", threadId, source, rmtype );
         elapsedShowMessage( msg, timeSA, System.currentTimeMillis() );
 
         msg = String.format( "Thread id %02d; Updating ref_age: ref_age", threadId );
@@ -3939,7 +3949,7 @@ public class LinksCleanThread extends Thread
      /**
      * @param source
      */
-    public void standardAgeLiteral( boolean debug, TableToArrayListMultimap almmLitAge, String source )
+    public void standardAgeLiteral( boolean debug, TableToArrayListMultimap almmLitAge, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
@@ -3947,16 +3957,23 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , id_registration , role, age_literal , age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_person , id_registration , role, age_literal , age_year , age_month , age_week , age_day ";
+            selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardAgeLiteral, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -4193,7 +4210,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardAge( boolean debug, String source )
+    public void standardAge( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
@@ -4201,16 +4218,23 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , age_year , age_month , age_week , age_day FROM links_original.person_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_person , age_year , age_month , age_week , age_day ";
+            selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardAge, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -4308,7 +4332,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doRole for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doRole for source: %s, rmtype %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -4332,7 +4356,7 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Processing standardRole for source: %s ...", threadId, source );
         showMessage( msg, false, true );
 
-        standardRole( debug, almmRole, source );
+        standardRole( debug, almmRole, source, rmtype );
 
         while( almmRole.isBusy().get() ) {
             plog.show( "No permission to update ref_role: Waiting 60 seconds" );
@@ -4350,7 +4374,7 @@ public class LinksCleanThread extends Thread
 
         msg = String.format( "Thread id %02d; Processing standardAlive for source: %s ...", threadId, source );
         showMessage( msg, false, true );
-        standardAlive( debug, source );
+        standardAlive( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -4362,7 +4386,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    private void standardRole( boolean debug, TableToArrayListMultimap almmRole, String source )
+    private void standardRole( boolean debug, TableToArrayListMultimap almmRole, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         
@@ -4373,15 +4397,23 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , role FROM links_original.person_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_person , role ";
+            selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardRole, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -4468,7 +4500,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardAlive( boolean debug, String source )
+    public void standardAlive( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         
@@ -4479,16 +4511,23 @@ public class LinksCleanThread extends Thread
         try
         {
             //String selectQuery = "SELECT id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
-            String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year FROM links_cleaned.person_c WHERE id_source = " + source;
-            if( debug ) { showMessage( "standardAlive() " + selectQuery, false, true ); }
+            String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year ";
+            selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconCleaned.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardAlive, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -4556,7 +4595,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doDates for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doDates for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -4575,34 +4614,34 @@ public class LinksCleanThread extends Thread
         ///*
         ts = System.currentTimeMillis();
         String type = "birth";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
         showMessage( msg, false, true );
-        standardDate( debug, source, type );
-        msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
+        standardDate( debug, source, type, rmtype );
+        msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
         ts = System.currentTimeMillis();
         type = "mar";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
         showMessage( msg, false, true );
-        standardDate( debug, source, type );
-        msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
+        standardDate( debug, source, type, rmtype );
+        msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
         ts = System.currentTimeMillis();
         type = "death";
-        msg = String.format( "Thread id %02d; Processing standardDate for source: %s for: %s ...", threadId, source, type );
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
         showMessage( msg, false, true );
-        standardDate( debug, source, type );
-        msg = String.format( "Thread id %02d; Processing standard dates ", threadId );
+        standardDate( debug, source, type, rmtype );
+        msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
 
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        standardRegistrationDate( debug, source );
-        msg = String.format( "Thread id %02d; Processing standardRegistrationDate ", threadId );
+        standardRegistrationDate( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
@@ -4611,24 +4650,24 @@ public class LinksCleanThread extends Thread
         ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagBirthDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s ...", threadId, source );
+        flagBirthDate( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagMarriageDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s ...", threadId, source );
+        flagMarriageDate( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagDeathDate( debug, source );
-        msg = String.format( "Thread id %02d; Flagging empty dates ", threadId );
+        flagDeathDate( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Flagging empty dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
         ///*
         ts = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing minMaxValidDate for source: %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; Processing minMaxDateValid for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        minMaxValidDate( debug, source );
-        msg = String.format( "Thread id %02d; Processing minMaxValidDate ", threadId );
+        minMaxDateValid( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
@@ -4638,8 +4677,8 @@ public class LinksCleanThread extends Thread
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateMain for source: %s ...", threadId, source );
         showMessage( msg, false, true );
-        minMaxDateMain( debug, source );
-        msg = String.format( "Thread id %02d; Processing minMaxDateMain ", threadId );
+        minMaxDateMain( debug, source, rmtype );
+        msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
@@ -4654,7 +4693,7 @@ public class LinksCleanThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void minMaxDateMain( boolean debug, String source ) throws Exception
+    public void minMaxDateMain( boolean debug, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -4690,10 +4729,8 @@ public class LinksCleanThread extends Thread
             + " WHERE person_c.id_registration = registration_c.id_registration"
             + " AND links_cleaned.person_c.id_source = " + source;
 
-        if( debug ) {
-            showMessage( "minMaxDateMain()", false, true );
-            //showMessage( startQuery, false, true );
-        }
+        if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( startQuery, false, true ); }
 
         int id_registration = -1;   // want to show it when exception occurs
         int id_person = -1;         // want to show it when exception occurs
@@ -4702,7 +4739,6 @@ public class LinksCleanThread extends Thread
         {
             ResultSet rsPersons = dbconCleaned.runQueryWithResult( startQuery );            // Run person query
 
-            // Count hits
             rsPersons.last();
             int total = rsPersons.getRow();
             rsPersons.beforeFirst();
@@ -4716,7 +4752,9 @@ public class LinksCleanThread extends Thread
                 count++;
 
                 if( count == stepstate ) {
-                    showMessage( count + " of " + total, true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    msg = String.format( "Thread id %02d, minMaxDateMain, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -5814,7 +5852,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardRegistrationDate( boolean debug, String source )
+    public void standardRegistrationDate( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         
@@ -5827,14 +5865,21 @@ public class LinksCleanThread extends Thread
         {
             String query_r = "SELECT id_registration, registration_maintype, registration_date, registration_day, registration_month, registration_year ";
             query_r += "FROM registration_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( query_r, false, true ); }
 
             ResultSet rs_r = dbconOriginal.runQueryWithResult( query_r );
+            rs_r.last();
+            int total = rs_r.getRow();
+            rs_r.beforeFirst();
 
             while( rs_r.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardRegistrationDate, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -6091,7 +6136,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param type      // "birth", "mar", or "death"
      */
-    public void standardDate( boolean debug, String source, String type )
+    public void standardDate( boolean debug, String source, String type, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -6102,18 +6147,24 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String startQuery = "SELECT id_person , id_source , " + type + "_date , "
-                + type + "_day , " + type + "_month , " + type + "_year "
-                + " FROM person_o WHERE id_source = " + source;
+            String startQuery = "SELECT id_person , id_source ";
+            startQuery += String.format(", %s_date , %s_day , %s_month , %s_year ", type, type, type, type );
+            startQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( startQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( startQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
-                // GUI info
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardDate %s, %d-of-%d (%d%%)", threadId, type, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -6198,8 +6249,10 @@ public class LinksCleanThread extends Thread
      * if the date is valid, set the min en max values of date, year, month, day equal to the given values
      * do this for birth, marriage and death
      */
-    private void minMaxValidDate( boolean debug, String source ) throws Exception
+    private void minMaxDateValid( boolean debug, String source, String rmtype ) throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         String q1 = ""
             + "UPDATE person_c "
             + "SET "
@@ -6214,6 +6267,8 @@ public class LinksCleanThread extends Thread
             + "WHERE "
             + "birth_date_valid = 1 OR LEFT(stillbirth, 1) = 'y' "
             + "AND links_cleaned.person_c.id_source = " + source;
+
+        if ( ! rmtype.isEmpty() ) { q1 += " AND registration_maintype = " + rmtype; }
 
         String q2 = ""
             + "UPDATE person_c "
@@ -6230,6 +6285,8 @@ public class LinksCleanThread extends Thread
             + "mar_date_valid = 1 "
             + "AND links_cleaned.person_c.id_source = " + source;
 
+        if ( ! rmtype.isEmpty() ) { q2 += " AND registration_maintype = " + rmtype; }
+
         String q3 = ""
             + "UPDATE person_c "
             + "SET "
@@ -6245,10 +6302,21 @@ public class LinksCleanThread extends Thread
             + "death_date_valid = 1 "
             + "AND links_cleaned.person_c.id_source = " + source;
 
+        if ( ! rmtype.isEmpty() ) { q3 += " AND registration_maintype = " + rmtype; }
+
+
+        if( debug ) { showMessage( q1, false, true ); }
+        else { showMessage( String.format( "Thread id %02d; 1-of-3, minMaxValidDate", threadId ), false, true ); }
         dbconCleaned.runQuery( q1 );
+
+        if( debug ) { showMessage( q2, false, true ); }
+        else { showMessage( String.format( "Thread id %02d; 2-of-3, minMaxValidDate", threadId ), false, true ); }
         dbconCleaned.runQuery( q2 );
+
+        if( debug ) { showMessage( q3, false, true ); }
+        else { showMessage( String.format( "Thread id %02d; 3-of-3, minMaxValidDate", threadId ), false, true ); }
         dbconCleaned.runQuery( q3 );
-    } // minMaxValidDate
+    } // minMaxDateValid
 
 
     /**
@@ -6369,7 +6437,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagBirthDate( boolean debug, String source )
+    public void flagBirthDate( boolean debug, String source, String rmtype )
     {
         // birth_date_flag is not used elsewhere in the cleaning.
         // In standardDate() birth_date_valid is set to either 1 (valid birth date) or 0 (invalid birth date)
@@ -6436,6 +6504,10 @@ public class LinksCleanThread extends Thread
                 long ts = System.currentTimeMillis();
                 int flag = nq;
                 nq++;
+
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int nrec = dbconCleaned.runQueryUpdate( query );
                 String msg = String.format( "Thread id %02d; query %d-of-%d, %d flags set to %d", threadId, nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
@@ -6454,7 +6526,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagMarriageDate( boolean debug, String source )
+    public void flagMarriageDate( boolean debug, String source, String rmtype )
     {
         // mar_date_flag is not used elsewhere in the cleaning.
         // In standardDate() mar_date_valid is set to either 1 (valid mar date) or 0 (invalid mar date)
@@ -6521,6 +6593,10 @@ public class LinksCleanThread extends Thread
                 long ts = System.currentTimeMillis();
                 int flag = nq;
                 nq++;
+
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int nrec = dbconCleaned.runQueryUpdate( query );
                 String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
@@ -6539,7 +6615,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagDeathDate( boolean debug, String source )
+    public void flagDeathDate( boolean debug, String source, String rmtype )
     {
         // death_date_flag is not used elsewhere in the cleaning.
         // In standardDate() death_date_valid is set to either 1 (valid death date) or 0 (invalid death date)
@@ -6606,6 +6682,10 @@ public class LinksCleanThread extends Thread
                 long ts = System.currentTimeMillis();
                 int flag = nq;
                 nq++;
+
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int nrec = dbconCleaned.runQueryUpdate( query );
                 String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
@@ -6631,7 +6711,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doMinMaxMarriage for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doMinMaxMarriage for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -6647,7 +6727,7 @@ public class LinksCleanThread extends Thread
             showTimingMessage( String.format( "Thread id %02d; Loaded MarriageYear reference table", threadId ), start );
         //}
 
-        minMaxMarriageYear( debug, almmMarriageYear, source );
+        minMaxMarriageYear( debug, almmMarriageYear, source, rmtype );
 
         //if( ! multithreaded ) {
             almmMarriageYear.free();
@@ -6664,7 +6744,7 @@ public class LinksCleanThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void minMaxMarriageYear( boolean debug, TableToArrayListMultimap almmMarriageYear, String source )
+    private void minMaxMarriageYear( boolean debug, TableToArrayListMultimap almmMarriageYear, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -6686,6 +6766,7 @@ public class LinksCleanThread extends Thread
             + " FROM person_c"
             + " WHERE id_source = " + source;
 
+        if ( ! rmtype.isEmpty() ) { selectQueryA += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( "standardMinMaxMarriageYear() " + selectQueryA, false, true ); }
 
         try {
@@ -6907,7 +6988,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doPartsToFullDate for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doPartsToFullDate for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -6917,16 +6998,16 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing partsToFullDate for source: %s ...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing partsToFullDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        partsToFullDate(source);
+        partsToFullDate( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doPartsToFullDate
 
 
-    private void partsToFullDate( String source )
+    private void partsToFullDate( boolean debug, String source, String rmtype )
     {
         /*
         Notice: the date components from person_c are INTs.
@@ -6954,13 +7035,16 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         String query = "UPDATE links_cleaned.person_c SET "
-                + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
-                + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
-                + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
-                + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
-                + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max ,   '-' , links_cleaned.person_c.mar_month_max ,   '-' , links_cleaned.person_c.mar_year_max ) ,"
-                + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) "
-                + "WHERE id_source = " + source;
+            + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
+            + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
+            + "links_cleaned.person_c.death_date_min  = CONCAT( links_cleaned.person_c.death_day_min , '-' , links_cleaned.person_c.death_month_min , '-' , links_cleaned.person_c.death_year_min ) ,"
+            + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
+            + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max ,   '-' , links_cleaned.person_c.mar_month_max ,   '-' , links_cleaned.person_c.mar_year_max ) ,"
+            + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) "
+            + "WHERE id_source = " + source;
+
+        if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( query, false, true ); }
 
         try { dbconCleaned.runQuery( query ); }
         catch( Exception ex ) {
@@ -6982,7 +7066,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doDaysSinceBegin for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doDaysSinceBegin for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7169,7 +7253,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doPostTasks for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doPostTasks for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7319,7 +7403,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doFlagRegistrations for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagRegistrations for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7394,7 +7478,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doFlagEmptyDateRegs for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagEmptyDateRegs for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -8461,7 +8545,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doScanRemarks for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doScanRemarks for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }

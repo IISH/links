@@ -66,7 +66,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-12-Apr-2017 Latest change
+ * FL-21-Jun-2017 rmtype from gui
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -85,7 +85,6 @@ public class ManagerGui extends javax.swing.JFrame
 	private boolean use_links_logs = true;
 
     private String max_threads_simul = "";
-    private String rmtype = "";
 
     private String dbgRenewData           = "";
     private String dbgPrepieceSuffix      = "";
@@ -250,7 +249,7 @@ public class ManagerGui extends javax.swing.JFrame
         getContentPane().revalidate();
         getContentPane().repaint();
 
-        //tpMain.setSelectedIndex( 4 );       // select the Cleaned tab
+        tpMain.setSelectedIndex( 3 );       // select the Cleaned tab
 
         // disable the first 4 tabs because they are no longer used (Genlias only)
         //tpMain.setEnabledAt( 0, false );
@@ -452,7 +451,7 @@ public class ManagerGui extends javax.swing.JFrame
 		cbCdoRole = new JCheckBox();
 		cbCdoDates = new JCheckBox();
 		label5 = new JLabel();
-		tblOLCrmtype = new JTextField();
+		tbLOLCrmtype = new JTextField();
 
 		//======== this ========
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -1900,8 +1899,8 @@ public class ManagerGui extends javax.swing.JFrame
 				label5.setText("Registration maintype:");
 				label5.setName("label5");
 
-				//---- tblOLCrmtype ----
-				tblOLCrmtype.setName("tblOLCrmtype");
+				//---- tbLOLCrmtype ----
+				tbLOLCrmtype.setName("tbLOLCrmtype");
 
 				GroupLayout pLOLCLayout = new GroupLayout(pLOLC);
 				pLOLC.setLayout(pLOLCLayout);
@@ -1960,7 +1959,7 @@ public class ManagerGui extends javax.swing.JFrame
 													.addComponent(jLabel44, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
 													.addGap(29, 29, 29)))
 											.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-												.addComponent(tblOLCrmtype, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+												.addComponent(tbLOLCrmtype, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
 												.addComponent(tbLOLCurl, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
 												.addComponent(tbLOLCrefpass, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
 												.addComponent(tbLOLCrefuser, GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
@@ -2004,7 +2003,7 @@ public class ManagerGui extends javax.swing.JFrame
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(label5)
-										.addComponent(tblOLCrmtype, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+										.addComponent(tbLOLCrmtype, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
 									.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 										.addComponent(jLabel4)
@@ -2145,11 +2144,15 @@ public class ManagerGui extends javax.swing.JFrame
 
         String sourceId = properties.getProperty( "tbLOLCSourceId" );
         if( sourceId == null ) { sourceId = ""; }
-        if( sourceId.isEmpty() ) { System.out.println( "sourceId not specified" ); }
+        if( sourceId.isEmpty() ) { System.out.println( "tbLOLCSourceId not specified" ); }
         else { System.out.println( "sourceId: " + sourceId ); }
         tbLOLCSourceId.setText( sourceId );
 
-        rmtype = properties.getProperty( "tbRegMaintype " );
+        String RMtypes = properties.getProperty( "tbLOLCrmtype" );
+        if( RMtypes == null ) { RMtypes = ""; }
+        if( RMtypes.isEmpty() ) { System.out.println( "tbLOLCrmtype not specified" ); }
+        else { System.out.println( "RMtypes: " + RMtypes ); }
+        tbLOLCrmtype.setText( RMtypes );
 
         String ref_url  = properties.getProperty( "mysql_hsnref_hosturl" );
         String ref_user = properties.getProperty( "mysql_hsnref_username" );
@@ -2862,6 +2865,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 
         String sourceIds = tbLOLCSourceId.getText();
+        String RMtypes   = tbLOLCrmtype.getText();
 
         String db_url  = tbLOLCurl.getText();      // from Tab Cleaned
         String db_user = tbLOLCuser.getText();     // from Tab Cleaned
@@ -2874,6 +2878,7 @@ public class ManagerGui extends javax.swing.JFrame
 
         opts.setLogger( plog );
         opts.setSourceIds( sourceIds );
+        opts.setRMtypes( RMtypes );
 
         opts.setDb_ref_url(  db_ref_url );
         opts.setDb_ref_user( db_ref_user );
@@ -3023,7 +3028,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "12-Apr-2017 11:15";
+            String timestamp1 = "21-Jun-2017 12:44";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try
@@ -3232,6 +3237,6 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoRole;
 	private JCheckBox cbCdoDates;
 	private JLabel label5;
-	private JTextField tblOLCrmtype;
+	private JTextField tbLOLCrmtype;
     // End of variables declaration//GEN-END:variables
 }

@@ -33,7 +33,7 @@ import general.PrintLogger;
  * FL-22-Jan-2015 int sourceId -> String sourceIds
  * FL-05-Feb-2015 RemoveDuplicates
  * FL-07-Nov-2016 Remove -> Flag
- * FL-06-Mar-2017 Latest change
+ * FL-21-Jun-2017 RMtypes
  */
 public class Options
 {
@@ -44,6 +44,7 @@ public class Options
     private int max_threads_simul = 1;
 
     private String sourceIds;
+    private String RMtypes;
 
     // db options
     private String db_ref_url;
@@ -128,13 +129,13 @@ public class Options
     public boolean getUseLinksLogs() { return use_links_logs; }
 
     public void setLogger( PrintLogger plog ) { this.plog = plog; }
-
     public PrintLogger getLogger() { return plog; }
 
-
     public void setSourceIds( String sourceIds ) { this.sourceIds = sourceIds; }
-
     public String getSourceIds() { return sourceIds; }
+
+    public void setRMtypes( String RMtypes ) { this.RMtypes = RMtypes; }
+    public String getRMtypes() { return RMtypes; }
 
 
     // db options
