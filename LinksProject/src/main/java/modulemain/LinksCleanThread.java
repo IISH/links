@@ -3099,7 +3099,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagBirthLocation( boolean debug, String source )
+    public void flagBirthLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3130,6 +3130,9 @@ public class LinksCleanThread extends Thread
         {
             try
             {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
@@ -3154,7 +3157,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagMarriageLocation( boolean debug, String source )
+    public void flagMarriageLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3185,6 +3188,9 @@ public class LinksCleanThread extends Thread
         {
             try
             {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
@@ -3209,7 +3215,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void flagDeathLocation( boolean debug, String source )
+    public void flagDeathLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3240,6 +3246,9 @@ public class LinksCleanThread extends Thread
         {
             try
             {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
                 String msg = "";
                 if( n == 0 )
@@ -7076,16 +7085,16 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing daysSinceBegin for source: %s ...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing daysSinceBegin for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        daysSinceBegin( debug, source );
+        daysSinceBegin( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDaysSinceBegin
 
 
-    private void daysSinceBegin( boolean debug, String source )
+    private void daysSinceBegin( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -7093,6 +7102,9 @@ public class LinksCleanThread extends Thread
             + "registration_date = NULL "
             + "WHERE ( registration_date = '00-00-0000' OR registration_date = '0000-00-00' ) "
             + "AND id_source = " + source;
+
+        if ( ! rmtype.isEmpty() ) { qRclean += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( qRclean, false, true ); }
 
         if( debug ) { showMessage( qRclean, false, true ); }
         else {
@@ -7123,6 +7135,16 @@ public class LinksCleanThread extends Thread
         queryP4 += "AND id_source = " + source;
         queryP5 += "AND id_source = " + source;
         queryP6 += "AND id_source = " + source;
+
+        if ( ! rmtype.isEmpty() ) {
+            queryP1 += " AND registration_maintype = " + rmtype;
+            queryP2 += " AND registration_maintype = " + rmtype;
+            queryP3 += " AND registration_maintype = " + rmtype;
+            queryP4 += " AND registration_maintype = " + rmtype;
+            queryP5 += " AND registration_maintype = " + rmtype;
+            queryP6 += " AND registration_maintype = " + rmtype;
+        }
+
 
         // registration_date strings '01-01-0000' give a negative DATEDIFF, which gives an exception
         // because the column links_cleaned.registration_days is defined as unsigned.
@@ -7189,6 +7211,8 @@ public class LinksCleanThread extends Thread
             showMessage( String.format( "Thread id %02d; 7-of-7: registration_days", threadId ), false, true );
 
             String queryS = "SELECT id_registration, registration_date FROM registration_c WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { queryS += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( queryS, false, true ); }
 
             ResultSet rs_s = dbconCleaned.runQueryWithResult( queryS );
 
@@ -7218,6 +7242,8 @@ public class LinksCleanThread extends Thread
                     + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
                     + "AND id_source = " + source + " "
                     + "AND id_registration = " + id_registration;
+
+                if ( ! rmtype.isEmpty() ) { queryU += " AND registration_maintype = " + rmtype; }
 
                  try {
                     int rowsAffected = dbconCleaned.runQueryUpdate( queryU );
@@ -7263,9 +7289,9 @@ public class LinksCleanThread extends Thread
         long start = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        String msg = String.format( "Thread id %02d; Processing postTasks for source: %s ...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing postTasks for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        postTasks( debug, source );
+        postTasks( debug, source, rmtype );
 
         elapsedShowMessage( funcname, start, System.currentTimeMillis() );
         showMessage_nl();
@@ -7275,23 +7301,23 @@ public class LinksCleanThread extends Thread
         // doRole() has been run. The calling of these functions has been (temporarily?) moved from doLocations() to
         // here in doPostTasks(). (The function bodies were left in the Locations segment.)
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagBirthLocation for source %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; flagBirthLocation for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagBirthLocation( debug, source );
+        flagBirthLocation( debug, source, rmtype );
         msg = String.format( "Thread id %02d; flagBirthLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagMarriageLocation for source %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; flagMarriageLocation for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagMarriageLocation( debug, source );
+        flagMarriageLocation( debug, source, rmtype );
         msg = String.format( "Thread id %02d; flagMarriageLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; flagDeathLocation for source %s ...", threadId, source );
+        msg = String.format( "Thread id %02d; flagDeathLocation for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagDeathLocation( debug, source );
+        flagDeathLocation( debug, source, rmtype );
         msg = String.format( "Thread id %02d; flagDeathLocation ", threadId );
         showTimingMessage( msg, start );
         showMessage_nl();
@@ -7304,7 +7330,7 @@ public class LinksCleanThread extends Thread
      * @param source
      * @throws Exception
      */
-    private void postTasks( boolean debug, String source )
+    private void postTasks( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7360,6 +7386,7 @@ public class LinksCleanThread extends Thread
         {
             n++;
 
+            if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
             if( debug ) { System.out.println( query ); }
 
             String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries.length );
@@ -7382,7 +7409,9 @@ public class LinksCleanThread extends Thread
             + "AND person_c.role = 10 "
             + "AND person_c.id_source = " + source;
 
+        if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
         if( debug ) { System.out.println( query ); }
+
         String msg = String.format( "Thread id %02d; running stillbirth birth_date query ...", threadId  );
         showMessage( msg, false, true );
         int count = dbconCleaned.runQueryUpdate( query );
@@ -7412,21 +7441,21 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        String msg = String.format( "Thread id %02d; Clear Previous Registration Flags ...", threadId );
+        String msg = String.format( "Thread id %02d; Clear Previous Registration Flags for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        clearFlagDuplicateRegs( debug, source );
+        clearFlagDuplicateRegs( debug, source, rmtype );
 
-        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations ...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagDuplicateRegs( debug, source );
+        flagDuplicateRegs( debug, source, rmtype );
 
-        msg = String.format( "Thread id %02d; Flagging Empty Date Registrations ...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Empty Date Registrations for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagEmptyDateRegs( debug, source );
+        flagEmptyDateRegs( debug, source, rmtype );
 
-        msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs ...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagEmptyDaysSinceBegin( debug, source );
+        flagEmptyDaysSinceBegin( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -7505,7 +7534,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void flagEmptyDateRegs( boolean debug, String source )
+    private void flagEmptyDateRegs( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7516,6 +7545,7 @@ public class LinksCleanThread extends Thread
             + " WHERE id_source = " + source
             + " AND ( registration_date IS NULL OR registration_date = '' );";
 
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRegDate = 0;
@@ -7620,7 +7650,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void flagEmptyDaysSinceBegin( boolean debug, String source )
+    private void flagEmptyDaysSinceBegin( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7631,6 +7661,7 @@ public class LinksCleanThread extends Thread
             + " WHERE id_source = " + source
             + " AND ( registration_days IS NULL OR registration_days = '' );";
 
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRegDate = 0;
@@ -7930,13 +7961,17 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void clearFlagDuplicateRegs( boolean debug, String source )
+    private void clearFlagDuplicateRegs( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
         // Clear previous flag values for given source
         String clearQuery_r = "UPDATE registration_c SET not_linksbase = NULL WHERE id_source = " + source + ";";
+
+        if ( ! rmtype.isEmpty() ) { clearQuery_r += " AND registration_maintype = " + rmtype; }
+        if( debug ) { System.out.println( clearQuery_r ); }
+
         //String clearQuery_r = "UPDATE registration_c SET not_linksbase = '0001' WHERE id_source = " + source + ";";   // test updates
         int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
 
@@ -7949,7 +7984,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void flagDuplicateRegs( boolean debug, String source )
+    private void flagDuplicateRegs( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7972,6 +8007,7 @@ public class LinksCleanThread extends Thread
             + "HAVING cnt >= " + min_cnt + " "
             + "ORDER BY cnt DESC;";
 
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nDuplicates = 0;
