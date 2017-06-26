@@ -23,7 +23,7 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
- * FL-21-Jun-2016 Latest change
+ * FL-26-Jun-2017 Latest change
  */
 public class TableToArrayListMultimap
 {
@@ -55,8 +55,9 @@ public class TableToArrayListMultimap
     int standardValOff;         // offset for "standard" value in value list
     int standardCodeValOff;     // offset for "standard_code" value in value list
 
-    private MySqlConnector conn_read;
-    private MySqlConnector conn_write;
+    // conn_read only used in constructor
+    // writing only used in update()
+    private MySqlConnector conn_read  = null;
 
     ResultSet rs;
 
@@ -66,14 +67,12 @@ public class TableToArrayListMultimap
      * "con_write" is only used in the 2 functions updateTable() and updateTableWithCode().
      *
      * @param conn_read         // "conn_read"  is normally conGeneral, i.e. the local links_general db
-     * @param conn_write        // "conn_write" is normally conOr, i.e. the remote links_general db (on node-030)
      * @param tableName
      * @param keyColumn
      */
     public TableToArrayListMultimap
     (
         MySqlConnector conn_read,
-        MySqlConnector conn_write,
         String tableName,
         String keyColumn,
         String standardColumn
@@ -81,7 +80,6 @@ public class TableToArrayListMultimap
     throws Exception
     {
         this.conn_read      = conn_read;
-        this.conn_write     = conn_write;
         this.tableName      = tableName;
         this.keyColumn      = keyColumn;
         this.standardColumn = standardColumn;
@@ -90,6 +88,8 @@ public class TableToArrayListMultimap
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
 
         update_busy.set( false );
+
+        //MySqlConnector dbconRefRead = new MySqlConnector( url, "links_general", user, pass );
 
         oldMap = ArrayListMultimap.create();
         newSet = HashMultiset.create();
@@ -173,6 +173,8 @@ public class TableToArrayListMultimap
 
         if( debug ) { tableInfo(); }
         //contentsOld();
+
+
 
     } // TabletoArrayListMultiMap
 
@@ -642,7 +644,7 @@ public class TableToArrayListMultimap
      * We ignore the update request if another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
      */
-    public boolean updateTable()
+    public boolean updateTable( MySqlConnector conn )
     throws Exception
     {
         // try to prevent: java.util.ConcurrentModificationException
@@ -660,8 +662,8 @@ public class TableToArrayListMultimap
 
             String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
 
-            //conn_write.insertIntoTable( tableName, fields, values );
-            conn_write.insertIntoTableIgnore( tableName, fields, values );  // ignore duplicates for UNIQUE keys
+            // insertIntoTableIgnore: ignore duplicates for UNIQUE keys
+            conn.insertIntoTableIgnore( tableName, fields, values );
         }
 
         update_busy.set( false );

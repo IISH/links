@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-12-Apr-2017 Latest change
+ * FL-26-Jun-2017 Local db_ref connections, immediate open/close
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -90,15 +90,7 @@ public class LinksCleanThread extends Thread
     boolean use_links_logs = true;
 
     // Reference Table -> ArrayListMultiMap
-    //private TableToArrayListMultimap almmPrepiece     = null;   // Names
-    //private TableToArrayListMultimap almmSuffix       = null;   // Names
-    //private TableToArrayListMultimap almmAlias        = null;   // Names
-    //private TableToArrayListMultimap almmFirstname    = null;   // Names
-    //private TableToArrayListMultimap almmFamilyname   = null;   // Names
-    //private TableToArrayListMultimap almmLocation     = null;   // Location
-    //private TableToArrayListMultimap almmRegisType   = null;  // Registration Type
-    //private TableToArrayListMultimap almmOccupation   = null;   // Occupation
-    private TableToArrayListMultimap almmReport       = null;   // Report warnings; read-only, so can remain file global
+    private TableToArrayListMultimap almmReport = null;   // Report warnings; read-only, so can remain file global
     //private TableToArrayListMultimap almmRole         = null;   // Role
     //private TableToArrayListMultimap almmCivilstatus  = null;   // Civilstatus & Gender
     //private TableToArrayListMultimap almmSex          = null;   // Civilstatus & Gender
@@ -186,16 +178,6 @@ public class LinksCleanThread extends Thread
         this.outputArea = outputArea;
 
         this.mg = mg;
-
-        /*
-        String timestamp = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
-        System.out.println( timestamp + "  linksCleaned()" );
-
-        System.out.println( "mysql_hsnref_hosturl:\t"  + ref_url );
-        System.out.println( "mysql_hsnref_username:\t" + ref_user );
-        System.out.println( "mysql_hsnref_password:\t" + ref_pass );
-        System.out.println( "mysql_hsnref_dbname:\t"   + ref_db );
-        */
     }
 
 
@@ -359,11 +341,9 @@ public class LinksCleanThread extends Thread
             msg = String.format( "Thread id %02d; rmtype: %s", mainThreadId, rmtype );
             showMessage( msg, false, true );
 
-            // links_general.ref_report contains about 75 error definitions,
-            // to be used when the normalization encounters errors
+            // links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors
             showMessage( String.format( "Thread id %02d; Loading report table", mainThreadId ), false, true );
-            almmReport = new TableToArrayListMultimap( dbconRefRead, null, "ref_report", "type", null );
-            //almmReport.contentsOld();
+            almmReport = new TableToArrayListMultimap( dbconRefRead, "ref_report", "type", null );
 
 
             if( multithreaded )
@@ -374,28 +354,6 @@ public class LinksCleanThread extends Thread
                 plog.show( msg ); showMessage( msg, false, true );
 
                 long timeStart = System.currentTimeMillis();
-
-                /*
-                msg = String.format( "Thread id %02d; Pre-loading all reference tables ...", mainThreadId );   // with multi-threaded they are not explicitly freed
-                plog.show( msg ); showMessage( msg, false, true );
-
-                almmPrepiece     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-                almmSuffix       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-                almmAlias        = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
-                almmFirstname    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
-                almmFamilyname   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
-                almmLocation     = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
-              //almmRegisType    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" );
-                almmOccupation   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
-              //almmReport  : see above, also loaded for single-threaded
-                almmRole         = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
-                almmCivilstatus  = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
-                almmSex          = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
-                almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
-                almmLitAge       = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
-
-                elapsedShowMessage( String.format( "Thread id %02d; Pre-loading all reference tables", mainThreadId ), timeStart, System.currentTimeMillis() );
-                */
 
                 ArrayList< CleaningThread > threads = new ArrayList();
 
@@ -1154,13 +1112,13 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-            TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-          //TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconnRefR, "ref_prepiece", "original", "prefix" );
+        TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconnRefR, "ref_suffix",   "original", "standard" );
+      //TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconnRefR, "ref_alias",    "original",  null );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
         showMessage( String.format( "Thread id %02d; standardPrepiece", threadId ), false, true );
         standardPrepiece( debug, almmPrepiece, source );
@@ -1168,33 +1126,29 @@ public class LinksCleanThread extends Thread
         showMessage( String.format( "Thread id %02d; standardSuffix", threadId ), false, true );
         standardSuffix( debug, almmSuffix, source );
 
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+
         // Wait until we can update
         while( almmPrepiece.isBusy().get() ) {
             plog.show( "No permission to update ref_prepiece: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( almmPrepiece.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_prepiece", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_prepiece FAILED, was busy", threadId ), false, true ); }
+        almmPrepiece.updateTable( dbconnRefW );
 
         while( almmSuffix.isBusy().get() ) {
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( almmSuffix.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_suffix", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_suffix FAILED, was busy", threadId ), false, true ); }
+        almmSuffix.updateTable( dbconnRefW );
 
-        // almmAlias.updateTable();     // almmAlias.add() never called; nothing added to almmAlias
+        // almmAlias.updateTable( dbconnRefW );         // almmAlias.add() never called; nothing added to almmAlias
 
-        //if( ! multithreaded ) {
-            almmPrepiece.free();
-            almmSuffix.free();
-            showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix", threadId ), false, true );
-          //almmAlias.free();
-        // }
+        dbconnRefW.close();
+
+        almmPrepiece.free();
+        almmSuffix.free();
+        //almmAlias.free();
+        showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix", threadId ), false, true );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -1220,21 +1174,17 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
-
-        String msg = "";
-
-        //if( ! multithreaded ) {
-            // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-            TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-            TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
-        //}
-
+        // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconnRefR, "ref_prepiece", "original", "prefix" );
+        TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconnRefR, "ref_suffix",   "original", "standard" );
+        TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconnRefR, "ref_alias",    "original",  null );
+        showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
         // Firstnames
+        String msg = "";
+        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
         String tmp_firstname = "firstname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp", tmp_firstname ) ) {
             msg = String.format( "Thread id %02d; Deleting table links_temp.%s", threadId, tmp_firstname );
@@ -1246,11 +1196,11 @@ public class LinksCleanThread extends Thread
 
         FileWriter writerFirstname = createTempFirstnameFile( source );
 
-        //if( ! multithreaded ) {
-            start = System.currentTimeMillis();
-            TableToArrayListMultimap almmFirstname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_firstname", "original", "standard" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Firstname reference table", threadId ), start );
-        //}
+        start = System.currentTimeMillis();
+        TableToArrayListMultimap almmFirstname = new TableToArrayListMultimap( dbconnRefR, "ref_firstname", "original", "standard" );
+        showTimingMessage( String.format( "Thread id %02d; Loaded Firstname reference table", threadId ), start );
+
+        dbconnRefR.close();
 
         int numrows = almmFirstname.numrows();
         int numkeys = almmFirstname.numkeys();
@@ -1258,12 +1208,15 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        //if( ! multithreaded ) { showTimingMessage( msg, start ); }
-
         msg = String.format( "Thread id %02d; standardFirstname ...", threadId );
         showMessage( msg, false, true );
         standardFirstname( debug, almmPrepiece, almmSuffix, almmAlias, almmFirstname, writerFirstname, source );
-        msg = String.format( "Thread id %02d; standardFirstname ", threadId );
+
+        almmPrepiece.free();
+        almmSuffix.free();
+        almmAlias.free();
+        showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix/almmAlias", threadId ), false, true );
+
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
@@ -1272,21 +1225,20 @@ public class LinksCleanThread extends Thread
             plog.show( String.format( "Thread id %02d; No permission to update ref_firstname: Waiting 60 seconds", threadId ) );
             Thread.sleep( 60000 );
         }
-        if( almmFirstname.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_firstname", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_firstname FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmFirstname.free();
-            showMessage( String.format( "Thread id %02d; Freed almmFirstname", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmFirstname.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmFirstname.free();
+        showMessage( String.format( "Thread id %02d; Freed almmFirstname", threadId ), false, true );
 
         writerFirstname.close();
         loadFirstnameCsvToTableT( dbconTemp, source );      // insert csv -> temp table
         updateFirstnameToPersonC( dbconTemp, source );      // update person_c with temp table
         removeFirstnameFile(      source );                 // cleanup
         removeFirstnameTable(     dbconTemp, source );      // cleanup
+        dbconTemp.close();
 
         msg = String.format( "Thread id %02d; remains Firstname", threadId );
         showTimingMessage( msg, start );
@@ -1300,15 +1252,6 @@ public class LinksCleanThread extends Thread
 
         msg = String.format( "Thread id %02d; Converting firstnames to lowercase ", threadId );
         showTimingMessage( msg, start );
-
-        //if( ! multithreaded ) {
-            almmPrepiece.free();
-            almmSuffix.free();
-            almmAlias.free();
-            showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix/almmAlias", threadId ), false, true );
-        //}
-
-        dbconTemp.close();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -1334,20 +1277,17 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
-
-        String msg = "";
-
-        //if( ! multithreaded ) {
-            // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_prepiece", "original", "prefix" );
-            TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_suffix",   "original", "standard" );
-            TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_alias",    "original",  null );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
-        //}
+        // almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmPrepiece = new TableToArrayListMultimap( dbconnRefR, "ref_prepiece", "original", "prefix" );
+        TableToArrayListMultimap almmSuffix   = new TableToArrayListMultimap( dbconnRefR, "ref_suffix",   "original", "standard" );
+        TableToArrayListMultimap almmAlias    = new TableToArrayListMultimap( dbconnRefR, "ref_alias",    "original",  null );
+        showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
         // Familynames
+        String msg = "";
+        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
         String tmp_familyname = "familyname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp",tmp_familyname  ) ) {
             msg = String.format( "Thread id %02d; Deleting table links_temp.%s", threadId, tmp_familyname );
@@ -1359,11 +1299,11 @@ public class LinksCleanThread extends Thread
 
         FileWriter writerFamilyname = createTempFamilynameFile(  source );
 
-        //if( ! multithreaded ) {
-            start = System.currentTimeMillis();
-            TableToArrayListMultimap almmFamilyname = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_familyname", "original", "standard" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Familyname reference table", threadId ), start );
-        //}
+        start = System.currentTimeMillis();
+        TableToArrayListMultimap almmFamilyname = new TableToArrayListMultimap( dbconnRefR, "ref_familyname", "original", "standard" );
+        showTimingMessage( String.format( "Thread id %02d; Loaded Familyname reference table", threadId ), start );
+
+        dbconnRefR.close();
 
         int numrows = almmFamilyname.numrows();
         int numkeys = almmFamilyname.numkeys();
@@ -1371,11 +1311,14 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( String.format( "Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        //if( ! multithreaded ) { showTimingMessage( msg, start ); }
-
-        msg = String.format( "Thread id %02d; standardFamilyname", threadId );
+        msg = String.format( "Thread id %02d; standardFamilyname ...", threadId );
         showMessage( msg + " ...", false, true );
         standardFamilyname( debug, almmPrepiece, almmSuffix, almmAlias, almmFamilyname, writerFamilyname, source );
+
+        almmPrepiece.free();
+        almmSuffix.free();
+        almmAlias.free();
+        showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix/almmAlias", threadId ), false, true );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
@@ -1386,21 +1329,22 @@ public class LinksCleanThread extends Thread
             plog.show( String.format( "Thread id %02d; No permission to update ref_familyname: Waiting 60 seconds", threadId ) );
             Thread.sleep( 60000 );
         }
-        if( almmFamilyname.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_familyname", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_familyname FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmFamilyname.free();
-            showMessage( String.format( "Thread id %02d; Freed almmFamilyname", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmFamilyname.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmFamilyname.free();
+        showMessage( String.format( "Thread id %02d; Freed almmFamilyname", threadId ), false, true );
 
         writerFamilyname.close();
-        loadFamilynameCsvToTableT(     dbconTemp, source );
+        loadFamilynameCsvToTableT( dbconTemp, source );
         updateFamilynameToPersonC( dbconTemp, source );
         removeFamilynameFile(      source );
         removeFamilynameTable(     dbconTemp, source );
+        dbconTemp.close();
+
+        msg = String.format( "Thread id %02d; remains Familyname", threadId );
         showTimingMessage( msg, start );
 
         // Familynames to lowercase
@@ -1411,15 +1355,6 @@ public class LinksCleanThread extends Thread
         dbconCleaned.runQuery( qLower );
         msg = String.format( "Thread id %02d; Converting familynames to lowercase ", threadId );
         showTimingMessage( msg, start );
-
-        //if( ! multithreaded ) {
-            almmPrepiece.free();
-            almmSuffix.free();
-            almmAlias.free();
-            showMessage( String.format( "Thread id %02d; Freed almmPrepiece/almmSuffix/almmAlias", threadId ), false, true );
-        //}
-
-        dbconTemp.close();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -2728,11 +2663,11 @@ public class LinksCleanThread extends Thread
         long funcStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmLocation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_location", "original", "location_no" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Location reference table", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmLocation = new TableToArrayListMultimap( dbconnRefR, "ref_location", "original", "location_no" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Location reference table", threadId ), start );
 
         int numrows = almmLocation.numrows();
         int numkeys = almmLocation.numkeys();
@@ -2784,20 +2719,17 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; standardDeathLocation ", threadId );
         showTimingMessage( msg, start );
 
-
         while( almmLocation.isBusy().get() ) {
             plog.show( String.format( "Thread id %02d; No permission to update ref_location: Waiting 60 seconds", threadId ) );
             Thread.sleep( 60000 );
         }
-        if( almmLocation.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_location", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_location FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmLocation.free();
-            showMessage( String.format( "Thread id %02d; Freed almmLocation", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmLocation.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmLocation.free();
+        showMessage( String.format( "Thread id %02d; Freed almmLocation", threadId ), false, true );
 
         elapsedShowMessage( funcname, funcStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3290,12 +3222,12 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmCivilstatus = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_civilstatus" );
-            TableToArrayListMultimap almmSex = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_status_sex", "original", "standard_sex" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Civilstatus/Sex reference table", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmCivilstatus = new TableToArrayListMultimap( dbconnRefR, "ref_status_sex", "original", "standard_civilstatus" );
+        TableToArrayListMultimap almmSex = new TableToArrayListMultimap( dbconnRefR, "ref_status_sex", "original", "standard_sex" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Civilstatus/Sex reference table", threadId ), start );
 
         int numrows = almmCivilstatus.numrows();
         int numkeys = almmCivilstatus.numkeys();
@@ -3310,15 +3242,13 @@ public class LinksCleanThread extends Thread
             plog.show( String.format( "Thread id %02d; No permission to update ref table: Waiting 60 seconds", threadId ) );
             Thread.sleep( 60000 );
         }
-        if( almmCivilstatus.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_status_sex", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_status_sex FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmCivilstatus.free();
-            almmSex.free();
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmCivilstatus.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmCivilstatus.free();
+        almmSex.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3573,21 +3503,7 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        /*
-        long start = System.currentTimeMillis();
-        String msg = "Loading reference table: ref_registration";
-        showMessage( msg + " ...", false, true );
-        if( ! multithreaded ) { almmRegisType = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_registration", "original", "standard" ); }
-        elapsedShowMessage( msg, start, System.currentTimeMillis() );
-        */
-
         standardRegistrationType( debug, source );
-
-        /*
-        showMessage( "Updating reference table: ref_registration", false, true );
-        almmRegisType.updateTable();
-        if( ! multithreaded ) { almmRegisType.free(); }
-        */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3709,11 +3625,11 @@ public class LinksCleanThread extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmOccupation = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_occupation", "original", "standard" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Occupation reference table", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmOccupation = new TableToArrayListMultimap( dbconnRefR, "ref_occupation", "original", "standard" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Occupation reference table", threadId ), start );
 
         int numrows = almmOccupation.numrows();
         int numkeys = almmOccupation.numkeys();
@@ -3732,15 +3648,13 @@ public class LinksCleanThread extends Thread
             plog.show( String.format( "Thread id %02d; No permission to update ref_occupation: Waiting 60 seconds", threadId ) );
             Thread.sleep( 60000 );
         }
-        if( almmOccupation.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated ref_occupation", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_occupation FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmOccupation.free();
-            showMessage( String.format( "Thread id %02d; Freed almmOccupation", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmOccupation.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmOccupation.free();
+        showMessage( String.format( "Thread id %02d; Freed almmOccupation", threadId ), false, true );
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3905,14 +3819,13 @@ public class LinksCleanThread extends Thread
         }
 
         long timeStart = System.currentTimeMillis();
-
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmLitAge = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_age", "original", "standard_year" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded LitAge reference table", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmLitAge = new TableToArrayListMultimap( dbconnRefR, "ref_age", "original", "standard_year" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded LitAge reference table", threadId ), start );
 
         int size = almmLitAge.numkeys();
         String msg = String.format( "Thread id %02d; Reference table: ref_age [%d records]", threadId, size );
@@ -3939,20 +3852,17 @@ public class LinksCleanThread extends Thread
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( almmLitAge.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_age", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_age FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmLitAge.free();
-            showMessage( String.format( "Thread id %02d; Freed almmLitAge", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmLitAge.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmLitAge.free();
+        showMessage( String.format( "Thread id %02d; Freed almmLitAge", threadId ), false, true );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doAge
-
 
 
      /**
@@ -4215,7 +4125,6 @@ public class LinksCleanThread extends Thread
     } // standardAgeLiteral
 
 
-
     /**
      * @param source
      */
@@ -4352,11 +4261,10 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmRole = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_role", "original", "standard" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded Role reference table", threadId ), start );
-        //}
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmRole = new TableToArrayListMultimap( dbconnRefR, "ref_role", "original", "standard" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Role reference table", threadId ), timeStart );
 
         int size = almmRole.numkeys();
         String msg = String.format( "Thread id %02d; Reference table: ref_role [%d records]", threadId, size );
@@ -4371,15 +4279,13 @@ public class LinksCleanThread extends Thread
             plog.show( "No permission to update ref_role: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
-        if( almmRole.updateTable() )
-        { showMessage( String.format( "Thread id %02d; Updated reference table ref_role", threadId ), false, true ); }
-        else
-        { showMessage( String.format( "Thread id %02d; Updating ref_role FAILED, was busy", threadId ), false, true ); }
 
-        //if( ! multithreaded ) {
-            almmRole.free();
-            showMessage( String.format( "Thread id %02d; Freed almmRole", threadId ), false, true );
-        //}
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        almmRole.updateTable( dbconnRefW );
+        dbconnRefW.close();
+
+        almmRole.free();
+        showMessage( String.format( "Thread id %02d; Freed almmRole", threadId ), false, true );
 
         msg = String.format( "Thread id %02d; Processing standardAlive for source: %s ...", threadId, source );
         showMessage( msg, false, true );
@@ -4516,12 +4422,12 @@ public class LinksCleanThread extends Thread
         int count = 0;
         int count_empty = 0;
         int stepstate = count_step;
+        int id_person = 0;
 
         try
         {
-            //String selectQuery = "SELECT id_person , role , death , occupation FROM links_cleaned.person_c WHERE id_source = " + source;
             String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year ";
-            selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+            selectQuery += "FROM links_cleaned.person_c WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
 
@@ -4540,7 +4446,7 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person       = rs.getInt( "id_person" );
+                id_person           = rs.getInt( "id_person" );
                 int id_registration = rs.getInt( "id_registration" );
                 int role            = rs.getInt( "role" );
                 String death        = rs.getString( "death" );
@@ -4589,6 +4495,8 @@ public class LinksCleanThread extends Thread
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning standardAlive: %s", threadId, count, ex.getMessage() );
+            showMessage( msg, false, true );
+            msg = String.format( "Thread id %02d; id_person: %d, ", threadId, id_person );
             showMessage( msg, false, true );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
@@ -6730,18 +6638,18 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        //if( ! multithreaded ) {
-            long start = System.currentTimeMillis();
-            TableToArrayListMultimap almmMarriageYear = new TableToArrayListMultimap( dbconRefRead, dbconRefWrite, "ref_minmax_marriageyear", "role_A", "role_B" );
-            showTimingMessage( String.format( "Thread id %02d; Loaded MarriageYear reference table", threadId ), start );
-        //}
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmMarriageYear = new TableToArrayListMultimap( dbconnRefR, "ref_minmax_marriageyear", "role_A", "role_B" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded MarriageYear reference table", threadId ), start );
 
         minMaxMarriageYear( debug, almmMarriageYear, source, rmtype );
 
-        //if( ! multithreaded ) {
-            almmMarriageYear.free();
-            showMessage( String.format( "Thread id %02d; Freed almmMarriageYear", threadId ), false, true );
-        //}
+        almmMarriageYear.free();
+        showMessage( String.format( "Thread id %02d; Freed almmMarriageYear", threadId ), false, true );
+
+        // Notice: nothing to update for almmMarriageYear
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -7471,7 +7379,7 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doFlagPersonRecs for source %s", threadId, source );
+        String funcname = String.format( "Thread id %02d; doFlagPersonRecs for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -7480,17 +7388,17 @@ public class LinksCleanThread extends Thread
 
         long timeStart = System.currentTimeMillis();
 
-        String msg = String.format( "Thread id %02d; Clear Previous Person Flags ...", threadId );
+        String msg = String.format( "Thread id %02d; Clear Previous Person Flags for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        clearPersonFlags( debug, source );
+        clearPersonFlags( debug, source, rmtype );
 
-        msg = String.format( "Thread id %02d; Flagging Person recs without familynames ...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Person recs without familynames for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagEmptyFamilynameRecs( debug, source );
+        flagEmptyFamilynameRecs( debug, source, rmtype );
 
-        msg = String.format( "Thread id %02d; Flagging Person recs without role ...", threadId );
+        msg = String.format( "Thread id %02d; Flagging Person recs without role for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagEmptyRoleRecs( debug, source );
+        flagEmptyRoleRecs( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -7729,14 +7637,17 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void clearPersonFlags( boolean debug, String source )
+    private void clearPersonFlags( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
         // Clear previous flag values for given source
-        String clearQuery_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + ";";
-        int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
+        String query_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + ";";
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
+        if( debug ) { System.out.println( query_r ); }
+
+        int nrec = dbconCleaned.runQueryUpdate( query_r );
 
         String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
         showMessage( msg, false, true );
@@ -7749,7 +7660,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void flagEmptyFamilynameRecs( boolean debug, String source )
+    private void flagEmptyFamilynameRecs( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7759,6 +7670,7 @@ public class LinksCleanThread extends Thread
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
             + " AND ( familyname IS NULL OR familyname = '' );";
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
 
         if( debug ) { showMessage( query_r, false, true ); }
 
@@ -7827,7 +7739,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void flagEmptyRoleRecs( boolean debug, String source )
+    private void flagEmptyRoleRecs( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7837,6 +7749,7 @@ public class LinksCleanThread extends Thread
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
             + " AND ( role IS NULL OR role = 0 );";
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
 
         if( debug ) { showMessage( query_r, false, true ); }
 
@@ -8577,7 +8490,8 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doScanRemarks( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doScanRemarks( boolean debug, boolean go, String source, String rmtype )
+    throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -8592,7 +8506,7 @@ public class LinksCleanThread extends Thread
         String msg = funcname + " ...";
         showMessage( msg, false, true );
 
-        scanRemarks( debug, source );
+        scanRemarks( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -8603,7 +8517,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void scanRemarks( boolean debug, String source ) throws Exception
+    private void scanRemarks( boolean debug, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -8612,18 +8526,22 @@ public class LinksCleanThread extends Thread
         // Clear previous values for given source
         showMessage( String.format( "Thread id %02d; clear previous remarks values: extract", threadId ), false, true );
         String clearQuery_r = "UPDATE registration_c SET extract = NULL WHERE id_source = " + source + ";";
+        if ( ! rmtype.isEmpty() ) { clearQuery_r += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_r );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: status_mother", threadId ), false, true );
         String clearQuery_p1 = "UPDATE person_c SET status_mother = NULL WHERE id_source = " + source + ";";
+        if ( ! rmtype.isEmpty() ) { clearQuery_p1 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p1 );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: stillbirth", threadId ), false, true );
         String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source + ";";
+        if ( ! rmtype.isEmpty() ) { clearQuery_p2 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p2 );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: divorce", threadId ), false, true );
         String clearQuery_p3 = "UPDATE person_c SET divorce_text = NULL, divorce_day = NULL, divorce_month = NULL, divorce_year = NULL, divorce_location = NULL WHERE id_source = " + source + ";";
+        if ( ! rmtype.isEmpty() ) { clearQuery_p3 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p3 );
 
         // load the table data from links_general.scan_remarks
@@ -8693,7 +8611,11 @@ public class LinksCleanThread extends Thread
 
 
         // loop through the remarks from registration_o
-        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o WHERE id_source = " + source + " ORDER BY id_registration";
+        String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
+        selectQuery_o += " WHERE id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { selectQuery_o += " AND registration_maintype = " + rmtype; }
+        selectQuery_o += " ORDER BY id_registration";
+
         if( debug ) {
             System.out.printf( "%s\n\n", selectQuery_o );
             showMessage( selectQuery_o, false, true );
