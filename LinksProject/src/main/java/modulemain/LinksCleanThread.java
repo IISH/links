@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-26-Jun-2017 Local db_ref connections, immediate open/close
+ * FL-27-Jun-2017 Local db_ref connections, immediate open/close
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -1009,7 +1009,6 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-
         // Delete cleaned data for given source
         String deleteRegist = String.format( "DELETE FROM registration_c WHERE id_source = %s", source );
         String deletePerson = String.format( "DELETE FROM person_c WHERE id_source = %s", source );
@@ -1121,10 +1120,10 @@ public class LinksCleanThread extends Thread
         showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
         showMessage( String.format( "Thread id %02d; standardPrepiece", threadId ), false, true );
-        standardPrepiece( debug, almmPrepiece, source );
+        standardPrepiece( debug, almmPrepiece, source, rmtype );
 
         showMessage( String.format( "Thread id %02d; standardSuffix", threadId ), false, true );
-        standardSuffix( debug, almmSuffix, source );
+        standardSuffix( debug, almmSuffix, source, rmtype );
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
@@ -1210,7 +1209,7 @@ public class LinksCleanThread extends Thread
 
         msg = String.format( "Thread id %02d; standardFirstname ...", threadId );
         showMessage( msg, false, true );
-        standardFirstname( debug, almmPrepiece, almmSuffix, almmAlias, almmFirstname, writerFirstname, source );
+        standardFirstname( debug, almmPrepiece, almmSuffix, almmAlias, almmFirstname, writerFirstname, source, rmtype );
 
         almmPrepiece.free();
         almmSuffix.free();
@@ -1313,7 +1312,7 @@ public class LinksCleanThread extends Thread
 
         msg = String.format( "Thread id %02d; standardFamilyname ...", threadId );
         showMessage( msg + " ...", false, true );
-        standardFamilyname( debug, almmPrepiece, almmSuffix, almmAlias, almmFamilyname, writerFamilyname, source );
+        standardFamilyname( debug, almmPrepiece, almmSuffix, almmAlias, almmFamilyname, writerFamilyname, source, rmtype );
 
         almmPrepiece.free();
         almmSuffix.free();
@@ -1366,7 +1365,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     public void standardFirstname( boolean debug, TableToArrayListMultimap almmPrepiece, TableToArrayListMultimap almmSuffix, TableToArrayListMultimap almmAlias,
-        TableToArrayListMultimap almmFirstname, FileWriter writerFirstname, String source )
+        TableToArrayListMultimap almmFirstname, FileWriter writerFirstname, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -1377,30 +1376,27 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            // WHY IS A LOCAL CONNECTION USED?
-            Connection con = getConnection( "links_original" );
-            con.setReadOnly( true );
-
             String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source;
-            //String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source + " ORDER BY id_person";
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( "standardFirstname: " + selectQuery, false, true ); }
 
-            ResultSet rsFirstName = con.createStatement().executeQuery( selectQuery );
-            con.createStatement().close();
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
-            rsFirstName.last();
-            int total = rsFirstName.getRow();
-            rsFirstName.beforeFirst();
-
-            while( rsFirstName.next() )
+            while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "-of-" + total, true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardFirstname, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
-                int id_person    = rsFirstName.getInt( "id_person" );
-                String firstname = rsFirstName.getString( "firstname" );
+                int id_person    = rs.getInt( "id_person" );
+                String firstname = rs.getString( "firstname" );
 
                 //if( id_person == 1 ) { debug = true; }
                 //else { debug = false; continue; }
@@ -1694,9 +1690,6 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            rsFirstName.close();
-            con.close();
-
             int count_new = almmFirstname.newcount();
             String strNew = "";
             if( count_new == 0 ) { strNew = "no new firstnames"; }
@@ -1723,7 +1716,7 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     public void standardFamilyname( boolean debug, TableToArrayListMultimap almmPrepiece, TableToArrayListMultimap almmSuffix, TableToArrayListMultimap almmAlias,
-        TableToArrayListMultimap almmFamilyname, FileWriter writerFamilyname, String source )
+        TableToArrayListMultimap almmFamilyname, FileWriter writerFamilyname, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -1731,32 +1724,30 @@ public class LinksCleanThread extends Thread
         int count_empty = 0;
         int stepstate = count_step;
 
-        try {
+        try
+        {
             String selectQuery = "SELECT id_person , familyname FROM person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( "standardFamilyname: " + selectQuery, false, true ); }
 
-            // WHY IS A LOCAL CONNECTION USED?
-            Connection con = getConnection( "links_original" );
-            con.setReadOnly( true );
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
-            // Read family names from table
-            ResultSet rsFamilyname = con.createStatement().executeQuery( selectQuery );
-            con.createStatement().close();
-
-            rsFamilyname.last();
-            int total = rsFamilyname.getRow();
-            rsFamilyname.beforeFirst();
-
-            while( rsFamilyname.next() )
+            while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "-of-" + total, true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardFamilyname, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
                 // Get family name
-                String familyname = rsFamilyname.getString( "familyname" );
-                int id_person = rsFamilyname.getInt( "id_person" );
+                String familyname = rs.getString( "familyname" );
+                int id_person     = rs.getInt( "id_person" );
                 if( debug ) { showMessage( "count: " + count + ", id_person: " + id_person + ", familyname: " + familyname, false, true ); }
 
                 // Check is Familyname is not empty or null
@@ -1888,8 +1879,6 @@ public class LinksCleanThread extends Thread
                     addToReportPerson( id_person, source, 1001, "" );  // EC 1001
                 }
             }
-            con.close();
-            rsFamilyname.close();
 
             int count_new = almmFamilyname.newcount();
             String strNew = "";
@@ -1996,44 +1985,40 @@ public class LinksCleanThread extends Thread
      * @param source
      * @throws Exception
      */
-    public void standardPrepiece( boolean debug, TableToArrayListMultimap almmPrepiece, String source )
+    public void standardPrepiece( boolean debug, TableToArrayListMultimap almmPrepiece, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
-        try {
-
+        try
+        {
             String selectQuery = "SELECT id_person , prefix FROM person_o WHERE id_source = " + source + " AND prefix <> ''";
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( "standardPrepiece: " + selectQuery, false, true ); }
 
-            // WHY IS A LOCAL CONNECTION USED?
-            Connection con = getConnection( "links_original" );
-            con.isReadOnly();       // TODO did Omar mean con.setReadOnly(true); ?
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
-            // Read family names from table
-            ResultSet rsPrepiece = con.createStatement().executeQuery( selectQuery );
-            con.createStatement().close();
-
-            rsPrepiece.last();
-            int total = rsPrepiece.getRow();
-            rsPrepiece.beforeFirst();
-
-            while (rsPrepiece.next()) {
+            while( rs.next() )
+            {
+                count++;
+                if( count == stepstate ) {
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardPrepiece, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
+                    stepstate += count_step;
+                }
 
                 // Create lists
                 String listPF = "";
                 String listTO = "";
                 String listTN = "";
 
-                count++;
-
-                if( count == stepstate ) {
-                    showMessage( count + "-of-" + total, true, true );
-                    stepstate += count_step;
-                }
-
-                int id_person = rsPrepiece.getInt( "id_person" );
-                String prepiece = rsPrepiece.getString( "prefix" ).toLowerCase();
+                int id_person   = rs.getInt( "id_person" );
+                String prepiece = rs.getString( "prefix" ).toLowerCase();
 
                 prepiece = cleanName( debug, source, id_person, prepiece );
 
@@ -2113,9 +2098,6 @@ public class LinksCleanThread extends Thread
                     dbconCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
                 }
             }
-
-            rsPrepiece.close();
-            con.close();
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Prepiece: %s", threadId, count, ex.getMessage() );
@@ -2128,37 +2110,35 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardSuffix( boolean debug, TableToArrayListMultimap almmSuffix, String source )
+    public void standardSuffix( boolean debug, TableToArrayListMultimap almmSuffix, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
         int stepstate = count_step;
 
-        try {
+        try
+        {
             String selectQuery = "SELECT id_person , suffix FROM person_o WHERE id_source = " + source + " AND suffix <> ''";
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( "standardSuffix: " + selectQuery, false, true ); }
 
-            // WHY IS A LOCAL CONNECTION USED?
-            Connection con = getConnection( "links_original" );
-            con.isReadOnly();       // TODO did Omar mean con.setReadOnly(true); ?
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
-            // Read family names from table
-            ResultSet rsSuffix = con.createStatement().executeQuery( selectQuery );
-            con.createStatement().close();
-
-            rsSuffix.last();
-            int total = rsSuffix.getRow();
-            rsSuffix.beforeFirst();
-
-            while( rsSuffix.next() )
+            while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "-of-" + total, true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardSuffix, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
-                int id_person = rsSuffix.getInt( "id_person" );
-                String suffix = rsSuffix.getString( "suffix" ).toLowerCase();
+                int id_person = rs.getInt( "id_person" );
+                String suffix = rs.getString( "suffix" ).toLowerCase();
 
                 suffix = cleanName( debug, source, id_person, suffix );
 
@@ -2205,10 +2185,6 @@ public class LinksCleanThread extends Thread
 
                 }
             }
-
-            rsSuffix.close();
-            con.close();
-
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; count: %d, Exception while cleaning Suffix: %s", threadId, count, ex.getMessage() );
@@ -2680,42 +2656,42 @@ public class LinksCleanThread extends Thread
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardRegistrationLocation ...", threadId );
         showMessage( msg, false, true );
-        standardRegistrationLocation( debug, almmLocation, source );
+        standardRegistrationLocation( debug, almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardRegistrationLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardBirthLocation ...", threadId );
         showMessage( msg, false, true );
-        standardBirthLocation( debug, almmLocation, source );
+        standardBirthLocation( debug, almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardBirthLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardMarriageLocation ...", threadId );
         showMessage( msg, false, true );
-        standardMarriageLocation( debug, almmLocation, source );
+        standardMarriageLocation( debug, almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardMarriageLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardDivorceLocation ...", threadId );
         showMessage( msg, false, true );
-        standardDivorceLocation( debug, almmLocation, source );
+        standardDivorceLocation( debug, almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardDivorceLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardLivingLocation ...", threadId );
         showMessage( msg, false, true );
-        standardLivingLocation( debug, almmLocation, source );
+        standardLivingLocation( debug, almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardLivingLocation ", threadId );
         showTimingMessage( msg, start );
 
         start = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; standardDeathLocation ...", threadId );
         showMessage( msg, false, true );
-        standardDeathLocation( debug,  almmLocation, source );
+        standardDeathLocation( debug,  almmLocation, source, rmtype );
         msg = String.format( "Thread id %02d; standardDeathLocation ", threadId );
         showTimingMessage( msg, start );
 
@@ -2738,6 +2714,90 @@ public class LinksCleanThread extends Thread
 
     /**
      * @param debug
+     * @param source
+     */
+    public void standardRegistrationLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardRegistrationLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
+    } // standardRegistrationLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void standardBirthLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardBirthLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
+    } // standardBirthLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void standardMarriageLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardMarLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
+    } // standardMarriageLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void standardDivorceLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_person , divorce_location FROM person_o WHERE id_source = " + source + " AND divorce_location <> ''";
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardDivorceLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_person", "divorce_location", "divorce_location", source, TableType.PERSON );
+    } // standardDivorceLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void standardLivingLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardLivingLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_person", "living_location", "living_location", source, TableType.PERSON );
+    } // standardLivingLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void standardDeathLocation( boolean debug, TableToArrayListMultimap almmLocation, String source, String rmtype )
+    {
+        String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
+        if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( "standardDeathLocation: " + selectQuery, false, true ); }
+
+        standardLocation( debug, almmLocation, selectQuery, "id_person", "death_location", "death_location", source, TableType.PERSON );
+    } // standardDeathLocation
+
+
+    /**
+     * @param debug
      * @param rs
      * @param idFieldO
      * @param locationFieldO
@@ -2745,8 +2805,7 @@ public class LinksCleanThread extends Thread
      * @param id_source
      * @param tt
      */
-    private void standardLocation( boolean debug, TableToArrayListMultimap almmLocation, ResultSet rs, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
-    throws Exception
+    private void standardLocation( boolean debug, TableToArrayListMultimap almmLocation, String selectQuery, String idFieldO, String locationFieldO, String locationFieldC, String id_source, TableType tt )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -2756,11 +2815,18 @@ public class LinksCleanThread extends Thread
 
         try
         {
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
+
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardLocation, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -2885,146 +2951,6 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardRegistrationLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_registration , registration_location FROM registration_o WHERE id_source = " + source;
-        if( debug ) { showMessage( "standardRegistrationLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-
-            standardLocation( debug, almmLocation, rs, "id_registration", "registration_location", "registration_location_no", source, TableType.REGISTRATION );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning registration_location: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardRegistrationLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardBirthLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_person , birth_location FROM person_o WHERE id_source = " + source + " AND birth_location <> ''";
-        if( debug ) { showMessage( "standardBirthLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-
-            standardLocation( debug, almmLocation, rs, "id_person", "birth_location", "birth_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning standardBirthLocation: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardBirthLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardMarriageLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_person , mar_location FROM person_o WHERE id_source = " + source + " AND mar_location <> ''";
-        if( debug ) { showMessage( "standardMarLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( debug, almmLocation, rs, "id_person", "mar_location", "mar_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning mar_location: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardMarriageLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardDivorceLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_person , divorce_location FROM person_o WHERE id_source = " + source + " AND divorce_location <> ''";
-        if( debug ) { showMessage( "standardDivorceLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( debug, almmLocation, rs, "id_person", "divorce_location", "divorce_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning divorce_location: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardDivorceLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardLivingLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_person , living_location FROM person_o WHERE id_source = " + source + " AND living_location <> ''";
-        if( debug ) { showMessage( "standardLivingLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( debug, almmLocation, rs, "id_person", "living_location", "living_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning living_location: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardLivingLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void standardDeathLocation( boolean debug, TableToArrayListMultimap almmLocation, String source )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String selectQuery = "SELECT id_person , death_location FROM person_o WHERE id_source = " + source + " AND death_location <> ''";
-        if( debug ) { showMessage( "standardDeathLocation: " + selectQuery, false, true ); }
-
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
-            standardLocation( debug, almmLocation, rs, "id_person", "death_location", "death_location", source, TableType.PERSON );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception while cleaning death_location: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // standardDeathLocation
 
 
     /**
@@ -3235,8 +3161,8 @@ public class LinksCleanThread extends Thread
         if( numrows != numkeys )
         { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        standardSex( debug, almmCivilstatus, almmSex, source );
-        standardCivilstatus( debug, almmCivilstatus, source );
+        standardSex( debug, almmCivilstatus, almmSex, source, rmtype );
+        standardCivilstatus( debug, almmCivilstatus, source, rmtype );
 
         while( almmCivilstatus.isBusy().get() ) {
             plog.show( String.format( "Thread id %02d; No permission to update ref table: Waiting 60 seconds", threadId ) );
@@ -3258,7 +3184,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardSex( boolean debug, TableToArrayListMultimap almmCivilstatus, TableToArrayListMultimap almmSex, String source )
+    public void standardSex( boolean debug, TableToArrayListMultimap almmCivilstatus, TableToArrayListMultimap almmSex, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3269,14 +3195,21 @@ public class LinksCleanThread extends Thread
         try
         {
             String selectQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardSex, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -3362,7 +3295,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param source
      */
-    public void standardCivilstatus( boolean debug, TableToArrayListMultimap almmCivilstatus, String source )
+    public void standardCivilstatus( boolean debug, TableToArrayListMultimap almmCivilstatus, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3375,14 +3308,21 @@ public class LinksCleanThread extends Thread
         try
         {
             String selectQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardCivilstatus, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -3503,7 +3443,7 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        standardRegistrationType( debug, source );
+        standardRegistrationType( debug, source, rmtype );
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3515,7 +3455,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void standardRegistrationType( boolean debug, String source )
+    public void standardRegistrationType( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
@@ -3523,15 +3463,23 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_registration, registration_maintype, registration_type FROM registration_o WHERE id_source = " + source;
+            String selectQuery = "SELECT id_registration, registration_maintype, registration_type";
+            selectQuery += "FROM registration_o WHERE id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( selectQuery, false, true ); }
 
             ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )      // process data from links_original
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardRegistrationType, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -3639,7 +3587,7 @@ public class LinksCleanThread extends Thread
 
         String msg = String.format( "Thread id %02d; Processing standardOccupation for source: %s", threadId, source );
         showMessage( msg, false, true );
-        standardOccupation( debug, almmOccupation, source );
+        standardOccupation( debug, almmOccupation, source, rmtype );
 
         msg = String.format( "Thread id %02d; Updating ref_occupation", threadId );
         showMessage( msg, false, true );
@@ -3665,7 +3613,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void standardOccupation( boolean debug, TableToArrayListMultimap almmOccupation, String source )
+    public void standardOccupation( boolean debug, TableToArrayListMultimap almmOccupation, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
 
@@ -3674,17 +3622,23 @@ public class LinksCleanThread extends Thread
         int stepstate = count_step;
 
         String query = "SELECT id_person , occupation FROM person_o WHERE id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query, false, true ); }
 
         try
         {
             ResultSet rs = dbconOriginal.runQueryWithResult( query );           // Get occupation
+            rs.last();
+            int total = rs.getRow();
+            rs.beforeFirst();
 
             while( rs.next() )
             {
                 count++;
                 if( count == stepstate ) {
-                    showMessage( count + "", true, true );
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, standardOccupation, %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
                     stepstate += count_step;
                 }
 
@@ -6686,10 +6640,12 @@ public class LinksCleanThread extends Thread
         if ( ! rmtype.isEmpty() ) { selectQueryA += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( "standardMinMaxMarriageYear() " + selectQueryA, false, true ); }
 
-        try {
+        try
+        {
             ResultSet rsA = dbconCleaned.runQueryWithResult( selectQueryA );
 
-            while (rsA.next()) {
+            while( rsA.next() )
+            {
                 count++;
                 if( count == stepstate ) {
                     showMessage( count + "", true, true );
