@@ -66,7 +66,7 @@ import general.PrintLogger;
  * FL-29-Jul-2014 Explicit imports
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
- * FL-27-Jun-2017 rmtype from gui
+ * FL-28-Jun-2017 rmtype from gui
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -1975,14 +1975,11 @@ public class ManagerGui extends javax.swing.JFrame
 										.addComponent(cbCdoPrepieceSuffix))
 									.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 304, Short.MAX_VALUE)))
 							.addGap(6, 6, 6)
-							.addGroup(pLOLCLayout.createParallelGroup()
-								.addGroup(pLOLCLayout.createSequentialGroup()
-									.addGroup(pLOLCLayout.createParallelGroup()
-										.addComponent(tbLOLClatestOutput, GroupLayout.PREFERRED_SIZE, 590, GroupLayout.PREFERRED_SIZE)
-										.addComponent(jLabel45))
-									.addGap(0, 0, Short.MAX_VALUE))
-								.addComponent(jScrollPane6))
-							.addContainerGap())
+							.addGroup(pLOLCLayout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+								.addComponent(jLabel45)
+								.addComponent(jScrollPane6, GroupLayout.DEFAULT_SIZE, 579, Short.MAX_VALUE)
+								.addComponent(tbLOLClatestOutput, GroupLayout.DEFAULT_SIZE, 579, Short.MAX_VALUE))
+							.addContainerGap(20, Short.MAX_VALUE))
 				);
 				pLOLCLayout.setVerticalGroup(
 					pLOLCLayout.createParallelGroup()
@@ -3028,7 +3025,7 @@ public class ManagerGui extends javax.swing.JFrame
             public void run()
             {
             long threadId = Thread.currentThread().getId();
-            String timestamp1 = "27-Jun-2017 13:04";
+            String timestamp1 = "28-Jun-2017 08:55";
             String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
             try
