@@ -77,7 +77,7 @@ import linksmanager.ManagerGui;
  * FL-21-Nov-2016 Old date difference bug in minMaxDate
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
- * FL-27-Jun-2017 Local db_ref connections, immediate open/close
+ * FL-28-Jun-2017 Local db_ref connections, immediate open/close
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -329,14 +329,14 @@ public class LinksCleanThread extends Thread
 
             // we currently only support a single rmtype, not a list
             try {
-                int rmtype_int = Integer.parseInt( RMtypesGui );
-                rmtype = RMtypesGui;
+                int rmtype_int = Integer.parseInt( RMtypesGui );    // test for (single) int
+                rmtype = RMtypesGui;                                // but we use the string
             }
-            catch( Exception ex ) {
+            catch( NumberFormatException nfex ) {
                 rmtype = "";
-                msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, ex.getMessage() );
-                showMessage( msg, false, true );
-                ex.printStackTrace( new PrintStream( System.out ) );
+                //msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, nfex.getMessage() );
+                //nfex.printStackTrace( new PrintStream( System.out ) );
+                if( ! RMtypesGui.isEmpty() ) { showMessage( "Not using registration_maintype", false, true ); }
             }
             msg = String.format( "Thread id %02d; rmtype: %s", mainThreadId, rmtype );
             showMessage( msg, false, true );
@@ -4540,6 +4540,7 @@ public class LinksCleanThread extends Thread
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+
         //*/
 
         ///*
@@ -7924,40 +7925,6 @@ public class LinksCleanThread extends Thread
                 {
                     for( int id_regist : registrationIds )
                     {
-                        /*
-                        TODO to-be-removed
-                        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_regist;
-                        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_regist;
-
-                        if( debug)
-                        {
-                            showMessage( "Deleting multi duplicate registration: " + id_regist, false, true );
-                            showMessage( queryDeleteRegist, false, true );
-                            showMessage( queryDeletePerson, false, true );
-                        }
-
-                        int countRegist = dbconCleaned.runQueryUpdate( queryDeleteRegist );
-                        int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
-                        ndeleteRegist += countRegist;
-                        ndeletePerson += countPerson;
-                        */
-
-                        /*
-                        String flag = "01";
-                        String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + flag + "'";
-                        flagQuery_r += " WHERE id_registration = " + id_regist;
-                        flagQuery_r += " AND not_linksbase IS NULL;";
-
-                        // if the flag was already set to this value, the count will be 0
-                        int countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
-                        nflagRegist += countRegist;
-
-                        if( countRegist != 1 ) {
-                            String msg = String.format( "flagDuplicateRegs() id_registration: %d already flagged", id_regist );
-                            showMessage( msg, false, true );
-                        }
-                        */
-
                         // get current flags string
                         String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
                         ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
@@ -8370,22 +8337,6 @@ public class LinksCleanThread extends Thread
         String value = "";      // nothing to add
         addToReportRegistration( id_reg_flag, id_source_flag, 1, value );       // warning 1
 
-        /*
-        TODO to-be-deleted
-        // Delete second member of duplicates from registration_c and person_c
-        String queryDeleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_reg_flag;
-        String queryDeletePerson = "DELETE FROM person_c WHERE id_registration = " + id_reg_flag;
-
-        if( debug ) {
-            showMessage( "Flagging duplicate registration: " + id_reg_flag,false,true );
-            showMessage( queryDeleteRegist,false,true );
-            showMessage( queryDeletePerson,false,true );
-        }
-
-        int countRegist = dbconCleaned.runQueryUpdate( queryDeleteRegist );
-        int countPerson = dbconCleaned.runQueryUpdate( queryDeletePerson );
-        */
-
         // get current flags string
         String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
         ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
@@ -8424,15 +8375,6 @@ public class LinksCleanThread extends Thread
             {
                 String msg = String.format( "flagDuplicate() id_registration: %d already flagged", id_reg_flag );
                 showMessage( msg, false, true );
-
-                // TODO to-be-deleted
-                //showMessage( deleteRegist, false, true );
-                //msg = String.format( "flagDuplicate() countRegist: %d", countRegist );
-                //showMessage( msg, false, true );
-
-                //showMessage( deletePerson, false, true );
-                //msg = String.format( "flagDuplicate() countPerson: %d", countPerson );
-                //showMessage( msg, false, true );
             }
             */
         }
