@@ -1020,7 +1020,7 @@ public class LinksCleanThread extends Thread
             deleteRegist += String.format( " AND registration_maintype = %s", rmtype );
             deletePerson += String.format( " AND registration_maintype = %s", rmtype );
 
-            msg = String.format( "Thread id %02d; Deleting previous data for source: %s and rmtype: %d", threadId, source, rmtype );
+            msg = String.format( "Thread id %02d; Deleting previous data for source: %s and rmtype: %s", threadId, source, rmtype );
         }
 
         showMessage( msg, false, true );
@@ -1398,8 +1398,13 @@ public class LinksCleanThread extends Thread
                 int id_person    = rs.getInt( "id_person" );
                 String firstname = rs.getString( "firstname" );
 
-                //if( id_person == 1 ) { debug = true; }
+                //if( id_person == 35241111 ) { debug = true; }
                 //else { debug = false; continue; }
+
+                if( debug ) {
+                    String msg = String.format( "count: %d, id_person: %d, firstname: %s", count, id_person, firstname );
+                    showMessage( msg, false, true );
+                }
 
                 // currently never filled in person_o, but flagged by having a firstname 'Levenloos'
                 //String stillbirth = rsFirstName.getString( "stillbirth" );
@@ -1407,12 +1412,12 @@ public class LinksCleanThread extends Thread
                 // Is firstname empty?
                 if( firstname != null && ! firstname.isEmpty() )
                 {
-                    if( debug ) { System.out.println( "firstname: " + firstname ); }
+                    if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
                     firstname = cleanFirstname( debug, source, id_person, firstname );
 
                     // cleanFirstname() assumes the presence of uppercase letters, so only now to lowercase
                     firstname = firstname.toLowerCase();
-                    if( debug ) { System.out.println( "firstname: " + firstname ); }
+                    if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
 
                     // Check name on aliases
                     String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, firstname, 1107 );
@@ -1655,6 +1660,7 @@ public class LinksCleanThread extends Thread
                     String firstname2 = "";
                     String firstname3 = "";
                     String firstname4 = "";
+
                     for( int n = 0; n < postList.size(); n++ )
                     {
                         if( n > 0 ) { firstnames += " "; }      // add space
@@ -1667,16 +1673,10 @@ public class LinksCleanThread extends Thread
                         if( n == 3 ) { firstname4 = name; }
                     }
 
-                    // if firstnames not empty write to csv
-                    if( ! firstnames.isEmpty() ) {
-                        //String query = PersonC.updateQuery("firstname", vn, id_person);
-                        //dbconCleaned.runQuery(query);
-
-                        //writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
-                        String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
-                            id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
-                        writerFirstname.write( line );
-                    }
+                    //writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
+                    String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
+                        id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
+                    writerFirstname.write( line );
 
                     preList.clear();
                     postList.clear();
@@ -1748,20 +1748,31 @@ public class LinksCleanThread extends Thread
                 // Get family name
                 String familyname = rs.getString( "familyname" );
                 int id_person     = rs.getInt( "id_person" );
-                if( debug ) { showMessage( "count: " + count + ", id_person: " + id_person + ", familyname: " + familyname, false, true ); }
+
+                //if( id_person == 35241111 ) { debug = true; }
+                //else { debug = false; continue; }
+
+                if( debug ) {
+                    String msg = String.format( "count: %d, id_person: %d, familyname: %s", count, id_person, familyname );
+                    showMessage( msg, false, true );
+                }
 
                 // Check is Familyname is not empty or null
-                if( familyname != null && !familyname.isEmpty() )
+                if( familyname != null && ! familyname.isEmpty() )
                 {
+                    if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
                     familyname = cleanFamilyname( debug, source, id_person, familyname );
                     familyname = familyname.toLowerCase();
+                    if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
 
                     // familyname in ref_familyname ?
                     if( almmFamilyname.contains( familyname ) )
                     {
                         // get standard_code
                         String standard_code = almmFamilyname.code( familyname );
-                        if( debug ) { showMessage( "code: " + standard_code, false, true ); }
+                        String standard = almmFamilyname.standard( familyname );
+                        if( debug ) { showMessage( "standard_code: " + standard_code, false, true ); }
+                        if( debug ) { showMessage( "standard: " + standard, false, true ); }
 
                         // Check the standard code
                         if( standard_code.equals( SC_Y ) )
@@ -1874,7 +1885,7 @@ public class LinksCleanThread extends Thread
                         }
                     }
                 }
-                else {  // Familyname empty
+                else {      // Familyname empty
                     count_empty++;
                     addToReportPerson( id_person, source, 1001, "" );  // EC 1001
                 }
