@@ -78,6 +78,7 @@ import linksmanager.ManagerGui;
  * FL-25-Jan-2017 Divorce info from remarks
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
  * FL-28-Jun-2017 Local db_ref connections, immediate open/close
+ * FL-05-Jul-2017 almmRegistration use
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -101,8 +102,8 @@ public class LinksCleanThread extends Thread
     private JTextArea  outputArea;
 
     private boolean dbconref_single = true;     // true: same ref for reading and writing
-    private MySqlConnector dbconRefWrite;       // [remote] reference db for writing new occurrences
-    private MySqlConnector dbconRefRead;        // [local]  reference db for reading
+    private MySqlConnector dbconRefWrite;       // used by almmReport
+    private MySqlConnector dbconRefRead;        // used by almmReport
     private MySqlConnector dbconLog;            // logging  of errors/warnings
     private MySqlConnector dbconOriginal;       // original data from A2A
     private MySqlConnector dbconCleaned;        // cleaned, from original
@@ -444,7 +445,7 @@ public class LinksCleanThread extends Thread
                 }
 
                 // Close db connections
-                dbconRefWrite.close();
+                //dbconRefWrite.close();
                 if( !dbconref_single ) { dbconRefRead.close(); }
                 dbconLog.close();
                 dbconOriginal.close();
@@ -1119,6 +1120,18 @@ public class LinksCleanThread extends Thread
         dbconnRefR.close();
         showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
+        int numrows = almmPrepiece.numrows();
+        int numkeys = almmPrepiece.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_firstname: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
+
+        numrows = almmSuffix.numrows();
+        numkeys = almmSuffix.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_firstname: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
+
         showMessage( String.format( "Thread id %02d; standardPrepiece", threadId ), false, true );
         standardPrepiece( debug, almmPrepiece, source, rmtype );
 
@@ -1132,12 +1145,16 @@ public class LinksCleanThread extends Thread
             plog.show( "No permission to update ref_prepiece: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
+        int newcount = almmPrepiece.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmPrepiece.updateTable( dbconnRefW );
 
         while( almmSuffix.isBusy().get() ) {
             plog.show( "No permission to update ref table: Waiting 60 seconds" );
             Thread.sleep( 60000 );
         }
+        newcount = almmSuffix.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmSuffix.updateTable( dbconnRefW );
 
         // almmAlias.updateTable( dbconnRefW );         // almmAlias.add() never called; nothing added to almmAlias
@@ -1226,6 +1243,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmFirstname.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmFirstname.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -1330,6 +1349,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmFamilyname.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmFamilyname.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -2712,6 +2733,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmLocation.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmLocation.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -3181,6 +3204,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmCivilstatus.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmCivilstatus.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -3350,7 +3375,6 @@ public class LinksCleanThread extends Thread
                 if( civil_status != null && !civil_status.isEmpty() )       // check presence of civil status
                 {
                     if( almmCivilstatus.contains( civil_status ) )          // check presence in original
-
                     {
                         String refSCode = almmCivilstatus.code( civil_status );
                         //showMessage( "code: " + refSCode, false, true );
@@ -3454,7 +3478,42 @@ public class LinksCleanThread extends Thread
         long timeStart = System.currentTimeMillis();
         showMessage( funcname + " ...", false, true );
 
-        standardRegistrationType( debug, source, rmtype );
+        long start = System.currentTimeMillis();
+        MySqlConnector dbconnRefR = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        TableToArrayListMultimap almmRegistration = new TableToArrayListMultimap( dbconnRefR, "ref_registration", "original", "standard" );
+        dbconnRefR.close();
+        showTimingMessage( String.format( "Thread id %02d; Loaded Registration reference table", threadId ), start );
+
+        int numrows = almmRegistration.numrows();
+        int numkeys = almmRegistration.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_registration: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
+
+        // glue original with registration_maintype
+        /*
+        Note that split() takes a regular expression, so remember to escape special characters if necessary.
+        there are 12 characters with special meanings: the backslash \,
+        the caret ^, the dollar sign $, the period or dot ., the vertical bar or pipe symbol |, the question mark ?,
+        the asterisk or star *, the plus sign +, the opening parenthesis (, the closing parenthesis ),
+        and the opening square bracket [, the opening curly brace {, These special characters are often called "metacharacters".
+        */
+        String delimiter = "_";
+        standardRegistrationType( debug, almmRegistration, delimiter, source, rmtype );
+
+        while( almmRegistration.isBusy().get() ) {
+            plog.show( String.format( "Thread id %02d; No permission to update ref table: Waiting 60 seconds", threadId ) );
+            Thread.sleep( 60000 );
+        }
+
+        MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        String extra_col = "main_type";
+        int newcount = almmRegistration.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
+        almmRegistration.updateTable( dbconnRefW, extra_col, delimiter );
+        dbconnRefW.close();
+
+        almmRegistration.free();
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -3466,7 +3525,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @param source
      */
-    public void standardRegistrationType( boolean debug, String source, String rmtype )
+    public void standardRegistrationType( boolean debug, TableToArrayListMultimap almmRegistration, String delimiter, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
         int count = 0;
@@ -3475,7 +3534,7 @@ public class LinksCleanThread extends Thread
         try
         {
             String selectQuery = "SELECT id_registration, registration_maintype, registration_type";
-            selectQuery += "FROM registration_o WHERE id_source = " + source;
+            selectQuery += " FROM registration_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
 
@@ -3495,15 +3554,18 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_registration = rs.getInt( "id_registration" );
-                int registration_maintype = rs.getInt( "registration_maintype" );
+                String registration_maintype = rs.getString( "registration_maintype" );
                 String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
-                String refQuery = "SELECT * FROM ref_registration WHERE main_type = '" + registration_maintype + "' AND original = '" + registration_type + "'";
-                ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
+                //String refQuery = "SELECT * FROM ref_registration WHERE main_type = '" + registration_maintype + "' AND original = '" + registration_type + "'";
+                //ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
 
-                if( ref.next() )        // compare with reference
+                //if( ref.next() )        // compare with reference
+                if( almmRegistration.contains( registration_type ) )
                 {
-                    String refSCode = ref.getString( "standard_code" ).toLowerCase();
+                    //String refSCode = ref.getString( "standard_code" ).toLowerCase();
+                    String refSCode = almmRegistration.code( registration_type );
+                    if( debug ) { System.out.println( "refSCode: " + refSCode ); }
 
                     if( refSCode.equals( SC_X ) ) {
                         if( debug ) { showMessage( "Warning 51: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
@@ -3523,13 +3585,15 @@ public class LinksCleanThread extends Thread
 
                         addToReportRegistration( id_registration, source, 55, registration_type );       // warning 55
 
-                        String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
+                        String refSRegisType = almmRegistration.standard( registration_type );
+                        String query = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
                         dbconCleaned.runQuery( query );
                     }
                     else if( refSCode.equals( SC_Y ) ) {
                         if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
-                        String query = RegistrationC.updateQuery( "registration_type", ref.getString( "standard" ).toLowerCase(), id_registration );
+                        String refSRegisType = almmRegistration.standard( registration_type );
+                        String query = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
                         dbconCleaned.runQuery( query );
                     }
                     else {    // invalid SC
@@ -3544,10 +3608,10 @@ public class LinksCleanThread extends Thread
 
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51
 
-                    //almmRegisType.add( occupation );      //need adapted almmRegisType
-
                     // column 'original' now has a UNIQUE key: using IGNORE to skip duplicates, preventing failing queries
-                    dbconRefWrite.runQuery( "INSERT IGNORE INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
+                    //dbconRefWrite.runQuery( "INSERT IGNORE INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
+
+                    almmRegistration.add( registration_type + delimiter + registration_maintype );
 
                     // update links_cleaned.registration_c
                     String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
@@ -3609,6 +3673,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmOccupation.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmOccupation.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -3701,7 +3767,7 @@ public class LinksCleanThread extends Thread
                     //showMessage( "old: " + occupation, false, true );
                     if( debug ) { showMessage("getStandardCodeByOriginal: " + occupation, false, true ); }
 
-                    String refSCode = almmOccupation.code(occupation);
+                    String refSCode = almmOccupation.code( occupation );
 
                     if( debug ) { showMessage( "refSCode: " + refSCode, false, true ); }
 
@@ -3792,12 +3858,14 @@ public class LinksCleanThread extends Thread
         dbconnRefR.close();
         showTimingMessage( String.format( "Thread id %02d; Loaded LitAge reference table", threadId ), start );
 
-        int size = almmLitAge.numkeys();
-        String msg = String.format( "Thread id %02d; Reference table: ref_age [%d records]", threadId, size );
-        showMessage( msg, false, true );
+        int numrows = almmLitAge.numrows();
+        int numkeys = almmLitAge.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_age: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
         long timeSAL = System.currentTimeMillis();
-        msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s, rmtype: %s ...", threadId, source, rmtype );
+        String msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         standardAgeLiteral( debug, almmLitAge, source, rmtype );
         msg = String.format( "Thread id %02d; Processing standardAgeLiteral for source: %s, rmtype: %s ", threadId, source, rmtype );
@@ -3819,6 +3887,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmLitAge.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmLitAge.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -4231,11 +4301,13 @@ public class LinksCleanThread extends Thread
         dbconnRefR.close();
         showTimingMessage( String.format( "Thread id %02d; Loaded Role reference table", threadId ), timeStart );
 
-        int size = almmRole.numkeys();
-        String msg = String.format( "Thread id %02d; Reference table: ref_role [%d records]", threadId, size );
-        showMessage( msg, false, true );
+        int numrows = almmRole.numrows();
+        int numkeys = almmRole.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_role: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
-        msg = String.format( "Thread id %02d; Processing standardRole for source: %s ...", threadId, source );
+        String msg = String.format( "Thread id %02d; Processing standardRole for source: %s ...", threadId, source );
         showMessage( msg, false, true );
 
         standardRole( debug, almmRole, source, rmtype );
@@ -4246,6 +4318,8 @@ public class LinksCleanThread extends Thread
         }
 
         MySqlConnector dbconnRefW = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
+        int newcount = almmRole.newcount();
+        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
         almmRole.updateTable( dbconnRefW );
         dbconnRefW.close();
 
@@ -6609,6 +6683,12 @@ public class LinksCleanThread extends Thread
         TableToArrayListMultimap almmMarriageYear = new TableToArrayListMultimap( dbconnRefR, "ref_minmax_marriageyear", "role_A", "role_B" );
         dbconnRefR.close();
         showTimingMessage( String.format( "Thread id %02d; Loaded MarriageYear reference table", threadId ), start );
+
+        int numrows = almmMarriageYear.numrows();
+        int numkeys = almmMarriageYear.numkeys();
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_role: %d", threadId, numrows ), false, true );
+        if( numrows != numkeys )
+        { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
         minMaxMarriageYear( debug, almmMarriageYear, source, rmtype );
 

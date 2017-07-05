@@ -23,7 +23,7 @@ import modulemain.LinksSpecific;
  * @author Fons Laan
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
- * FL-26-Jun-2017 Latest change
+ * FL-05-Jul-2017 optional extra column for ref_registration
  */
 public class TableToArrayListMultimap
 {
@@ -69,6 +69,7 @@ public class TableToArrayListMultimap
      * @param conn_read         // "conn_read"  is normally conGeneral, i.e. the local links_general db
      * @param tableName
      * @param keyColumn
+     * @param standardColumn
      */
     public TableToArrayListMultimap
     (
@@ -129,10 +130,10 @@ public class TableToArrayListMultimap
         */
 
         String query = "";
-        if( check_duplicates ) { query = "SELECT * FROM `" + tableName + "` ORDER BY `" + keyColumn + "` ASC"; }
-        else { query = "SELECT * FROM `" + tableName + "`"; }
+        if( check_duplicates ) { query = "SELECT * FROM links_general.`" + tableName + "` ORDER BY `" + keyColumn + "` ASC"; }
+        else { query = "SELECT * FROM links_general.`" + tableName + "`"; }
 
-        //if( debug ) { System.out.println( "TableToArrayListMultimap, query: " + query ); }
+        if( debug ) { System.out.println( "TableToArrayListMultimap, query: " + query ); }
         ResultSet rs = conn_read.runQueryWithResult( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
@@ -174,9 +175,7 @@ public class TableToArrayListMultimap
         if( debug ) { tableInfo(); }
         //contentsOld();
 
-
-
-    } // TabletoArrayListMultiMap
+    } // TableToArrayListMultiMap
 
 
     /**
@@ -655,12 +654,59 @@ public class TableToArrayListMultimap
         //System.out.println( "updateTable" );
 
         int num = 0;
-        for( String entry : newSet.elementSet() ) {
+        for( String entry : newSet.elementSet() )
+        {
             //num++;
             //System.out.printf( "%d %s\n", num, entry );
             String[] fields = { "original", "standard_code" };
 
             String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
+
+            // insertIntoTableIgnore: ignore duplicates for UNIQUE keys
+            conn.insertIntoTableIgnore( tableName, fields, values );
+        }
+
+        update_busy.set( false );
+
+        return true;    // i.e. success
+    } // updateTable
+
+    /**
+     * Insert the new set entries into the reference table
+     *
+     * Multi-threaded consideration:
+     * Do not call this function when the flag update_busy is true.
+     * We ignore the update request if another thread already has the update in progress.
+     * Beware of: java.util.ConcurrentModificationException
+     */
+    public boolean updateTable( MySqlConnector conn, String extra_col, String delimiter )
+    throws Exception
+    {
+        // try to prevent: java.util.ConcurrentModificationException
+        if( update_busy.get() ) { return false; }   // i.e. fail
+
+        update_busy.set( true );    // if we were not busy, now we are...
+
+        if( debug ) { System.out.println( "updateTable" ); }
+
+        if( debug ) { System.out.printf( "extra_col: %s, delimiter: %s\n", extra_col, delimiter ); }
+        if( debug ) { System.out.println( String.format( "number of new entries: %d", newSet.size() ) ); }
+
+        int num = 0;
+        String[] fields = { "original", extra_col, "standard_code" };
+        for( String entry : newSet.elementSet() )
+        {
+            //num++;
+            if( debug ) { System.out.printf( "num: %d, entry: %s\n", num, entry ); }
+
+            String[] comps   = entry.split( delimiter );
+            String original  = comps[ 0 ];
+            String extra_val = comps[ 1 ];
+
+            if( debug ) { System.out.println( String.format( "original: %s, %s: %s", original, extra_col, extra_val ) ); }
+
+            //String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
+            String[] values = { LinksSpecific.prepareForMysql( original ), LinksSpecific.prepareForMysql( extra_val ), "x" };
 
             // insertIntoTableIgnore: ignore duplicates for UNIQUE keys
             conn.insertIntoTableIgnore( tableName, fields, values );
