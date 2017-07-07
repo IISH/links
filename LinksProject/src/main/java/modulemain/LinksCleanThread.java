@@ -7386,6 +7386,7 @@ public class LinksCleanThread extends Thread
      */
     private void doFlagRegistrations( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
+        debug = true;
         long threadId = Thread.currentThread().getId();
 
         String funcname = String.format( "Thread id %02d; doFlagRegistrations for source: %s, rmtype: %s", threadId, source, rmtype );
@@ -7399,12 +7400,16 @@ public class LinksCleanThread extends Thread
 
         String msg = String.format( "Thread id %02d; Clear Previous Registration Flags for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        clearFlagDuplicateRegs( debug, source, rmtype );
-
-        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations for source: %s, rmtype: %s ...", threadId, source, rmtype );
+        clearFlagsRegsLinksbase( debug, source, rmtype );
+        /*
+        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations (components) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        flagDuplicateRegs( debug, source, rmtype );
-
+        flagDuplicateRegsComps( debug, source, rmtype );
+        */
+        msg = String.format( "Thread id %02d; Flagging Duplicate Registrations (_id_persist) for source: %s, rmtype: %s ...", threadId, source, rmtype );
+        showMessage( msg, false, true );
+        flagDuplicateRegsPersist( debug, source, rmtype );
+        /*
         msg = String.format( "Thread id %02d; Flagging Empty Date Registrations for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagEmptyDateRegs( debug, source, rmtype );
@@ -7412,10 +7417,653 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagEmptyDaysSinceBegin( debug, source, rmtype );
-
+        */
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doFlagRegistrations
+
+
+    /**
+     * @param debug
+     * @throws Exception
+     */
+    private void clearFlagsRegsLinksbase( boolean debug, String source, String rmtype )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        // Clear previous flag values for given source
+        String clearQuery_r = "UPDATE registration_c SET not_linksbase = NULL WHERE id_source = " + source;
+
+        if ( ! rmtype.isEmpty() ) { clearQuery_r += " AND registration_maintype = " + rmtype; }
+        if( debug ) { System.out.println( clearQuery_r ); }
+
+        //String clearQuery_r = "UPDATE registration_c SET not_linksbase = '0001' WHERE id_source = " + source + ";";   // test updates
+        int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
+
+        String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
+        showMessage( msg, false, true );
+    } // clearFlagsRegsLinksbase
+
+
+    /**
+     * @param debug
+     * @param source
+     * @param rmtype
+     * @throws Exception
+     */
+    private void flagDuplicateRegsComps( boolean debug, String source, String rmtype )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        showMessage( String.format( "Thread id %02d; flagDuplicateRegsComps for source %s", threadId, source ), false, true );
+        showMessage( String.format( "Thread id %02d; Notice: the familyname prefix is not used for comparisons", threadId ), false , true );
+
+        int min_cnt = 2;    // in practice we see double, triples and quadruples
+
+        // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
+        // And we require that the 4 grouping variables have normal values.
+        String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
+            + "FROM registration_c "
+            + "WHERE id_source = " + source + " "
+            + "AND registration_maintype IS NOT NULL AND registration_maintype <> 0 "
+            + "AND registration_location_no IS NOT NULL AND registration_location_no <> 0 "
+            + "AND registration_date IS NOT NULL AND registration_date <> '' "
+            + "AND registration_seq IS NOT NULL AND registration_seq <> '' "
+            + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
+            + "HAVING cnt >= " + min_cnt + " "
+            + "ORDER BY cnt DESC;";
+
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( query_r, false, true ); }
+
+        int nDuplicates = 0;
+
+        try
+        {
+            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+
+            int nflagRegist = 0;
+            //int ndeletePerson = 0;
+
+            int row = 0;
+            while( rs_r.next() )        // process all groups
+            {
+                row++;
+
+                String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
+                String registration_date   = rs_r.getString( "registration_date" );
+                String registration_seq    = rs_r.getString( "registration_seq" );
+
+                int registration_maintype    = rs_r.getInt( "registration_maintype" );
+                int registration_location_no = rs_r.getInt( "registration_location_no" );
+
+                if( debug ) {
+                    String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
+                        registration_maintype, registration_location_no, registration_date, registration_location_no );
+                    System.out.println( msg );
+                }
+
+                String registrationIdsStrs[] = registrationIds_str.split( "," );
+                Vector< Integer > registrationIds = new Vector< Integer >();
+                for( String registrationId : registrationIdsStrs ) {
+                    registrationIds.add( Integer.parseInt( registrationId ) );
+                }
+
+                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
+                Collections.sort( registrationIds );
+
+                if( debug ) {
+                    showMessage( registrationIds.toString(), false, true );
+                    showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                }
+
+                if( registrationIds.size() > 2 )   // useless registrations, flag them all
+                {
+                    for( int id_regist : registrationIds )
+                    {
+                        // get current flags string
+                        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
+                        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+                        String old_flags = "";
+                        while( rs.next() )
+                        { old_flags = rs.getString( "not_linksbase" ); }
+
+                        int countRegist = 0;
+                        String new_flags = "";
+
+                        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0100"; }
+                        else
+                        {
+                            // is the flag already set?
+                            int flag_idx = 1;       // 2nd position for the flag
+                            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                            {
+                                // preserve other flags, and set new flag
+                                StringBuilder sb = new StringBuilder( old_flags );
+                                sb.setCharAt( flag_idx,'1' );
+                                new_flags = sb.toString();
+                            }
+                        }
+
+                        if( ! new_flags.isEmpty() )
+                        {
+                            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                            flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+                            //System.out.println(flagQuery_r);
+
+                            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                        }
+                    }
+                }
+                else    // test pairs
+                {
+                    int rid1 = 0;
+                    int rid2 = 1;
+                    boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
+                    if( isDuplicate ) { nDuplicates++; }
+                }
+
+                for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
+                {
+                    for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
+                    {
+                        boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
+                        if( isDuplicate ) { nDuplicates++; }
+                    }
+                }
+
+                // free
+                registrationIds.clear();
+                registrationIds = null;
+            }
+
+            String msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate tuples: %d", threadId, nflagRegist );
+            showMessage( msg, false, true );
+
+            msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate pairs: %d", threadId, nDuplicates );
+            showMessage( msg, false, true );
+        }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsComps: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // flagDuplicateRegsComps
+
+
+    /**
+     * @param debug
+     * @param rid1
+     * @param rid2
+     * @param registrationIds
+     * @param registration_maintype
+     *
+     * @throws Exception
+     */
+    private boolean compare2Registrations( boolean debug, int rid1, int rid2, Vector< Integer > registrationIds, int registration_maintype )
+    throws Exception
+    {
+        if( debug ) {
+            System.out.println( String.format( "rid1: %d, rid2: %d", rid1, rid2 ) );
+            System.out.println( String.format( "registrationIds.size(): %d", registrationIds.size() ) );
+            for( int rid : registrationIds ) { System.out.println( rid ); }
+        }
+
+        int id_registration1 = registrationIds.get( rid1 );
+        int id_registration2 = registrationIds.get( rid2 );
+
+        if( debug ) { showMessage( "Comparing, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true ); }
+
+        String id_source1 = "";
+        String id_source2 = "";
+
+        if( registration_maintype == 1 )
+        {
+            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
+            if( debug ) { System.out.println( query_p1 ); }
+            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
+
+            String newborn_id_source1  = "";
+            String newborn_firstname1  = "";
+            String newborn_prefix1     = "";
+            String newborn_familyname1 = "";
+
+            while( rs_p1.next() )
+            {
+                int role = rs_p1.getInt( "role" );
+
+                newborn_id_source1  = rs_p1.getString( "id_source" );
+                newborn_firstname1  = rs_p1.getString( "firstname" );
+                newborn_prefix1     = rs_p1.getString( "prefix" );
+                newborn_familyname1 = rs_p1.getString( "familyname" );
+
+                if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
+                if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
+                if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
+                if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
+
+                id_source1 = newborn_id_source1;
+
+                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+            }
+
+            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
+            if( debug ) { System.out.println( query_p2 ); }
+            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
+
+            String newborn_id_source2  = "";
+            String newborn_firstname2  = "";
+            String newborn_prefix2     = "";
+            String newborn_familyname2 = "";
+
+            while( rs_p2.next() )
+            {
+                int role = rs_p2.getInt( "role" );
+
+                newborn_id_source2  = rs_p2.getString( "id_source" );
+                newborn_firstname2  = rs_p2.getString( "firstname" );
+                newborn_prefix2     = rs_p2.getString( "prefix" );
+                newborn_familyname2 = rs_p2.getString( "familyname" );
+
+                if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
+                if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
+                if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
+                if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
+
+                id_source2 = newborn_id_source2;
+            }
+
+            if( newborn_firstname1.equals( newborn_firstname2 ) && newborn_familyname1.equals( newborn_familyname2 ) )
+            {
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
+
+                    showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
+                    showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
+                }
+
+                int delcnt = flagDuplicateReg( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
+            }
+        }
+
+        else if( registration_maintype == 2 )   // marriage
+        {
+
+            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
+            if( debug ) { System.out.println( query_p1 ); }
+            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
+
+            String bride_id_source1  = "";
+            String bride_firstname1  = "";
+            String bride_prefix1     = "";
+            String bride_familyname1 = "";
+
+            String groom_id_source1  = "";
+            String groom_firstname1  = "";
+            String groom_prefix1     = "";
+            String groom_familyname1 = "";
+
+            while( rs_p1.next() )
+            {
+                int role = rs_p1.getInt( "role" );
+
+                if( role == 4 )
+                {
+                    bride_id_source1  = rs_p1.getString( "id_source" );
+                    bride_firstname1  = rs_p1.getString( "firstname" );
+                    bride_prefix1     = rs_p1.getString( "prefix" );
+                    bride_familyname1 = rs_p1.getString( "familyname" );
+
+                    if( bride_id_source1  == null ) { bride_id_source1  = ""; }
+                    if( bride_firstname1  == null ) { bride_firstname1  = ""; }
+                    if( bride_prefix1     == null ) { bride_prefix1     = ""; }
+                    if( bride_familyname1 == null ) { bride_familyname1 = ""; }
+
+                    id_source1 = bride_id_source1;
+                }
+                else    // role == 7
+                {
+                    groom_id_source1  = rs_p1.getString( "id_source" );
+                    groom_firstname1  = rs_p1.getString( "firstname" );
+                    groom_prefix1     = rs_p1.getString( "prefix" );
+                    groom_familyname1 = rs_p1.getString( "familyname" );
+
+                    if( groom_id_source1  == null ) { groom_id_source1  = ""; }
+                    if( groom_firstname1  == null ) { groom_firstname1  = ""; }
+                    if( groom_prefix1     == null ) { groom_prefix1     = ""; }
+                    if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+                    id_source1 = groom_id_source1;
+                }
+            }
+
+            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
+            if( debug ) { System.out.println( query_p2 ); }
+            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
+
+            String bride_id_source2  = "";
+            String bride_firstname2  = "";
+            String bride_prefix2     = "";
+            String bride_familyname2 = "";
+
+            String groom_id_source2  = "";
+            String groom_firstname2  = "";
+            String groom_prefix2     = "";
+            String groom_familyname2 = "";
+
+            while( rs_p2.next() )
+            {
+                int role = rs_p2.getInt( "role" );
+
+                if( role == 4 )
+                {
+                    bride_id_source2  = rs_p2.getString( "id_source" );
+                    bride_firstname2  = rs_p2.getString( "firstname" );
+                    bride_prefix2     = rs_p2.getString( "prefix" );
+                    bride_familyname2 = rs_p2.getString( "familyname" );
+
+                    if( bride_id_source2  == null ) { bride_id_source2  = ""; }
+                    if( bride_firstname2  == null ) { bride_firstname2  = ""; }
+                    if( bride_prefix2     == null ) { bride_prefix2     = ""; }
+                    if( bride_familyname2 == null ) { bride_familyname2 = ""; }
+
+                    id_source2 = bride_id_source2;
+                }
+                else    // role == 7
+                {
+                    groom_id_source2  = rs_p2.getString( "id_source" );
+                    groom_firstname2  = rs_p2.getString( "firstname" );
+                    groom_prefix2     = rs_p2.getString( "prefix" );
+                    groom_familyname2 = rs_p2.getString( "familyname" );
+
+                    if( groom_id_source2  == null ) { groom_id_source2  = ""; }
+                    if( groom_firstname2  == null ) { groom_firstname2  = ""; }
+                    if( groom_prefix2     == null ) { groom_prefix2     = ""; }
+                    if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+                    id_source2 = groom_id_source2;
+                }
+            }
+
+            if( bride_firstname1.equals( bride_firstname2 ) && bride_familyname1.equals( bride_familyname2 ) &&
+                groom_firstname1.equals( groom_firstname2 ) && groom_familyname1.equals( groom_familyname2 ) )
+            {
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
+
+                    showMessage( "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1, false, true );
+                    showMessage( "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2, false, true );
+
+                    showMessage( "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1, false, true );
+                    showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
+                }
+
+                int delcnt = flagDuplicateReg( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
+            }
+        }
+
+        else if( registration_maintype == 3 )   // death
+        {
+            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 10";
+            if( debug ) { System.out.println( query_p1 ); }
+            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
+
+            String deceased_id_source1  = "";
+
+            String deceased_firstname1  = "";
+            String deceased_prefix1     = "";
+            String deceased_familyname1 = "";
+
+            while( rs_p1.next() )
+            {
+                int role = rs_p1.getInt( "role" );
+
+                deceased_id_source1  = rs_p1.getString( "id_source" );
+                deceased_firstname1  = rs_p1.getString( "firstname" );
+                deceased_prefix1     = rs_p1.getString( "prefix" );
+                deceased_familyname1 = rs_p1.getString( "familyname" );
+
+                if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
+                if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
+                if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
+                if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
+
+                id_source1 = deceased_id_source1;
+            }
+
+            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
+            if( debug ) { System.out.println( query_p2 ); }
+            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
+
+            String deceased_id_source2  = "";
+            String deceased_firstname2  = "";
+            String deceased_prefix2     = "";
+            String deceased_familyname2 = "";
+
+            while( rs_p2.next() )
+            {
+                int role = rs_p2.getInt( "role" );
+
+                deceased_id_source2  = rs_p2.getString( "id_source" );
+                deceased_firstname2  = rs_p2.getString( "firstname" );
+                deceased_prefix2     = rs_p2.getString( "prefix" );
+                deceased_familyname2 = rs_p2.getString( "familyname" );
+
+                if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
+                if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
+                if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
+                if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
+
+                id_source2 = deceased_id_source2;
+            }
+
+            if( deceased_firstname1.equals( deceased_firstname2 ) && deceased_familyname1.equals( deceased_familyname2 ) )
+            {
+                if( debug ) {
+                    showMessage_nl();
+                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
+                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
+                    showMessage( msg, false, true );
+
+                    showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
+                    showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
+                }
+
+                int delcnt = flagDuplicateReg( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
+                if( delcnt > 0 ) { return true; }
+            }
+        }
+
+        return false;
+    } // compare2Registrations
+
+
+    /**
+     * @param debug
+     *
+     * @throws Exception
+     */
+    private int flagDuplicateReg( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
+        int id_registration1, int id_registration2, int registration_maintype )
+    throws Exception
+    {
+        if( debug ) {
+            showMessage_nl();
+            showMessage( "Duplicate in Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+        }
+
+        int id_reg_keep = 0;
+        int id_reg_flag = 0;
+        String id_source_flag = "";
+
+        // keep the smallest id_reg
+        if( id_registration2 > id_registration1 )
+        {
+            id_reg_keep    = id_registration1;
+            id_reg_flag    = id_registration2;
+            id_source_flag = id_source2;
+        }
+        else
+        {
+            id_reg_keep    = id_registration2;
+            id_reg_flag    = id_registration1;
+            id_source_flag = id_source1;
+        }
+
+        //String msgt = "TEST RUN; NOT DELETING";
+        //System.out.println( msgt ); showMessage( msgt, false, true );
+
+        if( debug ) {
+            String msg = "keep id: " + id_reg_keep + ", flag: " + id_reg_flag + " (registration_maintype: " + registration_maintype + ")";
+            //System.out.println( msg );
+            showMessage( msg, false, true );
+        }
+
+        // write error msg with EC=1
+        if( id_source_flag.isEmpty() ) { id_source_flag = "0"; }    // it must be a valid integer string for the log table
+        String value = "";      // nothing to add
+        addToReportRegistration( id_reg_flag, id_source_flag, 1, value );       // warning 1
+
+        // get current flags string
+        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
+        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
+        String old_flags = "";
+        while( rs.next() )
+        { old_flags = rs.getString( "not_linksbase" ); }
+
+        int countRegist = 0;
+        String new_flags = "";
+
+        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "1000"; }
+        else
+        {
+            // is the flag already set?
+            int flag_idx = 0;       // 1st position for the flag
+            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+            {
+                // preserve other flags, and set new flag
+                StringBuilder sb = new StringBuilder( old_flags );
+                sb.setCharAt( flag_idx,'1' );
+                new_flags = sb.toString();
+            }
+        }
+
+        if( ! new_flags.isEmpty() )
+        {
+            // Flag second member of duplicate pair from registration_c
+            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+            flagQuery_r += " WHERE id_registration = " + id_reg_flag + ";";
+            //System.out.println(flagQuery_r);
+
+            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+
+            /*
+            if( countRegist != 1 )
+            {
+                String msg = String.format( "flagDuplicate() id_registration: %d already flagged", id_reg_flag );
+                showMessage( msg, false, true );
+            }
+            */
+        }
+
+        return countRegist;
+    } // flagDuplicateReg
+
+
+    /**
+     * @param debug
+     * @param source
+     * @param rmtype
+     * @throws Exception
+     */
+    private void flagDuplicateRegsPersist( boolean debug, String source, String rmtype )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist for source %s", threadId, source ), false, true );
+
+        int min_cnt = 2;    // in practice we see double, triples and quadruples
+
+        // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
+        // And we require that the 4 grouping variables have normal values.
+        String query_r = "SELECT GROUP_CONCAT(id_persist_registration), registration_maintype, COUNT(*) AS cnt ";
+        query_r += "FROM registration_c ";
+        query_r += "WHERE id_source = " + source + " ";
+        query_r += "AND id_persist_registration IS NOT NULL AND INSTR(id_persist_registration, ' ') = 0 ";
+
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype + " "; }
+
+        query_r +=  "GROUP BY id_persist_registration ";
+        query_r +=  "HAVING cnt >= " + min_cnt + " ";
+        query_r +=  "ORDER BY cnt DESC;";
+
+        if( debug ) { showMessage( query_r, false, true ); }
+        if( debug ) { System.out.println( query_r ); }
+
+        int nDuplicates = 0;
+
+        try
+        {
+            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
+
+            int nflagRegist = 0;
+            //int ndeletePerson = 0;
+
+            int row = 0;
+            while( rs_r.next() )        // process all groups
+            {
+                row++;
+
+                String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_persist_registration)" );
+
+                int registration_maintype    = rs_r.getInt( "registration_maintype" );
+
+                /*
+                if( debug ) {
+                    String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
+                        registration_maintype, registration_location_no, registration_date, registration_location_no );
+                    System.out.println( msg );
+                }
+                */
+
+                String registrationIdsStrs[] = registrationIds_str.split( "," );
+                Vector< String > registrationIds = new Vector< String >();
+                for( String registrationId : registrationIdsStrs ) {
+                    registrationIds.add( registrationId );
+                }
+
+                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
+                Collections.sort( registrationIds );
+
+                if( debug ) {
+                    showMessage( registrationIds.toString(), false, true );
+                    showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                }
+
+                //if( registrationIds.size() > 2 )   // useless registrations, flag them all
+                //{}
+
+
+
+            }
+        }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // flagDuplicateRegsPersist
 
 
     /**
@@ -7438,7 +8086,7 @@ public class LinksCleanThread extends Thread
 
         String msg = String.format( "Thread id %02d; Clear Previous Person Flags for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
-        clearPersonFlags( debug, source, rmtype );
+        clearFlagsPersonBasetable( debug, source, rmtype );
 
         msg = String.format( "Thread id %02d; Flagging Person recs without familynames for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
@@ -7452,37 +8100,6 @@ public class LinksCleanThread extends Thread
         showMessage_nl();
     } // doFlagPersonRecs
 
-
-    /**
-     * @param debug
-     * @param go
-     * @throws Exception
-     */
-    /*
-    private void doFlagEmptyDateRegs( boolean debug, boolean go, String source, String rmtype ) throws Exception
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String funcname = String.format( "Thread id %02d; doFlagEmptyDateRegs for source: %s, rmtype: %s", threadId, source, rmtype );
-
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        String msg = String.format( "Thread id %02d; Flagging Registrations without dates ...", threadId );
-        showMessage( msg, false, true );
-
-        flagEmptyDateRegs( debug, source );
-
-        flagEmptyDaysSinceBegin( debug, source );
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-
-    } // doFlagEmptyDateRegs
-    */
 
     /**
      * Flag registrations with empty registration dates from links_cleaned
@@ -7685,7 +8302,7 @@ public class LinksCleanThread extends Thread
      * @param debug
      * @throws Exception
      */
-    private void clearPersonFlags( boolean debug, String source, String rmtype )
+    private void clearFlagsPersonBasetable( boolean debug, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7699,7 +8316,7 @@ public class LinksCleanThread extends Thread
 
         String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
         showMessage( msg, false, true );
-    } // clearPersonFlags
+    } // clearFlagsPersonBasetable
 
 
     /**
@@ -7916,562 +8533,6 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagEmptyRoleRecs
-
-
-    /**
-     * @param debug
-     * @throws Exception
-     */
-    private void clearFlagDuplicateRegs( boolean debug, String source, String rmtype )
-    throws Exception
-    {
-        long threadId = Thread.currentThread().getId();
-
-        // Clear previous flag values for given source
-        String clearQuery_r = "UPDATE registration_c SET not_linksbase = NULL WHERE id_source = " + source + ";";
-
-        if ( ! rmtype.isEmpty() ) { clearQuery_r += " AND registration_maintype = " + rmtype; }
-        if( debug ) { System.out.println( clearQuery_r ); }
-
-        //String clearQuery_r = "UPDATE registration_c SET not_linksbase = '0001' WHERE id_source = " + source + ";";   // test updates
-        int nrec = dbconCleaned.runQueryUpdate( clearQuery_r );
-
-        String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
-        showMessage( msg, false, true );
-    } // clearFlagDuplicateRegs
-
-
-    /**
-     * @param debug
-     * @throws Exception
-     */
-    private void flagDuplicateRegs( boolean debug, String source, String rmtype )
-    throws Exception
-    {
-        long threadId = Thread.currentThread().getId();
-
-        showMessage( String.format( "Thread id %02d; flagDuplicateRegs for source %s", threadId, source ), false, true );
-        showMessage( String.format( "Thread id %02d; Notice: the familyname prefix is not used for comparisons", threadId ), false , true );
-
-        int min_cnt = 2;    // in practice we see double, triples and quadruples
-
-        // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
-        // And we require that the 4 grouping variables have normal values.
-        String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
-            + "FROM registration_c "
-            + "WHERE id_source = " + source + " "
-            + "AND registration_maintype IS NOT NULL AND registration_maintype <> 0 "
-            + "AND registration_location_no IS NOT NULL AND registration_location_no <> 0 "
-            + "AND registration_date IS NOT NULL AND registration_date <> '' "
-            + "AND registration_seq IS NOT NULL AND registration_seq <> '' "
-            + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
-            + "HAVING cnt >= " + min_cnt + " "
-            + "ORDER BY cnt DESC;";
-
-        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
-        if( debug ) { showMessage( query_r, false, true ); }
-
-        int nDuplicates = 0;
-
-        try
-        {
-            ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
-
-            int nflagRegist = 0;
-            //int ndeletePerson = 0;
-
-            int row = 0;
-            while( rs_r.next() )        // process all groups
-            {
-                row++;
-
-                String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
-                String registration_date   = rs_r.getString( "registration_date" );
-                String registration_seq    = rs_r.getString( "registration_seq" );
-
-                int registration_maintype    = rs_r.getInt( "registration_maintype" );
-                int registration_location_no = rs_r.getInt( "registration_location_no" );
-
-                if( debug ) {
-                    String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
-                        registration_maintype, registration_location_no, registration_date, registration_location_no );
-                    System.out.println( msg );
-                }
-
-                String registrationIdsStrs[] = registrationIds_str.split( "," );
-                Vector< Integer > registrationIds = new Vector< Integer >();
-                for( String registrationId : registrationIdsStrs ) {
-                    registrationIds.add( Integer.parseInt( registrationId ) );
-                }
-
-                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
-                Collections.sort( registrationIds );
-
-                if( debug ) {
-                    showMessage( registrationIds.toString(), false, true );
-                    showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
-                }
-
-                if( registrationIds.size() > 2 )   // useless registrations, flag them all
-                {
-                    for( int id_regist : registrationIds )
-                    {
-                        // get current flags string
-                        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-                        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
-                        String old_flags = "";
-                        while( rs.next() )
-                        { old_flags = rs.getString( "not_linksbase" ); }
-
-                        int countRegist = 0;
-                        String new_flags = "";
-
-                        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0100"; }
-                        else
-                        {
-                            // is the flag already set?
-                            int flag_idx = 1;       // 2nd position for the flag
-                            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
-                            {
-                                // preserve other flags, and set new flag
-                                StringBuilder sb = new StringBuilder( old_flags );
-                                sb.setCharAt( flag_idx,'1' );
-                                new_flags = sb.toString();
-                            }
-                        }
-
-                        if( ! new_flags.isEmpty() )
-                        {
-                            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-                            flagQuery_r += " WHERE id_registration = " + id_regist + ";";
-                            //System.out.println(flagQuery_r);
-
-                            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
-                        }
-                    }
-                }
-                else    // test pairs
-                {
-                    int rid1 = 0;
-                    int rid2 = 1;
-                    boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
-                    if( isDuplicate ) { nDuplicates++; }
-                }
-
-                for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
-                {
-                    for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
-                    {
-                        boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
-                        if( isDuplicate ) { nDuplicates++; }
-                    }
-                }
-
-
-                // free
-                registrationIds.clear();
-                registrationIds = null;
-            }
-
-            String msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate tuples: %d", threadId, nflagRegist );
-            showMessage( msg, false, true );
-
-            msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate pairs: %d", threadId, nDuplicates );
-            showMessage( msg, false, true );
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegs: %s", threadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
-        }
-    } // flagDuplicateRegs
-
-
-    /**
-     * @param debug
-     * @param rid1
-     * @param rid2
-     * @param registrationIds
-     * @param registration_maintype
-     *
-     * @throws Exception
-     */
-    private boolean compare2Registrations( boolean debug, int rid1, int rid2, Vector< Integer > registrationIds, int registration_maintype )
-    throws Exception
-    {
-        if( debug ) {
-            System.out.println( String.format( "rid1: %d, rid2: %d", rid1, rid2 ) );
-            System.out.println( String.format( "registrationIds.size(): %d", registrationIds.size() ) );
-            for( int rid : registrationIds ) { System.out.println( rid ); }
-        }
-
-        int id_registration1 = registrationIds.get( rid1 );
-        int id_registration2 = registrationIds.get( rid2 );
-
-        if( debug ) { showMessage( "Comparing, " + rid1 + ": " + id_registration1 + ", " + rid2 + ": " + id_registration2, false, true ); }
-
-        String id_source1 = "";
-        String id_source2 = "";
-
-        if( registration_maintype == 1 )
-        {
-            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
-            if( debug ) { System.out.println( query_p1 ); }
-            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
-
-            String newborn_id_source1  = "";
-            String newborn_firstname1  = "";
-            String newborn_prefix1     = "";
-            String newborn_familyname1 = "";
-
-            while( rs_p1.next() )
-            {
-                int role = rs_p1.getInt( "role" );
-
-                newborn_id_source1  = rs_p1.getString( "id_source" );
-                newborn_firstname1  = rs_p1.getString( "firstname" );
-                newborn_prefix1     = rs_p1.getString( "prefix" );
-                newborn_familyname1 = rs_p1.getString( "familyname" );
-
-                if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
-                if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
-                if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
-                if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
-
-                id_source1 = newborn_id_source1;
-
-                //if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
-            }
-
-            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
-            if( debug ) { System.out.println( query_p2 ); }
-            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
-
-            String newborn_id_source2  = "";
-            String newborn_firstname2  = "";
-            String newborn_prefix2     = "";
-            String newborn_familyname2 = "";
-
-            while( rs_p2.next() )
-            {
-                int role = rs_p2.getInt( "role" );
-
-                newborn_id_source2  = rs_p2.getString( "id_source" );
-                newborn_firstname2  = rs_p2.getString( "firstname" );
-                newborn_prefix2     = rs_p2.getString( "prefix" );
-                newborn_familyname2 = rs_p2.getString( "familyname" );
-
-                if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
-                if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
-                if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
-                if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
-
-                id_source2 = newborn_id_source2;
-            }
-
-            if( newborn_firstname1.equals( newborn_firstname2 ) && newborn_familyname1.equals( newborn_familyname2 ) )
-            {
-                if( debug ) {
-                    showMessage_nl();
-                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                    showMessage( msg, false, true );
-
-                    showMessage( "newborn_familyname1: " + newborn_familyname1 + ", newborn_prefix1: " + newborn_prefix1 + ", newborn_firstname1: " + newborn_firstname1, false, true );
-                    showMessage( "newborn_familyname2: " + newborn_familyname2 + ", newborn_prefix2: " + newborn_prefix2 + ", newborn_firstname2: " + newborn_firstname2, false, true );
-                }
-
-                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                if( delcnt > 0 ) { return true; }
-            }
-        }
-
-        else if( registration_maintype == 2 )   // marriage
-        {
-
-            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
-            if( debug ) { System.out.println( query_p1 ); }
-            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
-
-            String bride_id_source1  = "";
-            String bride_firstname1  = "";
-            String bride_prefix1     = "";
-            String bride_familyname1 = "";
-
-            String groom_id_source1  = "";
-            String groom_firstname1  = "";
-            String groom_prefix1     = "";
-            String groom_familyname1 = "";
-
-            while( rs_p1.next() )
-            {
-                int role = rs_p1.getInt( "role" );
-
-                if( role == 4 )
-                {
-                    bride_id_source1  = rs_p1.getString( "id_source" );
-                    bride_firstname1  = rs_p1.getString( "firstname" );
-                    bride_prefix1     = rs_p1.getString( "prefix" );
-                    bride_familyname1 = rs_p1.getString( "familyname" );
-
-                    if( bride_id_source1  == null ) { bride_id_source1  = ""; }
-                    if( bride_firstname1  == null ) { bride_firstname1  = ""; }
-                    if( bride_prefix1     == null ) { bride_prefix1     = ""; }
-                    if( bride_familyname1 == null ) { bride_familyname1 = ""; }
-
-                    id_source1 = bride_id_source1;
-                }
-                else    // role == 7
-                {
-                    groom_id_source1  = rs_p1.getString( "id_source" );
-                    groom_firstname1  = rs_p1.getString( "firstname" );
-                    groom_prefix1     = rs_p1.getString( "prefix" );
-                    groom_familyname1 = rs_p1.getString( "familyname" );
-
-                    if( groom_id_source1  == null ) { groom_id_source1  = ""; }
-                    if( groom_firstname1  == null ) { groom_firstname1  = ""; }
-                    if( groom_prefix1     == null ) { groom_prefix1     = ""; }
-                    if( groom_familyname1 == null ) { groom_familyname1 = ""; }
-
-                    id_source1 = groom_id_source1;
-                }
-            }
-
-            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
-            if( debug ) { System.out.println( query_p2 ); }
-            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
-
-            String bride_id_source2  = "";
-            String bride_firstname2  = "";
-            String bride_prefix2     = "";
-            String bride_familyname2 = "";
-
-            String groom_id_source2  = "";
-            String groom_firstname2  = "";
-            String groom_prefix2     = "";
-            String groom_familyname2 = "";
-
-            while( rs_p2.next() )
-            {
-                int role = rs_p2.getInt( "role" );
-
-                if( role == 4 )
-                {
-                    bride_id_source2  = rs_p2.getString( "id_source" );
-                    bride_firstname2  = rs_p2.getString( "firstname" );
-                    bride_prefix2     = rs_p2.getString( "prefix" );
-                    bride_familyname2 = rs_p2.getString( "familyname" );
-
-                    if( bride_id_source2  == null ) { bride_id_source2  = ""; }
-                    if( bride_firstname2  == null ) { bride_firstname2  = ""; }
-                    if( bride_prefix2     == null ) { bride_prefix2     = ""; }
-                    if( bride_familyname2 == null ) { bride_familyname2 = ""; }
-
-                    id_source2 = bride_id_source2;
-                }
-                else    // role == 7
-                {
-                    groom_id_source2  = rs_p2.getString( "id_source" );
-                    groom_firstname2  = rs_p2.getString( "firstname" );
-                    groom_prefix2     = rs_p2.getString( "prefix" );
-                    groom_familyname2 = rs_p2.getString( "familyname" );
-
-                    if( groom_id_source2  == null ) { groom_id_source2  = ""; }
-                    if( groom_firstname2  == null ) { groom_firstname2  = ""; }
-                    if( groom_prefix2     == null ) { groom_prefix2     = ""; }
-                    if( groom_familyname2 == null ) { groom_familyname2 = ""; }
-
-                    id_source2 = groom_id_source2;
-                }
-            }
-
-            if( bride_firstname1.equals( bride_firstname2 ) && bride_familyname1.equals( bride_familyname2 ) &&
-                groom_firstname1.equals( groom_firstname2 ) && groom_familyname1.equals( groom_familyname2 ) )
-            {
-                if( debug ) {
-                    showMessage_nl();
-                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                    showMessage( msg, false, true );
-
-                    showMessage( "bride_familyname1: " + bride_familyname1 + ", bride_prefix1: " + bride_prefix1 + ", bride_firstname1: " + bride_firstname1, false, true );
-                    showMessage( "bride_familyname2: " + bride_familyname2 + ", bride_prefix2: " + bride_prefix2 + ", bride_firstname2: " + bride_firstname2, false, true );
-
-                    showMessage( "groom_familyname1: " + groom_familyname1 + ", groom_prefix1: " + groom_prefix1 + ", groom_firstname1: " + groom_firstname1, false, true );
-                    showMessage( "groom_familyname2: " + groom_familyname2 + ", groom_prefix2: " + groom_prefix2 + ", groom_firstname2: " + groom_firstname2, false, true );
-                }
-
-                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                if( delcnt > 0 ) { return true; }
-            }
-        }
-
-        else if( registration_maintype == 3 )   // death
-        {
-            String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 10";
-            if( debug ) { System.out.println( query_p1 ); }
-            ResultSet rs_p1 = dbconCleaned.runQueryWithResult( query_p1 );
-
-            String deceased_id_source1  = "";
-
-            String deceased_firstname1  = "";
-            String deceased_prefix1     = "";
-            String deceased_familyname1 = "";
-
-            while( rs_p1.next() )
-            {
-                int role = rs_p1.getInt( "role" );
-
-                deceased_id_source1  = rs_p1.getString( "id_source" );
-                deceased_firstname1  = rs_p1.getString( "firstname" );
-                deceased_prefix1     = rs_p1.getString( "prefix" );
-                deceased_familyname1 = rs_p1.getString( "familyname" );
-
-                if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
-                if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
-                if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
-                if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
-
-                id_source1 = deceased_id_source1;
-            }
-
-            String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
-            if( debug ) { System.out.println( query_p2 ); }
-            ResultSet rs_p2 = dbconCleaned.runQueryWithResult( query_p2 );
-
-            String deceased_id_source2  = "";
-            String deceased_firstname2  = "";
-            String deceased_prefix2     = "";
-            String deceased_familyname2 = "";
-
-            while( rs_p2.next() )
-            {
-                int role = rs_p2.getInt( "role" );
-
-                deceased_id_source2  = rs_p2.getString( "id_source" );
-                deceased_firstname2  = rs_p2.getString( "firstname" );
-                deceased_prefix2     = rs_p2.getString( "prefix" );
-                deceased_familyname2 = rs_p2.getString( "familyname" );
-
-                if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
-                if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
-                if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
-                if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
-
-                id_source2 = deceased_id_source2;
-            }
-
-            if( deceased_firstname1.equals( deceased_firstname2 ) && deceased_familyname1.equals( deceased_familyname2 ) )
-            {
-                if( debug ) {
-                    showMessage_nl();
-                    String msg = String.format( "Duplicate registrations, ids, %d: %d, %d: %d (registration_maintype: %d)",
-                        rid1, id_registration1, rid2, id_registration2, registration_maintype );
-                    showMessage( msg, false, true );
-
-                    showMessage( "deceased_familyname1: " + deceased_familyname1 + ", deceased_prefix1: " + deceased_prefix1 + ", deceased_firstname1: " + deceased_firstname1, false, true );
-                    showMessage( "deceased_familyname2: " + deceased_familyname2 + ", deceased_prefix2: " + deceased_prefix2 + ", deceased_firstname2: " + deceased_firstname2, false, true );
-                }
-
-                int delcnt = flagDuplicate( debug, registrationIds, id_source1, id_source2, id_registration1, id_registration2, registration_maintype );
-                if( delcnt > 0 ) { return true; }
-            }
-        }
-
-        return false;
-    } // compare2Registrations
-
-
-    /**
-     * @param debug
-     *
-     * @throws Exception
-     */
-    private int flagDuplicate( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
-        int id_registration1, int id_registration2, int registration_maintype )
-    throws Exception
-    {
-        if( debug ) {
-            showMessage_nl();
-            showMessage( "Duplicate in Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
-        }
-
-        int id_reg_keep = 0;
-        int id_reg_flag = 0;
-        String id_source_flag = "";
-
-        // keep the smallest id_reg
-        if( id_registration2 > id_registration1 )
-        {
-            id_reg_keep    = id_registration1;
-            id_reg_flag    = id_registration2;
-            id_source_flag = id_source2;
-        }
-        else
-        {
-            id_reg_keep    = id_registration2;
-            id_reg_flag    = id_registration1;
-            id_source_flag = id_source1;
-        }
-
-        //String msgt = "TEST RUN; NOT DELETING";
-        //System.out.println( msgt ); showMessage( msgt, false, true );
-
-        if( debug ) {
-            String msg = "keep id: " + id_reg_keep + ", flag: " + id_reg_flag + " (registration_maintype: " + registration_maintype + ")";
-            //System.out.println( msg );
-            showMessage( msg, false, true );
-        }
-
-        // write error msg with EC=1
-        if( id_source_flag.isEmpty() ) { id_source_flag = "0"; }    // it must be a valid integer string for the log table
-        String value = "";      // nothing to add
-        addToReportRegistration( id_reg_flag, id_source_flag, 1, value );       // warning 1
-
-        // get current flags string
-        String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
-        ResultSet rs = dbconCleaned.runQueryWithResult( getFlagQuery_r );
-        String old_flags = "";
-        while( rs.next() )
-        { old_flags = rs.getString( "not_linksbase" ); }
-
-        int countRegist = 0;
-        String new_flags = "";
-
-        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "1000"; }
-        else
-        {
-            // is the flag already set?
-            int flag_idx = 0;       // 1st position for the flag
-            if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
-            {
-                // preserve other flags, and set new flag
-                StringBuilder sb = new StringBuilder( old_flags );
-                sb.setCharAt( flag_idx,'1' );
-                new_flags = sb.toString();
-            }
-        }
-
-        if( ! new_flags.isEmpty() )
-        {
-            // Flag second member of duplicate pair from registration_c
-            String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-            flagQuery_r += " WHERE id_registration = " + id_reg_flag + ";";
-            //System.out.println(flagQuery_r);
-
-            countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
-
-            /*
-            if( countRegist != 1 )
-            {
-                String msg = String.format( "flagDuplicate() id_registration: %d already flagged", id_reg_flag );
-                showMessage( msg, false, true );
-            }
-            */
-        }
-
-        return countRegist;
-    } // flagDuplicate
 
 
     /**
