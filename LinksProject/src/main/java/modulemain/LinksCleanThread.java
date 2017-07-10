@@ -2986,181 +2986,6 @@ public class LinksCleanThread extends Thread
         }
     } // standardLocation
 
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void flagBirthLocation( boolean debug, String source, String rmtype )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String[] queries =
-        {
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.birth_location_flag = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 1"
-                + " AND person_c.role = 1"
-                + " AND person_c.birth_location IS NOT NULL"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.birth_location_flag = 2,"
-                + " person_c.birth_location = registration_c.registration_location_no"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 1"
-                + " AND person_c.role = 1"
-                + " AND person_c.birth_location IS NULL"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-        };
-
-        int n = 0;
-        for( String query : queries )
-        {
-            try
-            {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
-                if( debug ) { showMessage( query, false, true ); }
-
-                int rowsAffected = dbconCleaned.runQueryUpdate( query );
-                String msg = "";
-                if( n == 0 )
-                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
-                else
-                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
-
-                showMessage( msg, false, true );
-                n++;
-            }
-            catch( Exception ex ) {
-                String msg = String.format( "Thread id %02d; Exception in flagBirthLocation: %s", threadId, ex.getMessage() );
-                showMessage( msg, false, true );
-                showMessage( query, false, true );
-                ex.printStackTrace( new PrintStream( System.out ) );
-            }
-        }
-    } // flagBirthLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void flagMarriageLocation( boolean debug, String source, String rmtype )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String[] queries =
-        {
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.mar_location_flag = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 2"
-                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.mar_location IS NOT NULL"
-                + " AND person_c.id_registration = registration_c.id_registration;",
-
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.mar_location_flag = 2,"
-                + " person_c.mar_location = registration_c.registration_location_no"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 2"
-                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.mar_location IS NULL"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-        };
-
-        int n = 0;
-        for( String query : queries )
-        {
-            try
-            {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
-                if( debug ) { showMessage( query, false, true ); }
-
-                int rowsAffected = dbconCleaned.runQueryUpdate( query );
-                String msg = "";
-                if( n == 0 )
-                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
-                else
-                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
-
-                showMessage( msg, false, true );
-                n++;
-            }
-            catch( Exception ex ) {
-                String msg = String.format( "Thread id %02d; Exception in flagMarriageLocation: %s", threadId, ex.getMessage() );
-                showMessage( msg, false, true );
-                showMessage( query, false, true );
-                ex.printStackTrace( new PrintStream( System.out ) );
-            }
-        }
-    } // flagMarriageLocation
-
-
-    /**
-     * @param debug
-     * @param source
-     */
-    public void flagDeathLocation( boolean debug, String source, String rmtype )
-    {
-        long threadId = Thread.currentThread().getId();
-
-        String[] queries =
-        {
-            "UPDATE person_c, registration_c"
-                + " SET"
-                + " person_c.death_location_flag = 1"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 3"
-                + " AND person_c.role = 10"
-                + " AND person_c.death_location IS NOT NULL"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-
-            "UPDATE person_c, registration_c "
-                + " SET "
-                + " person_c.death_location_flag = 2,"
-                + " person_c.death_location = registration_c.registration_location_no"
-                + " WHERE person_c.id_source = " + source
-                + " AND person_c.registration_maintype = 3"
-                + " AND person_c.role = 10"
-                + " AND person_c.death_location IS NULL"
-                + " AND person_c.id_registration = registration_c.id_registration; ",
-        };
-
-        int n = 0;
-        for( String query : queries )
-        {
-            try
-            {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
-                if( debug ) { showMessage( query, false, true ); }
-
-                int rowsAffected = dbconCleaned.runQueryUpdate( query );
-                String msg = "";
-                if( n == 0 )
-                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
-                else
-                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
-
-                showMessage( msg, false, true );
-                n++;
-            }
-            catch( Exception ex ) {
-                String msg = String.format( "Thread id %02d; Exception in flagDeathLocation: %s", threadId, ex.getMessage() );
-                showMessage( msg, false, true );
-                showMessage( query, false, true );
-                ex.printStackTrace( new PrintStream( System.out ) );
-            }
-        }
-    } // flagDeathLocation
-
-
     /*---< Civil status and Sex >---------------------------------------------*/
 
     /**
@@ -7075,6 +6900,8 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
+        // Notice: UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
+
         String queryP1 = "UPDATE IGNORE person_c SET birth_min_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_min, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_min IS NOT NULL AND birth_date_min NOT LIKE '0-%' AND birth_date_min NOT LIKE '%-0-%' AND birth_date_min NOT LIKE '%-0' ";
         String queryP2 = "UPDATE IGNORE person_c SET birth_max_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( birth_date_max, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE birth_date_max IS NOT NULL AND birth_date_max NOT LIKE '0-%' AND birth_date_max NOT LIKE '%-0-%' AND birth_date_max NOT LIKE '%-0' ";
         String queryP3 = "UPDATE IGNORE person_c SET mar_min_days   = DATEDIFF( DATE_FORMAT( STR_TO_DATE( mar_date_min,   '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) WHERE mar_date_min   IS NOT NULL AND mar_date_min   NOT LIKE '0-%' AND mar_date_min   NOT LIKE '%-0-%' AND mar_date_min   NOT LIKE '%-0' ";
@@ -7100,7 +6927,6 @@ public class LinksCleanThread extends Thread
             queryP5 += " AND registration_maintype = " + rmtype;
             queryP6 += " AND registration_maintype = " + rmtype;
         }
-
 
         // registration_date strings '01-01-0000' give a negative DATEDIFF, which gives an exception
         // because the column links_cleaned.registration_days is defined as unsigned.
@@ -7252,7 +7078,6 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( funcname, start, System.currentTimeMillis() );
         showMessage_nl();
 
-
         // The location flag functions below use the "role" variable. Therefore they must be called after
         // doRole() has been run. The calling of these functions has been (temporarily?) moved from doLocations() to
         // here in doPostTasks(). (The function bodies were left in the Locations segment.)
@@ -7292,13 +7117,30 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         if( debug ) { showMessage( "postTasks()", false, true ); }
-        // Notice:
-        // UPDATE IGNORE means "ignore rows that break unique constraints, instead of failing the query".
 
         String table_male   = "links_temp.male_"   + Long.toString( threadId );
         String table_female = "links_temp.female_" + Long.toString( threadId );
 
-        String[] queries =
+        String[] queries1 =
+        {
+            "DROP TABLE IF EXISTS " + table_male   + ";",
+            "DROP TABLE IF EXISTS " + table_female + ";",
+
+            "CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
+            "CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
+        };
+
+        int n = 0;
+        for( String query : queries1 )
+        {
+            n++;
+            String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries1.length );
+            showMessage( msg, false, true );
+            dbconCleaned.runQuery( query );
+        }
+
+
+        String[] queries2 =
         {
             "UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 2 AND id_source = " + source,
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
@@ -7310,13 +7152,6 @@ public class LinksCleanThread extends Thread
             "UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
 
             "UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
-
-
-            "DROP TABLE IF EXISTS " + table_male   + ";",
-            "DROP TABLE IF EXISTS " + table_female + ";",
-
-            "CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
-            "CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
 
             "INSERT INTO " + table_male   + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
                 + "WHERE role = 10 AND sex = 'm' AND id_source = " + source,
@@ -7330,25 +7165,38 @@ public class LinksCleanThread extends Thread
 
             "UPDATE links_cleaned.person_c, " + table_female + " SET sex = 'm' "
                 + "WHERE " + table_female + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-                + "AND id_source = " + source,
-
-            "DROP TABLE IF EXISTS " + table_male + ";",
-            "DROP TABLE IF EXISTS " + table_female + ";",
+                + "AND id_source = " + source
         };
 
-        // Execute queries
-        int n = 0;
-        for( String query : queries )
+        n = 0;
+        for( String query : queries2 )
         {
             n++;
 
             if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
             if( debug ) { System.out.println( query ); }
 
-            String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries.length );
+            String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries2.length );
             showMessage( msg, false, true );
             dbconCleaned.runQuery( query );
         }
+
+
+        String[] queries3 =
+        {
+            "DROP TABLE IF EXISTS " + table_male + ";",
+            "DROP TABLE IF EXISTS " + table_female + ";"
+        };
+
+        n = 0;
+        for( String query : queries3 )
+        {
+            n++;
+            String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries3.length );
+            showMessage( msg, false, true );
+            dbconCleaned.runQuery( query );
+        }
+
 
         // stillbirth with missing birth_date -> registration_date
         String query = "UPDATE links_cleaned.registration_c, links_cleaned.person_c "
@@ -7376,6 +7224,178 @@ public class LinksCleanThread extends Thread
 
     } // postTasks
 
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagBirthLocation( boolean debug, String source, String rmtype )
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String[] queries =
+            {
+                "UPDATE person_c, registration_c"
+                    + " SET"
+                    + " person_c.birth_location_flag = 1"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 1"
+                    + " AND person_c.role = 1"
+                    + " AND person_c.birth_location IS NOT NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration; ",
+
+                "UPDATE person_c, registration_c"
+                    + " SET"
+                    + " person_c.birth_location_flag = 2,"
+                    + " person_c.birth_location = registration_c.registration_location_no"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 1"
+                    + " AND person_c.role = 1"
+                    + " AND person_c.birth_location IS NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration; ",
+            };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try
+            {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
+                else
+                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
+
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagBirthLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                showMessage( query, false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagBirthLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagMarriageLocation( boolean debug, String source, String rmtype )
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String[] queries =
+            {
+                "UPDATE person_c, registration_c"
+                    + " SET"
+                    + " person_c.mar_location_flag = 1"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 2"
+                    + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                    + " AND person_c.mar_location IS NOT NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration;",
+
+                "UPDATE person_c, registration_c"
+                    + " SET"
+                    + " person_c.mar_location_flag = 2,"
+                    + " person_c.mar_location = registration_c.registration_location_no"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 2"
+                    + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                    + " AND person_c.mar_location IS NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration; ",
+            };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try
+            {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
+                else
+                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
+
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagMarriageLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                showMessage( query, false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagMarriageLocation
+
+
+    /**
+     * @param debug
+     * @param source
+     */
+    public void flagDeathLocation( boolean debug, String source, String rmtype )
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String[] queries =
+            {
+                "UPDATE person_c, registration_c"
+                    + " SET"
+                    + " person_c.death_location_flag = 1"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 3"
+                    + " AND person_c.role = 10"
+                    + " AND person_c.death_location IS NOT NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration; ",
+
+                "UPDATE person_c, registration_c "
+                    + " SET "
+                    + " person_c.death_location_flag = 2,"
+                    + " person_c.death_location = registration_c.registration_location_no"
+                    + " WHERE person_c.id_source = " + source
+                    + " AND person_c.registration_maintype = 3"
+                    + " AND person_c.role = 10"
+                    + " AND person_c.death_location IS NULL"
+                    + " AND person_c.id_registration = registration_c.id_registration; ",
+            };
+
+        int n = 0;
+        for( String query : queries )
+        {
+            try
+            {
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
+                int rowsAffected = dbconCleaned.runQueryUpdate( query );
+                String msg = "";
+                if( n == 0 )
+                { msg = String.format( "Thread id %02d; flag = 1 # of rows affected: %d", threadId, rowsAffected ); }
+                else
+                { msg = String.format( "Thread id %02d; flag = 2 # of rows affected: %d", threadId, rowsAffected ); }
+
+                showMessage( msg, false, true );
+                n++;
+            }
+            catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagDeathLocation: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                showMessage( query, false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagDeathLocation
 
     /*---< Flag Bad Registrations >-----------------------------------------*/
 
@@ -7384,9 +7404,9 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doFlagRegistrations( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doFlagRegistrations( boolean debug, boolean go, String source, String rmtype )
+    throws Exception
     {
-        debug = true;
         long threadId = Thread.currentThread().getId();
 
         String funcname = String.format( "Thread id %02d; doFlagRegistrations for source: %s, rmtype: %s", threadId, source, rmtype );
@@ -7464,19 +7484,20 @@ public class LinksCleanThread extends Thread
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
         // And we require that the 4 grouping variables have normal values.
-        String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt "
-            + "FROM registration_c "
-            + "WHERE id_source = " + source + " "
-            + "AND registration_maintype IS NOT NULL AND registration_maintype <> 0 "
-            + "AND registration_location_no IS NOT NULL AND registration_location_no <> 0 "
-            + "AND registration_date IS NOT NULL AND registration_date <> '' "
-            + "AND registration_seq IS NOT NULL AND registration_seq <> '' "
-            + "GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq "
-            + "HAVING cnt >= " + min_cnt + " "
-            + "ORDER BY cnt DESC;";
+        String query_r = "SELECT GROUP_CONCAT(id_registration), registration_maintype, registration_location_no, registration_date, registration_seq, COUNT(*) AS cnt"
+            + " FROM registration_c"
+            + " WHERE id_source = " + source
+            + " AND registration_maintype IS NOT NULL AND registration_maintype <> 0"
+            + " AND registration_location_no IS NOT NULL AND registration_location_no <> 0"
+            + " AND registration_date IS NOT NULL AND registration_date <> ''"
+            + " AND registration_seq IS NOT NULL AND registration_seq <> ''";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
+
+        query_r += " GROUP BY registration_maintype, registration_location_no, registration_date, registration_seq";
+        query_r += " HAVING cnt >= " + min_cnt;
+        query_r += " ORDER BY cnt DESC;";
 
         int nDuplicates = 0;
 
@@ -7991,72 +8012,119 @@ public class LinksCleanThread extends Thread
     {
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist for source %s", threadId, source ), false, true );
+        showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist for source %s...", threadId, source ), false, true );
 
-        int min_cnt = 2;    // in practice we see double, triples and quadruples
+        String query_c = "SELECT COUNT(*) AS cnt FROM registration_c WHERE id_source = " + source;
+        query_c += " AND ( id_persist_registration IS NULL OR INSTR( id_persist_registration, ' ' ) > 0 )";
+
+        if ( ! rmtype.isEmpty() ) { query_c += " AND registration_maintype = " + rmtype; }
+        if( debug ) { showMessage( query_c, false, true ); }
+        if( debug ) { System.out.println( query_c ); }
+
+        ResultSet rs_c = dbconCleaned.runQueryWithResult( query_c );
+        rs_c.first();
+        int cnt = rs_c.getInt( "cnt" );
+        if( cnt != 0 ) {
+            String msg = String.format( "Thread id %02d; # of regs with invalid id_persist_registration: %d (not flagged)", threadId, cnt );
+            showMessage( msg, false, true );
+        }
 
         // The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
         // And we require that the 4 grouping variables have normal values.
-        String query_r = "SELECT GROUP_CONCAT(id_persist_registration), registration_maintype, COUNT(*) AS cnt ";
-        query_r += "FROM registration_c ";
-        query_r += "WHERE id_source = " + source + " ";
-        query_r += "AND id_persist_registration IS NOT NULL AND INSTR(id_persist_registration, ' ') = 0 ";
+        int min_cnt = 2;    // in practice we see double, triples and quadruples
 
-        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype + " "; }
+        String query_r = "SELECT GROUP_CONCAT(id_persist_registration), registration_maintype, COUNT(*) AS cnt";
+        query_r += " FROM registration_c";
+        query_r += " WHERE id_source = " + source;
+        query_r += " AND id_persist_registration IS NOT NULL AND INSTR(id_persist_registration, ' ') = 0";
 
-        query_r +=  "GROUP BY id_persist_registration ";
-        query_r +=  "HAVING cnt >= " + min_cnt + " ";
-        query_r +=  "ORDER BY cnt DESC;";
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
+
+        query_r +=  " GROUP BY id_persist_registration";
+        query_r +=  " HAVING cnt >= " + min_cnt;
+        query_r +=  " ORDER BY cnt DESC;";
 
         if( debug ) { showMessage( query_r, false, true ); }
-        if( debug ) { System.out.println( query_r ); }
+        System.out.println( query_r );
 
-        int nDuplicates = 0;
-
+        int stepstate = count_step;
         try
         {
             ResultSet rs_r = dbconCleaned.runQueryWithResult( query_r );
 
-            int nflagRegist = 0;
-            //int ndeletePerson = 0;
+            rs_r.last();
+            int total = rs_r.getRow();
+            rs_r.beforeFirst();
 
-            int row = 0;
+            int nflagRegist = 0;
+
+            int ndups2 = 0;
+            int ndups3 = 0;
+            int ndups4 = 0;
+            int ndups5 = 0;
+            int ndupsx = 0;
+
+            int count = 0;
             while( rs_r.next() )        // process all groups
             {
-                row++;
+                count++;
+                if( count == stepstate ) {
+                    long pct = Math.round( 100.0 * (float)count / (float)total );
+                    String msg = String.format( "Thread id %02d, flagDuplicateRegsPersist %d-of-%d (%d%%)", threadId, count, total, pct );
+                    showMessage( msg, true, true );
+                    stepstate += count_step;
+                }
 
                 String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_persist_registration)" );
-
+                if( registrationIds_str == null ) { registrationIds_str = ""; }
                 int registration_maintype    = rs_r.getInt( "registration_maintype" );
-
-                /*
-                if( debug ) {
-                    String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
-                        registration_maintype, registration_location_no, registration_date, registration_location_no );
-                    System.out.println( msg );
-                }
-                */
 
                 String registrationIdsStrs[] = registrationIds_str.split( "," );
                 Vector< String > registrationIds = new Vector< String >();
+
                 for( String registrationId : registrationIdsStrs ) {
                     registrationIds.add( registrationId );
                 }
 
-                if( debug ) { showMessage( registrationIds.toString(), false, true ); }
                 Collections.sort( registrationIds );
+                int ndups = registrationIds.size();
 
-                if( debug ) {
-                    showMessage( registrationIds.toString(), false, true );
-                    showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+                switch( ndups )
+                {
+                    case 2:
+                        ndups2++; break;
+                    case 3:
+                        ndups3++; break;
+                    case 4:
+                        ndups4++; break;
+                    case 5:
+                        ndups5++; break;
+                    default:
+                        ndupsx++;
                 }
 
-                //if( registrationIds.size() > 2 )   // useless registrations, flag them all
-                //{}
+                if( debug ) {
+                    String guid = registrationIds.get( 0 );
+                    plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist duplicates: %d %s", threadId, ndups, guid ) );
+                }
 
+                flagIdPersistDuplicates( debug, source, rmtype, registrationIds );
 
-
+                registrationIds.clear();        // free
+                registrationIds = null;
             }
+
+            if( ndups2 != 0 )
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup2: %d", threadId, ndups2 ), false, true );  }
+            else if( ndups3 != 0 )
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup3: %d", threadId, ndups3 ), false, true ); }
+            else if( ndups4 != 0 )
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup4: %d", threadId, ndups4 ), false, true );  }
+            else if( ndups5 != 0 )
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup5: %d", threadId, ndups5 ), false, true );  }
+            else if( ndupsx != 0 )
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dupx: %d", threadId, ndupsx ), false, true );  }
+
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
@@ -8064,6 +8132,82 @@ public class LinksCleanThread extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagDuplicateRegsPersist
+
+
+    private void flagIdPersistDuplicates( boolean debug, String source, String rmtype, Vector< String > registrationIds )
+    throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        try
+        {
+            for( String registrationId : registrationIds )
+            {
+                String query = "SELECT id_registration, not_linksbase FROM links_cleaned.registration_c";
+                query += String.format( " WHERE id_source = %s", source );
+                query += String.format( " AND id_persist_registration = '%s'", registrationId );
+                query += " ORDER BY id_registration";
+
+                if( debug ) { showMessage( query, false, true ); }
+                //System.out.println( query );
+
+                ResultSet rs = dbconCleaned.runQueryWithResult( query );
+
+                rs.last();
+                int ndups = rs.getRow();
+                rs.beforeFirst();
+
+                int count = 0;
+                if( ndups >= 2 )
+                {
+                    while( rs.next() )
+                    {
+
+                        if( count == 0 )
+                        { ; }   // keep
+                        else    // flag
+                        {
+                            int id_registration = rs.getInt( "id_registration" );
+                            String old_flags = rs.getString( "not_linksbase" );
+
+                            int countRegist = 0;
+                            String new_flags = "";
+
+                            if( old_flags == null || old_flags.isEmpty() ) { new_flags = "10000"; }
+                            else
+                            {
+                                // is the flag already set?
+                                int flag_idx = 0;       // 1st position for the flag
+                                if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+                                {
+                                    // preserve other flags, and set new flag
+                                    StringBuilder sb = new StringBuilder( old_flags );
+                                    sb.setCharAt( flag_idx,'1' );
+                                    new_flags = sb.toString();
+                                }
+                            }
+
+                            if( ! new_flags.isEmpty() )
+                            {
+                                String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                                flagQuery_r += " WHERE id_registration = " + id_registration + ";";
+                                if( debug ) { System.out.println(flagQuery_r); }
+
+                                countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
+                                //nNoRegDate += countRegist;
+                            }
+                        }
+                        count++;
+                    }
+                }
+            }
+        }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
+            showMessage( msg, false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+    } // flagIdPersistDuplicates
 
 
     /**
@@ -8309,6 +8453,7 @@ public class LinksCleanThread extends Thread
 
         // Clear previous flag values for given source
         String query_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + ";";
+
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { System.out.println( query_r ); }
 
@@ -8335,8 +8480,8 @@ public class LinksCleanThread extends Thread
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
             + " AND ( familyname IS NULL OR familyname = '' );";
-        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
 
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRole = 0;
@@ -8414,8 +8559,8 @@ public class LinksCleanThread extends Thread
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
             + " AND ( role IS NULL OR role = 0 );";
-        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
 
+        if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
 
         int nNoRole = 0;
@@ -8663,7 +8808,9 @@ public class LinksCleanThread extends Thread
         // loop through the remarks from registration_o
         String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
         selectQuery_o += " WHERE id_source = " + source;
+
         if ( ! rmtype.isEmpty() ) { selectQuery_o += " AND registration_maintype = " + rmtype; }
+
         selectQuery_o += " ORDER BY id_registration";
 
         if( debug ) {
@@ -8772,6 +8919,9 @@ public class LinksCleanThread extends Thread
                     }
                 }
             }
+
+            ref_remarksVec.clear();     // free
+            ref_remarksVec = null;
 
             String msg = String.format( "Thread id %02d; scanRemarks: Number of updates: %d, of which divorces: %d", threadId, nupdates, ndivorces );
             showMessage( msg, false, true );
