@@ -30,7 +30,7 @@ import prematch.Lvs;
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
  * FL-31-Jan-2017 Two more name frequency count queries
- * FL-31-Jan-2017 Latest change
+ * FL-11-Jul-2017 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -44,6 +44,7 @@ public class LinksPrematch extends Thread
     private String db_user;
     private String db_pass;
     private String sourceIdsGui;
+    private String RMtypes;
 
     private boolean bSplitFirstames;
     private boolean bFrequencyTables;
@@ -104,6 +105,7 @@ public class LinksPrematch extends Thread
         this.db_pass = opts.getDb_pass();
 
         this.sourceIdsGui = opts.getSourceIds();
+        this.RMtypes      = opts.getRMtypes();
 
         this.bSplitFirstames  = bSplitFirstnames;
         this.bFrequencyTables = bFrequencyTables;
@@ -151,14 +153,19 @@ public class LinksPrematch extends Thread
 
             doNamesToNumbers( debug, bNamesToNos );
 
-            if( Strings.isNullOrEmpty( sourceIdsGui ) )
+            String rmtStr[] = sourceIdsGui.split( " " );
+            String rmtype = rmtStr[ 0 ];    // only use 1
+
+            if( Strings.isNullOrEmpty( sourceIdsGui ) && Strings.isNullOrEmpty( rmtype  ) )
             { doCreateNewBaseTable( debug, bBaseTable ); }                      // new links_base
-            else
+            else if( Strings.isNullOrEmpty( RMtypes ) )
             {
                 String idsStr[] = sourceIdsGui.split( " " );
+
                 for( String source : idsStr )
-                { doCreateNewBaseTableSource( debug, bBaseTable, source ); }    // update per source
+                { doCreateNewBaseTableSource( debug, bBaseTable, source, rmtype ); }    // update per source & rmtype
             }
+
 
             //doLevenshtein( debug, bLevenshtein, bExactMatches );        // now here in main
             String funcname = "doLevenshtein";
@@ -801,9 +808,10 @@ public class LinksPrematch extends Thread
      * @param debug
      * @param go
      * @param source
-     * @thr@param ows Exception
+     * @param rmtype
+     * @throws Exception
      */
-    public void doCreateNewBaseTableSource( boolean debug, boolean go, String source ) throws Exception
+    public void doCreateNewBaseTableSource( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         String funcname = "doCreateNewBaseTableSource";
 
@@ -820,6 +828,11 @@ public class LinksPrematch extends Thread
         // delete the previous records for source
         long start_del = System.currentTimeMillis();
         String qdelete = "DELETE FROM links_base WHERE id_source = " + source;
+
+        if( ! Strings.isNullOrEmpty( rmtype  ) ) {
+            qdelete += " AND registration_maintype = " + rmtype;
+        }
+
         showMessage( qdelete, false, true );
 
         try {
@@ -860,7 +873,6 @@ public class LinksPrematch extends Thread
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
     } // doCreateNewBaseTableSource
-
 
 
      /**

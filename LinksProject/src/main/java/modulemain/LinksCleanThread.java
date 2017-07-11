@@ -79,6 +79,7 @@ import linksmanager.ManagerGui;
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
  * FL-28-Jun-2017 Local db_ref connections, immediate open/close
  * FL-05-Jul-2017 almmRegistration use
+ * FL-11-Jul-2017 more not_linksbase flagging
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -7421,15 +7422,15 @@ public class LinksCleanThread extends Thread
         String msg = String.format( "Thread id %02d; Clear Previous Registration Flags for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         clearFlagsRegsLinksbase( debug, source, rmtype );
-        /*
+
         msg = String.format( "Thread id %02d; Flagging Duplicate Registrations (components) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagDuplicateRegsComps( debug, source, rmtype );
-        */
+
         msg = String.format( "Thread id %02d; Flagging Duplicate Registrations (_id_persist) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagDuplicateRegsPersist( debug, source, rmtype );
-        /*
+
         msg = String.format( "Thread id %02d; Flagging Empty Date Registrations for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagEmptyDateRegs( debug, source, rmtype );
@@ -7437,7 +7438,7 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Flagging Empty Days since begin Regs for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagEmptyDaysSinceBegin( debug, source, rmtype );
-        */
+
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doFlagRegistrations
@@ -7554,11 +7555,11 @@ public class LinksCleanThread extends Thread
                         int countRegist = 0;
                         String new_flags = "";
 
-                        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0100"; }
+                        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
                         else
                         {
                             // is the flag already set?
-                            int flag_idx = 1;       // 2nd position for the flag
+                            int flag_idx = 2;       // 3rd position for the flag
                             if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
                             {
                                 // preserve other flags, and set new flag
@@ -7965,11 +7966,11 @@ public class LinksCleanThread extends Thread
         int countRegist = 0;
         String new_flags = "";
 
-        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "1000"; }
+        if( old_flags == null || old_flags.isEmpty() ) { new_flags = "01000"; }
         else
         {
             // is the flag already set?
-            int flag_idx = 0;       // 1st position for the flag
+            int flag_idx = 1;       // 2nd position for the flag
             if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
             {
                 // preserve other flags, and set new flag
@@ -8033,7 +8034,7 @@ public class LinksCleanThread extends Thread
         // And we require that the 4 grouping variables have normal values.
         int min_cnt = 2;    // in practice we see double, triples and quadruples
 
-        String query_r = "SELECT GROUP_CONCAT(id_persist_registration), registration_maintype, COUNT(*) AS cnt";
+        String query_r = "SELECT GROUP_CONCAT(id_registration), id_persist_registration, COUNT(*) AS cnt";
         query_r += " FROM registration_c";
         query_r += " WHERE id_source = " + source;
         query_r += " AND id_persist_registration IS NOT NULL AND INSTR(id_persist_registration, ' ') = 0";
@@ -8042,10 +8043,10 @@ public class LinksCleanThread extends Thread
 
         query_r +=  " GROUP BY id_persist_registration";
         query_r +=  " HAVING cnt >= " + min_cnt;
-        query_r +=  " ORDER BY cnt DESC;";
+        query_r +=  " ORDER BY id_registration ASC, cnt DESC;";
 
         if( debug ) { showMessage( query_r, false, true ); }
-        System.out.println( query_r );
+        if( debug ) { System.out.println( query_r ); }
 
         int stepstate = count_step;
         try
@@ -8075,20 +8076,12 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_persist_registration)" );
+                String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
                 if( registrationIds_str == null ) { registrationIds_str = ""; }
-                int registration_maintype    = rs_r.getInt( "registration_maintype" );
+                String id_persist_registration = rs_r.getString( "id_persist_registration" );
 
                 String registrationIdsStrs[] = registrationIds_str.split( "," );
-                Vector< String > registrationIds = new Vector< String >();
-
-                for( String registrationId : registrationIdsStrs ) {
-                    registrationIds.add( registrationId );
-                }
-
-                Collections.sort( registrationIds );
-                int ndups = registrationIds.size();
-
+                int ndups = registrationIdsStrs.length;
                 switch( ndups )
                 {
                     case 2:
@@ -8103,28 +8096,21 @@ public class LinksCleanThread extends Thread
                         ndupsx++;
                 }
 
-                if( debug ) {
-                    String guid = registrationIds.get( 0 );
-                    plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist duplicates: %d %s", threadId, ndups, guid ) );
-                }
+                if( debug ) { plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist guid: %s, ndups: %d, idregs: %s", threadId, id_persist_registration, ndups, registrationIds_str ) ); }
 
-                flagIdPersistDuplicates( debug, source, rmtype, registrationIds );
-
-                registrationIds.clear();        // free
-                registrationIds = null;
+                flagIdPersistDuplicates( debug, source, rmtype, registrationIdsStrs );
             }
 
             if( ndups2 != 0 )
-            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup2: %d", threadId, ndups2 ), false, true );  }
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup2: %d", threadId, ndups2 ), false, true ); }
             else if( ndups3 != 0 )
             { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup3: %d", threadId, ndups3 ), false, true ); }
             else if( ndups4 != 0 )
-            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup4: %d", threadId, ndups4 ), false, true );  }
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup4: %d", threadId, ndups4 ), false, true ); }
             else if( ndups5 != 0 )
-            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup5: %d", threadId, ndups5 ), false, true );  }
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup5: %d", threadId, ndups5 ), false, true ); }
             else if( ndupsx != 0 )
-            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dupx: %d", threadId, ndupsx ), false, true );  }
-
+            { showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dupx: %d", threadId, ndupsx ), false, true ); }
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
@@ -8134,73 +8120,71 @@ public class LinksCleanThread extends Thread
     } // flagDuplicateRegsPersist
 
 
-    private void flagIdPersistDuplicates( boolean debug, String source, String rmtype, Vector< String > registrationIds )
+    private void flagIdPersistDuplicates( boolean debug, String source, String rmtype, String registrationIdsStrs[] )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
         try
         {
-            for( String registrationId : registrationIds )
+            Vector< Integer > registrationIds = new Vector< Integer >();
+            for( String registrationId : registrationIdsStrs ) {
+                registrationIds.add( Integer.parseInt( registrationId ) );
+            }
+            Collections.sort( registrationIds );    // inplace sorting
+
+            int r = 0;
+            for( int id_registration : registrationIds )
             {
-                String query = "SELECT id_registration, not_linksbase FROM links_cleaned.registration_c";
-                query += String.format( " WHERE id_source = %s", source );
-                query += String.format( " AND id_persist_registration = '%s'", registrationId );
-                query += " ORDER BY id_registration";
-
-                if( debug ) { showMessage( query, false, true ); }
-                //System.out.println( query );
-
-                ResultSet rs = dbconCleaned.runQueryWithResult( query );
-
-                rs.last();
-                int ndups = rs.getRow();
-                rs.beforeFirst();
-
-                int count = 0;
-                if( ndups >= 2 )
+                if( r == 0 )
+                {   // keep lowest id_registration
+                    plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist keep id_reg: %d", threadId, id_registration ) );
+                }
+                else
                 {
-                    while( rs.next() )
+                    // flag
+                    plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist flag id_reg: %d", threadId, id_registration ) );
+
+                    String query = "SELECT not_linksbase FROM links_cleaned.registration_c";
+                    query += String.format( " WHERE id_source = %s", source );
+                    query += String.format( " AND id_registration = %s", id_registration );
+
+                    if( debug ) { showMessage( query, false, true ); }
+                    //System.out.println( query );
+
+                    ResultSet rs = dbconCleaned.runQueryWithResult( query );
+                    rs.first();
+                    String old_flags = rs.getString( "not_linksbase" );
+
+                    String new_flags = "";
+
+                    if( old_flags == null || old_flags.isEmpty() ) { new_flags = "10000"; }
+                    else
                     {
-
-                        if( count == 0 )
-                        { ; }   // keep
-                        else    // flag
+                        // is the flag already set?
+                        int flag_idx = 0;       // 1st position for the flag
+                        if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
                         {
-                            int id_registration = rs.getInt( "id_registration" );
-                            String old_flags = rs.getString( "not_linksbase" );
-
-                            int countRegist = 0;
-                            String new_flags = "";
-
-                            if( old_flags == null || old_flags.isEmpty() ) { new_flags = "10000"; }
-                            else
-                            {
-                                // is the flag already set?
-                                int flag_idx = 0;       // 1st position for the flag
-                                if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
-                                {
-                                    // preserve other flags, and set new flag
-                                    StringBuilder sb = new StringBuilder( old_flags );
-                                    sb.setCharAt( flag_idx,'1' );
-                                    new_flags = sb.toString();
-                                }
-                            }
-
-                            if( ! new_flags.isEmpty() )
-                            {
-                                String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-                                flagQuery_r += " WHERE id_registration = " + id_registration + ";";
-                                if( debug ) { System.out.println(flagQuery_r); }
-
-                                countRegist = dbconCleaned.runQueryUpdate( flagQuery_r );
-                                //nNoRegDate += countRegist;
-                            }
+                            // preserve other flags, and set new flag
+                            StringBuilder sb = new StringBuilder( old_flags );
+                            sb.setCharAt( flag_idx,'1' );
+                            new_flags = sb.toString();
                         }
-                        count++;
+                    }
+
+                    if( ! new_flags.isEmpty() )
+                    {
+                        String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+                        flagQuery_r += " WHERE id_registration = " + id_registration + ";";
+                        if( debug ) { System.out.println(flagQuery_r); }
+
+                        int count = dbconCleaned.runQueryUpdate( flagQuery_r );
                     }
                 }
+                r++;
             }
+
+            registrationIds.clear();
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
@@ -8323,11 +8307,11 @@ public class LinksCleanThread extends Thread
                 int countRegist = 0;
                 String new_flags = "";
 
-                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0010"; }
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00010"; }
                 else
                 {
                     // is the flag already set?
-                    int flag_idx = 2;       // 3rd position for the flag
+                    int flag_idx = 3;       // 4th position for the flag
                     if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
                     {
                         // preserve other flags, and set new flag
@@ -8404,11 +8388,11 @@ public class LinksCleanThread extends Thread
                 int countRegist = 0;
                 String new_flags = "";
 
-                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "0001"; }
+                if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00001"; }
                 else
                 {
                     // is the flag already set?
-                    int flag_idx = 3;       // 4th position for the flag
+                    int flag_idx = 4;       // 5th position for the flag
                     if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
                     {
                         // preserve other flags, and set new flag
