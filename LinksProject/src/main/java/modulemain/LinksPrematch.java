@@ -30,7 +30,7 @@ import prematch.Lvs;
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
  * FL-31-Jan-2017 Two more name frequency count queries
- * FL-11-Jul-2017 Latest change
+ * FL-12-Jul-2017 Latest change
  */
 
 public class LinksPrematch extends Thread
@@ -153,17 +153,25 @@ public class LinksPrematch extends Thread
 
             doNamesToNumbers( debug, bNamesToNos );
 
-            String rmtStr[] = sourceIdsGui.split( " " );
+
+            String rmtStr[] = RMtypes.split( " " );
             String rmtype = rmtStr[ 0 ];    // only use 1
+            if( debug ) {
+                String msg = String.format( "sourceIds: %s, rmtype: %s", sourceIdsGui, rmtype );
+                showMessage( msg, false, true );
+            }
 
             if( Strings.isNullOrEmpty( sourceIdsGui ) && Strings.isNullOrEmpty( rmtype  ) )
-            { doCreateNewBaseTable( debug, bBaseTable ); }                      // new links_base
-            else if( Strings.isNullOrEmpty( RMtypes ) )
+            {
+                String source = "";
+                doCreateNewBaseTable( debug, bBaseTable, source, rmtype );
+            }                      // new links_base
+            else
             {
                 String idsStr[] = sourceIdsGui.split( " " );
 
                 for( String source : idsStr )
-                { doCreateNewBaseTableSource( debug, bBaseTable, source, rmtype ); }    // update per source & rmtype
+                { doCreateNewBaseTable( debug, bBaseTable, source, rmtype ); }    // update per source & rmtype
             }
 
 
@@ -754,9 +762,10 @@ public class LinksPrematch extends Thread
      * @param debug
      * @throws Exception
      */
-    public void doCreateNewBaseTable( boolean debug, boolean go ) throws Exception
+    /*
+    public void doCreateNewBaseTableOld( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doCreateNewBaseTable";
+        String funcname = "doCreateNewBaseTableOld";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -801,8 +810,8 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doCreateNewBaseTable
-
+    } // doCreateNewBaseTableOld
+    */
 
     /**
      * @param debug
@@ -811,9 +820,9 @@ public class LinksPrematch extends Thread
      * @param rmtype
      * @throws Exception
      */
-    public void doCreateNewBaseTableSource( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    public void doCreateNewBaseTable( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
-        String funcname = "doCreateNewBaseTableSource";
+        String funcname = "doCreateNewBaseTable";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -825,12 +834,28 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        // delete the previous records for source
-        long start_del = System.currentTimeMillis();
-        String qdelete = "DELETE FROM links_base WHERE id_source = " + source;
+        boolean have_source;
+        boolean have_rmtype;
 
-        if( ! Strings.isNullOrEmpty( rmtype  ) ) {
-            qdelete += " AND registration_maintype = " + rmtype;
+        if( Strings.isNullOrEmpty( source ) ) { have_source = false; }
+        else { have_source = true; }
+
+        if( Strings.isNullOrEmpty( rmtype ) ) { have_rmtype = false; }
+        else { have_rmtype = true; }
+
+        // delete the previous records
+        long start_del = System.currentTimeMillis();
+        String qdelete = "";
+        if( have_source ) {
+            qdelete =  "DELETE FROM links_base WHERE id_source = " + source;
+            if( have_rmtype ) { qdelete += " AND registration_maintype = " + rmtype; }
+        }
+        else
+        {
+            if( have_rmtype ) {
+                qdelete += " DELETE FROM links_base WHERE registration_maintype = " + rmtype;
+            }
+            else { qdelete = "TRUNCATE TABLE links_base"; }
         }
 
         showMessage( qdelete, false, true );
@@ -843,7 +868,7 @@ public class LinksPrematch extends Thread
         catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
         elapsedShowMessage( "delete done in", start_del, System.currentTimeMillis() );
 
-        String[] queries = getNewBaseTableQueries( debug, source );
+        String[] queries = getNewBaseTableQueries( debug, source, rmtype );
         int nupdated = 0;
         int n = 0;
 
@@ -872,7 +897,7 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doCreateNewBaseTableSource
+    } // doCreateNewBaseTable
 
 
      /**
@@ -880,9 +905,19 @@ public class LinksPrematch extends Thread
      * @param source
      * @throws Exception
      */
-    public String[] getNewBaseTableQueries( boolean debug, String source ) throws Exception
+    public String[] getNewBaseTableQueries( boolean debug, String source, String rmtype )
+    throws Exception
     {
-        String query1 = ""
+        boolean have_source;
+        boolean have_rmtype;
+
+        if( Strings.isNullOrEmpty( source ) ) { have_source = false; }
+        else { have_source = true; }
+
+        if( Strings.isNullOrEmpty( rmtype ) ) { have_rmtype = false; }
+        else { have_rmtype = true; }
+
+        String query1a = ""
             + "INSERT INTO links_prematch.links_base "
             + "( "
             + "id_registration , "
@@ -947,10 +982,25 @@ public class LinksPrematch extends Thread
             + "links_cleaned.person_c.death_max_days , "
             + "links_cleaned.person_c.death_location , "
             + "links_cleaned.person_c.role "
-            + "FROM links_cleaned.registration_c , links_cleaned.person_c "
-            + ""
-            + "WHERE links_cleaned.registration_c.id_source = " + source
-            + " AND links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration AND ( "
+            + "FROM links_cleaned.registration_c , links_cleaned.person_c"
+            + "";
+
+        if( have_source ) {
+            query1a += " WHERE links_cleaned.registration_c.id_source = " + source;
+            if( have_rmtype ) { query1a += " AND links_cleaned.registration_c.registration_maintype = " + rmtype; }
+            query1a += " AND";
+        }
+        else
+        {
+            if( have_rmtype ) {
+                query1a += " WHERE links_cleaned.registration_c.registration_maintype = " + rmtype;
+                query1a += " AND";
+            }
+            else { query1a += " WHERE"; }
+        }
+
+        String query1b = ""
+            + " links_cleaned.registration_c.id_registration = links_cleaned.person_c.id_registration AND ( "
             + " ( links_cleaned.registration_c.registration_maintype = 1 AND ( "
             + "    links_cleaned.person_c.role = 1 OR "
             + "    links_cleaned.person_c.role = 2 OR "
@@ -972,7 +1022,10 @@ public class LinksPrematch extends Thread
             + " ) "
             + " ) ; ";
 
-        String query2 = ""
+        String query1 = query1a + query1b;
+
+
+        String query2a = ""
             + "UPDATE links_prematch.links_base , links_cleaned.person_c "
             + "SET "
             + "mother_id                = links_cleaned.person_c.id_person , "
@@ -996,9 +1049,24 @@ public class LinksPrematch extends Thread
             + "mother_death_min         = links_cleaned.person_c.death_min_days , "
             + "mother_death_max         = links_cleaned.person_c.death_max_days , "
             + "mother_death_loc         = links_cleaned.person_c.death_location "
-            + ""
-            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
-            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "";
+
+        if( have_source ) {
+            query2a += " WHERE links_prematch.links_base.id_source = " + source;
+            if( have_rmtype ) { query2a += " AND links_prematch.links_base.registration_maintype = " + rmtype; }
+            query2a += " AND";
+        }
+        else
+        {
+            if( have_rmtype ) {
+                query2a += " WHERE links_prematch.links_base.registration_maintype = " + rmtype;
+                query2a += " AND";
+            }
+            else { query2a += " WHERE"; }
+        }
+
+        String query2b = ""
+            + " links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
             + "( "
             + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 1 ) OR "
             + ""
@@ -1008,7 +1076,10 @@ public class LinksPrematch extends Thread
             + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 10 ) "
             + ") ; ";
 
-        String query3 = ""
+        String query2 = query2a + query2b;
+
+
+        String query3a = ""
             + "UPDATE links_prematch.links_base , links_cleaned.person_c "
             + "SET "
             + "father_id                = links_cleaned.person_c.id_person , "
@@ -1032,9 +1103,24 @@ public class LinksPrematch extends Thread
             + "father_death_min         = links_cleaned.person_c.death_min_days , "
             + "father_death_max         = links_cleaned.person_c.death_max_days , "
             + "father_death_loc         = links_cleaned.person_c.death_location "
-            + ""
-            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
-            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "";
+
+        if( have_source ) {
+            query3a += " WHERE links_prematch.links_base.id_source = " + source;
+            if( have_rmtype ) { query3a += " AND links_prematch.links_base.registration_maintype = " + rmtype; }
+            query3a += " AND";
+        }
+        else
+        {
+            if( have_rmtype ) {
+                query3a += " WHERE links_prematch.links_base.registration_maintype = " + rmtype;
+                query3a += " AND";
+            }
+            else { query3a += " WHERE"; }
+        }
+
+        String query3b = ""
+            + " links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
             + "( "
             + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role =  1 ) OR "
             + " "
@@ -1044,7 +1130,10 @@ public class LinksPrematch extends Thread
             + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role = 10 ) "
             + " ) ; ";
 
-        String query4 = ""
+        String query3 = query3a + query3b;
+
+
+        String query4a = ""
             + "UPDATE links_prematch.links_base , links_cleaned.person_c "
             + "SET "
             + "partner_id                = links_cleaned.person_c.id_person , "
@@ -1068,9 +1157,24 @@ public class LinksPrematch extends Thread
             + "partner_death_min         = links_cleaned.person_c.death_min_days , "
             + "partner_death_max         = links_cleaned.person_c.death_max_days , "
             + "partner_death_loc         = links_cleaned.person_c.death_location "
-            + ""
-            + "WHERE links_prematch.links_base.id_source = " + source + " AND "
-            + "links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
+            + "";
+
+        if( have_source ) {
+            query4a += " WHERE links_prematch.links_base.id_source = " + source;
+            if( have_rmtype ) { query4a += " AND links_prematch.links_base.registration_maintype = " + rmtype; }
+            query4a += " AND";
+        }
+        else
+        {
+            if( have_rmtype ) {
+                query4a += " WHERE links_prematch.links_base.registration_maintype = " + rmtype;
+                query4a += " AND";
+            }
+            else { query4a += " WHERE"; }
+        }
+
+        String query4b = ""
+            + " links_prematch.links_base.id_registration = links_cleaned.person_c.id_registration AND "
             + "( "
             + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 2 AND links_prematch.links_base.ego_role = 3 ) OR "
             + " ( links_prematch.links_base.registration_maintype = 1 AND links_cleaned.person_c.role = 3 AND links_prematch.links_base.ego_role = 2 ) OR "
@@ -1087,6 +1191,8 @@ public class LinksPrematch extends Thread
             + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 10 AND links_prematch.links_base.ego_role = 11 ) OR "
             + " ( links_prematch.links_base.registration_maintype = 3 AND links_cleaned.person_c.role = 11 AND links_prematch.links_base.ego_role = 10 ) "
             + ") ; ";
+
+        String query4 = query4a + query4b;
 
         String[] queries = { query1, query2, query3, query4 };
 
