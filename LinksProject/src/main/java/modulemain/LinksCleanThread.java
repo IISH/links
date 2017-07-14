@@ -4411,6 +4411,14 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
         ts = System.currentTimeMillis();
+        type = "divorce";
+        msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
+        showMessage( msg, false, true );
+        standardDate( debug, source, type, rmtype );
+        msg = String.format( "Thread id %02d; Processing standard dates", threadId );
+        elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+
+        ts = System.currentTimeMillis();
         type = "death";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
         showMessage( msg, false, true );
@@ -4435,12 +4443,19 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagBirthDate( debug, source, rmtype );
+
         msg = String.format( "Thread id %02d; Flagging marriage dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagMarriageDate( debug, source, rmtype );
+
+        msg = String.format( "Thread id %02d; Flagging divorce dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
+        showMessage( msg, false, true );
+        flagDivorceDate( debug, source, rmtype );
+
         msg = String.format( "Thread id %02d; Flagging death dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         flagDeathDate( debug, source, rmtype );
+
         msg = String.format( "Thread id %02d; Flagging empty dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
@@ -5930,7 +5945,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String startQuery = "SELECT id_person , id_source ";
+            String startQuery = "SELECT id_person , id_source , registration_type";
             startQuery += String.format(", %s_date , %s_day , %s_month , %s_year ", type, type, type, type );
             startQuery += "FROM links_original.person_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
@@ -5950,7 +5965,7 @@ public class LinksCleanThread extends Thread
                     showMessage( msg, true, true );
                     stepstate += count_step;
                 }
-
+                String rtype = rs.getString( "registration_type" );
                 String date_str = rs.getString( type + "_date" );
 
                 if( date_str == null || date_str.isEmpty() )    // try to repair date from components
@@ -6002,9 +6017,10 @@ public class LinksCleanThread extends Thread
                     count_invalid++;
 
                     int errno = 0;
-                    if(       type.equals( "birth" ) ) { errno = 211; }
-                    else if ( type.equals( "mar" ) )   { errno = 221; }
-                    else if ( type.equals( "death" ) ) { errno = 231; }
+                    if(       type.equals( "birth" ) )   { errno = 211; }
+                    else if ( type.equals( "mar" ) )     { errno = 221; }
+                    else if ( type.equals( "divorce" ) ) { errno = 221; }
+                    else if ( type.equals( "death" ) )   { errno = 231; }
 
                     addToReportPerson( id_person, id_source + "", errno, dymd.getReports() );   // EC 211 / 221 / 231
                 }
@@ -6069,6 +6085,8 @@ public class LinksCleanThread extends Thread
             + "AND links_cleaned.person_c.id_source = " + source;
 
         if ( ! rmtype.isEmpty() ) { q2 += " AND registration_maintype = " + rmtype; }
+
+
 
         String q3 = ""
             + "UPDATE person_c "
