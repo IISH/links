@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-22-Feb-2017 Latest change
+ * FL-14-Jul-2017 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -276,8 +276,8 @@ public class MatchAsync extends Thread
             // Create database connections
             dbconMatch    = General.getConnection( url, "links_match",    user, pass );
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
+            dbconTemp     = null;
 
-            dbconTemp = null;
             String csvFilename = "";
             FileWriter writerMatches = null;
             if( match2csv ) {

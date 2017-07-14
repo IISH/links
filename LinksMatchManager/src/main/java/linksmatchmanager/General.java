@@ -25,8 +25,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * FL-14-Jul-2017 autoReconnect=true to prevent connection timeouts
  */
 public class General {
     
@@ -80,7 +82,9 @@ public class General {
     public static Connection getConnection(String url, String db, String user, String pass) 
             throws Exception {
         String driver = "org.gjt.mm.mysql.Driver";
-        String longUrl = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
+
+        //String longUrl = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
+        String longUrl = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&autoReconnect=true";
 
         Class.forName(driver);
         return DriverManager.getConnection(longUrl, user, pass);
