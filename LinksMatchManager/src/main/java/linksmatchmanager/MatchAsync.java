@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-14-Jul-2017 Latest change
+ * FL-17-Jul-2017 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -874,7 +874,7 @@ public class MatchAsync extends Thread
         {
             sem.release();
 
-            String err = String.format( "MatchAsync/run(): thread error: s1_idx_cpy = %d, lvs_idx_cpy = %d, s2_hit_cpy: %d, error = %s",
+            String err = String.format( "MatchAsync/run(): thread exception: s1_idx_cpy = %d, lvs_idx_cpy = %d, s2_hit_cpy: %d, error = %s",
                 s1_idx_cpy, lvs_idx_cpy, s2_hit_cpy, ex1.getMessage() );
             System.out.println( err );
             ex1.printStackTrace();
@@ -899,7 +899,7 @@ public class MatchAsync extends Thread
             }
         }
         catch( Exception ex ) {
-            String err = "Exception in emtable_ls_exists(): " + ex.getMessage();
+            String err = "Exception in existsMatchTempTable(): " + ex.getMessage();
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
@@ -1404,7 +1404,7 @@ public class MatchAsync extends Thread
             }
         }
         catch( Exception ex ) {
-            System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
+            System.out.println( "Exception in getFrequencyStr(): " + ex.getMessage() );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
 
