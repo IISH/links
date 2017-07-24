@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-17-Jul-2017 Latest change
+ * FL-24-Jul-2017 Debug run
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -47,12 +47,12 @@ import linksmatchmanager.DataSet.QuerySet;
 public class MatchAsync extends Thread
 {
     // efficient: static final boolean false blocks will be removed during compilation
-    static final boolean debugfail = false;     // debug match failures
-    static final boolean debugfreq = false;     // debug name frequencies
     static final boolean match2csv = true;      // collect all matches of current thread in csv file, and write to table in one go
+    //static final boolean debugfail = false;     // debug match failures
+    //static final boolean debugfreq = false;     // debug name frequencies
 
-    //boolean debugfail = false;     // debug match failures
-    //boolean debugfreq = false;     // debug name frequencies
+    boolean debugfail = false;     // debug match failures
+    boolean debugfreq = false;     // debug name frequencies
 
     boolean debug;
     boolean dry_run;
@@ -286,8 +286,10 @@ public class MatchAsync extends Thread
                 msg = String.format( "Collecting thread matches in CSV file: %s", csvFilename );
                 System.out.println( msg ); plog.show( msg );
 
-                //dbconTemp = General.getConnection( url, "links_temp", user, pass );
-                //createTempMatchesTable( threadId );                         // Create temp table to collect the matches
+                if( debug ) {   // use temp table to collect the matches
+                    dbconTemp = General.getConnection( url, "links_temp", user, pass );
+                    createTempMatchesTable( threadId );                     // Create temp table to collect the matches
+                }
             }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
@@ -345,10 +347,9 @@ public class MatchAsync extends Thread
                 //{ debug = debugfreq = debugfail = true; }
                 //else { debug = debugfreq = debugfail = false; continue; }
 
-                //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
-                //if( s1_id_registration == 1631 || s1_id_registration == 12312 ) { debug = true; debugfreq = true; debugfail = true; }
-                //if( s1_id_registration == 3593 || s1_id_registration == 11969 ) { debug = true; debugfreq = true; debugfail = true; }
-                //else { debugfreq = false; continue; }
+                int s1_id_registration = ql.s1_id_registration.get( s1_idx );
+                if( s1_id_registration == 24497594 || s1_id_registration == 32141233 ) { debug = true; debugfreq = true; debugfail = true; }
+                else { debugfreq = false; continue; }
 
                 if( debug || debugfreq) {
                     System.out.println( "***< s1_idx >*******************************************************************" );
@@ -743,11 +744,16 @@ public class MatchAsync extends Thread
                 writerMatches.close();
 
                 boolean removeCsv = true;
-                if( dbconTemp != null ) {
-                    loadCsvFileToTempTable( threadId, csvFilename );
-                    //updateMatchesTempToMatches( dbconMatch );
-                    //removematchesTableTemp( dbconMatch );
-                    dbconTemp.close();
+                if( debug ) { removeCsv = false; }
+
+                if( debug )
+                {
+                    if( dbconTemp != null ) {
+                        loadCsvFileToTempTable( threadId, csvFilename );
+                        //updateMatchesTempToMatches( dbconMatch );
+                        //removematchesTableTemp( dbconMatch );
+                        dbconTemp.close();
+                    }
                 }
                 else { loadCsvFileToMatchTable( threadId, csvFilename, removeCsv ); }
             }
@@ -1627,10 +1633,11 @@ public class MatchAsync extends Thread
 
             // this query assumes the lvs_table is an asymmetric (single-sized) lvs table
             if( debug ) {
-                query += "( SELECT name_int_2 AS name_int, name_str_2 AS name_str FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
+                query += "( SELECT name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
                 query += "UNION ALL ";
-                query += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
+                query += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
                 query += "ORDER BY value;";
+                System.out.println( query );
             }
             else {
                 query += "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
@@ -1648,18 +1655,14 @@ public class MatchAsync extends Thread
 
                 int lvs_dist_nrec = rs.getInt( "value" );
 
-                if( debug ) {
-                    String name_str_1 = rs.getString( "name_str_1" );
-                    String name_str_2 = rs.getString( "name_str_2" );
+                if( debug )
+                {
+                    String name_str = rs.getString( "name_str" );
 
-                    int name_int_1 = rs.getInt( "name_int_1" );
-                    int name_int_2 = rs.getInt( "name_int_2" );
-
-                    if( nrecs == 0 ) { System.out.printf( lvs_table + " variant for %s (%d): ", name_str_1, name_int_1 ); }
-                    System.out.printf( "%s (%d) ", name_str_2, name_int_2 );
+                    if( nrecs == 0 ) { System.out.printf( lvs_table + " variant for %s (%d): ", name_str, name_int ); }
+                    System.out.printf( "%s (%d) ", name_str, name_int );
                 }
-
-              //if( s1Name == name_int_2 )      // old
+                
                 if( s1Name == name_int )        // new
                 {
                     lvs_dist = lvs_dist_nrec;
@@ -1677,6 +1680,7 @@ public class MatchAsync extends Thread
         catch( Exception ex ) {
             System.out.println( "Exception in compareLvsNames: " + ex.getMessage() );
             System.out.println( "Abort" );
+            ex.printStackTrace();
             System.exit( 1 );
         }
 

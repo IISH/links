@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-14-Jul-2017 Latest change
+ * FL-24-Jul-2017 Latest change
  */
 
 public class MatchMain
@@ -70,8 +70,8 @@ public class MatchMain
      */
     public static void main( String[] args )
     {
+        // Notice: if debug = true (see below), dry_run => true, use_memory_tables => false
         boolean dry_run = false;     // true: do not delete former matches, + do not write new matches
-
         boolean use_memory_tables = true;
         String name_postfix = "_mem";
 
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "17-Jul-2017 13:50";
+            String timestamp1 = "24-Jul-2017 10:49";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -128,8 +128,13 @@ public class MatchMain
             //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
             else { debug = false; }
-            //System.out.println( "debug: '" + debug + "'" );
-
+            System.out.println( "debug: '" + debug + "'" );
+            if( debug ){
+                dry_run = true;
+                use_memory_tables = false;
+            }
+            System.out.println( "dry_run: '" + dry_run + "'" );
+            System.out.println( "use_memory_tables: '" + use_memory_tables + "'" );
 
             msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, s1_sample_limit: %s, s2_sample_limit: %s, debug: %s",
                 url, user, pass, max_threads_str, max_heap_table_size, s1_sample_limit, s2_sample_limit, debug );
