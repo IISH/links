@@ -37,7 +37,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * @author Fons Laan
  *
  * FL-15-Jan-2015 Each thread its own db connectors
- * FL-24-Jul-2017 Debug run
+ * FL-25-Jul-2017 Debug run
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -48,11 +48,12 @@ public class MatchAsync extends Thread
 {
     // efficient: static final boolean false blocks will be removed during compilation
     static final boolean match2csv = true;      // collect all matches of current thread in csv file, and write to table in one go
-    //static final boolean debugfail = false;     // debug match failures
-    //static final boolean debugfreq = false;     // debug name frequencies
 
-    boolean debugfail = false;     // debug match failures
-    boolean debugfreq = false;     // debug name frequencies
+    static final boolean debugfail = false;     // debug match failures
+    static final boolean debugfreq = false;     // debug name frequencies
+
+    //boolean debugfail = false;     // debug match failures
+    //boolean debugfreq = false;     // debug name frequencies
 
     boolean debug;
     boolean dry_run;
@@ -347,9 +348,9 @@ public class MatchAsync extends Thread
                 //{ debug = debugfreq = debugfail = true; }
                 //else { debug = debugfreq = debugfail = false; continue; }
 
-                int s1_id_registration = ql.s1_id_registration.get( s1_idx );
-                if( s1_id_registration == 24497594 || s1_id_registration == 32141233 ) { debug = true; debugfreq = true; debugfail = true; }
-                else { debugfreq = false; continue; }
+                //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
+                //if( s1_id_registration == 24497594 || s1_id_registration == 32141233 ) { debug = true; debugfreq = true; debugfail = true; }
+                ///else { debugfreq = false; continue; }
 
                 if( debug || debugfreq) {
                     System.out.println( "***< s1_idx >*******************************************************************" );
@@ -1662,7 +1663,7 @@ public class MatchAsync extends Thread
                     if( nrecs == 0 ) { System.out.printf( lvs_table + " variant for %s (%d): ", name_str, name_int ); }
                     System.out.printf( "%s (%d) ", name_str, name_int );
                 }
-                
+
                 if( s1Name == name_int )        // new
                 {
                     lvs_dist = lvs_dist_nrec;
@@ -1796,10 +1797,67 @@ public class MatchAsync extends Thread
     {
         String msg = "";
 
-        if( debug ) { System.out.printf( "s1_idx = %d, s2_idx = %d\n", s1_idx, s2_idx ); }
-        if( debug ) { System.out.printf( "use_minmax ego: %3d\n", qs.int_minmax_e ); }
+        String str_minmax_e = String.format( "%03d", qs.int_minmax_e );
+        String str_minmax_m = String.format( "%03d", qs.int_minmax_m );
+        String str_minmax_f = String.format( "%03d", qs.int_minmax_f );
+        String str_minmax_p = String.format( "%03d", qs.int_minmax_p );
 
-        if( ( qs.int_minmax_e % 2 ) == 1 )
+        int g_flag_idx = 0;       // 1st position for the birth (geboorte) flag
+        int h_flag_idx = 1;       // 2nd position for the marriage (huwelijk) flag
+        int o_flag_idx = 2;       // 3rd position for the death (overlijden) flag
+
+        boolean chk_ego_birth    = false;
+        boolean chk_ego_marriage = false;
+        boolean chk_ego_death    = false;
+
+        boolean chk_mother_birth    = false;
+        boolean chk_mother_marriage = false;
+        boolean chk_mother_death    = false;
+
+        boolean chk_father_birth    = false;
+        boolean chk_father_marriage = false;
+        boolean chk_father_death    = false;
+
+        boolean chk_partner_birth    = false;
+        boolean chk_partner_marriage = false;
+        boolean chk_partner_death    = false;
+
+        if( str_minmax_e.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { chk_ego_birth    = true; }       //
+        if( str_minmax_e.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { chk_ego_marriage = true; }       //
+        if( str_minmax_e.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { chk_ego_death    = true; }       //
+
+        if( str_minmax_m.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { chk_mother_birth    = true; }    //
+        if( str_minmax_m.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { chk_mother_marriage = true; }    //
+        if( str_minmax_m.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { chk_mother_death    = true; }    //
+
+        if( str_minmax_f.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { chk_father_birth    = true; }    //
+        if( str_minmax_f.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { chk_father_marriage = true; }    //
+        if( str_minmax_f.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { chk_father_death    = true; }    //
+
+        if( str_minmax_p.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { chk_partner_birth    = true; }   //
+        if( str_minmax_p.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { chk_partner_marriage = true; }   //
+        if( str_minmax_p.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { chk_partner_death    = true; }   //
+
+        if( debug ) {
+            System.out.printf( "str_minmax_e: %s\n", str_minmax_e );
+            System.out.printf( "str_minmax_m: %s\n", str_minmax_m );
+            System.out.printf( "str_minmax_f: %s\n", str_minmax_f );
+            System.out.printf( "str_minmax_p: %s\n", str_minmax_p );
+
+            System.out.printf( "ego     geb: %s, huw: %s, ovl: %s\n", chk_ego_birth,     chk_ego_marriage,     chk_ego_death );
+            System.out.printf( "mother  geb: %s, huw: %s, ovl: %s\n", chk_mother_birth,  chk_mother_marriage,  chk_mother_death );
+            System.out.printf( "father  geb: %s, huw: %s, ovl: %s\n", chk_father_birth,  chk_father_marriage,  chk_father_death );
+            System.out.printf( "partner geb: %s, huw: %s, ovl: %s\n", chk_partner_birth, chk_partner_marriage, chk_partner_death );
+        }
+
+        if( debug ) {
+            System.out.printf( "s1_idx = %d, s2_idx = %d\n", s1_idx, s2_idx );
+            System.out.printf( "use_minmax ego: %3d\n", qs.int_minmax_e );
+        }
+
+        //if( ( qs.int_minmax_e % 2 ) == 1 )
+        //if( qs.int_minmax_e == 100 || qs.int_minmax_e == 101 || qs.int_minmax_e == 110 || qs.int_minmax_e == 111 )
+        if( chk_ego_birth )
         {
             if( debug ) { System.out.printf( "use_minmax ego birth...\n" ); }
 
@@ -1818,10 +1876,8 @@ public class MatchAsync extends Thread
 
         if( ! skip )
         {
-            if( qs.int_minmax_e ==  10 ||
-                qs.int_minmax_e ==  11 ||
-                qs.int_minmax_e == 110 ||
-                qs.int_minmax_e == 111 )
+            //if( qs.int_minmax_e ==  10 || qs.int_minmax_e ==  11 || qs.int_minmax_e == 110 || qs.int_minmax_e == 111 )
+            if( chk_ego_marriage )
             {
                 if( debug ) { System.out.printf( "use_minmax ego marriage...\n" ); }
 
@@ -1831,7 +1887,9 @@ public class MatchAsync extends Thread
             }
         }
 
-        if( qs.int_minmax_e > 99 )
+        //if( qs.int_minmax_e > 99 )
+        //if( qs.int_minmax_e ==   1 || qs.int_minmax_e ==  11 || qs.int_minmax_e == 101 || qs.int_minmax_e == 111 )
+        if( chk_ego_death )
         {
             if( debug ) { System.out.printf( "use_minmax ego death...\n" ); }
 
@@ -1844,25 +1902,26 @@ public class MatchAsync extends Thread
         {
             if( debug ) { System.out.printf( "use_minmax mother: %3d\n", qs.int_minmax_m ); }
 
-            if( ( qs.int_minmax_m % 2 ) == 1 )
+            //if( ( qs.int_minmax_m % 2 ) == 1 )
+            //if( qs.int_minmax_m == 100 || qs.int_minmax_m == 101 || qs.int_minmax_m == 110 || qs.int_minmax_m == 111 )
+            if( chk_mother_birth )
             {
                 if( ( firstGreater( ql.s1_mother_birth_min.get( s1_idx ), ql.s2_mother_birth_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_mother_birth_min.get( s2_idx ), ql.s1_mother_birth_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_m ==  10 ||
-                qs.int_minmax_m ==  11 ||
-                qs.int_minmax_m == 110 ||
-                qs.int_minmax_m == 111 )
+            //if( qs.int_minmax_m ==  10 || qs.int_minmax_m ==  11 || qs.int_minmax_m == 110 || qs.int_minmax_m == 111 )
+            if( chk_mother_marriage )
             {
-
                 if( ( firstGreater( ql.s1_mother_marriage_min.get( s1_idx ), ql.s2_mother_marriage_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_mother_marriage_min.get( s2_idx ), ql.s1_mother_marriage_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_m > 99 )
+            //if( qs.int_minmax_m > 99 )
+            //if( qs.int_minmax_m ==   1 || qs.int_minmax_m ==  11 || qs.int_minmax_m == 101 || qs.int_minmax_m == 111 )
+            if( chk_mother_death )
             {
                 if( ( firstGreater( ql.s1_mother_death_min.get( s1_idx ), ql.s2_mother_death_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_mother_death_min.get( s2_idx ), ql.s1_mother_death_max.get( s1_idx ) ) ) )
@@ -1872,31 +1931,29 @@ public class MatchAsync extends Thread
 
         if( qs.use_father )
         {
-            if( debug ) {
-                msg = String.format( "use_minmax father: %3d", qs.int_minmax_f );
-                System.out.println( msg );
-                try { plog.show( msg ); }
-                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-            }
+            if( debug ) { System.out.printf( "use_minmax father: %3d\n", qs.int_minmax_f ); }
 
-            if( ( qs.int_minmax_f % 2 ) == 1 )
+            //if( ( qs.int_minmax_f % 2 ) == 1 )    // Omar
+            //if( qs.int_minmax_f == 100 || qs.int_minmax_f == 101 || qs.int_minmax_f == 110 || qs.int_minmax_f == 111 )
+            if( chk_father_birth )
             {
                 if( ( firstGreater( ql.s1_father_birth_min.get( s1_idx ), ql.s2_father_birth_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_father_birth_min.get( s2_idx ), ql.s1_father_birth_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_f ==  10 ||
-                qs.int_minmax_f ==  11 ||
-                qs.int_minmax_f == 110 ||
-                qs.int_minmax_f == 111 )
+            //if( qs.int_minmax_f ==  10 || qs.int_minmax_f ==  11 || qs.int_minmax_f == 110 || qs.int_minmax_f == 111 )
+            if( chk_father_marriage )
             {
                 if( ( firstGreater( ql.s1_father_marriage_min.get( s1_idx ), ql.s2_father_marriage_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_father_marriage_min.get( s2_idx ), ql.s1_father_marriage_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_f > 99) {
+            //if( qs.int_minmax_f > 99 )
+            //if( qs.int_minmax_f ==   1 || qs.int_minmax_f ==  11 || qs.int_minmax_f == 101 || qs.int_minmax_f == 111 )
+            if( chk_father_death )
+            {
                 if( ( firstGreater( ql.s1_father_death_min.get( s1_idx ), ql.s2_father_death_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_father_death_min.get( s2_idx ), ql.s1_father_death_max.get( s1_idx ) ) ) )
                 { return false; }
@@ -1905,31 +1962,28 @@ public class MatchAsync extends Thread
 
         if( qs.use_partner )
         {
-            if( debug ) {
-                msg = String.format( "use_minmax partner: %3d", qs.int_minmax_p );
-                System.out.println( msg );
-                try { plog.show( msg ); }
-                catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-            }
+            if( debug ) { System.out.printf( "use_minmax partner: %3d\n", qs.int_minmax_p ); }
 
-            if( ( qs.int_minmax_p % 2 ) == 1 )
+            //if( ( qs.int_minmax_p % 2 ) == 1 )
+            //if( qs.int_minmax_p == 100 || qs.int_minmax_p == 101 || qs.int_minmax_p == 110 || qs.int_minmax_p == 111 )
+            if( chk_partner_birth )
             {
                 if( ( firstGreater( ql.s1_partner_birth_min.get( s1_idx ), ql.s2_partner_birth_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_partner_birth_min.get( s2_idx ), ql.s1_partner_birth_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_p ==  10 ||
-                qs.int_minmax_p ==  11 ||
-                qs.int_minmax_p == 110 ||
-                qs.int_minmax_p == 111 )
+            //if( qs.int_minmax_p ==  10 || qs.int_minmax_p ==  11 || qs.int_minmax_p == 110 || qs.int_minmax_p == 111 )
+            if( chk_partner_marriage )
             {
                 if( ( firstGreater( ql.s1_partner_marriage_min.get( s1_idx ), ql.s2_partner_marriage_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_partner_marriage_min.get( s2_idx ), ql.s1_partner_marriage_max.get( s1_idx ) ) ) )
                 { return false; }
             }
 
-            if( qs.int_minmax_p > 99 )
+            //if( qs.int_minmax_p > 99 )
+            //if( qs.int_minmax_p ==   1 || qs.int_minmax_p ==  11 || qs.int_minmax_p == 101 || qs.int_minmax_p == 111 )
+            if( chk_partner_death )
             {
                 if( ( firstGreater( ql.s1_partner_death_min.get( s1_idx ), ql.s2_partner_death_max.get( s2_idx ) ) ) ||
                     ( firstGreater( ql.s2_partner_death_min.get( s2_idx ), ql.s1_partner_death_max.get( s1_idx ) ) ) )
