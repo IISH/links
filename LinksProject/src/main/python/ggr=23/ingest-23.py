@@ -4,7 +4,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.1
+Version:	0.2
 Goal:		Ingest id_source = 23
 
 USE links_temp;
@@ -20,18 +20,24 @@ INSERT INTO links_original.registration_o
 	name_source,
 	id_orig_registration,
 	registration_maintype,
-	registration_type
+	registration_type,
+	registration_day,
+	registration_month,
+	registration_year
 )
 SELECT
 	id_source,
 	name_source,
 	id_orig_registration,
 	registration_maintype,
-	registration_type
+	registration_type,
+	registration_day,
+	registration_month,
+	registration_year
 FROM
-	links_temp.ggr;
+	links_temp.ggr_r;
 
-# Copy ggr.id_orig_registration to person_o.id_person_o (NOT ggr.id_person_o)
+-- Copy ggr.id_orig_registration to person_o.id_person_o (NOT ggr.id_person_o)
 INSERT INTO links_original.person_o
 (
 	id_source,
@@ -59,9 +65,9 @@ SELECT
 	birth_year,
 	birth_date
 FROM
-	links_temp.ggr;
+	links_temp.ggr_p;
 
-# We use id_orig_registration to links to two tables
+-- We use id_orig_registration to link the two tables
 UPDATE links_original.registration_o, links_original.person_o 
 SET person_o.id_registration = registration_o.id_registration 
 WHERE person_o.id_source = 23 
@@ -69,7 +75,7 @@ AND registration_o.id_source = 23
 AND person_o.id_person_o = registration_o.id_orig_registration;
 
 21-Jul-2017 Created
-24-Jul-2017 Latest change
+15-Aug-2017 Latest change
 """
 
 
@@ -221,7 +227,12 @@ def process_csv( db_links, csv_filename ):
 		"sex"                   : "sex"
 	}
 	
+	
+	
 	nline = 0
+	nline_r = 0		# registration lines (2 persons per registration)
+	nskip_r = 0
+	id_person_o_prev = None
 	csv_file = io.open( csv_pathname, 'r', encoding = encoding )
 	
 	for line in csv_file:
@@ -231,7 +242,17 @@ def process_csv( db_links, csv_filename ):
 		logging.debug( "%d in: %s" % ( nline, line ) )
 		
 		wrong_date_comps = False
-		out_dict = { "name_source" : '\"ggr\"', "registration_type" : '\"o\"' }
+		out_dict = { 
+			"name_source" : '\"ggr\"', 
+			"registration_type" : '\"o\"' 
+		}
+		
+		reg_dict = { 
+			"name_source" : '\"ggr\"', 
+			"registration_type" : '\"o\"', 
+			"registration_day" : '\"1\"', 
+			"registration_month" : '\"1\"'
+		}
 		
 		fields = line.split( ';' )
 		if nline == 1:
@@ -248,6 +269,7 @@ def process_csv( db_links, csv_filename ):
 				csv_header_name = csv_header_names[ i ]
 				tbl_header_name = map_columns[ csv_header_name ]
 				value = fields[ i ]
+				
 				if tbl_header_name in [ "birth_date", "role", "firstname", "familyname", "sex" ]:
 					out_dict[ tbl_header_name ] = '\"' + value + '\"'
 				else:
@@ -255,6 +277,12 @@ def process_csv( db_links, csv_filename ):
 						wrong_date_comps = True
 						#print( "nline: %d, csv_header_name: %s, value: %s" % (nline, csv_header_name, value ) )
 					out_dict[ tbl_header_name ] = value
+				
+				if tbl_header_name in [ "id_source", "id_orig_registration", "registration_maintype" ]:
+					reg_dict[ tbl_header_name ] = '\"' + value + '\"'
+				
+				if tbl_header_name == "birth_year":
+					reg_dict[ "registration_year" ] = '\"' + value + '\"'
 
 		if wrong_date_comps:
 			# input cvs has split the date incorrectly, re-establish the components
@@ -279,17 +307,24 @@ def process_csv( db_links, csv_filename ):
 			logging.debug( msg )
 			print( msg )
 	
-		table = "links_temp.ggr"
+		#print( nline )
+	
+		table = "links_temp.ggr_p"
 		cols = out_dict.keys()
 		vals = out_dict.values()
 		sql = "INSERT INTO %s (%s) VALUES(%s)" % ( table, ",".join( cols ), ",".join( vals ) )
-		
 		#print( sql )
-		#print( nline )
-			
 		logging.debug( "sql: %s" % sql )
-		
 		db_links.insert( sql )
+		
+		table = "links_temp.ggr_r"
+		cols = reg_dict.keys()
+		vals = reg_dict.values()
+		sql_r = "INSERT INTO %s (%s) VALUES(%s)" % ( table, ",".join( cols ), ",".join( vals ) )
+		#print( sql_r )
+		logging.debug( "sql_r: %s" % sql_r )
+		db_links.insert( sql_r )
+
 
 
 def format_secs( seconds ):
@@ -344,6 +379,6 @@ if __name__ == "__main__":
 	if log_file: print( msg )
 	
 	str_elapsed = format_secs( time() - time0 )
-	print( "militie_import %s" % str_elapsed )  
+	print( "ingest-23 %s" % str_elapsed )  
 
 # [eof]
