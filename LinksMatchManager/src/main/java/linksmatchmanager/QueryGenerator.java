@@ -17,7 +17,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package linksmatchmanager;
 
-import java.io.PrintStream;
 import java.sql.*;
 import java.util.*;
 
@@ -33,17 +32,17 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
- * FL-25-Jul-2016 Latest change
+ * FL-16-Aug-2017 Add chk_ booleans derived from minmax 0/1 inputs
  */
 public class QueryGenerator
 {
-    public InputSet is;     // this variable can be used outside the class
+    public InputSet is;     // only this variable is accessible from outside this class
 
     private boolean debug = false;
     private PrintLogger plog;
     private String s1_sampleLimit;
     private String s2_sampleLimit;
-    private ResultSet rs;
+    //private ResultSet rs;
 
     /**
      * Constructor
@@ -68,11 +67,11 @@ public class QueryGenerator
         plog.show( msg );
 
         // Get all records and fields from the match_process table
-        rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process ORDER BY id" );
+        ResultSet rs = dbconMatch.createStatement().executeQuery( "SELECT * FROM match_process ORDER BY id" );
 
         is = new InputSet();
 
-        setToArray( dbconPrematch );   // fill 1 or more QueryGroupSets, and add them to the InputSet 'is'
+        setToArray( dbconPrematch, rs );   // fill 1 or more QueryGroupSets, and add them to the InputSet 'is'
     }
 
 
@@ -111,7 +110,7 @@ public class QueryGenerator
      * Creates an array of queries
      * @throws Exception When a database operation fails
      */
-    private void setToArray( Connection dbconPrematch ) throws Exception
+    private void setToArray( Connection dbconPrematch, ResultSet rs ) throws Exception
     {
         if( debug ) { System.out.println( "QueryGenerator/setToArray()" ); }
 
@@ -195,6 +194,15 @@ public class QueryGenerator
             int int_minmax_f = Integer.parseInt( use_minmax.split( "\\." )[ 2 ] );
             int int_minmax_p = Integer.parseInt( use_minmax.split( "\\." )[ 3 ] );
 
+            String str_minmax_e = String.format( "%03d", int_minmax_e );
+            String str_minmax_m = String.format( "%03d", int_minmax_m );
+            String str_minmax_f = String.format( "%03d", int_minmax_f );
+            String str_minmax_p = String.format( "%03d", int_minmax_p );
+
+            int g_flag_idx = 0;       // 1st position for the birth (geboorte) flag
+            int h_flag_idx = 1;       // 2nd position for the marriage (huwelijk) flag
+            int o_flag_idx = 2;       // 3rd position for the death (overlijden) flag
+
             String use_mother  = "n";
             String use_father  = "n";
             String use_partner = "n";
@@ -267,10 +275,28 @@ public class QueryGenerator
                 qs.int_minmax_f = int_minmax_f;
                 qs.int_minmax_p = int_minmax_p;
 
+                // the chk_* booleans are used in MatcAsync.java/CheckMinMax()
+                if( str_minmax_e.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { qs.chk_ego_birth    = true; }       //
+                if( str_minmax_e.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { qs.chk_ego_marriage = true; }       //
+                if( str_minmax_e.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { qs.chk_ego_death    = true; }       //
+
+                if( str_minmax_m.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { qs.chk_mother_birth    = true; }    //
+                if( str_minmax_m.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { qs.chk_mother_marriage = true; }    //
+                if( str_minmax_m.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { qs.chk_mother_death    = true; }    //
+
+                if( str_minmax_f.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { qs.chk_father_birth    = true; }    //
+                if( str_minmax_f.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { qs.chk_father_marriage = true; }    //
+                if( str_minmax_f.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { qs.chk_father_death    = true; }    //
+
+                if( str_minmax_p.substring( g_flag_idx, g_flag_idx + 1 ).equals( "1" ) ) { qs.chk_partner_birth    = true; }   //
+                if( str_minmax_p.substring( h_flag_idx, h_flag_idx + 1 ).equals( "1" ) ) { qs.chk_partner_marriage = true; }   //
+                if( str_minmax_p.substring( o_flag_idx, o_flag_idx + 1 ).equals( "1" ) ) { qs.chk_partner_death    = true; }   //
+
                 // booleans
                 qs.use_mother    = use_mother   .equalsIgnoreCase( "y" ) ? true : false;
                 qs.use_father    = use_father   .equalsIgnoreCase( "y" ) ? true : false;
                 qs.use_partner   = use_partner  .equalsIgnoreCase( "y" ) ? true : false;
+
                 qs.ignore_minmax = ignore_minmax.equalsIgnoreCase( "y" ) ? true : false;
 
               //qs.ignore_sex = ignore_sex   .equalsIgnoreCase( "y" ) ? true : false;

@@ -21,7 +21,7 @@ package linksmatchmanager.DataSet;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-21-Jul-2016 Latest change
+ * FL-16-Aug-2017 Add chk_* flags (for date range min/max purpose)
  */
 public class QuerySet
 {
@@ -72,20 +72,37 @@ public class QuerySet
     public int int_firstname_m;
     public int int_firstname_f;
     public int int_firstname_p;
-            
+
+    // these 4 minmax inputs from the match_process table
     public int int_minmax_e;
     public int int_minmax_m;
     public int int_minmax_f;
     public int int_minmax_p;
 
+    // these derived chk minmax flags are easier to use (computed once)
+    public boolean chk_ego_birth    = false;
+    public boolean chk_ego_marriage = false;
+    public boolean chk_ego_death    = false;
+
+    public boolean chk_mother_birth    = false;
+    public boolean chk_mother_marriage = false;
+    public boolean chk_mother_death    = false;
+
+    public boolean chk_father_birth    = false;
+    public boolean chk_father_marriage = false;
+    public boolean chk_father_death    = false;
+
+    public boolean chk_partner_birth    = false;
+    public boolean chk_partner_marriage = false;
+    public boolean chk_partner_death    = false;
 
     public int date_range = 0;      // moving date window counter
 
     public int s1_offset = 0;       // s1 query OFFSET
     public int s2_offset = 0;       // s2 query OFFSET
 
-    public int s1_limit = 0;       // s1 query LIMIT
-    public int s2_limit = 0;       // s2 query LIMIT
+    public int s1_limit = 0;        // s1 query LIMIT
+    public int s2_limit = 0;        // s2 query LIMIT
 
 
     public QuerySet copyQuerySet()
@@ -143,6 +160,22 @@ public class QuerySet
         qs.int_minmax_m = int_minmax_m;
         qs.int_minmax_f = int_minmax_f;
         qs.int_minmax_p = int_minmax_p;
+
+        qs.chk_ego_birth    = chk_ego_birth;
+        qs.chk_ego_marriage = chk_ego_marriage;
+        qs.chk_ego_death    = chk_ego_death;
+
+        qs.chk_mother_birth    = chk_mother_birth;
+        qs.chk_mother_marriage = chk_mother_marriage;
+        qs.chk_mother_death    = chk_mother_death;
+
+        qs.chk_father_birth    = chk_father_birth;
+        qs.chk_father_marriage = chk_father_marriage;
+        qs.chk_father_death    = chk_father_death;
+
+        qs.chk_partner_birth    = chk_partner_birth;
+        qs.chk_partner_marriage = chk_partner_marriage;
+        qs.chk_partner_death    = chk_partner_death;
 
         qs.s1_offset = s1_offset;
         qs.s2_offset = s2_offset;

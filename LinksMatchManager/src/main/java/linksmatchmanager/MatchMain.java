@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-25-Jul-2017 Latest change
+ * FL-16-Aug-2017 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "25-Jul-2017 14:10";
+            String timestamp1 = "16-Aug-2017 16:46";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -100,7 +100,7 @@ public class MatchMain
             //System.out.println( dbg ); plog.show( dbg );
             //System.exit( 0 );
 
-            // Load arguments; check length
+            // Load cmd line arguments; check length
             if( args.length != 8 ) {
                 String msg ="Invalid argument length " + args.length + ", it should be 8";
                 plog.show( msg ); System.out.println( msg );
@@ -129,7 +129,7 @@ public class MatchMain
             if( debug_str.equals( "true" ) ) { debug = true; }
             else { debug = false; }
             System.out.println( "debug: '" + debug + "'" );
-            if( debug ){
+            if( debug ) {
                 dry_run = true;
                 use_memory_tables = false;
             }
@@ -205,6 +205,10 @@ public class MatchMain
             int isSize = inputSet.getSize();
             plog.show( String.format( "Number of active records from links_match.match_process: %d\n", isSize ) );
             if( isSize == 0 ) { msg = "Nothing to do; Stop.";  System.out.println( msg ); plog.show( msg ); }
+
+            //msg = "Input test only\nEXIT.";
+            //System.out.println( msg ); plog.show( msg );
+            //System.exit( 0 );
 
             // The first ls_firstname and ls_familyname, are copied to a MEMORY database table
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
@@ -365,7 +369,7 @@ public class MatchMain
                 int match_process_id = qgs.get( 0 ).id;
 
                 if( dry_run ) {
-                    msg = String.format( "Thread id %02d; DRY RUN: not deleting or writing matches!", mainThreadId );
+                    msg = String.format( "Thread id %02d; DRY RUN: not deleting, nor writing matches!", mainThreadId );
                     System.out.println( msg ); plog.show( msg );
                 }
                 else { deleteMatches( match_process_id ); }
@@ -538,6 +542,40 @@ public class MatchMain
                 System.out.println( msg );
             }
         }
+
+        // Loop through the records from the match_process table
+        for( int n_mp = 0; n_mp < isSize; n_mp++ )
+        {
+            QueryGroupSet qgs = inputSet.get( n_mp );
+
+            int qgsSize = qgs.getSize();
+            for( int n_qs = 0; n_qs < qgsSize; n_qs++ )
+            {
+                QuerySet qs = qgs.get( n_qs );
+
+                String msg = String.format(
+                    "QuerySet: %2d, int_minmax_e: %03d, chk_ego_birth:     %5s, chk_ego_marriage:     %5s, chk_ego_death:     %5s",
+                    n_qs, qs.int_minmax_e, qs.chk_ego_birth, qs.chk_ego_marriage, qs.chk_ego_death );
+                System.out.println( msg );
+
+                msg = String.format(
+                    "QuerySet: %2d, int_minmax_m: %03d, chk_mother_birth:  %5s, chk_mother_marriage:  %5s, chk_mother_death:  %5s",
+                    n_qs, qs.int_minmax_m, qs.chk_mother_birth, qs.chk_mother_marriage, qs.chk_mother_death );
+                System.out.println( msg );
+
+                msg = String.format(
+                    "QuerySet: %2d, int_minmax_f: %03d, chk_father_birth:  %5s, chk_father_marriage:  %5s, chk_father_death:  %5s",
+                    n_qs, qs.int_minmax_f, qs.chk_father_birth, qs.chk_father_marriage, qs.chk_father_death );
+                System.out.println( msg );
+
+                msg = String.format(
+                    "QuerySet: %2d, int_minmax_p: %03d, chk_partner_birth: %5s, chk_partner_marriage: %5s, chk_partner_death: %5s",
+                    n_qs, qs.int_minmax_p, qs.chk_partner_birth, qs.chk_partner_marriage, qs.chk_partner_death );
+                System.out.println( msg );
+            }
+        }
+        System.out.println( "" );
+
     } // checkInputSet
 
 
