@@ -9,10 +9,10 @@ Goal:		Ingest miltieregister XML files into MySQL table
 
 18-Apr-2017	Created
 28-Jun-2017	Move empty string initialization inside loop in process_xml()
-17-Jul-2017	Latest change
+18-Aug-2017	Latest change
 
 
-SQL manipulations afterwards:
+-- SQL manipulations afterwards (only once):
 USE links_original;
 ALTER TABLE `registration_o` ADD INDEX `id_source` (`id_source`);
 ALTER TABLE `person_o` ADD INDEX `id_source` (`id_source`);
@@ -23,6 +23,12 @@ USE links_original;
 ALTER TABLE `person_o` ADD INDEX `id_person_o` (`id_person_o`);
 
 
+-- Delete previous data
+USE links_original;
+DELETE FROM links_original.registration_o WHERE id_source = 25;
+DELETE FROM links_original.person_o WHERE id_source = 25;
+
+-- Copy from temp
 USE links_temp;
 USE links_original;
 
