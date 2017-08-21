@@ -9,7 +9,7 @@ Goal:		Ingest miltieregister XML files into MySQL table
 
 18-Apr-2017	Created
 28-Jun-2017	Move empty string initialization inside loop in process_xml()
-18-Aug-2017	Latest change
+21-Aug-2017	Latest change
 
 
 -- SQL manipulations afterwards (only once):
@@ -96,6 +96,7 @@ ALTER TABLE links_temp.militieregisters ADD role VARCHAR(50) DEFAULT NULL AFTER 
 UPDATE links_temp.militieregisters SET id_source = 25;
 UPDATE links_temp.militieregisters SET name_source = "militieregisters";
 UPDATE links_temp.militieregisters SET registration_maintype = 1;
+UPDATE links_temp.militieregisters SET registration_type = "militieregisters";
 UPDATE links_temp.militieregisters SET sex = "m";
 UPDATE links_temp.militieregisters SET role = "Kind";
 
@@ -107,6 +108,7 @@ id_source				25
 name_source				"militieregisters"
 id_orig_registration	militieregisters.id
 registration_maintype	1
+registration_type		"militieregisters"
 registration_date		militieregisters.date	# reverse date string! OK
 
 person_o
