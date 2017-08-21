@@ -4,7 +4,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.2
+Version:	0.3
 Goal:		Ingest id_source = 23
 
 USE links_temp;
@@ -75,7 +75,7 @@ AND registration_o.id_source = 23
 AND person_o.id_person_o = registration_o.id_orig_registration;
 
 21-Jul-2017 Created
-15-Aug-2017 Latest change
+21-Aug-2017 Latest change
 """
 
 
@@ -244,12 +244,12 @@ def process_csv( db_links, csv_filename ):
 		wrong_date_comps = False
 		out_dict = { 
 			"name_source" : '\"ggr\"', 
-			"registration_type" : '\"o\"' 
+			"registration_type" : '\"Overlijden\"' 
 		}
 		
 		reg_dict = { 
 			"name_source" : '\"ggr\"', 
-			"registration_type" : '\"o\"', 
+			"registration_type" : '\"Overlijden\"', 
 			"registration_day" : '\"1\"', 
 			"registration_month" : '\"1\"'
 		}
