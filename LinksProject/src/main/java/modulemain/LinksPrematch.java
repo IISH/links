@@ -30,7 +30,7 @@ import prematch.Lvs;
  * FL-13-Mar-2015 Split firstnames: (also) make firstname4 free of spaces
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
  * FL-31-Jan-2017 Two more name frequency count queries
- * FL-12-Jul-2017 Latest change
+ * FL-21-Aug-2017 NamesToNumbers per id_source & rmtype
  */
 
 public class LinksPrematch extends Thread
@@ -143,6 +143,9 @@ public class LinksPrematch extends Thread
         showMessage( "db_user: " + db_user, false, true );
         showMessage( "db_pass: " + db_pass, false, true );
 
+        showMessage( "sourceIdsGui: " + sourceIdsGui, false, true );
+        showMessage( "RMtypes: " + RMtypes, false, true );
+
         try
         {
             doSplitFirstnames( debug, bSplitFirstames );
@@ -151,11 +154,12 @@ public class LinksPrematch extends Thread
 
             doStandardization( debug, bStandardization );
 
-            doNamesToNumbers( debug, bNamesToNos );
+            String rmtype = "";
+            if( RMtypes.length() > 0 ) {
+                String rmtStr[] = RMtypes.split( " " );
+                rmtype = rmtStr[ 0 ];       // only use the first !
+            }
 
-
-            String rmtStr[] = RMtypes.split( " " );
-            String rmtype = rmtStr[ 0 ];    // only use 1
             if( debug ) {
                 String msg = String.format( "sourceIds: %s, rmtype: %s", sourceIdsGui, rmtype );
                 showMessage( msg, false, true );
@@ -164,6 +168,7 @@ public class LinksPrematch extends Thread
             if( Strings.isNullOrEmpty( sourceIdsGui ) && Strings.isNullOrEmpty( rmtype  ) )
             {
                 String source = "";
+                doNamesToNumbers( debug, bNamesToNos, source, rmtype );
                 doCreateNewBaseTable( debug, bBaseTable, source, rmtype );
             }                      // new links_base
             else
@@ -171,7 +176,10 @@ public class LinksPrematch extends Thread
                 String idsStr[] = sourceIdsGui.split( " " );
 
                 for( String source : idsStr )
-                { doCreateNewBaseTable( debug, bBaseTable, source, rmtype ); }    // update per source & rmtype
+                { doNamesToNumbers( debug, bNamesToNos, source, rmtype ); }     // update per source & rmtype
+
+                for( String source : idsStr )
+                { doCreateNewBaseTable( debug, bBaseTable, source, rmtype ); }  // update per source & rmtype
             }
 
 
@@ -715,10 +723,9 @@ public class LinksPrematch extends Thread
     /*---< Names to Numbers >-------------------------------------------------*/
 
     /**
-     *
      * @throws Exception
      */
-    public void doNamesToNumbers( boolean debug, boolean go ) throws Exception
+    public void doNamesToNumbersOld( boolean debug, boolean go ) throws Exception
     {
         String funcname = "doNamesToNumbers";
 
@@ -745,6 +752,67 @@ public class LinksPrematch extends Thread
             String query = LinksSpecific.getSqlQuery( qPath );
             String msg = "query " + n + "-of-" + nqLast;
             showMessage( msg + "...", false, true );
+            if( debug ) { showMessage( query, false, true ); }
+
+            conPrematch.runQuery( query );
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doNamesToNumbersOld
+
+    /**
+     * @throws Exception
+     */
+    public void doNamesToNumbers( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    {
+        String funcname = "doNamesToNumbers";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String[] queries =
+        {
+            "UPDATE links_cleaned.person_c, links_prematch.freq_familyname"
+                + " SET links_cleaned.person_c.familyname_no = links_prematch.freq_familyname.id"
+                + " WHERE links_cleaned.person_c.familyname = links_prematch.freq_familyname.name_str",     // Query 01
+
+            "UPDATE links_cleaned.person_c, links_prematch.freq_firstname"
+                + " SET links_cleaned.person_c.firstname1_no = links_prematch.freq_firstname.id"
+                + " WHERE links_cleaned.person_c.firstname1 = links_prematch.freq_firstname.name_str",      // Query 02
+
+            "UPDATE links_cleaned.person_c, links_prematch.freq_firstname"
+                + " SET links_cleaned.person_c.firstname2_no = links_prematch.freq_firstname.id"
+                + " WHERE links_cleaned.person_c.firstname2 = links_prematch.freq_firstname.name_str",      // Query 03
+
+            "UPDATE links_cleaned.person_c, links_prematch.freq_firstname"
+                + " SET links_cleaned.person_c.firstname3_no = links_prematch.freq_firstname.id"
+                + " WHERE links_cleaned.person_c.firstname3 = links_prematch.freq_firstname.name_str",      //Query 04
+
+            "UPDATE links_cleaned.person_c, links_prematch.freq_firstname"
+                + " SET links_cleaned.person_c.firstname4_no = links_prematch.freq_firstname.id"
+                + " WHERE links_cleaned.person_c.firstname4 = links_prematch.freq_firstname.name_str"       //Query 05
+        };
+
+        int nq = 0;
+        for( String query : queries )
+        {
+            nq++;
+            if( ! source.isEmpty() ) { query += String.format( " AND id_source = %s", source ); }
+            if( ! rmtype.isEmpty() ) { query += String.format( " AND registration_maintype = %s", rmtype ); }
+
+            long start = System.currentTimeMillis();
+            String msg = "query " + nq + "-of-" + queries.length;
+            showMessage( msg + "...", false, true );
+            System.out.println( query );
             if( debug ) { showMessage( query, false, true ); }
 
             conPrematch.runQuery( query );

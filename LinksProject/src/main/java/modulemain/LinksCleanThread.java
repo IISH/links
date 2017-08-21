@@ -6326,6 +6326,7 @@ public class LinksCleanThread extends Thread
     /**
      * @param debug
      * @param source
+     * @param rmtype
      */
     public void flagMarriageDate( boolean debug, String source, String rmtype )
     {
@@ -6410,6 +6411,96 @@ public class LinksCleanThread extends Thread
             }
         }
     } // flagMarriageDate
+
+
+    /**
+     * @param debug
+     * @param source
+     * @param rmtype
+     */
+    public void flagDivorceDate( boolean debug, String source, String rmtype )
+    {
+        // divorce_date_flag is not used elsewhere in the cleaning.
+        // In standardDate() divorce_date_valid is set to either 1 (valid mar date) or 0 (invalid mar date)
+
+        long threadId = Thread.currentThread().getId();
+
+        String[] queries =
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.divorce_date_flag = 0"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.divorce_date_valid = 0"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.divorce_date_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.divorce_date_valid = 1"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.divorce_date_flag  = 2,"
+                + " person_c.divorce_date_valid = 1,"
+                + " person_c.divorce_date  = registration_c.registration_date,"
+                + " person_c.divorce_year  = registration_c.registration_year,"
+                + " person_c.divorce_month = registration_c.registration_month,"
+                + " person_c.divorce_day   = registration_c.registration_day"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( person_c.divorce_date IS NULL OR person_c.divorce_date = '' )"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
+                + " AND person_c.id_registration = registration_c.id_registration;",
+
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.divorce_date_flag  = 3,"
+                + " person_c.divorce_date_valid = 1,"
+                + " person_c.divorce_date  = registration_c.registration_date,"
+                + " person_c.divorce_year  = registration_c.registration_year,"
+                + " person_c.divorce_month = registration_c.registration_month,"
+                + " person_c.divorce_day   = registration_c.registration_day"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND person_c.divorce_date_valid = 0"
+                + " AND NOT ( person_c.divorce_date IS NULL OR person_c.divorce_date = '' )"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
+                + " AND person_c.id_registration = registration_c.id_registration;"
+        };
+
+        int nq = 0;
+        for( String query : queries )
+        {
+            try {
+                long ts = System.currentTimeMillis();
+                int flag = nq;
+                nq++;
+
+                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if( debug ) { showMessage( query, false, true ); }
+
+                int nrec = dbconCleaned.runQueryUpdate( query );
+                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+            }
+            catch( Exception ex ) {
+                String msg = String.format( "Thread id %02d; Exception in flagMarriageDate: %s", threadId, ex.getMessage() );
+                showMessage( msg, false, true );
+                showMessage( query, false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+    } // flagDivorceDate
 
 
     /**
@@ -6843,6 +6934,7 @@ public class LinksCleanThread extends Thread
 
         long threadId = Thread.currentThread().getId();
 
+        // Notice: should we alse have divorce_date_min & divorce_date_max ?
         String query = "UPDATE links_cleaned.person_c SET "
             + "links_cleaned.person_c.birth_date_min  = CONCAT( links_cleaned.person_c.birth_day_min , '-' , links_cleaned.person_c.birth_month_min , '-' , links_cleaned.person_c.birth_year_min ) ,"
             + "links_cleaned.person_c.mar_date_min    = CONCAT( links_cleaned.person_c.mar_day_min ,   '-' , links_cleaned.person_c.mar_month_min ,   '-' , links_cleaned.person_c.mar_year_min ) ,"
