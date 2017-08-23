@@ -4,7 +4,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.3
+Version:	0.4
 Goal:		Ingest id_source = 23
 
 USE links_temp;
@@ -44,6 +44,7 @@ INSERT INTO links_original.person_o
 	registration_maintype,
 	id_person_o,
 	firstname,
+	prefix,
 	familyname,
 	role,
 	sex,
@@ -57,6 +58,7 @@ SELECT
 	registration_maintype,
 	id_orig_registration,
 	firstname,
+	prefix,
 	familyname,
 	role,
 	sex,
@@ -75,7 +77,7 @@ AND registration_o.id_source = 23
 AND person_o.id_person_o = registration_o.id_orig_registration;
 
 21-Jul-2017 Created
-21-Aug-2017 Latest change
+23-Aug-2017 Latest change
 """
 
 
@@ -95,7 +97,8 @@ import yaml
 
 from time import time
 
-csv_filename = "Gen_0_1_2_voor_links_export.csv"
+csv_filename_r = "data/Gen_0_1_2_voor_links_export_registrations_2.csv"
+csv_filename_p = "data/Gen_0_1_2_voor_links_export_3.csv"
 
 LIMIT = None
 
@@ -188,8 +191,81 @@ def check_encoding( csv_pathname ):
 
 
 
-def process_csv( db_links, csv_filename ):
-	logging.debug( "process_csv()" )
+def process_csv_r( db_links, csv_filename ):
+	logging.debug( "process_csv_r()" )
+	logging.info( "read: %s" % csv_filename )
+	cur_dir = os.getcwd()
+	csv_pathname = os.path.abspath( os.path.join( cur_dir, csv_filename ) )
+	logging.info( "read: %s" % csv_pathname )
+	encoding_dict = check_encoding( csv_pathname )
+	logging.info( "chardet: %s" % encoding_dict )
+	encoding = encoding_dict[ "encoding" ]		# ISO-8859-1
+	
+	csv_header_names = [
+		"REGISTRATIE_NR",
+		"REGISTRATION_MAINTYPE",
+		"ID_SOURCE",
+		"reg_day",
+		"reg_month",
+		"reg_year"
+	]
+	
+	map_columns = {
+		"REGISTRATIE_NR"        : "id_orig_registration",
+		"REGISTRATION_MAINTYPE" : "registration_maintype",
+		"ID_SOURCE"             : "id_source",
+		"reg_day"               : "registration_day",
+		"reg_month"             : "registration_month",
+		"reg_year"              : "registration_year"
+	}
+
+	nline = 0
+	id_person_o_prev = None
+	csv_file = io.open( csv_pathname, 'r', encoding = encoding )
+
+	for line in csv_file:
+		nline += 1
+		#logging.debug( "line %d: %s" % ( nline, line ) )
+		line = line.strip( '\n' )		# remove trailing \n
+		logging.debug( "%d in: %s" % ( nline, line ) )
+		
+		reg_dict = { 
+			"name_source" : '\"ggr\"', 
+			"registration_type" : '\"Overlijden\"'
+		}
+
+		fields = line.split( ';' )
+		if nline == 1:
+			line_header = line
+			nfields_header = len( fields )		# nfields of header line
+			continue	# do not store header line
+		else:
+			nfields = len( fields )
+			if nfields != nfields_header:
+				msg = "skipping bad data line # %d" % nline
+				continue
+			
+			for i in range( nfields ):
+				csv_header_name = csv_header_names[ i ]
+				tbl_header_name = map_columns[ csv_header_name ]
+				value = fields[ i ]
+				
+				reg_dict[ tbl_header_name ] = value
+	
+		#print( nline )
+		
+		table = "links_temp.ggr_r"
+		cols = reg_dict.keys()
+		vals = reg_dict.values()
+		sql_r = "INSERT INTO %s (%s) VALUES(%s)" % ( table, ",".join( cols ), ",".join( vals ) )
+		#print( sql_r )
+		logging.debug( "sql_r: %s" % sql_r )
+		db_links.insert( sql_r )
+
+
+
+def process_csv_p( db_links, csv_filename ):
+	logging.debug( "process_csv_p()" )
 	logging.info( "read: %s" % csv_filename )
 	cur_dir = os.getcwd()
 	csv_pathname = os.path.abspath( os.path.join( cur_dir, csv_filename ) )
@@ -209,6 +285,7 @@ def process_csv( db_links, csv_filename ):
 		"role_links",
 		"firstname",
 		"familyname",
+		"prefix",
 		"sex"
 	]
 	
@@ -224,14 +301,11 @@ def process_csv( db_links, csv_filename ):
 		"role_links"            : "role",
 		"firstname"             : "firstname",
 		"familyname"            : "familyname",
+		"prefix"                : "prefix",
 		"sex"                   : "sex"
 	}
 	
-	
-	
 	nline = 0
-	nline_r = 0		# registration lines (2 persons per registration)
-	nskip_r = 0
 	id_person_o_prev = None
 	csv_file = io.open( csv_pathname, 'r', encoding = encoding )
 	
@@ -245,13 +319,6 @@ def process_csv( db_links, csv_filename ):
 		out_dict = { 
 			"name_source" : '\"ggr\"', 
 			"registration_type" : '\"Overlijden\"' 
-		}
-		
-		reg_dict = { 
-			"name_source" : '\"ggr\"', 
-			"registration_type" : '\"Overlijden\"', 
-			"registration_day" : '\"1\"', 
-			"registration_month" : '\"1\"'
 		}
 		
 		fields = line.split( ';' )
@@ -270,19 +337,13 @@ def process_csv( db_links, csv_filename ):
 				tbl_header_name = map_columns[ csv_header_name ]
 				value = fields[ i ]
 				
-				if tbl_header_name in [ "birth_date", "role", "firstname", "familyname", "sex" ]:
+				if tbl_header_name in [ "birth_date", "role", "firstname", "familyname", "prefix", "sex" ]:
 					out_dict[ tbl_header_name ] = '\"' + value + '\"'
 				else:
 					if int( value ) <= 0:
 						wrong_date_comps = True
 						#print( "nline: %d, csv_header_name: %s, value: %s" % (nline, csv_header_name, value ) )
 					out_dict[ tbl_header_name ] = value
-				
-				if tbl_header_name in [ "id_source", "id_orig_registration", "registration_maintype" ]:
-					reg_dict[ tbl_header_name ] = '\"' + value + '\"'
-				
-				if tbl_header_name == "birth_year":
-					reg_dict[ "registration_year" ] = '\"' + value + '\"'
 
 		if wrong_date_comps:
 			# input cvs has split the date incorrectly, re-establish the components
@@ -316,14 +377,6 @@ def process_csv( db_links, csv_filename ):
 		#print( sql )
 		logging.debug( "sql: %s" % sql )
 		db_links.insert( sql )
-		
-		table = "links_temp.ggr_r"
-		cols = reg_dict.keys()
-		vals = reg_dict.values()
-		sql_r = "INSERT INTO %s (%s) VALUES(%s)" % ( table, ",".join( cols ), ",".join( vals ) )
-		#print( sql_r )
-		logging.debug( "sql_r: %s" % sql_r )
-		db_links.insert( sql_r )
 
 
 
@@ -371,7 +424,8 @@ if __name__ == "__main__":
 	
 	logging.info( __file__ )
 	
-	process_csv( db_links, csv_filename )
+#	process_csv_r( db_links, csv_filename_r )
+	process_csv_p( db_links, csv_filename_p )
 	
 	msg = "Stop: %s" % datetime.datetime.now()
 	

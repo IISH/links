@@ -34,6 +34,7 @@ CREATE TABLE `ggr_p` (
   `sex` char(1) COLLATE utf8_bin DEFAULT NULL,
   `role` varchar(50) COLLATE utf8_bin DEFAULT NULL,
   `firstname` varchar(100) COLLATE utf8_bin DEFAULT NULL,
+  `prefix` varchar(30) COLLATE utf8_bin DEFAULT NULL,
   `familyname` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `birth_day` tinyint(3) unsigned DEFAULT NULL,
   `birth_month` tinyint(3) unsigned DEFAULT NULL,
