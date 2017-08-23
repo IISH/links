@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-16-Aug-2017 Latest change
+ * FL-23-Aug-2017 Latest change
  */
 
 public class MatchMain
@@ -86,7 +86,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "16-Aug-2017 16:46";
+            String timestamp1 = "23-Aug-2017 12:47";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -260,12 +260,6 @@ public class MatchMain
 
                 System.out.println( "Using Levenshtein memory tables" );
 
-                // not used  here
-                //int lvs_dist_familyname = qs0.prematch_familyname_value;
-                //int lvs_dist_firstname  = qs0.prematch_firstname_value;
-                //System.out.println( "lvs familyname distance: " + lvs_dist_familyname );
-                //System.out.println( "lvs firstname  distance: " + lvs_dist_firstname );
-
                 // Create memory tables as copies of the normal tables
                 // create ls_memory tables
                 memtables_ls_create( lvs_table_firstname, lvs_table_familyname, name_postfix );
@@ -363,6 +357,14 @@ public class MatchMain
                 msg = String.format( "Thread id %02d; Number of matching threads to be used: %d", mainThreadId, total_match_threads );
                 System.out.println( msg ); plog.show( msg );
 
+                /*
+                if( dry_run ) {
+                    msg = String.format( "Thread id %02d; DRY RUN: not deleting old matches, not matching!", mainThreadId );
+                    System.out.println( msg ); plog.show( msg );
+                    System.exit( 1 );
+                }
+                */
+
                 // delete the previous matches for this QueryGroupSet;
                 // get its match_process table id from its first QuerySet.
                 // (the QuerySets only differ in registration_days low and high limits)
@@ -393,9 +395,11 @@ public class MatchMain
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
                     /*
-                    msg = "SKIPPING MatchAsyncs !!!";
-                    System.out.println( msg ); plog.show( msg );
-                    if( 1 == 1 ) { continue; }
+                    if( debug ) {
+                        msg = "SKIPPING MatchAsyncs !!!";
+                        System.out.println( msg ); plog.show( msg );
+                        if( 1 == 1 ) { continue; }
+                    }
                     */
 
                     int s1_size = ql.s1_id_base.size();
@@ -412,7 +416,6 @@ public class MatchMain
                         System.out.println( msg ); plog.show( msg );
                         continue;
                     }
-
 
                     // Wait until semaphore gives permission
                     int npermits = sem.availablePermits();
@@ -536,7 +539,7 @@ public class MatchMain
                 }
 
                 String msg = String.format(
-                    "QuerySet: %2d, date_range: %d, s1_record_count: %d, s2_record_count: %d, s2_days_low: %d, s1_days_high: %d, s2_days_low: %d, s2_days_high: %d, s1_limit: %d, s1_offset: %d, s2_limit: %d, s2_offset: %d",
+                    "QuerySet: %2d, date_range: %d, s1_record_count: %d, s2_record_count: %d, s1_days_low: %d, s1_days_high: %d, s2_days_low: %d, s2_days_high: %d, s1_limit: %d, s1_offset: %d, s2_limit: %d, s2_offset: %d",
                     n_qs, qs.date_range, qs.s1_record_count, qs.s2_record_count, qs.s1_days_low, qs.s1_days_high, qs.s2_days_low, qs.s2_days_high,
                     qs.s1_limit, qs.s1_offset, qs.s2_limit, qs.s2_offset );
                 System.out.println( msg );
