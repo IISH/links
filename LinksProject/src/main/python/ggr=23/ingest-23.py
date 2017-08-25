@@ -8,10 +8,11 @@ Version:	0.4
 Goal:		Ingest id_source = 23
 
 USE links_temp;
+TRUNCATE TABLE links_temp.ggr_r;
+TRUNCATE TABLE links_temp.ggr_p;
+
 USE links_original;
-
 DELETE FROM links_original.registration_o WHERE id_source = 23;
-
 DELETE FROM links_original.person_o WHERE id_source = 23;
 
 INSERT INTO links_original.registration_o
@@ -77,7 +78,7 @@ AND registration_o.id_source = 23
 AND person_o.id_person_o = registration_o.id_orig_registration;
 
 21-Jul-2017 Created
-23-Aug-2017 Latest change
+25-Aug-2017 Latest change
 """
 
 
@@ -192,6 +193,7 @@ def check_encoding( csv_pathname ):
 
 
 def process_csv_r( db_links, csv_filename ):
+	print( "process_csv_r()" )
 	logging.debug( "process_csv_r()" )
 	logging.info( "read: %s" % csv_filename )
 	cur_dir = os.getcwd()
@@ -231,7 +233,7 @@ def process_csv_r( db_links, csv_filename ):
 		
 		reg_dict = { 
 			"name_source" : '\"ggr\"', 
-			"registration_type" : '\"Overlijden\"'
+			"registration_type" : '\"Huwelijk\"'
 		}
 
 		fields = line.split( ';' )
@@ -262,9 +264,20 @@ def process_csv_r( db_links, csv_filename ):
 		logging.debug( "sql_r: %s" % sql_r )
 		db_links.insert( sql_r )
 
+	id_source = 23
+	query_cnt = "SELECT COUNT(*) as count FROM %s WHERE id_source = %d" % ( table, id_source )
+	print( query_cnt ); logging.info( query_cnt )
+	
+	resp_cnt = db_links.query( query_cnt )
+	dict_cnt = resp_cnt[ 0 ]
+	count = dict_cnt[ "count" ]
+	msg = "Number of records in table %s: %d" % ( table, count )
+	print( msg ); logging.info( msg )
+
 
 
 def process_csv_p( db_links, csv_filename ):
+	print( "process_csv_p()" )
 	logging.debug( "process_csv_p()" )
 	logging.info( "read: %s" % csv_filename )
 	cur_dir = os.getcwd()
@@ -318,7 +331,7 @@ def process_csv_p( db_links, csv_filename ):
 		wrong_date_comps = False
 		out_dict = { 
 			"name_source" : '\"ggr\"', 
-			"registration_type" : '\"Overlijden\"' 
+			"registration_type" : '\"Huwelijk\"' 
 		}
 		
 		fields = line.split( ';' )
@@ -378,6 +391,16 @@ def process_csv_p( db_links, csv_filename ):
 		logging.debug( "sql: %s" % sql )
 		db_links.insert( sql )
 
+	id_source = 23
+	query_cnt = "SELECT COUNT(*) as count FROM %s WHERE id_source = %d" % ( table, id_source )
+	print( query_cnt ); logging.info( query_cnt )
+	
+	resp_cnt = db_links.query( query_cnt )
+	dict_cnt = resp_cnt[ 0 ]
+	count = dict_cnt[ "count" ]
+	msg = "Number of records in table %s: %d" % ( table, count )
+	print( msg ); logging.info( msg )
+
 
 
 def format_secs( seconds ):
@@ -397,8 +420,9 @@ def format_secs( seconds ):
 
 
 if __name__ == "__main__":
-	log_level = logging.DEBUG
-	#log_level = logging.INFO
+	print( __file__ )
+	#log_level = logging.DEBUG
+	log_level = logging.INFO
 	#log_level = logging.WARNING
 	#log_level = logging.ERROR
 	#log_level = logging.CRITICAL
@@ -424,7 +448,7 @@ if __name__ == "__main__":
 	
 	logging.info( __file__ )
 	
-#	process_csv_r( db_links, csv_filename_r )
+	process_csv_r( db_links, csv_filename_r )
 	process_csv_p( db_links, csv_filename_p )
 	
 	msg = "Stop: %s" % datetime.datetime.now()
