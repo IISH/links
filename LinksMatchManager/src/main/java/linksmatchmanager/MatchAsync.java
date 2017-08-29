@@ -39,6 +39,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-25-Jul-2017 Debug run
  * FL-23-Aug-2017 chk_* flags from qs object
+ * FL-29-Aug-2017 dbconMatchLocal
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -301,14 +302,15 @@ public class MatchAsync extends Thread
             }
             */
 
-            // Create database connections
-            dbconMatch    = General.getConnection( url, "links_match",    user, pass );
+            // database connections
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
-            dbconTemp     = null;
+            dbconMatch    = null;       // write matches immediately
+            dbconTemp     = null;       // only in debug mode
 
             String csvFilename = "";
             FileWriter writerMatches = null;
-            if( match2csv ) {
+            if( match2csv ) // collect matches in csv file
+            {
                 csvFilename = "matches_threadId_" + threadId + ".csv";      // Create csv file to collect the matches
                 writerMatches = createCsvFileMatches( threadId, csvFilename );
                 msg = String.format( "Collecting thread matches in CSV file: %s", csvFilename );
@@ -318,6 +320,10 @@ public class MatchAsync extends Thread
                     dbconTemp = General.getConnection( url, "links_temp", user, pass );
                     createTempMatchesTable( threadId );                     // Create temp table to collect the matches
                 }
+            }
+            else    // write matches immediately to matches table
+            {
+                dbconMatch = General.getConnection( url, "links_match",    user, pass );
             }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
@@ -774,8 +780,6 @@ public class MatchAsync extends Thread
                 {
                     if( dbconTemp != null ) {
                         loadCsvFileToTempTable( threadId, csvFilename );
-                        //updateMatchesTempToMatches( dbconMatch );
-                        //removematchesTableTemp( dbconMatch );
                         dbconTemp.close();
                     }
                 }
@@ -887,6 +891,7 @@ public class MatchAsync extends Thread
 
             dbconPrematch.close();
             dbconMatch.close();
+            dbconTemp.close();
 
             msg = String.format( "Thread id %2d; clock time", threadId );
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
@@ -912,6 +917,7 @@ public class MatchAsync extends Thread
             catch( Exception ex2 ) { ex2.printStackTrace(); }
         }
     } // run
+
 
     private boolean existsMatchTempTable( String table_name )
     {
@@ -990,8 +996,8 @@ public class MatchAsync extends Thread
             + " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
 
         System.out.println( query );
-        dbconMatch.createStatement().execute( query );
-        dbconMatch.createStatement().close();
+        dbconTemp.createStatement().execute( query );
+        dbconTemp.createStatement().close();
     } // createTempFamilynameTable
 
 
@@ -1066,8 +1072,11 @@ public class MatchAsync extends Thread
 
         //System.out.println( query ); plog.show( query );
 
-        dbconMatch.createStatement().execute( query );
-        dbconMatch.createStatement().close();
+        // do not keep connection endlessly open
+        Connection dbconMatchLocal = General.getConnection( url, "links_match",    user, pass );
+        dbconMatchLocal.createStatement().execute( query );
+        dbconMatchLocal.createStatement().close();
+        dbconMatchLocal.close();
 
         if( removeCsv ) {
             msg = String.format( "Thread id %02d; Deleting file %s", threadId, filenameCsv );
@@ -1402,7 +1411,6 @@ public class MatchAsync extends Thread
             System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
             ex.printStackTrace( new PrintStream( System.out ) );
         }
-
 
         return freq;
     } //
