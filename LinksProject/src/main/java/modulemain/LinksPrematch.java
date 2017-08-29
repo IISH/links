@@ -31,6 +31,7 @@ import prematch.Lvs;
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
  * FL-31-Jan-2017 Two more name frequency count queries
  * FL-21-Aug-2017 NamesToNumbers per id_source & rmtype
+ * FL-29-Aug-2017
  */
 
 public class LinksPrematch extends Thread
@@ -150,14 +151,12 @@ public class LinksPrematch extends Thread
         {
             doSplitFirstnames( debug, bSplitFirstames );
 
-            doFrequencyTables( debug, bFrequencyTables );               // creates the freq_* tables
-
-            doStandardization( debug, bStandardization );
+            String idsStr[] = sourceIdsGui.split( " " );
 
             String rmtype = "";
             if( RMtypes.length() > 0 ) {
                 String rmtStr[] = RMtypes.split( " " );
-                rmtype = rmtStr[ 0 ];       // only use the first !
+                rmtype = rmtStr[ 0 ];       // only use the first rmtype !
             }
 
             if( debug ) {
@@ -167,14 +166,29 @@ public class LinksPrematch extends Thread
 
             if( Strings.isNullOrEmpty( sourceIdsGui ) && Strings.isNullOrEmpty( rmtype  ) )
             {
+                // re-create the freq_* tables
+                doFrequencyTablesFull( debug, bFrequencyTables );
+            }
+            else
+            {
+                doFrequencyTablesFull( debug, bFrequencyTables );
+                /* NOT FINISHED
+                // update the freq_* tables per source & rmtype
+                for( String source : idsStr )
+                { doFrequencyTablesUpdate( debug, bFrequencyTables, source, rmtype ); }
+                */
+            }
+
+            doStandardization( debug, bStandardization );
+
+            if( Strings.isNullOrEmpty( sourceIdsGui ) && Strings.isNullOrEmpty( rmtype  ) )
+            {
                 String source = "";
                 doNamesToNumbers( debug, bNamesToNos, source, rmtype );
                 doCreateNewBaseTable( debug, bBaseTable, source, rmtype );
             }                      // new links_base
             else
             {
-                String idsStr[] = sourceIdsGui.split( " " );
-
                 for( String source : idsStr )
                 { doNamesToNumbers( debug, bNamesToNos, source, rmtype ); }     // update per source & rmtype
 
@@ -313,7 +327,8 @@ public class LinksPrematch extends Thread
     /*---< Split Firstnames >-------------------------------------------------*/
 
     /**
-     * 
+     * @param debug
+     * @param go
      * @throws Exception 
      */
     public void doSplitFirstnames( boolean debug, boolean go ) throws Exception
@@ -415,7 +430,7 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
+     * @param debug
      * @throws Exception
      */
     private void createTempFirstname( boolean debug ) throws Exception
@@ -443,10 +458,10 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
      * @throws Exception
      */
-    private void createTempFirstnameFile() throws Exception {
+    private void createTempFirstnameFile() throws Exception
+    {
         String filename = "firstname_t_split.csv";
         showMessage( "Creating file " + filename, false, true);
         writerFirstname = new java.io.FileWriter( filename );
@@ -454,11 +469,10 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
+     * @param debug
      * @throws Exception
      */
-    private void loadFirstnameToTable( boolean debug )
-            throws Exception
+    private void loadFirstnameToTable( boolean debug ) throws Exception
     {
         showMessage( "Loading CSV data into temp table...", false, true );
 
@@ -472,10 +486,10 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
+     * @param debug
+     * @throws Exception
      */
-    private void updateFirstnameToPersonC( boolean debug )
-            throws Exception
+    private void updateFirstnameToPersonC( boolean debug ) throws Exception
     {
         showMessage( "Moving first names from temp table to person_c...", false, true );
 
@@ -493,10 +507,10 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
      * @throws Exception
      */
-    public void removeFirstnameFile() throws Exception {
+    public void removeFirstnameFile() throws Exception
+    {
         String filename = "firstname_t_split.csv";
         showMessage( "Removing file " + filename, false, true);
         File file = new File( filename );
@@ -505,25 +519,26 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
      * @throws Exception
      */
-    public void removeFirstnameTable() throws Exception {
+    public void removeFirstnameTable() throws Exception
+    {
         String tablename = "firstname_t_split";
         showMessage( "Removing table " + tablename, false, true);
         String query = "DROP TABLE " + tablename + ";";
         conTemp.runQuery( query );
     } // removeFirstnameTable
 
-
     /*---< Frequency Tables >-------------------------------------------------*/
 
     /**
-     *
+     * @param debug
+     * @param go
+     * @throws Exception
      */
-    public void doFrequencyTables( boolean debug, boolean go ) throws Exception
+    public void doFrequencyTablesOld( boolean debug, boolean go ) throws Exception
     {
-        String funcname = "doFrequencyTables";
+        String funcname = "doFrequencyTablesOld";
 
         if( !go ) {
             showMessage( "Skipping " + funcname, false, true );
@@ -563,13 +578,315 @@ public class LinksPrematch extends Thread
 
         elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doFrequencyTables
+    } // doFrequencyTablesOld
 
+
+    /**
+     * @param debug
+     * @param go
+     * @throws Exception
+     */
+    public void doFrequencyTablesFull( boolean debug, boolean go ) throws Exception
+    {
+        String funcname = "doFrequencyTablesFull";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String[] queries =
+        {
+            // query 01
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_familyname ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(100) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 02
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 03
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " sex VARCHAR(2) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 04
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex_tmp ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " sex VARCHAR(2) NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 05
+            "TRUNCATE TABLE links_prematch.freq_familyname ;",
+
+            // query 06
+            "ALTER TABLE links_prematch.freq_familyname AUTO_INCREMENT = 1 ;",
+
+            // query 07
+            "TRUNCATE TABLE links_prematch.freq_firstname ;",
+
+            // query 08
+            "ALTER TABLE links_prematch.freq_firstname AUTO_INCREMENT = 1 ;",
+
+            // query 09
+            "TRUNCATE TABLE links_prematch.freq_firstname_sex ;",
+
+            // query 10
+            "ALTER TABLE links_prematch.freq_firstname_sex AUTO_INCREMENT = 1 ;",
+
+            // query 11
+            "TRUNCATE TABLE links_prematch.freq_firstname_sex_tmp ;",
+
+            // query 12
+            "ALTER TABLE links_prematch.freq_firstname_sex_tmp AUTO_INCREMENT = 1 ;",
+
+            // query 13
+            "INSERT INTO links_prematch.freq_familyname( name_str , frequency )"
+                + " SELECT familyname , COUNT(*) AS frequency"
+                + " FROM links_cleaned.person_c"
+                + " WHERE familyname IS NOT NULL AND familyname <> 'null' AND familyname <> ''"
+                + " GROUP BY familyname ;",
+
+            // query 14
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname1 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname1 IS NOT NULL AND firstname1 <> 'null' AND firstname1 <> '' ;",
+
+            // query 15
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname2 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname2 IS NOT NULL AND firstname2 <> 'null' AND firstname2 <> '' ;",
+
+            // query 16
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname3 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ;",
+
+            // query 17
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname4 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname4 IS NOT NULL AND firstname4 <> 'null' AND firstname4 <> '' ;",
+
+            // query 18
+            "INSERT INTO links_prematch.freq_firstname ( name_str , frequency )"
+                + " SELECT name_str , COUNT(*) AS frequency"
+                + " FROM links_prematch.freq_firstname_sex_tmp"
+                + " GROUP BY name_str ;",
+
+            // query 19
+            "INSERT INTO links_prematch.freq_firstname_sex ( name_str , sex, frequency )"
+                + " SELECT name_str , sex, COUNT(*) AS frequency"
+                + " FROM links_prematch.freq_firstname_sex_tmp"
+                + " GROUP BY sex , name_str ;",
+
+            // query 20
+            "DROP TABLE links_prematch.freq_firstname_sex_tmp ;"
+        };
+
+        int nq = 0;
+        for( String query : queries )
+        {
+            nq++;
+            long start = System.currentTimeMillis();
+            String msg = "query " + nq + "-of-" + queries.length;
+            showMessage( msg + "...", false, true );
+            System.out.println( query );
+            if( debug ) { showMessage( query, false, true ); }
+
+            conPrematch.runQuery( query );
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doFrequencyTablesFull
+
+
+    /**
+     * @param debug
+     * @param go
+     * @param source
+     * @param rmtype
+     * @throws Exception
+     */
+    public void doFrequencyTablesUpdate( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    {
+        String funcname = "doFrequencyTablesUpdate";
+
+        if( !go ) {
+            showMessage( "Skipping " + funcname, false, true );
+            return;
+        }
+
+        if( debug ) { System.out.println( funcname ); }
+
+        long funcstart = System.currentTimeMillis();
+        showMessage( funcname + "...", false, true );
+
+        String[] queries =
+        {
+            // query 01
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_familyname ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(100) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 02
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 03
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " sex VARCHAR(2) NULL ,"
+                + " frequency INT UNSIGNED NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 04
+            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex_tmp ("
+                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+                + " name_str VARCHAR(30) NULL ,"
+                + " sex VARCHAR(2) NULL ,"
+                + " PRIMARY KEY (id) ,"
+                + " INDEX `name_str` (`name_str`)"
+                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+
+            // query 05
+            "TRUNCATE TABLE links_prematch.freq_familyname ;",
+
+            // query 06
+            "ALTER TABLE links_prematch.freq_familyname AUTO_INCREMENT = 1 ;",
+
+            // query 07
+            "TRUNCATE TABLE links_prematch.freq_firstname ;",
+
+            // query 08
+            "ALTER TABLE links_prematch.freq_firstname AUTO_INCREMENT = 1 ;",
+
+            // query 09
+            "TRUNCATE TABLE links_prematch.freq_firstname_sex ;",
+
+            // query 10
+            "ALTER TABLE links_prematch.freq_firstname_sex AUTO_INCREMENT = 1 ;",
+
+            // query 11
+            "TRUNCATE TABLE links_prematch.freq_firstname_sex_tmp ;",
+
+            // query 12
+            "ALTER TABLE links_prematch.freq_firstname_sex_tmp AUTO_INCREMENT = 1 ;",
+
+            // query 13
+            "INSERT INTO links_prematch.freq_familyname( name_str , frequency )"
+                + " SELECT familyname , COUNT(*) AS frequency"
+                + " FROM links_cleaned.person_c"
+                + " WHERE familyname IS NOT NULL AND familyname <> 'null' AND familyname <> ''"
+                + " GROUP BY familyname ;",
+
+            // query 14
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname1 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname1 IS NOT NULL AND firstname1 <> 'null' AND firstname1 <> '' ;",
+
+            // query 15
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname2 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname2 IS NOT NULL AND firstname2 <> 'null' AND firstname2 <> '' ;",
+
+            // query 16
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname3 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ;",
+
+            // query 17
+            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+                + " SELECT firstname4 , sex"
+                + " FROM links_cleaned.person_c"
+                + " WHERE firstname4 IS NOT NULL AND firstname4 <> 'null' AND firstname4 <> '' ;",
+
+            // query 18
+            "INSERT INTO links_prematch.freq_firstname ( name_str , frequency )"
+                + " SELECT name_str , COUNT(*) AS frequency"
+                + " FROM links_prematch.freq_firstname_sex_tmp"
+                + " GROUP BY name_str ;",
+
+            // query 19
+            "INSERT INTO links_prematch.freq_firstname_sex ( name_str , sex, frequency )"
+                + " SELECT name_str , sex, COUNT(*) AS frequency"
+                + " FROM links_prematch.freq_firstname_sex_tmp"
+                + " GROUP BY sex , name_str ;",
+
+            // query 20
+            "DROP TABLE links_prematch.freq_firstname_sex_tmp ;"
+        };
+
+        int nq = 0;
+        for( String query : queries )
+        {
+            nq++;
+            if( ! source.isEmpty() ) { query += String.format( " AND id_source = %s", source ); }
+            if( ! rmtype.isEmpty() ) { query += String.format( " AND registration_maintype = %s", rmtype ); }
+
+            long start = System.currentTimeMillis();
+            String msg = "query " + nq + "-of-" + queries.length;
+            showMessage( msg + "...", false, true );
+            System.out.println( query );
+            if( debug ) { showMessage( query, false, true ); }
+
+            conPrematch.runQuery( query );
+            elapsedShowMessage( msg, start, System.currentTimeMillis() );
+        }
+
+        elapsedShowMessage( funcname, funcstart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doFrequencyTablesUpdate
 
     /*---< Automatic Standardization >----------------------------------------*/
 
     /**
-     *
+     * @param debug
+     * @param go
+     * @throws Exception
      */
     public void doStandardization( boolean debug, boolean go )
     throws Exception
@@ -652,7 +969,7 @@ public class LinksPrematch extends Thread
 
 
     /**
-     *
+     * @throws Exception
      */
     /*
     public void doUniqueNameTablesTemp() throws Exception
@@ -723,6 +1040,8 @@ public class LinksPrematch extends Thread
     /*---< Names to Numbers >-------------------------------------------------*/
 
     /**
+     * @param debug
+     * @param go
      * @throws Exception
      */
     public void doNamesToNumbersOld( boolean debug, boolean go ) throws Exception
@@ -762,7 +1081,12 @@ public class LinksPrematch extends Thread
         showMessage_nl();
     } // doNamesToNumbersOld
 
+
     /**
+     * @param debug
+     * @param go
+     * @param source
+     * @param rmtype
      * @throws Exception
      */
     public void doNamesToNumbers( boolean debug, boolean go, String source, String rmtype ) throws Exception
@@ -828,6 +1152,7 @@ public class LinksPrematch extends Thread
 
     /**
      * @param debug
+     * @param go
      * @throws Exception
      */
     /*
@@ -971,6 +1296,7 @@ public class LinksPrematch extends Thread
      /**
      * @param debug
      * @param source
+     * @param rmtype
      * @throws Exception
      */
     public String[] getNewBaseTableQueries( boolean debug, String source, String rmtype )
@@ -1273,6 +1599,8 @@ public class LinksPrematch extends Thread
     // now in main
     /**
      * @param debug
+     * @param go
+     * @param bExactMatches
      * @throws Exception
      */
     /*
@@ -1304,7 +1632,6 @@ public class LinksPrematch extends Thread
     */
 
     /**
-     *
      * @param s
      * @param t
      * @return
@@ -1351,7 +1678,8 @@ public class LinksPrematch extends Thread
     /*---< Obsolete >---------------------------------------------------------*/
 
     /**
-     *
+     * @param debug
+     * @throws Exception
      */
     public void doBasicName( boolean debug ) throws Exception
     {
