@@ -4,12 +4,12 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.4
+Version:	0.5
 Goal:		Ingest id_source = 23
 
 USE links_temp;
-TRUNCATE TABLE links_temp.ggr_r;
-TRUNCATE TABLE links_temp.ggr_p;
+-- TRUNCATE TABLE links_temp.ggr_r;
+-- TRUNCATE TABLE links_temp.ggr_p;
 
 USE links_original;
 DELETE FROM links_original.registration_o WHERE id_source = 23;
@@ -78,7 +78,7 @@ AND registration_o.id_source = 23
 AND person_o.id_person_o = registration_o.id_orig_registration;
 
 21-Jul-2017 Created
-25-Aug-2017 Latest change
+30-Aug-2017 Latest change
 """
 
 
@@ -142,7 +142,8 @@ class Database:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
-			logging.error( "%s, %s\n" % ( etype, value ) )
+			logging.error( "%s, %s" % ( etype, value ) )
+			logging.error( "%s\n" % query )
 		return affected_count
 	
 	def update( self, query ):
@@ -245,6 +246,8 @@ def process_csv_r( db_links, csv_filename ):
 			nfields = len( fields )
 			if nfields != nfields_header:
 				msg = "skipping bad data line # %d" % nline
+				logging.debug( msg )
+				logging.debug( line )
 				continue
 			
 			for i in range( nfields ):
@@ -328,7 +331,6 @@ def process_csv_p( db_links, csv_filename ):
 		line = line.strip( '\n' )		# remove trailing \n
 		logging.debug( "%d in: %s" % ( nline, line ) )
 		
-		wrong_date_comps = False
 		out_dict = { 
 			"name_source" : '\"ggr\"', 
 			"registration_type" : '\"Huwelijk\"' 
@@ -343,6 +345,8 @@ def process_csv_p( db_links, csv_filename ):
 			nfields = len( fields )
 			if nfields != nfields_header:
 				msg = "skipping bad data line # %d" % nline
+				logging.debug( msg )
+				logging.debug( line )
 				continue
 			
 			for i in range( nfields ):
@@ -350,37 +354,8 @@ def process_csv_p( db_links, csv_filename ):
 				tbl_header_name = map_columns[ csv_header_name ]
 				value = fields[ i ]
 				
-				if tbl_header_name in [ "birth_date", "role", "firstname", "familyname", "prefix", "sex" ]:
-					out_dict[ tbl_header_name ] = '\"' + value + '\"'
-				else:
-					if int( value ) <= 0:
-						wrong_date_comps = True
-						#print( "nline: %d, csv_header_name: %s, value: %s" % (nline, csv_header_name, value ) )
-					out_dict[ tbl_header_name ] = value
-
-		if wrong_date_comps:
-			# input cvs has split the date incorrectly, re-establish the components
-			date  = out_dict[ "birth_date" ]
-			
-			in_day   = out_dict[ "birth_day" ]
-			in_month = out_dict[ "birth_month" ]
-			in_year  = out_dict[ "birth_year" ]
-			
-			date_comps = date.split( '-' )
-			
-			out_day    = date_comps[ 0 ]
-			out_month  = date_comps[ 1 ]
-			out_year   = date_comps[ 2 ]
-			
-			out_dict[ "birth_day" ]   = out_day
-			out_dict[ "birth_month" ] = out_month
-			out_dict[ "birth_year" ]  = out_year
-			
-			msg = "nline: %d, date: %s, in_day: %s, in_month: %s, in_year: %s, => out_day: %s, out_month: %s, out_year: %s" % \
-				( nline, date, in_day, in_month, in_year, out_day, out_month, out_year )
-			logging.debug( msg )
-			print( msg )
-	
+				out_dict[ tbl_header_name ] = '\"' + value + '\"'
+		
 		#print( nline )
 	
 		table = "links_temp.ggr_p"

@@ -11,9 +11,9 @@ CREATE TABLE `ggr_r` (
   `id_orig_registration` int(10) unsigned DEFAULT NULL,
   `registration_maintype` tinyint(3) unsigned DEFAULT NULL,
   `registration_type` varchar(50) COLLATE utf8_bin  DEFAULT NULL,
-  `registration_day` tinyint(3) unsigned DEFAULT NULL,
-  `registration_month` tinyint(3) unsigned DEFAULT NULL,
-  `registration_year` smallint(5) unsigned DEFAULT NULL,
+  `registration_day` tinyint(3) DEFAULT NULL,
+  `registration_month` tinyint(3) DEFAULT NULL,
+  `registration_year` smallint(5) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_orig_registration` (`id_orig_registration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
@@ -36,9 +36,9 @@ CREATE TABLE `ggr_p` (
   `firstname` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `prefix` varchar(30) COLLATE utf8_bin DEFAULT NULL,
   `familyname` varchar(100) COLLATE utf8_bin DEFAULT NULL,
-  `birth_day` tinyint(3) unsigned DEFAULT NULL,
-  `birth_month` tinyint(3) unsigned DEFAULT NULL,
-  `birth_year` smallint(5) unsigned DEFAULT NULL,
+  `birth_day` tinyint(3) DEFAULT NULL,
+  `birth_month` tinyint(3) DEFAULT NULL,
+  `birth_year` smallint(5) DEFAULT NULL,
   `birth_date` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
