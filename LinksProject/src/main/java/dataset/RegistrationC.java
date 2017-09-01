@@ -3,25 +3,24 @@ package dataset;
 import modulemain.LinksSpecific;
 
 /**
+ * @author Omar Azouguagh
+ * @author Fons Laan
  *
- * @author oaz
+ * FL-01-Sep-2017
  */
-public class RegistrationC {
-    public static String table = "registration_c";
-    public static String idp   = "id_registration";
-
-
+public class RegistrationC
+{
     /**
-     *
      * @param field
      * @param value
      * @param id
      * @return
      */
-    public static String updateQuery( String field , String value , int id ){
-        return  "UPDATE IGNORE " + table
+    public static String updateQuery( String field , String value , int id )
+    {
+        return  "UPDATE IGNORE registration_c"
         + " SET " + field + " = '" + LinksSpecific.prepareForMysql( value ) + "'"
-        + " WHERE " + idp + " = " + id;
+        + " WHERE id_registration = " + id;
     }
 
 
@@ -32,9 +31,10 @@ public class RegistrationC {
      * @param id
      * @return
      */
-    public static String updateIntQuery( String field , String value , int id ){
-        return  "UPDATE " + table
+    public static String updateIntQuery( String field , String value , int id )
+    {
+        return  "UPDATE registration_c"
         + " SET " + field + " = " + value
-        + " WHERE " + idp + " = " + id;
+        + " WHERE id_registration = " + id;
     }
 }

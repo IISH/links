@@ -4536,7 +4536,7 @@ public class LinksCleanThread extends Thread
             + " WHERE person_c.id_registration = registration_c.id_registration"
             + " AND links_cleaned.person_c.id_source = " + source;
 
-        if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
+        if ( ! rmtype.isEmpty() ) { startQuery += " AND person_c.registration_maintype = " + rmtype; }
         if( debug ) { showMessage( startQuery, false, true ); }
 
         int id_registration = -1;   // want to show it when exception occurs
@@ -5670,7 +5670,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String query_r = "SELECT id_registration, registration_maintype, registration_date, registration_day, registration_month, registration_year ";
+            String query_r = "SELECT id_registration, registration_maintype, registration_type, registration_date, registration_day, registration_month, registration_year ";
             query_r += "FROM registration_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( query_r, false, true ); }
@@ -5692,6 +5692,7 @@ public class LinksCleanThread extends Thread
 
                 int id_registration       = rs_r.getInt( "id_registration" );
                 int registration_maintype = rs_r.getInt( "registration_maintype" );
+                String registration_type  = rs_r.getString( "registration_type" );
                 String registration_date  = rs_r.getString( "registration_date" );
 
                 int regist_day   = rs_r.getInt( "registration_day" );
@@ -5795,7 +5796,8 @@ public class LinksCleanThread extends Thread
                         // try to use the event date
                         String event_date = "";
                              if( registration_maintype == 1 ) { event_date = rs_p.getString( "birth_date" ); }
-                        else if( registration_maintype == 2 ) { event_date = rs_p.getString( "mar_date" ); }
+                        else if( registration_maintype == 2 && registration_type.equals( 'h' ) ) { event_date = rs_p.getString( "mar_date" ); }
+                        else if( registration_maintype == 2 && registration_type.equals( 's' ) ) { event_date = rs_p.getString( "divorce_date" ); }
                         else if( registration_maintype == 3 ) { event_date = rs_p.getString( "death_date" ); }
 
                         dymd_event = LinksSpecific.divideCheckDate( event_date );
@@ -6264,7 +6266,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.birth_date_valid = 0"
                 + " AND person_c.role = 1"
                 + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6273,7 +6275,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 1"
                 + " AND person_c.birth_date_valid = 1"
                 + " AND person_c.role = 1"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6288,7 +6290,7 @@ public class LinksCleanThread extends Thread
                 + " AND ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6304,7 +6306,7 @@ public class LinksCleanThread extends Thread
                 + " AND NOT ( person_c.birth_date IS NULL OR person_c.birth_date = '' )"
                 + " AND person_c.role = 1"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;"
+                + " AND person_c.id_registration = registration_c.id_registration"
         };
 
         int nq = 0;
@@ -6315,7 +6317,7 @@ public class LinksCleanThread extends Thread
                 int flag = nq;
                 nq++;
 
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
@@ -6351,19 +6353,21 @@ public class LinksCleanThread extends Thread
                 + " person_c.mar_date_flag = 0"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 'h'"
                 + " AND person_c.mar_date_valid = 0"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.mar_date_flag = 1"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 'h'"
                 + " AND person_c.mar_date_valid = 1"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6375,10 +6379,11 @@ public class LinksCleanThread extends Thread
                 + " person_c.mar_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 'h'"
                 + " AND ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6390,11 +6395,12 @@ public class LinksCleanThread extends Thread
                 + " person_c.mar_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 'h'"
                 + " AND person_c.mar_date_valid = 0"
                 + " AND NOT ( person_c.mar_date IS NULL OR person_c.mar_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;"
+                + " AND person_c.id_registration = registration_c.id_registration"
         };
 
         int nq = 0;
@@ -6405,7 +6411,7 @@ public class LinksCleanThread extends Thread
                 int flag = nq;
                 nq++;
 
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
@@ -6441,19 +6447,21 @@ public class LinksCleanThread extends Thread
                 + " person_c.divorce_date_flag = 0"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 's'"
                 + " AND person_c.divorce_date_valid = 0"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
                 + " person_c.divorce_date_flag = 1"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 's'"
                 + " AND person_c.divorce_date_valid = 1"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6465,10 +6473,11 @@ public class LinksCleanThread extends Thread
                 + " person_c.divorce_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 's'"
                 + " AND ( person_c.divorce_date IS NULL OR person_c.divorce_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6480,11 +6489,12 @@ public class LinksCleanThread extends Thread
                 + " person_c.divorce_day   = registration_c.registration_day"
                 + " WHERE person_c.id_source = " + source
                 + " AND person_c.registration_maintype = 2"
+                + " AND person_c.registration_type = 's'"
                 + " AND person_c.divorce_date_valid = 0"
                 + " AND NOT ( person_c.divorce_date IS NULL OR person_c.divorce_date = '' )"
                 + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;"
+                + " AND person_c.id_registration = registration_c.id_registration"
         };
 
         int nq = 0;
@@ -6495,7 +6505,7 @@ public class LinksCleanThread extends Thread
                 int flag = nq;
                 nq++;
 
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
@@ -6533,7 +6543,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.death_date_valid = 0"
                 + " AND person_c.role = 10"
                 + " AND ( registration_c.registration_flag IS NULL OR registration_c.registration_flag < 0 )"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c "
                 + " SET"
@@ -6542,7 +6552,7 @@ public class LinksCleanThread extends Thread
                 + " AND person_c.registration_maintype = 3"
                 + " AND person_c.death_date_valid = 1"
                 + " AND person_c.role = 10"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c"
                 + " SET"
@@ -6557,7 +6567,7 @@ public class LinksCleanThread extends Thread
                 + " AND ( person_c.death_date IS NULL OR person_c.death_date = '' )"
                 + " AND person_c.role = 10"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;",
+                + " AND person_c.id_registration = registration_c.id_registration",
 
             "UPDATE person_c, registration_c "
                 + " SET "
@@ -6573,7 +6583,7 @@ public class LinksCleanThread extends Thread
                 + " AND NOT ( person_c.death_date IS NULL OR person_c.death_date = '' )"
                 + " AND person_c.role = 10"
                 + " AND registration_c.registration_flag IS NOT NULL AND registration_c.registration_flag >= 0"
-                + " AND person_c.id_registration = registration_c.id_registration;"
+                + " AND person_c.id_registration = registration_c.id_registration"
         };
 
         int nq = 0;
@@ -6584,7 +6594,7 @@ public class LinksCleanThread extends Thread
                 int flag = nq;
                 nq++;
 
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
@@ -6951,9 +6961,9 @@ public class LinksCleanThread extends Thread
             + "links_cleaned.person_c.birth_date_max  = CONCAT( links_cleaned.person_c.birth_day_max , '-' , links_cleaned.person_c.birth_month_max , '-' , links_cleaned.person_c.birth_year_max ) ,"
             + "links_cleaned.person_c.mar_date_max    = CONCAT( links_cleaned.person_c.mar_day_max ,   '-' , links_cleaned.person_c.mar_month_max ,   '-' , links_cleaned.person_c.mar_year_max ) ,"
             + "links_cleaned.person_c.death_date_max  = CONCAT( links_cleaned.person_c.death_day_max , '-' , links_cleaned.person_c.death_month_max , '-' , links_cleaned.person_c.death_year_max ) "
-            + "WHERE id_source = " + source;
+            + "WHERE person_c.id_source = " + source;
 
-        if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+        if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query, false, true ); }
 
         try { dbconCleaned.runQuery( query ); }
@@ -7333,7 +7343,7 @@ public class LinksCleanThread extends Thread
             + "AND person_c.role = 10 "
             + "AND person_c.id_source = " + source;
 
-        if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+        if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
         if( debug ) { System.out.println( query ); }
 
         String msg = String.format( "Thread id %02d; running stillbirth birth_date query ...", threadId  );
@@ -7353,33 +7363,33 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         String[] queries =
-            {
-                "UPDATE person_c, registration_c"
-                    + " SET"
-                    + " person_c.birth_location_flag = 1"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 1"
-                    + " AND person_c.role = 1"
-                    + " AND person_c.birth_location IS NOT NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration; ",
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.birth_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration",
 
-                "UPDATE person_c, registration_c"
-                    + " SET"
-                    + " person_c.birth_location_flag = 2,"
-                    + " person_c.birth_location = registration_c.registration_location_no"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 1"
-                    + " AND person_c.role = 1"
-                    + " AND person_c.birth_location IS NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration; ",
-            };
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.birth_location_flag = 2,"
+                + " person_c.birth_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 1"
+                + " AND person_c.role = 1"
+                + " AND person_c.birth_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration"
+        };
 
         int n = 0;
         for( String query : queries )
         {
             try
             {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
@@ -7411,33 +7421,33 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         String[] queries =
-            {
-                "UPDATE person_c, registration_c"
-                    + " SET"
-                    + " person_c.mar_location_flag = 1"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 2"
-                    + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                    + " AND person_c.mar_location IS NOT NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration;",
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.mar_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration",
 
-                "UPDATE person_c, registration_c"
-                    + " SET"
-                    + " person_c.mar_location_flag = 2,"
-                    + " person_c.mar_location = registration_c.registration_location_no"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 2"
-                    + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
-                    + " AND person_c.mar_location IS NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration; ",
-            };
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.mar_location_flag = 2,"
+                + " person_c.mar_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 2"
+                + " AND ( ( person_c.role = 4 ) || ( person_c.role = 7 ) )"
+                + " AND person_c.mar_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration"
+        };
 
         int n = 0;
         for( String query : queries )
         {
             try
             {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
@@ -7469,33 +7479,33 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         String[] queries =
-            {
-                "UPDATE person_c, registration_c"
-                    + " SET"
-                    + " person_c.death_location_flag = 1"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 3"
-                    + " AND person_c.role = 10"
-                    + " AND person_c.death_location IS NOT NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration; ",
+        {
+            "UPDATE person_c, registration_c"
+                + " SET"
+                + " person_c.death_location_flag = 1"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.role = 10"
+                + " AND person_c.death_location IS NOT NULL"
+                + " AND person_c.id_registration = registration_c.id_registration",
 
-                "UPDATE person_c, registration_c "
-                    + " SET "
-                    + " person_c.death_location_flag = 2,"
-                    + " person_c.death_location = registration_c.registration_location_no"
-                    + " WHERE person_c.id_source = " + source
-                    + " AND person_c.registration_maintype = 3"
-                    + " AND person_c.role = 10"
-                    + " AND person_c.death_location IS NULL"
-                    + " AND person_c.id_registration = registration_c.id_registration; ",
-            };
+            "UPDATE person_c, registration_c "
+                + " SET "
+                + " person_c.death_location_flag = 2,"
+                + " person_c.death_location = registration_c.registration_location_no"
+                + " WHERE person_c.id_source = " + source
+                + " AND person_c.registration_maintype = 3"
+                + " AND person_c.role = 10"
+                + " AND person_c.death_location IS NULL"
+                + " AND person_c.id_registration = registration_c.id_registration"
+        };
 
         int n = 0;
         for( String query : queries )
         {
             try
             {
-                if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+                if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
                 if( debug ) { showMessage( query, false, true ); }
 
                 int rowsAffected = dbconCleaned.runQueryUpdate( query );
@@ -8363,7 +8373,7 @@ public class LinksCleanThread extends Thread
 
         String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c"
             + " WHERE id_source = " + source
-            + " AND ( registration_date IS NULL OR registration_date = '' );";
+            + " AND ( registration_date IS NULL OR registration_date = '' )";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
@@ -8479,7 +8489,7 @@ public class LinksCleanThread extends Thread
 
         String query_r = "SELECT id_registration, id_source, registration_days FROM registration_c"
             + " WHERE id_source = " + source
-            + " AND ( registration_days IS NULL OR registration_days = '' );";
+            + " AND ( registration_days IS NULL OR registration_days = '' )";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
@@ -8555,7 +8565,7 @@ public class LinksCleanThread extends Thread
         long threadId = Thread.currentThread().getId();
 
         // Clear previous flag values for given source
-        String query_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + ";";
+        String query_r = "UPDATE person_c SET not_linksbase_p = NULL WHERE id_source = " + source + "";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { System.out.println( query_r ); }
@@ -8582,7 +8592,7 @@ public class LinksCleanThread extends Thread
 
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
-            + " AND ( familyname IS NULL OR familyname = '' );";
+            + " AND ( familyname IS NULL OR familyname = '' )";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
@@ -8661,7 +8671,7 @@ public class LinksCleanThread extends Thread
 
         String query_r = "SELECT id_person, role FROM person_c"
             + " WHERE id_source = " + source
-            + " AND ( role IS NULL OR role = 0 );";
+            + " AND ( role IS NULL OR role = 0 )";
 
         if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
         if( debug ) { showMessage( query_r, false, true ); }
@@ -8823,22 +8833,22 @@ public class LinksCleanThread extends Thread
 
         // Clear previous values for given source
         showMessage( String.format( "Thread id %02d; clear previous remarks values: extract", threadId ), false, true );
-        String clearQuery_r = "UPDATE registration_c SET extract = NULL WHERE id_source = " + source + ";";
+        String clearQuery_r = "UPDATE registration_c SET extract = NULL WHERE id_source = " + source;
         if ( ! rmtype.isEmpty() ) { clearQuery_r += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_r );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: status_mother", threadId ), false, true );
-        String clearQuery_p1 = "UPDATE person_c SET status_mother = NULL WHERE id_source = " + source + ";";
+        String clearQuery_p1 = "UPDATE person_c SET status_mother = NULL WHERE id_source = " + source;
         if ( ! rmtype.isEmpty() ) { clearQuery_p1 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p1 );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: stillbirth", threadId ), false, true );
-        String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source + ";";
+        String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source;
         if ( ! rmtype.isEmpty() ) { clearQuery_p2 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p2 );
 
         showMessage( String.format( "Thread id %02d; clear previous remarks values: divorce", threadId ), false, true );
-        String clearQuery_p3 = "UPDATE person_c SET divorce_text = NULL, divorce_day = NULL, divorce_month = NULL, divorce_year = NULL, divorce_location = NULL WHERE id_source = " + source + ";";
+        String clearQuery_p3 = "UPDATE person_c SET divorce_text = NULL, divorce_day = NULL, divorce_month = NULL, divorce_year = NULL, divorce_location = NULL WHERE id_source = " + source;
         if ( ! rmtype.isEmpty() ) { clearQuery_p3 += " AND registration_maintype = " + rmtype; }
         dbconCleaned.runQuery( clearQuery_p3 );
 

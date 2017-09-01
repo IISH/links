@@ -8,50 +8,47 @@ import modulemain.LinksSpecific;
  *
  * FL-01-Sep-2017
  */
-public class PersonC {
-    public static String table = "person_c";
-    public static String idp = "id_person";
-    public static String idr = "id_registration";
-
-
+public class PersonC
+{
     /**
      * @param field
      * @param value
-     * @param idp
+     * @param id
      * @return
      */
-    public static String updateQuery( String field, String value , int idp )
+    public static String updateQuery( String field, String value , int id )
     {
-        return  "UPDATE " + table
+        return  "UPDATE person_c"
         + " SET " + field + " = '" + LinksSpecific.prepareForMysql( value ) + "'"
-        + " WHERE " + idp + " = " + idp;
+        + " WHERE id_person = " + id;
     }
 
+
     /**
      * @param field
      * @param value
-     * @param idr
+     * @param id
      * @return
      */
-    public static String updateQueryByReg( String field, String value , int idr )
+    public static String updateQueryByReg( String field, String value , int id )
     {
-        return  "UPDATE " + table
+        return  "UPDATE person_c"
         + " SET " + field + " = '" + LinksSpecific.prepareForMysql( value ) + "'"
-        + " WHERE " + idr + " = " + idr;
+        + " WHERE id_registration = " + id;
     }
 
 
      /**
      * @param field
      * @param value
-     * @param idp
+     * @param id
      * @return
      */
-    public static String updateIntQuery( String field, String value , int idp )
+    public static String updateIntQuery( String field, String value , int id )
     {
-        return  "UPDATE " + table
+        return  "UPDATE person_c"
         + " SET " + field + " = " + LinksSpecific.prepareForMysql( value )
-        + " WHERE " + idp + " = " + idp;
+        + " WHERE id_person = " + id;
     }
 
 
