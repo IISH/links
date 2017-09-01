@@ -80,6 +80,8 @@ import linksmanager.ManagerGui;
  * FL-28-Jun-2017 Local db_ref connections, immediate open/close
  * FL-05-Jul-2017 almmRegistration use
  * FL-11-Jul-2017 more not_linksbase flagging
+ * FL-01-Sep-2017 registration_type also in person_c
+ *
  * TODO:
  * - check all occurrences of TODO
  * - in order to use TableToArrayListMultimap almmRegisType, we need to create a variant for almmRegisType
@@ -3383,10 +3385,6 @@ public class LinksCleanThread extends Thread
                 String registration_maintype = rs.getString( "registration_maintype" );
                 String registration_type = rs.getString( "registration_type" ) != null ? rs.getString( "registration_type" ).toLowerCase() : "";
 
-                //String refQuery = "SELECT * FROM ref_registration WHERE main_type = '" + registration_maintype + "' AND original = '" + registration_type + "'";
-                //ResultSet ref = dbconRefRead.runQueryWithResult( refQuery );
-
-                //if( ref.next() )        // compare with reference
                 if( almmRegistration.contains( registration_type ) )
                 {
                     //String refSCode = ref.getString( "standard_code" ).toLowerCase();
@@ -3398,8 +3396,8 @@ public class LinksCleanThread extends Thread
 
                         addToReportRegistration( id_registration, source, 51, registration_type );       // warning 51
 
-                        String query = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
-                        dbconCleaned.runQuery( query );
+                        String query_r = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
+                        dbconCleaned.runQuery( query_r );
                     }
                     else if( refSCode.equals( SC_N ) ) {
                         if( debug ) { showMessage( "Warning 53: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
@@ -3412,15 +3410,17 @@ public class LinksCleanThread extends Thread
                         addToReportRegistration( id_registration, source, 55, registration_type );       // warning 55
 
                         String refSRegisType = almmRegistration.standard( registration_type );
-                        String query = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
-                        dbconCleaned.runQuery( query );
+
+                        String query_r = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
+                        dbconCleaned.runQuery( query_r );
                     }
                     else if( refSCode.equals( SC_Y ) ) {
                         if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
                         String refSRegisType = almmRegistration.standard( registration_type );
-                        String query = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
-                        dbconCleaned.runQuery( query );
+
+                        String query_r = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
+                        dbconCleaned.runQuery( query_r );
                     }
                     else {    // invalid SC
                         if( debug ) { showMessage( "Warning 59: id_registration: " + id_registration + ", reg type: " + registration_type, false, true ); }
@@ -3434,16 +3434,25 @@ public class LinksCleanThread extends Thread
 
                     addToReportRegistration( id_registration, source, 51, registration_type );           // warning 51
 
-                    // column 'original' now has a UNIQUE key: using IGNORE to skip duplicates, preventing failing queries
-                    //dbconRefWrite.runQuery( "INSERT IGNORE INTO ref_registration( original, main_type, standard_code ) VALUES ('" + registration_type + "', '" + registration_maintype + "', 'x')" );
-
                     almmRegistration.add( registration_type + delimiter + registration_maintype );
 
                     // update links_cleaned.registration_c
-                    String query = RegistrationC.updateQuery( "registration_type", registration_type.length() < 50 ? registration_type : registration_type.substring(0, 50), id_registration );
-                    dbconCleaned.runQuery( query );
+                    String query_r = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
+                    dbconCleaned.runQuery( query_r );
                 }
             }
+
+            // update links_cleaned.person_c.registration_type
+            String query_p = "UPDATE links_cleaned.person_c, links_cleaned.registration_c"
+                + " SET person_c.registration_type = registration_c.registration_type"
+                + " WHERE person_c.id_registration = registration_c.id_registration"
+                + " AND person_c.id_source = " + source;
+            if ( ! rmtype.isEmpty() ) { query_p += " AND person_c.registration_maintype = " + rmtype; }
+            if( debug ) { showMessage( query_p, false, true ); }
+
+            int nrec = dbconCleaned.runQueryUpdate( query_p );
+            String msg = String.format( "Thread id %02d; person_c.registration_type: %d rows updated", threadId, nrec  );
+            showMessage( msg, false, true );
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; count: %d, Exception in standardRegistrationType: %s", threadId, count, ex.getMessage() );
