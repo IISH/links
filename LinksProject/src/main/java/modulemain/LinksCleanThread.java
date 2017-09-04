@@ -81,6 +81,7 @@ import linksmanager.ManagerGui;
  * FL-05-Jul-2017 almmRegistration use
  * FL-11-Jul-2017 more not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
+ * FL-04-Sep-2017
  *
  * TODO:
  * - check all occurrences of TODO
@@ -6074,8 +6075,7 @@ public class LinksCleanThread extends Thread
             + "birth_month_max = birth_month , "
             + "birth_day_min   = birth_day , "
             + "birth_day_max   = birth_day "
-            + "WHERE "
-            + "birth_date_valid = 1 OR LEFT(stillbirth, 1) = 'y' "
+            + "WHERE ( birth_date_valid = 1 OR LEFT(stillbirth, 1) = 'y' ) "
             + "AND links_cleaned.person_c.id_source = " + source;
 
         if ( ! rmtype.isEmpty() ) { q1 += " AND registration_maintype = " + rmtype; }
@@ -6091,8 +6091,7 @@ public class LinksCleanThread extends Thread
             + "mar_month_max = mar_month , "
             + "mar_day_min   = mar_day , "
             + "mar_day_max   = mar_day "
-            + "WHERE "
-            + "mar_date_valid = 1 "
+            + "WHERE mar_date_valid = 1 "
             + "AND links_cleaned.person_c.id_source = " + source;
 
         if ( ! rmtype.isEmpty() ) { q2 += " AND registration_maintype = " + rmtype; }
@@ -6110,8 +6109,7 @@ public class LinksCleanThread extends Thread
             + "death_month_max = death_month , "
             + "death_day_min   = death_day , "
             + "death_day_max   = death_day "
-            + "WHERE "
-            + "death_date_valid = 1 "
+            + "WHERE death_date_valid = 1 "
             + "AND links_cleaned.person_c.id_source = " + source;
 
         if ( ! rmtype.isEmpty() ) { q3 += " AND registration_maintype = " + rmtype; }

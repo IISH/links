@@ -31,7 +31,7 @@ import prematch.Lvs;
  * FL-02-Feb-2016 Show # of updated records when links_base is re-created
  * FL-31-Jan-2017 Two more name frequency count queries
  * FL-21-Aug-2017 NamesToNumbers per id_source & rmtype
- * FL-29-Aug-2017
+ * FL-04-Sep-2017 Frequency tables per source & rmtype
  */
 
 public class LinksPrematch extends Thread
@@ -171,12 +171,8 @@ public class LinksPrematch extends Thread
             }
             else
             {
-                doFrequencyTablesFull( debug, bFrequencyTables );
-                /* NOT FINISHED
-                // update the freq_* tables per source & rmtype
                 for( String source : idsStr )
                 { doFrequencyTablesUpdate( debug, bFrequencyTables, source, rmtype ); }
-                */
             }
 
             doStandardization( debug, bStandardization );
@@ -204,27 +200,6 @@ public class LinksPrematch extends Thread
             else
             {
                 if( debug ) { System.out.println( funcname ); }
-                /*
-                // prematch.Lv is a separate thread, so timing should be done there internally
-                showMessage( funcname + ", using 4 threads", false, true );
-
-                //the 5th parameter (boolean) specifies 'strict' or 'non-strict' Levenshtein method.
-                Lv lv1 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  true,  bExactMatches, outputLine, outputArea, plog );
-                Lv lv2 = new Lv( debug, conPrematch, "links_prematch", "freq_firstname",  false, bExactMatches, outputLine, outputArea, plog );
-                Lv lv3 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", true,  bExactMatches, outputLine, outputArea, plog );
-                Lv lv4 = new Lv( debug, conPrematch, "links_prematch", "freq_familyname", false, bExactMatches, outputLine, outputArea, plog );
-
-                lv1.start();    // firstname    strict = true   tables: ls_firstname_strict
-                lv2.start();    // firstname    strict = false  tables: ls_firstname, ls_firstname_first
-                lv3.start();    // familyname   strict = true   tables: ls_familyname_strict
-                lv4.start();    // familyname   strict = false  tables: ls_familyname, ls_familyname_first
-
-                lv1.join();
-                lv2.join();
-                lv3.join();
-                lv4.join();
-                */
-
                 // prematch.Lvs is a separate thread, so timing should be done there internally
                 showMessage( funcname + ", using 6 threads", false, true );
 
@@ -252,7 +227,6 @@ public class LinksPrematch extends Thread
                 lvs4.join();
                 lvs5.join();
                 lvs6.join();
-
             }
 
             showMessage( "", false, true );
@@ -750,130 +724,79 @@ public class LinksPrematch extends Thread
         long funcstart = System.currentTimeMillis();
         showMessage( funcname + "...", false, true );
 
-        String[] queries =
-        {
-            // query 01
-            "CREATE TABLE IF NOT EXISTS links_prematch.freq_familyname ("
-                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " name_str VARCHAR(100) NULL ,"
-                + " frequency INT UNSIGNED NULL ,"
-                + " PRIMARY KEY (id) ,"
-                + " INDEX `name_str` (`name_str`)"
-                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+        String query_1 = "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex_tmp ("
+            + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
+            + " name_str VARCHAR(30) NULL ,"
+            + " sex VARCHAR(2) NULL ,"
+            + " PRIMARY KEY (id) ,"
+            + " INDEX `name_str` (`name_str`)"
+            + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
-            // query 02
-            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname ("
-                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " name_str VARCHAR(30) NULL ,"
-                + " frequency INT UNSIGNED NULL ,"
-                + " PRIMARY KEY (id) ,"
-                + " INDEX `name_str` (`name_str`)"
-                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+        String query_2 = "TRUNCATE TABLE links_prematch.freq_firstname_sex_tmp";
 
-            // query 03
-            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex ("
-                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " name_str VARCHAR(30) NULL ,"
-                + " sex VARCHAR(2) NULL ,"
-                + " frequency INT UNSIGNED NULL ,"
-                + " PRIMARY KEY (id) ,"
-                + " INDEX `name_str` (`name_str`)"
-                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+        String query_3 = "ALTER TABLE links_prematch.freq_firstname_sex_tmp AUTO_INCREMENT = 1";
 
-            // query 04
-            "CREATE TABLE IF NOT EXISTS links_prematch.freq_firstname_sex_tmp ("
-                + " id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
-                + " name_str VARCHAR(30) NULL ,"
-                + " sex VARCHAR(2) NULL ,"
-                + " PRIMARY KEY (id) ,"
-                + " INDEX `name_str` (`name_str`)"
-                + " ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;",
+        String query_4 = "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+            + " SELECT firstname1 , sex"
+            + " FROM links_cleaned.person_c"
+            + " WHERE firstname1 IS NOT NULL AND firstname1 <> 'null' AND firstname1 <> '' ";
+        query_4 += " AND person_c.id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query_4 += " AND registration_maintype = " + rmtype; }
 
-            // query 05
-            "TRUNCATE TABLE links_prematch.freq_familyname ;",
+        String query_5 = "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+            + " SELECT firstname2 , sex"
+            + " FROM links_cleaned.person_c"
+            + " WHERE firstname2 IS NOT NULL AND firstname2 <> 'null' AND firstname2 <> '' ";
+        query_5 += " AND person_c.id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query_5 += " AND registration_maintype = " + rmtype; }
 
-            // query 06
-            "ALTER TABLE links_prematch.freq_familyname AUTO_INCREMENT = 1 ;",
+        String query_6 = "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+            + " SELECT firstname3 , sex"
+            + " FROM links_cleaned.person_c"
+            + " WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ";
+        query_6 += " AND person_c.id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query_6 += " AND registration_maintype = " + rmtype; }
 
-            // query 07
-            "TRUNCATE TABLE links_prematch.freq_firstname ;",
+        String query_7 = "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
+            + " SELECT firstname4 , sex"
+            + " FROM links_cleaned.person_c"
+            + " WHERE firstname4 IS NOT NULL AND firstname4 <> 'null' AND firstname4 <> '' ";
+        query_7 += " AND person_c.id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query_7 += " AND registration_maintype = " + rmtype; }
 
-            // query 08
-            "ALTER TABLE links_prematch.freq_firstname AUTO_INCREMENT = 1 ;",
+        String query_8 = "INSERT IGNORE INTO links_prematch.freq_firstname ( name_str , frequency )"
+            + " SELECT name_str , 1"
+            + " FROM links_prematch.freq_firstname_sex_tmp";
 
-            // query 09
-            "TRUNCATE TABLE links_prematch.freq_firstname_sex ;",
+        String query_9 = "INSERT IGNORE INTO links_prematch.freq_firstname_sex ( name_str , sex, frequency )"
+            + " SELECT name_str , sex, 1"
+            + " FROM links_prematch.freq_firstname_sex_tmp";
 
-            // query 10
-            "ALTER TABLE links_prematch.freq_firstname_sex AUTO_INCREMENT = 1 ;",
+        String query_10 = "INSERT IGNORE INTO links_prematch.freq_familyname( name_str , frequency )"
+            + " SELECT familyname , 1"
+            + " FROM links_cleaned.person_c"
+            + " WHERE familyname IS NOT NULL AND familyname <> 'null' AND familyname <> '' ";
+        query_10 += " AND person_c.id_source = " + source;
+        if ( ! rmtype.isEmpty() ) { query_10 += " AND registration_maintype = " + rmtype; }
 
-            // query 11
-            "TRUNCATE TABLE links_prematch.freq_firstname_sex_tmp ;",
+        String query_11 = "DROP TABLE links_prematch.freq_firstname_sex_tmp";
 
-            // query 12
-            "ALTER TABLE links_prematch.freq_firstname_sex_tmp AUTO_INCREMENT = 1 ;",
 
-            // query 13
-            "INSERT INTO links_prematch.freq_familyname( name_str , frequency )"
-                + " SELECT familyname , COUNT(*) AS frequency"
-                + " FROM links_cleaned.person_c"
-                + " WHERE familyname IS NOT NULL AND familyname <> 'null' AND familyname <> ''"
-                + " GROUP BY familyname ;",
-
-            // query 14
-            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
-                + " SELECT firstname1 , sex"
-                + " FROM links_cleaned.person_c"
-                + " WHERE firstname1 IS NOT NULL AND firstname1 <> 'null' AND firstname1 <> '' ;",
-
-            // query 15
-            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
-                + " SELECT firstname2 , sex"
-                + " FROM links_cleaned.person_c"
-                + " WHERE firstname2 IS NOT NULL AND firstname2 <> 'null' AND firstname2 <> '' ;",
-
-            // query 16
-            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
-                + " SELECT firstname3 , sex"
-                + " FROM links_cleaned.person_c"
-                + " WHERE firstname3 IS NOT NULL AND firstname3 <> 'null' AND firstname3 <> '' ;",
-
-            // query 17
-            "INSERT INTO links_prematch.freq_firstname_sex_tmp( name_str , sex )"
-                + " SELECT firstname4 , sex"
-                + " FROM links_cleaned.person_c"
-                + " WHERE firstname4 IS NOT NULL AND firstname4 <> 'null' AND firstname4 <> '' ;",
-
-            // query 18
-            "INSERT INTO links_prematch.freq_firstname ( name_str , frequency )"
-                + " SELECT name_str , COUNT(*) AS frequency"
-                + " FROM links_prematch.freq_firstname_sex_tmp"
-                + " GROUP BY name_str ;",
-
-            // query 19
-            "INSERT INTO links_prematch.freq_firstname_sex ( name_str , sex, frequency )"
-                + " SELECT name_str , sex, COUNT(*) AS frequency"
-                + " FROM links_prematch.freq_firstname_sex_tmp"
-                + " GROUP BY sex , name_str ;",
-
-            // query 20
-            "DROP TABLE links_prematch.freq_firstname_sex_tmp ;"
+        String[] queries = {
+            query_1, query_2, query_3, query_4, query_5, query_6, query_7, query_8, query_9, query_10, query_11
         };
 
         int nq = 0;
         for( String query : queries )
         {
             nq++;
-            if( ! source.isEmpty() ) { query += String.format( " AND id_source = %s", source ); }
-            if( ! rmtype.isEmpty() ) { query += String.format( " AND registration_maintype = %s", rmtype ); }
-
             long start = System.currentTimeMillis();
             String msg = "query " + nq + "-of-" + queries.length;
             showMessage( msg + "...", false, true );
             System.out.println( query );
             if( debug ) { showMessage( query, false, true ); }
 
-            conPrematch.runQuery( query );
+            //conPrematch.runQuery( query );
             elapsedShowMessage( msg, start, System.currentTimeMillis() );
         }
 
