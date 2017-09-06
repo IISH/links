@@ -4,10 +4,10 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.5
+Version:	0.6
 Goal:		Ingest id_source = 23
 
-USE links_temp;
+-- USE links_temp;
 -- TRUNCATE TABLE links_temp.ggr_r;
 -- TRUNCATE TABLE links_temp.ggr_p;
 
@@ -38,11 +38,12 @@ SELECT
 FROM
 	links_temp.ggr_r;
 
--- Copy ggr.id_orig_registration to person_o.id_person_o (NOT ggr.id_person_o)
+-- Copy ggr.id_orig_registration to person_o.living_location for matching the tables; clear afterwards
 INSERT INTO links_original.person_o
 (
 	id_source,
 	registration_maintype,
+	living_location,
 	id_person_o,
 	firstname,
 	prefix,
@@ -58,6 +59,7 @@ SELECT
 	id_source,
 	registration_maintype,
 	id_orig_registration,
+	id_person_o,
 	firstname,
 	prefix,
 	familyname,
@@ -75,10 +77,12 @@ UPDATE links_original.registration_o, links_original.person_o
 SET person_o.id_registration = registration_o.id_registration 
 WHERE person_o.id_source = 23 
 AND registration_o.id_source = 23 
-AND person_o.id_person_o = registration_o.id_orig_registration;
+AND person_o.living_location = registration_o.id_orig_registration;
+
+-- clear person_o.living_location ...
 
 21-Jul-2017 Created
-30-Aug-2017 Latest change
+06-Sep-2017 Latest change
 """
 
 
