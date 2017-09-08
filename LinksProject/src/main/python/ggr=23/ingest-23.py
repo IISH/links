@@ -4,7 +4,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest-23.py
-Version:	0.6
+Version:	0.7
 Goal:		Ingest id_source = 23
 
 -- USE links_temp;
@@ -38,12 +38,20 @@ SELECT
 FROM
 	links_temp.ggr_r;
 
--- Copy ggr.id_orig_registration to person_o.living_location for matching the tables; clear afterwards
+-- The previous query created the id_registration pk's in the links_original.registration_o table
+-- Copy the pk's to the links_temp.ggr_p table, using id_source and id_orig_registration, 
+-- if needed, add registration_maintype check. 
+UPDATE links_original.registration_o, links_temp.ggr_p 
+SET ggr_p.id_registration = registration_o.id_registration 
+WHERE registration_o.id_source = 23 
+AND ggr_p.id_source = 23 
+AND ggr_p.id_orig_registration = registration_o.id_orig_registration;
+
 INSERT INTO links_original.person_o
 (
+	id_registration,
 	id_source,
 	registration_maintype,
-	living_location,
 	id_person_o,
 	firstname,
 	prefix,
@@ -56,9 +64,9 @@ INSERT INTO links_original.person_o
 	birth_date
 )
 SELECT
+	id_registration,
 	id_source,
 	registration_maintype,
-	id_orig_registration,
 	id_person_o,
 	firstname,
 	prefix,
@@ -72,17 +80,8 @@ SELECT
 FROM
 	links_temp.ggr_p;
 
--- We use id_orig_registration to link the two tables
-UPDATE links_original.registration_o, links_original.person_o 
-SET person_o.id_registration = registration_o.id_registration 
-WHERE person_o.id_source = 23 
-AND registration_o.id_source = 23 
-AND person_o.living_location = registration_o.id_orig_registration;
-
--- clear person_o.living_location ...
-
 21-Jul-2017 Created
-06-Sep-2017 Latest change
+08-Sep-2017 Latest change
 """
 
 

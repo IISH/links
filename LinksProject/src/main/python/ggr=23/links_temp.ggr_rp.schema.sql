@@ -1,3 +1,4 @@
+-- FL-08-Sep-2017
 
 --
 -- Table structure for table `ggr_r`
@@ -29,6 +30,7 @@ CREATE TABLE `ggr_p` (
   `name_source` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `id_orig_registration` int(10) unsigned DEFAULT NULL,
   `id_person_o` int(10) unsigned DEFAULT NULL,
+  `id_registration` int(10) unsigned DEFAULT NULL,
   `registration_maintype` tinyint(3) unsigned DEFAULT NULL,
   `registration_type` varchar(50) COLLATE utf8_bin  DEFAULT NULL,
   `sex` char(1) COLLATE utf8_bin DEFAULT NULL,
