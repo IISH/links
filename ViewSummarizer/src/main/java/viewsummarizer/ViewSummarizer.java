@@ -15,7 +15,8 @@ import java.util.HashMap;
  * @author Omar Azouguagh
  * @author Fons Laan
  *
- * FL-29-Feb-2016 Latest change
+ * FL-29-Feb-2016
+ * FL-11-Sep-2017 debug, and template: [=3-4] => [=3-6]
  */
 public class ViewSummarizer
 {
@@ -715,14 +716,37 @@ public class ViewSummarizer
         int s2_potential_int = 0;
         if( ! s2_potential.isEmpty() ) { s2_potential_int = Integer.parseInt( s2_potential ); }
 
-        s1_more = Integer.toString( s1_unique_int  - s1_once_int );
-        s2_more = Integer.toString( s2_unique_int  - s2_once_int );
+        int s1_more_int = s1_unique_int  - s1_once_int;
+        int s2_more_int = s2_unique_int  - s2_once_int;
+
+        int s1_without_int = s1_potential_int  - s1_unique_int;
+        int s2_without_int = s2_potential_int  - s2_unique_int;
+
+        System.out.printf( "s1_potential_int: .................. %d\n", s1_potential_int );
+        System.out.printf( "s2_potential_int: .................. %d\n", s2_potential_int );
+        System.out.printf( "s1_unique_int: ..................... %d\n", s1_unique_int );
+        System.out.printf( "s2_unique_int: ..................... %d\n", s2_unique_int );
+        System.out.printf( "s1_once_int: ....................... %d\n", s1_once_int );
+        System.out.printf( "s2_once_int: ....................... %d\n", s2_once_int );
+
+        System.out.printf( "s1_more_int = unique - once: ....... %d\n", s1_more_int );
+        System.out.printf( "s2_more_int = unique - once: ....... %d\n", s2_more_int );
+
+        System.out.printf( "s1_without_int = potential - unique: %d\n", s1_without_int );
+        System.out.printf( "s2_without_int = potential - unique: %d\n", s2_without_int );
+
+        //s1_more = Integer.toString( s1_unique_int  - s1_once_int );
+        //s2_more = Integer.toString( s2_unique_int  - s2_once_int );
+        s1_more = Integer.toString( s1_more_int );
+        s2_more = Integer.toString( s2_more_int );
 
         replaceInTemplate( "s1_more", s1_more );
         replaceInTemplate( "s2_more", s2_more );
 
-        s1_without = Integer.toString( s1_potential_int - s1_unique_int );
-        s2_without = Integer.toString( s2_potential_int - s2_unique_int );
+        //s1_without = Integer.toString( s1_potential_int - s1_unique_int );
+        //s2_without = Integer.toString( s2_potential_int - s2_unique_int );
+        s1_without = Integer.toString( s1_without_int );
+        s2_without = Integer.toString( s2_without_int );
 
         replaceInTemplate( "s1_without", s1_without );
         replaceInTemplate( "s2_without", s2_without );

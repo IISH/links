@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Match summary</title>
+
+<style type="text/css">
+/* single line border */
+table {
+	border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+	padding: 2px;
+}
+
+* {margin: 0; padding: 0;}
+#container {height: 100%; width:100%; font-size: 0;}
+#left, #middle, #right {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 12px;}
+#left   {width: 10%;}	<!--  background: blue; -->
+#middle {width: 85%;}	<!--  background: green; -->
+#right  {width:  5%;}	<!--  background: yellow; -->
+
+</style>
+</head>
+
+<body>
+<div id="container">
+	<div id="left"></div>	<!-- Left Side Menu -->
+	<div id="middle">		<!-- View Summarizer -->
+
+<br>
+<h3>Match summary</h3>
+<br>
+Date: {date}
+<br>
+Hostname: {hostname}
+<br>
+Match Proces id: <b>{id_match_process}</b>
+<br>
+<br>
+<table>
+	<tr>
+		<td><b>Property</b></td>
+		<td align="center"><b>Sample 1</b></td>
+		<td align="center"><b>Sample 2</b></td>
+	</tr>
+	<tr>
+		<td>Source</td>
+		<td align="center">{s1_source}</td>
+		<td align="center">{s2_source}</td>
+	</tr>
+	<tr>
+		<td>Maintype</td>
+		<td align="center">{s1_maintype}</td>
+		<td align="center">{s2_maintype}</td>
+	</tr>
+	<tr>
+		<td>Type</td>
+		<td align="center">{s1_type}</td>
+		<td align="center">{s2_type}</td>
+	</tr>
+	<tr>
+		<td>Role ego</td>
+		<td align="center">{s1_role_ego}</td>
+		<td align="center">{s2_role_ego}</td>
+	</tr>
+	<tr>
+		<td>Range</td>
+		<td align="center">{s1_range}</td>
+		<td align="center">{s2_range}</td>
+	</tr>
+	<tr>
+		<td>Start year</td>
+		<td align="center">{s1_startyear}</td>
+		<td align="center">{s2_startyear}</td>
+	</tr>
+	<tr>
+		<td>End year</td>
+		<td align="center">{s1_endyear}</td>
+		<td align="center"></td>
+	</tr>
+</table>
+
+<br>
+<br>
+<table>
+	<tr>
+		<td><b>Property</b></td>
+		<td align="center"><b>Value</b></td>
+	</tr>
+	<tr>
+		<td>Method</td>
+		<td align="center">{method}</td>
+	</tr>
+	<tr>
+		<td>Ignore sex</td>
+		<td align="center">{ignore_sex}</td>
+	</tr>
+	<tr>
+		<td>Firstname method</td>
+		<td align="center">{firstname}</td>
+	</tr>
+	<tr>
+		<td>Levenshtein firstname table</td>
+		<td align="center">{prematch_firstname}</td>
+	</tr>
+	<tr>
+		<td>Levenshtein familyname table</td>
+		<td align="center">{prematch_familyname}</td>
+	</tr>
+	<tr>
+		<td>Levenshtein distance firstname</td>
+		<td align="center">{prematch_firstname_value}</td>
+	</tr>
+	<tr>
+		<td>Levenshtein distance familyname</td>
+		<td align="center">{prematch_familyname_value}</td>
+	</tr>
+	<tr>
+		<td>Use firstname <span style="float:right">EMFP</span></td>
+		<td align="center">{use_firstname}</td>
+	</tr>
+	<tr>
+		<td>Use familyname <span style="float:right">EMFP</span></td>
+		<td align="center">{use_familyname}</td>
+	</tr>
+	<tr>
+		<td>Dates [min,max] <span style="float:right">gho EMFP</span></td>
+		<td align="center">{use_minmax}</td>
+	</tr>
+<table>
+
+<br>
+<br>
+<table>
+	<tr>
+		<td/>
+		<td><b>Property</b></td>
+		<td align="center"><b>Sample 1</b></td>
+		<td align="center"><b>Sample 2</b></td>
+	</tr>
+	<tr>
+		<td align="right"><b>1</b></td>
+		<td>Registrations for source and maintype <span style="float:right">[{s1_factor} x, {s2_factor} x]</span></td>
+		<td align="right">{s1_potential}</td>
+		<td align="right">{s2_potential}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>2</b></td>
+		<td>Realized matches</td>
+		<td align="right">{s1_realized}</td>
+		<td align="right">{s2_realized}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>3</b></td>
+		<td>Unique registrations that matched</td>
+		<td align="right">{s1_unique}</td>
+		<td align="right">{s2_unique}</td>
+	</tr>
+
+	<tr>
+		<td align="right"><b>4</b></td>
+		<td>Registrations that matched twice or more [=3-6]</td>
+		<td align="right">{s1_more}</td>
+		<td align="right">{s2_more}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>5</b></td>
+		<td>Registrations without matches [=1-3]</td>
+		<td align="right">{s1_without}</td>
+		<td align="right">{s2_without}</td>
+	</tr>
+
+{trows}
+
+	<!-- 
+	<tr>
+		<td align="right"><b>4</b></td>
+		<td>Registrations that matched 1 x</td>
+		<td align="right">{s1_once}</td>
+		<td align="right">{s2_once}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>5</b></td>
+		<td>Registrations that matched 2 x</td>
+		<td align="right">{s1_twice}</td>
+		<td align="right">{s2_twice}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>6</b></td>
+		<td>Registrations that matched 3 x</td>
+		<td align="right">{s1_thrice}</td>
+		<td align="right">{s2_thrice}</td>
+	</tr>
+	<tr>
+		<td align="right"><b>7</b></td>
+		<td>Registrations that matched 4 x</td>
+		<td align="right">{s1_frice}</td>
+		<td align="right">{s2_frice}</td>
+	</tr>
+	-->
+
+</table>
+
+<br>
+<br>
+Multiple matches <b>sample 1</b>: 
+<br>{s1_allcnts}
+<br>
+<br>
+Multiple matches <b>sample 2</b>: 
+<br>{s2_allcnts}
+<br>
+
+
+<!--
+<br>
+<br>
+<br>
+<table>
+    <tr>
+        <td rowspan="2" colspan="2"><b>Sum of levenshtein</b></td>
+        <td colspan="5" align="center"><b>Number of persons matched exactly</b></td>
+    </tr>
+    <tr>
+        <td align="right"><b>0</b></td>
+        <td align="right"><b>1</b></td>
+        <td align="right"><b>2</b></td>
+        <td align="right"><b>3</b></td>
+        <td align="right"><b>4</b></td>
+    </tr>
+    <tr>
+        <td align="right">0</td>
+        <td align="right">{query1000}</td>
+        <td align="right">{query1100}</td>
+        <td align="right">{query1200}</td>
+        <td align="right">{query1300}</td>
+        <td align="right">{query1400}</td>
+        <td align="right">{query1500}</td>
+    </tr>
+    <tr>
+        <td align="right">1</td>
+        <td align="right">{query1001}</td>
+        <td align="right">{query1101}</td>
+        <td align="right">{query1201}</td>
+        <td align="right">{query1301}</td>
+        <td align="right">{query1401}</td>
+        <td align="right">{query1501}</td>
+    </tr>
+    <tr>
+        <td align="right">2</td>
+        <td align="right">{query1002}</td>
+        <td align="right">{query1102}</td>
+        <td align="right">{query1202}</td>
+        <td align="right">{query1302}</td>
+        <td align="right">{query1402}</td>
+        <td align="right">{query1502}</td>
+    </tr>
+    <tr>
+        <td align="right">3</td>
+        <td align="right">{query1003}</td>
+        <td align="right">{query1103}</td>
+        <td align="right">{query1203}</td>
+        <td align="right">{query1303}</td>
+        <td align="right">{query1403}</td>
+        <td align="right">{query1503}</td>
+    </tr>
+    <tr>
+        <td align="right">4</td>
+        <td align="right">{query1004}</td>
+        <td align="right">{query1104}</td>
+        <td align="right">{query1204}</td>
+        <td align="right">{query1304}</td>
+        <td align="right">{query1404}</td>
+        <td align="right">{query1504}</td>
+    </tr>
+    <tr>
+        <td align="right">5</td>
+        <td align="right">{query1005}</td>
+        <td align="right">{query1105}</td>
+        <td align="right">{query1205}</td>
+        <td align="right">{query1305}</td>
+        <td align="right">{query1405}</td>
+        <td align="right">{query1505}</td>
+    </tr>
+    <tr>
+        <td align="right">6</td>
+        <td align="right">{query1006}</td>
+        <td align="right">{query1106}</td>
+        <td align="right">{query1206}</td>
+        <td align="right">{query1306}</td>
+        <td align="right">{query1406}</td>
+        <td align="right">{query1506}</td>
+    </tr>
+    <tr>
+        <td align="right">7</td>
+        <td align="right">{query1007}</td>
+        <td align="right">{query1107}</td>
+        <td align="right">{query1207}</td>
+        <td align="right">{query1307}</td>
+        <td align="right">{query1407}</td>
+        <td align="right">{query1507}</td>
+    </tr>
+    <tr>
+        <td align="right">8</td>
+        <td align="right">{query1008}</td>
+        <td align="right">{query1108}</td>
+        <td align="right">{query1208}</td>
+        <td align="right">{query1308}</td>
+        <td align="right">{query1408}</td>
+        <td align="right">{query1508}</td>
+    </tr>
+</table>
+-->
+    </div>
+    <div id="right"></div> <!-- Right Side Menu -->
+</div>
+</body>
+</html>
