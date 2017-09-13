@@ -326,7 +326,7 @@ public class QueryLoader
                     var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
                     var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
                     var_s1_ego_firstname3 = set1.getInt( "ego_firstname3" );
-                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname4" );
+                    var_s1_ego_firstname4 = set1.getInt( "ego_firstname4" );
                     break;
                 case 2:
                     var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
@@ -344,7 +344,7 @@ public class QueryLoader
                     var_s1_ego_firstname1 = set1.getInt( "ego_firstname1" );
                     var_s1_ego_firstname2 = set1.getInt( "ego_firstname2" );
                     var_s1_ego_firstname3 = set1.getInt( "ego_firstname3" );
-                    var_s1_ego_firstname3 = set1.getInt( "ego_firstname4" );
+                    var_s1_ego_firstname4 = set1.getInt( "ego_firstname4" );
                     break;
             }
 
@@ -372,7 +372,7 @@ public class QueryLoader
                         var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
                         var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
                         var_s1_mother_firstname3 = set1.getInt( "mother_firstname3" );
-                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname4" );
+                        var_s1_mother_firstname4 = set1.getInt( "mother_firstname4" );
                         break;
                     case 2:
                         var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
@@ -390,7 +390,7 @@ public class QueryLoader
                         var_s1_mother_firstname1 = set1.getInt( "mother_firstname1" );
                         var_s1_mother_firstname2 = set1.getInt( "mother_firstname2" );
                         var_s1_mother_firstname3 = set1.getInt( "mother_firstname3" );
-                        var_s1_mother_firstname3 = set1.getInt( "mother_firstname4" );
+                        var_s1_mother_firstname4 = set1.getInt( "mother_firstname4" );
                         break;
                 }
 
@@ -417,7 +417,7 @@ public class QueryLoader
                         var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
                         var_s1_father_firstname2 = set1.getInt( "father_firstname2" );
                         var_s1_father_firstname3 = set1.getInt( "father_firstname3" );
-                        var_s1_father_firstname3 = set1.getInt( "father_firstname4" );
+                        var_s1_father_firstname4 = set1.getInt( "father_firstname4" );
                         break;
                     case 2:
                         var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
@@ -435,7 +435,7 @@ public class QueryLoader
                         var_s1_father_firstname1 = set1.getInt( "father_firstname1" );
                         var_s1_father_firstname2 = set1.getInt( "father_firstname2" );
                         var_s1_father_firstname3 = set1.getInt( "father_firstname3" );
-                        var_s1_father_firstname3 = set1.getInt( "father_firstname4" );
+                        var_s1_father_firstname4 = set1.getInt( "father_firstname4" );
                         break;
                 }
 
@@ -462,7 +462,7 @@ public class QueryLoader
                         var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
                         var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
                         var_s1_partner_firstname3 = set1.getInt( "partner_firstname3" );
-                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname4" );
+                        var_s1_partner_firstname4 = set1.getInt( "partner_firstname4" );
                         break;
                     case 2:
                         var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
@@ -480,7 +480,7 @@ public class QueryLoader
                         var_s1_partner_firstname1 = set1.getInt( "partner_firstname1" );
                         var_s1_partner_firstname2 = set1.getInt( "partner_firstname2" );
                         var_s1_partner_firstname3 = set1.getInt( "partner_firstname3" );
-                        var_s1_partner_firstname3 = set1.getInt( "partner_firstname4" );
+                        var_s1_partner_firstname4 = set1.getInt( "partner_firstname4" );
                         break;
                 }
 
@@ -653,7 +653,7 @@ public class QueryLoader
                     var_s2_ego_firstname1 = set2.getInt( "ego_firstname1" );
                     var_s2_ego_firstname2 = set2.getInt( "ego_firstname2" );
                     var_s2_ego_firstname3 = set2.getInt( "ego_firstname3" );
-                    var_s2_ego_firstname3 = set2.getInt( "ego_firstname4" );
+                    var_s2_ego_firstname4 = set2.getInt( "ego_firstname4" );
                     break;
                 case 2:
                     var_s2_ego_firstname1 = set2.getInt( "ego_firstname1" );
@@ -671,7 +671,7 @@ public class QueryLoader
                     var_s2_ego_firstname1 = set2.getInt( "ego_firstname1" );
                     var_s2_ego_firstname2 = set2.getInt( "ego_firstname2" );
                     var_s2_ego_firstname3 = set2.getInt( "ego_firstname3" );
-                    var_s2_ego_firstname3 = set2.getInt( "ego_firstname4" );
+                    var_s2_ego_firstname4 = set2.getInt( "ego_firstname4" );
                     break;
             }
 
@@ -699,7 +699,7 @@ public class QueryLoader
                         var_s2_mother_firstname1 = set2.getInt( "mother_firstname1" );
                         var_s2_mother_firstname2 = set2.getInt( "mother_firstname2" ) ;
                         var_s2_mother_firstname3 = set2.getInt( "mother_firstname3" );
-                        var_s2_mother_firstname3 = set2.getInt( "mother_firstname4" );
+                        var_s2_mother_firstname4 = set2.getInt( "mother_firstname4" );
                         break;
                     case 2:
                         var_s2_mother_firstname1 = set2.getInt( "mother_firstname1" );
@@ -717,7 +717,7 @@ public class QueryLoader
                         var_s2_mother_firstname1 = set2.getInt( "mother_firstname1" );
                         var_s2_mother_firstname2 = set2.getInt( "mother_firstname2" );
                         var_s2_mother_firstname3 = set2.getInt( "mother_firstname3" );
-                        var_s2_mother_firstname3 = set2.getInt( "mother_firstname4" );
+                        var_s2_mother_firstname4 = set2.getInt( "mother_firstname4" );
                         break;
                 }
 
@@ -744,7 +744,7 @@ public class QueryLoader
                         var_s2_father_firstname1 = set2.getInt( "father_firstname1" );
                         var_s2_father_firstname2 = set2.getInt( "father_firstname2" );
                         var_s2_father_firstname3 = set2.getInt( "father_firstname3" );
-                        var_s2_father_firstname3 = set2.getInt( "father_firstname4" );
+                        var_s2_father_firstname4 = set2.getInt( "father_firstname4" );
                         break;
                     case 2:
                         var_s2_father_firstname1 = set2.getInt( "father_firstname1" );
@@ -762,7 +762,7 @@ public class QueryLoader
                         var_s2_father_firstname1 = set2.getInt( "father_firstname1" );
                         var_s2_father_firstname2 = set2.getInt( "father_firstname2" );
                         var_s2_father_firstname3 = set2.getInt( "father_firstname3" );
-                        var_s2_father_firstname3 = set2.getInt( "father_firstname4" );
+                        var_s2_father_firstname4 = set2.getInt( "father_firstname4" );
                         break;
                 }
 
@@ -789,7 +789,7 @@ public class QueryLoader
                         var_s2_partner_firstname1 = set2.getInt( "partner_firstname1" );
                         var_s2_partner_firstname2 = set2.getInt( "partner_firstname2" );
                         var_s2_partner_firstname3 = set2.getInt( "partner_firstname3" );
-                        var_s2_partner_firstname3 = set2.getInt( "partner_firstname4" );
+                        var_s2_partner_firstname4 = set2.getInt( "partner_firstname4" );
                         break;
                     case 2:
                         var_s2_partner_firstname1 = set2.getInt( "partner_firstname1" );
@@ -807,7 +807,7 @@ public class QueryLoader
                         var_s2_partner_firstname1 = set2.getInt( "partner_firstname1" );
                         var_s2_partner_firstname2 = set2.getInt( "partner_firstname2" );
                         var_s2_partner_firstname3 = set2.getInt( "partner_firstname3" );
-                        var_s2_partner_firstname3 = set2.getInt( "partner_firstname4" );
+                        var_s2_partner_firstname4 = set2.getInt( "partner_firstname4" );
                         break;
                 }
 

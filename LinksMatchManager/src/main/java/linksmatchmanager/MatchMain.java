@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
- * FL-29-Aug-2017 Latest change
+ * FL-13-Sep-2017 Beginning of SampleLoader use
  */
 
 public class MatchMain
@@ -49,6 +49,7 @@ public class MatchMain
     private static boolean debug;
 
     private static QueryLoader ql;
+    private static SampleLoader s1, s2;
     private static PrintLogger plog;
 
     private static Connection dbconPrematch;
@@ -393,6 +394,16 @@ public class MatchMain
                     ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
+
+                    long sStart = System.currentTimeMillis();
+                    // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
+                    s1 = new SampleLoader( Thread.currentThread().getId(), qs, dbconPrematch, 1 );
+                    s2 = new SampleLoader( Thread.currentThread().getId(), qs, dbconPrematch, 2 );
+                    //msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
+                    msg = "s1 & s2 from SampleLoader";
+                    s1.freeVectors();
+                    s1.freeVectors();
+                    elapsedShowMessage( msg, sStart, System.currentTimeMillis() );
 
                     /*
                     if( debug ) {
