@@ -87,7 +87,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "29-Aug-2017 11:52";
+            String timestamp1 = "15-Aug-2017 14:48";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -164,7 +164,7 @@ public class MatchMain
                 dbconMatch    = General.getConnection( url, "links_match",    user, pass );
             }
             catch( Exception ex ) {
-                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
             }
 
@@ -178,7 +178,7 @@ public class MatchMain
                 System.out.println( msg ); plog.show( msg );
             }
             catch( Exception ex ) {
-                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
             }
 
@@ -190,7 +190,7 @@ public class MatchMain
                 dbconPrematch.createStatement().execute( query );
             }
             catch( Exception ex ) {
-                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
             }
 
@@ -391,19 +391,23 @@ public class MatchMain
                     // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
                     // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
                     // Its input is a QuerySet and a database connection object.
-                    ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
+                    //ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
+                    ql = new QueryLoader( qs, dbconPrematch );
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
+                    /*
                     long sStart = System.currentTimeMillis();
                     // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
-                    s1 = new SampleLoader( Thread.currentThread().getId(), qs, dbconPrematch, 1 );
-                    s2 = new SampleLoader( Thread.currentThread().getId(), qs, dbconPrematch, 2 );
-                    //msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
-                    msg = "s1 & s2 from SampleLoader";
+                    s1 = new SampleLoader( qs, dbconPrematch, 1 );
+                    s2 = new SampleLoader( qs, dbconPrematch, 2 );
+                    msg = String.format( "Thread id %02d; s1_size: %d, s2_size: %d", mainThreadId, s1.id_base.size(), s2.id_base.size() );
+                    System.out.println( msg ); plog.show( msg );
                     s1.freeVectors();
-                    s1.freeVectors();
+                    s2.freeVectors();
+                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; samples loading time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, sStart, System.currentTimeMillis() );
+                    */
 
                     /*
                     if( debug ) {
@@ -414,11 +418,8 @@ public class MatchMain
                     */
 
                     int s1_size = ql.s1_id_base.size();
-                    msg = String.format( "s1_size: " + s1_size );
-                    System.out.println( msg ); plog.show( msg );
-
                     int s2_size = ql.s2_id_base.size();
-                    msg = String.format( "s2_size: " + s2_size );
+                    msg = String.format( "Thread id %02d; s1_size: %d, s2_size: %d", mainThreadId, s1_size, s2_size );
                     System.out.println( msg ); plog.show( msg );
 
                     if( s1_size == 0 || s2_size == 0 ) {
@@ -448,13 +449,13 @@ public class MatchMain
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
-                        ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             rootFirstName, rootFamilyName, nameLvsVariants, true );
                     }
                     else          // method == 0
                     {
-                        ma = new MatchAsync( debug, dry_run, sem, n_mp, n_qs, ql, plog, qgs, inputSet, url, user, pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, url, user, pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             variantFirstName, variantFamilyName, nameLvsVariants );
                     }
@@ -477,7 +478,7 @@ public class MatchMain
             // join the threads: main thread must wait for children to finish
             for( MatchAsync ma : threads ) { ma.join(); }
 
-            msg = String.format( "Main thread (id %d); Matching Finished.", mainThreadId );
+            msg = String.format( "Thread id %02d; Matching Finished.", mainThreadId );
             System.out.println( msg ); plog.show( msg );
 
             // the memory tables should only be dropped after all threads have finished.
@@ -494,7 +495,7 @@ public class MatchMain
                 dbconPrematch.createStatement().execute( query );
             }
             catch( Exception ex ) {
-                msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
             }
 
@@ -508,7 +509,7 @@ public class MatchMain
         } // try
 
         catch( Exception ex ) {
-            String msg = String.format( "Main thread (id %d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
             System.out.println( msg );
         }
 

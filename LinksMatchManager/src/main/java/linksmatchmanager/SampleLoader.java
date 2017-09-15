@@ -13,15 +13,11 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
- * FL-13-Sep-2017 Latest change
- *
- * NOT FINISHED
+ * FL-15-Sep-2017 Latest change
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. Here in SampleLoader we prefer to keep them separate,
  * because in general they need not be filled together all the time.
- *
- * TODO untested <<<
  */
 public class SampleLoader
 {
@@ -38,10 +34,13 @@ public class SampleLoader
 
     private ResultSet rs;
 
-    public int set_no;
-    public String query;
+    public int sample_no = 0;
+    public String query = "";
+    public int record_count = 0;
 
     // Create Vectors for the links_base columns
+    private boolean have_vectors = true;
+
     public Vector< Integer > id_base              = new Vector< Integer >();
     public Vector< Integer > id_registration      = new Vector< Integer >();
     public Vector< Integer > registration_days    = new Vector< Integer >();
@@ -142,14 +141,16 @@ public class SampleLoader
 
 
     /**
-     * @param threadId
      * @param qs
      * @param dbconPrematch
-     * @param set_no
+     * @param sample_no
+     * @throws Exception
      */
-    public SampleLoader( long threadId, QuerySet qs, Connection dbconPrematch, int set_no )
+    public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
     throws Exception
     {
+        long threadId = Thread.currentThread().getId();
+
         this.use_mother       = qs.use_mother;
         this.use_father       = qs.use_father;
         this.use_partner      = qs.use_partner;
@@ -158,40 +159,34 @@ public class SampleLoader
         this.ignore_minmax    = qs.ignore_minmax;
 
         this.dbconPrematch = dbconPrematch;
+        this.sample_no     = sample_no;
 
-        System.out.println( "SampleLoader()" );
-
-        this.set_no = set_no;
         rs = null;
 
-        if( set_no == 1 )
-        {
-            // get set 1 from links_base
-            query = qs.s1_query;
-            System.out.println( "Thread id " + threadId + "; retrieving set 1 from links_base..." );
-            System.out.println( query );
-            rs = dbconPrematch.createStatement().executeQuery( query );
+        // get sample from links_base
+             if( sample_no == 1 ) { query = qs.s1_query; }
+        else if( sample_no == 2 ) { query = qs.s2_query; }
+        else {
+            System.out.printf( "Thread id %d; SampleLoader() sample_no must be 1 or 2\n", threadId );
+            return;
         }
-        else if( set_no == 2 )
-        {
-            // get set 2 from links_base
-            query = qs.s2_query;
-            System.out.println( "Thread id " + threadId + "; retrieving set 2 from links_base..." );
-            System.out.println( query );
 
-            rs = dbconPrematch.createStatement().executeQuery( query );
-            //set2 = dbconPrematch.createStatement().executeQuery( qs.query1 );     // only for matching TEST !
-        }
+        System.out.printf( "Thread id %02d; SampleLoader() retrieving sample %d...\n", threadId, sample_no );
+        System.out.printf( "Thread id %02d; %s\n", threadId, query );
+        rs = dbconPrematch.createStatement().executeQuery( query );
 
         fillArrays();
-    }
+    } // SampleLoader
 
 
+    /**
+     * @throws Exception
+     */
     private void fillArrays() throws Exception
     {
-        System.out.println( "fillArrays()" );
+        long threadId = Thread.currentThread().getId();
 
-        int record_count = 0;
+        System.out.printf( "Thread id %02d; SampleLoader/fillArrays() sample_no: %s\n", threadId, sample_no );
 
         while( rs.next() )          // fetch records from ResultSet
         {
@@ -522,70 +517,83 @@ public class SampleLoader
         rs.close();
         rs = null;
 
-        System.out.println( String.format( "sample record_count: %d", record_count ) );
-    }
+        System.out.println( String.format( "Thread id %02d; SampleLoader/fillArrays() sample record_count: %d", threadId, record_count ) );
+    } // fillArrays
 
 
+    /**
+     * @throws Exception
+     */
     public void freeVectors() throws Exception
     {
-        id_base              .clear(); id_base              = null;
-        id_registration      .clear(); id_registration      = null;
-        registration_days    .clear(); registration_days    = null;
+        long threadId = Thread.currentThread().getId();
 
-        ego_familyname_str   .clear(); ego_familyname_str   = null;
-        ego_firstname1_str   .clear(); ego_firstname1_str   = null;
+        if( ! have_vectors ) { System.out.printf( "Thread id %02d; SampleLoader/freeVectors(): sample_no %d already freed?\n", threadId, sample_no ); }
+        else
+        {
+            System.out.printf( "Thread id %02d; SampleLoader/freeVectors() sample_no: %s\n", threadId, sample_no );
 
-        ego_familyname       .clear(); ego_familyname       = null;
-        ego_firstname1       .clear(); ego_firstname1       = null;
-        ego_firstname2       .clear(); ego_firstname2       = null;
-        ego_firstname3       .clear(); ego_firstname3       = null;
-        ego_firstname4       .clear(); ego_firstname4       = null;
-        ego_birth_min        .clear(); ego_birth_min        = null;
-        ego_birth_max        .clear(); ego_birth_max        = null;
-        ego_marriage_min     .clear(); ego_marriage_min     = null;
-        ego_marriage_max     .clear(); ego_marriage_max     = null;
-        ego_death_min        .clear(); ego_death_min        = null;
-        ego_death_max        .clear(); ego_death_max        = null;
+            id_base              .clear(); id_base              = null;
+            id_registration      .clear(); id_registration      = null;
+            registration_days    .clear(); registration_days    = null;
 
-        sex                  .clear(); sex                  = null;
+            ego_familyname_str   .clear(); ego_familyname_str   = null;
+            ego_firstname1_str   .clear(); ego_firstname1_str   = null;
 
-        mother_familyname_str.clear(); mother_familyname_str= null;
-        mother_firstname1_str.clear(); mother_firstname1_str= null;
+            ego_familyname       .clear(); ego_familyname       = null;
+            ego_firstname1       .clear(); ego_firstname1       = null;
+            ego_firstname2       .clear(); ego_firstname2       = null;
+            ego_firstname3       .clear(); ego_firstname3       = null;
+            ego_firstname4       .clear(); ego_firstname4       = null;
+            ego_birth_min        .clear(); ego_birth_min        = null;
+            ego_birth_max        .clear(); ego_birth_max        = null;
+            ego_marriage_min     .clear(); ego_marriage_min     = null;
+            ego_marriage_max     .clear(); ego_marriage_max     = null;
+            ego_death_min        .clear(); ego_death_min        = null;
+            ego_death_max        .clear(); ego_death_max        = null;
 
-        mother_familyname    .clear(); mother_familyname    = null;
-        mother_firstname1    .clear(); mother_firstname1    = null;
-        mother_firstname2    .clear(); mother_firstname2    = null;
-        mother_firstname3    .clear(); mother_firstname3    = null;
-        mother_firstname4    .clear(); mother_firstname4    = null;
-        mother_birth_min     .clear(); mother_birth_min     = null;
-        mother_birth_max     .clear(); mother_birth_max     = null;
-        mother_marriage_min  .clear(); mother_marriage_min  = null;
-        mother_marriage_max  .clear(); mother_marriage_max  = null;
-        mother_death_min     .clear(); mother_death_min     = null;
-        mother_death_max     .clear(); mother_death_max     = null;
+            sex                  .clear(); sex                  = null;
 
-        father_familyname    .clear(); father_familyname    = null;
-        father_firstname1    .clear(); father_firstname1    = null;
-        father_firstname2    .clear(); father_firstname2    = null;
-        father_firstname3    .clear(); father_firstname3    = null;
-        father_firstname4    .clear(); father_firstname4    = null;
-        father_birth_min     .clear(); father_birth_min     = null;
-        father_birth_max     .clear(); father_birth_max     = null;
-        father_marriage_min  .clear(); father_marriage_min  = null;
-        father_marriage_max  .clear(); father_marriage_max  = null;
-        father_death_min     .clear(); father_death_min     = null;
-        father_death_max     .clear(); father_death_max     = null;
+            mother_familyname_str.clear(); mother_familyname_str= null;
+            mother_firstname1_str.clear(); mother_firstname1_str= null;
 
-        partner_familyname   .clear(); partner_familyname   = null;
-        partner_firstname1   .clear(); partner_firstname1   = null;
-        partner_firstname2   .clear(); partner_firstname2   = null;
-        partner_firstname3   .clear(); partner_firstname3   = null;
-        partner_firstname4   .clear(); partner_firstname4   = null;
-        partner_birth_min    .clear(); partner_birth_min    = null;
-        partner_birth_max    .clear(); partner_birth_max    = null;
-        partner_marriage_min .clear(); partner_marriage_min = null;
-        partner_marriage_max .clear(); partner_marriage_max = null;
-        partner_death_min    .clear(); partner_death_min    = null;
-        partner_death_max    .clear(); partner_death_max    = null;
-    }
+            mother_familyname    .clear(); mother_familyname    = null;
+            mother_firstname1    .clear(); mother_firstname1    = null;
+            mother_firstname2    .clear(); mother_firstname2    = null;
+            mother_firstname3    .clear(); mother_firstname3    = null;
+            mother_firstname4    .clear(); mother_firstname4    = null;
+            mother_birth_min     .clear(); mother_birth_min     = null;
+            mother_birth_max     .clear(); mother_birth_max     = null;
+            mother_marriage_min  .clear(); mother_marriage_min  = null;
+            mother_marriage_max  .clear(); mother_marriage_max  = null;
+            mother_death_min     .clear(); mother_death_min     = null;
+            mother_death_max     .clear(); mother_death_max     = null;
+
+            father_familyname    .clear(); father_familyname    = null;
+            father_firstname1    .clear(); father_firstname1    = null;
+            father_firstname2    .clear(); father_firstname2    = null;
+            father_firstname3    .clear(); father_firstname3    = null;
+            father_firstname4    .clear(); father_firstname4    = null;
+            father_birth_min     .clear(); father_birth_min     = null;
+            father_birth_max     .clear(); father_birth_max     = null;
+            father_marriage_min  .clear(); father_marriage_min  = null;
+            father_marriage_max  .clear(); father_marriage_max  = null;
+            father_death_min     .clear(); father_death_min     = null;
+            father_death_max     .clear(); father_death_max     = null;
+
+            partner_familyname   .clear(); partner_familyname   = null;
+            partner_firstname1   .clear(); partner_firstname1   = null;
+            partner_firstname2   .clear(); partner_firstname2   = null;
+            partner_firstname3   .clear(); partner_firstname3   = null;
+            partner_firstname4   .clear(); partner_firstname4   = null;
+            partner_birth_min    .clear(); partner_birth_min    = null;
+            partner_birth_max    .clear(); partner_birth_max    = null;
+            partner_marriage_min .clear(); partner_marriage_min = null;
+            partner_marriage_max .clear(); partner_marriage_max = null;
+            partner_death_min    .clear(); partner_death_min    = null;
+            partner_death_max    .clear(); partner_death_max    = null;
+
+            have_vectors = false;
+        }
+    } // freeVectors
 }

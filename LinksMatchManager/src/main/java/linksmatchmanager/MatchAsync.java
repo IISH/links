@@ -39,7 +39,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-25-Jul-2017 Debug run
  * FL-23-Aug-2017 chk_* flags from qs object
- * FL-29-Aug-2017 dbconMatchLocal
+ * FL-15-Sep-2017 dbconMatchLocal
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -66,6 +66,9 @@ public class MatchAsync extends Thread
     int n_qs;           // query sets: 0...
 
     QueryLoader ql;     // contains s1 & s2 samples from links_base
+    SampleLoader s1;    // sample 1
+    SampleLoader s2;    // sample 2
+
     PrintLogger plog;
 
     QueryGroupSet qgs;
@@ -91,9 +94,9 @@ public class MatchAsync extends Thread
 
     NameLvsVariants nameLvsVariants;
 
-    Connection dbconPrematch;
-    Connection dbconMatch;
-    Connection dbconTemp;
+    Connection dbconPrematch = null;
+    Connection dbconMatch = null;
+    Connection dbconTemp = null;
 
 
     public MatchAsync       // for variant names
@@ -101,13 +104,15 @@ public class MatchAsync extends Thread
         boolean debug,
         boolean dry_run,
 
+        PrintLogger plog,
         Semaphore sem,
 
         int n_mp,
         int n_qs,
 
         QueryLoader ql,
-        PrintLogger plog,
+        SampleLoader s1,    // sample 1
+        SampleLoader s2,    // sample 2
 
         QueryGroupSet qgs,
         InputSet inputSet,
@@ -131,13 +136,15 @@ public class MatchAsync extends Thread
         this.debug = debug;
         this.dry_run = dry_run;
 
+        this.plog = plog;
         this.sem = sem;
 
         this.n_mp = n_mp;
         this.n_qs = n_qs;
 
         this.ql = ql;
-        this.plog = plog;
+        this.s1 = s1;    // sample 1
+        this.s2 = s2;    // sample 2
 
         this.qgs = qgs;
         this.inputSet = inputSet;
@@ -157,7 +164,8 @@ public class MatchAsync extends Thread
 
         this.nameLvsVariants = nameLvsVariants;
 
-        System.out.println( "\nMatchAsync: using variant names (instead of root names)" );
+        long threadId = Thread.currentThread().getId();
+        System.out.printf( "Thread id %02d; MatchAsync: using variant names (instead of root names)\n", threadId );
     }
 
 
@@ -166,13 +174,15 @@ public class MatchAsync extends Thread
         boolean debug,
         boolean dry_run,
 
+        PrintLogger plog,
         Semaphore sem,
 
         int n_mp,
         int n_qs,
 
         QueryLoader ql,
-        PrintLogger plog,
+        SampleLoader s1,    // sample 1
+        SampleLoader s2,    // sample 2
 
         QueryGroupSet qgs,
         InputSet inputSet,
@@ -198,13 +208,15 @@ public class MatchAsync extends Thread
         this.debug = debug;
         this.dry_run = dry_run;
 
+        this.plog = plog;
         this.sem = sem;
 
         this.n_mp = n_mp;
         this.n_qs = n_qs;
 
         this.ql = ql;
-        this.plog = plog;
+        this.s1 = s1;    // sample 1
+        this.s2 = s2;    // sample 2
 
         this.qgs = qgs;
         this.inputSet = inputSet;
@@ -226,7 +238,8 @@ public class MatchAsync extends Thread
 
         this.isUseRoot = true;      // true for root
 
-        System.out.println( "\nMatchAsync: using root names (instead of variant names)" );
+        long threadId = Thread.currentThread().getId();
+        System.out.printf( "Thread id %02d; MatchAsync: using root names (instead of variant names)\n", threadId );
     }
 
     @Override
@@ -258,6 +271,7 @@ public class MatchAsync extends Thread
         long n_minmax = 0;
         long n_sex    = 0;
 
+        long threadId = Thread.currentThread().getId();
 
         try
         {
@@ -266,14 +280,13 @@ public class MatchAsync extends Thread
             long nanoseconds_begin  = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
             long milliseconds_begin = TimeUnit.SECONDS.convert( nanoseconds_begin, TimeUnit.MILLISECONDS );
 
-            long threadId = Thread.currentThread().getId();
-            String msg = String.format( "\nMatchAsync/run(): thread id %2d running", threadId );
+            String msg = String.format( "\nThread id %02d; MatchAsync/run(): thread started running", threadId );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d; process id: %d", threadId, qgs.get( 0 ).id );
+            msg = String.format( "Thread id %02d; process id: %d", threadId, qgs.get( 0 ).id );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d; Range %d of %d", threadId, (n_qs + 1), qgs.getSize() );
+            msg = String.format( "Thread id %02d; Range %d of %d", threadId, (n_qs + 1), qgs.getSize() );
             System.out.println( msg ); plog.show( msg );
 
             /*
@@ -287,11 +300,11 @@ public class MatchAsync extends Thread
                 int s1_id_registration_idx = ql.s1_id_registration.indexOf( s1_id_registration_chk );
                 int s2_id_registration_idx = ql.s2_id_registration.indexOf( s2_id_registration_chk );
 
-                msg = String.format( "Thread id %2d; s1_id_registration_chk: %d, s1_id_registration_idx: %d",
+                msg = String.format( "Thread id %02d; s1_id_registration_chk: %d, s1_id_registration_idx: %d",
                     threadId, s1_id_registration_chk, s1_id_registration_idx );
                 System.out.println( msg );
 
-                msg = String.format( "Thread id %2d; s2_id_registration_chk: %d, s2_id_registration_idx: %d",
+                msg = String.format( "Thread id %02d; s2_id_registration_chk: %d, s2_id_registration_idx: %d",
                     threadId, s2_id_registration_chk, s2_id_registration_idx );
                 System.out.println( msg );
 
@@ -304,8 +317,6 @@ public class MatchAsync extends Thread
 
             // database connections
             dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
-            dbconMatch    = null;       // write matches immediately
-            dbconTemp     = null;       // only in debug mode
 
             String csvFilename = "";
             FileWriter writerMatches = null;
@@ -313,7 +324,7 @@ public class MatchAsync extends Thread
             {
                 csvFilename = "matches_threadId_" + threadId + ".csv";      // Create csv file to collect the matches
                 writerMatches = createCsvFileMatches( threadId, csvFilename );
-                msg = String.format( "Collecting thread matches in CSV file: %s", csvFilename );
+                msg = String.format( "Thread id %02d; Collecting thread matches in CSV file: %s", threadId, csvFilename );
                 System.out.println( msg ); plog.show( msg );
 
                 if( debug ) {   // use temp table to collect the matches
@@ -335,20 +346,20 @@ public class MatchAsync extends Thread
             int lvs_dist_firstname  = qs.lvs_dist_max_firstname;
             int lvs_dist_familyname = qs.lvs_dist_max_familyname;
 
-            msg = String.format( "Thread id %2d; use firstname  levenshtein distance for variants: %d", threadId, lvs_dist_firstname );
+            msg = String.format( "Thread id %02d; use firstname  levenshtein distance for variants: %d", threadId, lvs_dist_firstname );
             System.out.println( msg ); plog.show( msg );
-            msg = String.format( "Thread id %2d; use familyname levenshtein distance for variants: %d", threadId, lvs_dist_familyname );
-            System.out.println( msg ); plog.show( msg );
-
-
-            long threadId_current = Thread.currentThread().getId();
-
-            msg = String.format( "Thread id %2d, based on s1 query:\n%s", threadId_current, qs.s1_query );
+            msg = String.format( "Thread id %02d; use familyname levenshtein distance for variants: %d", threadId, lvs_dist_familyname );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d, based on s2 query:\n%s", threadId_current, qs.s2_query );
+            msg = String.format( "Thread id %02d; based on s1 query:", threadId );
+            System.out.println( msg ); plog.show( msg );
+            msg = String.format( "Thread id %02d; %s", threadId, qs.s1_query );
             System.out.println( msg ); plog.show( msg );
 
+            msg = String.format( "Thread id %02d, based on s2 query:", threadId );
+            System.out.println( msg ); plog.show( msg );
+            msg = String.format( "Thread id %02d; %s", threadId, qs.s2_query );
+            System.out.println( msg ); plog.show( msg );
 
             // variant names for s1 name from ls_ table, plus lvs distance
             Vector< Integer > s2_idx_matches   = new Vector< Integer >();   // matches for current s1_idx
@@ -358,8 +369,8 @@ public class MatchAsync extends Thread
             int name_previous = -1;
 
             // Loop through set 1
-            //msg = String.format( "Thread id %2d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
-            msg = String.format( "Thread id %2d", threadId );
+            //msg = String.format( "Thread id %02d; Set 1 size: %d from links_base", threadId, ql.s1_id_base.size() );
+            msg = String.format( "Thread id %02d", threadId );
             System.out.println( msg ); plog.show( msg );
 
             long n_recs   = 0;
@@ -396,7 +407,7 @@ public class MatchAsync extends Thread
                 s1_idx_cpy = s1_idx;   // copy value to display if exception occurs
 
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
-                { System.out.println( String.format( "Thread id %2d; records processed: %d-of-%d, total # of matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
+                { System.out.println( String.format( "Thread id %02d; records processed: %d-of-%d, total # of matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
 
                 /*
                 if( n_match > 100 ) {
@@ -752,6 +763,7 @@ public class MatchAsync extends Thread
                                         if( ! dry_run ) {
                                             dbconMatch.createStatement().execute( query );
                                             dbconMatch.createStatement().close();
+                                            dbconMatch = null;
                                         }
                                     }
                                 } // insert
@@ -790,115 +802,115 @@ public class MatchAsync extends Thread
             int npermits = sem.availablePermits();
             plog.show( "Semaphore: # of permits: " + npermits );
 
-            msg = String.format( "Thread id %2d; s1 records processed:         %10d", threadId, n_recs );
+            msg = String.format( "Thread id %02d; s1 records processed:         %10d", threadId, n_recs );
             System.out.println( msg ); plog.show( msg );
 
-            msg = String.format( "Thread id %2d; Number of matches:            %10d", threadId, n_match );
+            msg = String.format( "Thread id %02d; Number of matches:            %10d", threadId, n_match );
             System.out.println( msg ); plog.show( msg );
 
             long n_fail = 0;
 
             if( n_int_name != 0 ) {
                 n_fail += n_int_name;
-                msg = String.format( "Thread id %2d; failures n_int_name:          %10d", threadId, n_int_name );
+                msg = String.format( "Thread id %02d; failures n_int_name:          %10d", threadId, n_int_name );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_e != 0 ) {
                 n_fail += n_int_familyname_e;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_e:  %10d", threadId, n_int_familyname_e );
+                msg = String.format( "Thread id %02d; failures n_int_familyname_e:  %10d", threadId, n_int_familyname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_m != 0 ) {
                 n_fail += n_int_familyname_m;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_m:  %10d", threadId, n_int_familyname_m );
+                msg = String.format( "Thread id %02d; failures n_int_familyname_m:  %10d", threadId, n_int_familyname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_f != 0 ) {
                 n_fail += n_int_familyname_f;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_f:  %10d", threadId, n_int_familyname_f );
+                msg = String.format( "Thread id %02d; failures n_int_familyname_f:  %10d", threadId, n_int_familyname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_familyname_p != 0 ) {
                 n_fail += n_int_familyname_p;
-                msg = String.format( "Thread id %2d; failures n_int_familyname_p:  %10d", threadId, n_int_familyname_p );
+                msg = String.format( "Thread id %02d; failures n_int_familyname_p:  %10d", threadId, n_int_familyname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_e != 0 ) {
                 n_fail += n_int_firstname_e;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_e:   %10d", threadId, n_int_firstname_e );
+                msg = String.format( "Thread id %02d; failures n_int_firstname_e:   %10d", threadId, n_int_firstname_e );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_m != 0 ) {
                 n_fail += n_int_firstname_m;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_m:   %10d", threadId, n_int_firstname_m );
+                msg = String.format( "Thread id %02d; failures n_int_firstname_m:   %10d", threadId, n_int_firstname_m );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_f != 0 ) {
                 n_fail += n_int_firstname_f;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_f:   %10d", threadId, n_int_firstname_f );
+                msg = String.format( "Thread id %02d; failures n_int_firstname_f:   %10d", threadId, n_int_firstname_f );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_int_firstname_p != 0 ) {
                 n_fail += n_int_firstname_p;
-                msg = String.format( "Thread id %2d; failures n_int_firstname_p:   %10d", threadId, n_int_firstname_p );
+                msg = String.format( "Thread id %02d; failures n_int_firstname_p:   %10d", threadId, n_int_firstname_p );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_minmax != 0 ) {
                 n_fail += n_minmax;
-                msg = String.format( "Thread id %2d; failures n_minmax:            %10d", threadId, n_minmax );
+                msg = String.format( "Thread id %02d; failures n_minmax:            %10d", threadId, n_minmax );
                 System.out.println( msg ); plog.show( msg );
             }
 
             if( n_sex != 0 ) {
                 n_fail += n_sex;
-                msg = String.format( "Thread id %2d; failures n_sex:               %10d", threadId, n_sex );
+                msg = String.format( "Thread id %02d; failures n_sex:               %10d", threadId, n_sex );
                 System.out.println( msg ); plog.show( msg );
             }
 
-            msg = String.format( "Thread id %2d; total match attempt failures: %10d", threadId, n_fail );
+            msg = String.format( "Thread id %02d; total match attempt failures: %10d", threadId, n_fail );
             System.out.println( msg ); plog.show( msg );
 
             long n_mismatch = n_recs - ( n_fail + n_match );
             if( n_mismatch > 0 ) {
-                msg = String.format( "Thread id %2d; missing records: %d ??", threadId, n_mismatch );
+                msg = String.format( "Thread id %02d; missing records: %d ??", threadId, n_mismatch );
                 System.out.println( msg ); plog.show( msg );
             }
 
 
-            msg = String.format( "Thread id %2d; Done: Range %d-of-%d", threadId, (n_qs + 1), qgs.getSize() );
+            msg = String.format( "Thread id %02d; Done: Range %d-of-%d", threadId, (n_qs + 1), qgs.getSize() );
             System.out.println( msg );
             plog.show( msg );
 
             int nthreads_active = java.lang.Thread.activeCount();
-            msg = String.format( "MatchAsync/run(): thread id %2d is done (%d active threads remaining)", threadId, nthreads_active );
+            msg = String.format( "Thread id %02d; MatchAsync/run(): Thread is done (%d active threads remaining)", threadId, nthreads_active );
             System.out.println( msg );
             plog.show( msg );
 
-            msg = String.format( "Thread id %2d; freeing s1 and s2 vectors", threadId );
+            msg = String.format( "Thread id %02d; freeing s1 and s2 vectors", threadId );
             System.out.println( msg ); plog.show( msg );
             ql.freeVectors();
             ql = null;
             qs = null;
 
-            dbconPrematch.close();
-            dbconMatch.close();
-            dbconTemp.close();
+            if( dbconPrematch != null ) { dbconPrematch.close(); }
+            if( dbconMatch    != null ) { dbconMatch.close(); }
+            if( dbconTemp     != null ) { dbconTemp.close(); }
 
-            msg = String.format( "Thread id %2d; clock time", threadId );
+            msg = String.format( "Thread id %02d; clock time", threadId );
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
 
             long cpuTimeNsec  = threadMXB.getCurrentThreadCpuTime();   // elapsed CPU time for current thread in nanoseconds
             long cpuTimeMsec  = TimeUnit.NANOSECONDS.toMillis( cpuTimeNsec );
-            msg = String.format( "Thread id %2d; thread time", threadId );
+            msg = String.format( "Thread id %02d; thread time", threadId );
             elapsedShowMessage( msg, 0, cpuTimeMsec );
 
             //long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
@@ -908,9 +920,8 @@ public class MatchAsync extends Thread
         catch( Exception ex1 )
         {
             sem.release();
-
-            String err = String.format( "MatchAsync/run(): thread exception: s1_idx_cpy = %d, lvs_idx_cpy = %d, s2_hit_cpy: %d, error = %s",
-                s1_idx_cpy, lvs_idx_cpy, s2_hit_cpy, ex1.getMessage() );
+            String err = String.format( "Thread id %02d; MatchAsync/run(): thread exception: s1_idx_cpy = %d, lvs_idx_cpy = %d, s2_hit_cpy: %d, error = %s",
+                threadId, s1_idx_cpy, lvs_idx_cpy, s2_hit_cpy, ex1.getMessage() );
             System.out.println( err );
             ex1.printStackTrace();
             try { plog.show( err ); }
@@ -1039,7 +1050,8 @@ public class MatchAsync extends Thread
             + " value_firstname_fa , value_familyname_fa ,"
             + " value_firstname_pa , value_familyname_pa );";
 
-        System.out.println( query ); plog.show( msg );
+        msg = String.format( "Thread id %02d; %s", threadId, query );
+        System.out.println( msg ); plog.show( msg );
 
         dbconTemp.createStatement().execute( query );
         dbconTemp.createStatement().close();
@@ -1080,7 +1092,7 @@ public class MatchAsync extends Thread
 
         if( removeCsv ) {
             msg = String.format( "Thread id %02d; Deleting file %s", threadId, filenameCsv );
-            System.out.println( query ); plog.show( msg );
+            System.out.println( msg ); plog.show( msg );
             java.io.File file = new java.io.File( filenameCsv );
             file.delete();
         }
