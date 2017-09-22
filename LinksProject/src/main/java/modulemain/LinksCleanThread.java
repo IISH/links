@@ -81,7 +81,7 @@ import linksmanager.ManagerGui;
  * FL-05-Jul-2017 almmRegistration use
  * FL-11-Jul-2017 more not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
- * FL-04-Sep-2017
+ * FL-22-Sep-2017
  *
  * TODO:
  * - check all occurrences of TODO
@@ -1126,13 +1126,13 @@ public class LinksCleanThread extends Thread
 
         int numrows = almmPrepiece.numrows();
         int numkeys = almmPrepiece.numkeys();
-        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_firstname: %d", threadId, numrows ), false, true );
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_prepiece: %d", threadId, numrows ), false, true );
         if( numrows != numkeys )
         { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
         numrows = almmSuffix.numrows();
         numkeys = almmSuffix.numkeys();
-        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_firstname: %d", threadId, numrows ), false, true );
+        showMessage( String.format( "Thread id %02d; Number of rows in reference table ref_suffix: %d", threadId, numrows ), false, true );
         if( numrows != numkeys )
         { showMessage( String.format( "Thread id %02d; Number of keys in arraylist multimap: %d", threadId, numkeys ), false, true ); }
 
@@ -1150,7 +1150,7 @@ public class LinksCleanThread extends Thread
             Thread.sleep( 60000 );
         }
         int newcount = almmPrepiece.newcount();
-        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
+        showMessage( String.format( "Thread id %02d; New entries for ref table prepiece: %d", threadId, newcount ), false, true );
         almmPrepiece.updateTable( dbconnRefW );
 
         while( almmSuffix.isBusy().get() ) {
@@ -1158,7 +1158,7 @@ public class LinksCleanThread extends Thread
             Thread.sleep( 60000 );
         }
         newcount = almmSuffix.newcount();
-        showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
+        showMessage( String.format( "Thread id %02d; New entries for ref table suffix: %d", threadId, newcount ), false, true );
         almmSuffix.updateTable( dbconnRefW );
 
         // almmAlias.updateTable( dbconnRefW );         // almmAlias.add() never called; nothing added to almmAlias
