@@ -81,7 +81,7 @@ import linksmanager.ManagerGui;
  * FL-05-Jul-2017 almmRegistration use
  * FL-11-Jul-2017 more not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
- * FL-22-Sep-2017
+ * FL-25-Sep-2017
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3777,7 +3777,8 @@ public class LinksCleanThread extends Thread
                 String age_month_str = rs.getString( "age_month" );
                 String age_year_str  = rs.getString( "age_year" );
 
-                if( age_literal == null ) { age_literal = ""; }
+                if( age_literal == null || age_literal.isEmpty() ) { continue; }    // nothing to do
+
                 if( role == null ) { role = ""; }
 
                 //if(  id_person == 3258692 ) { debug = true; }
