@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 07-Sep-2016 Created
-15-Sep-2016 Changed
+17-Oct-2017 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -26,17 +26,15 @@ import datetime
 from time import time
 import csv
 import MySQLdb
+import yaml
 
 debug = False
 
-# db
-HOST   = "localhost"
-#HOST   = "10.24.64.154"
-#HOST   = "10.24.64.158"
-
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""				# be explicit in all queries
+# db settings, read values from config file
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
 
 long_archive_names = { 
@@ -311,7 +309,15 @@ def export( debug, db ):
 if __name__ == "__main__":
 	print( "export_reports.py" )
 	
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	config_path = os.path.join( os.getcwd(), "export_reports.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
+	
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	db = Database( host = HOST_LINKS , user = USER_LINKS , passwd = PASSWD_LINKS , dbname = DBNAME_LINKS )
 	
 	export( debug, db )
 	

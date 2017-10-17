@@ -9,7 +9,7 @@ Version:	0.1
 Goal:		Count and compare links original & cleaned record counts
 
 29-Mar-2016 Created
-15-Sep-2016 Changed
+17-Oct-2017 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -22,17 +22,16 @@ import sys
 import datetime
 from time import time
 import MySQLdb
+import yaml
 
 debug = True
 
-# db
-HOST   = "localhost"
-#HOST   = "10.24.64.154"
-#HOST   = "10.24.64.158"
+# db settings, read values from config file
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""				# be explicit in all queries
 
 """
 # incomplete
@@ -671,8 +670,15 @@ def base_counts( debug, db, sources_person ):
 
 
 if __name__ == "__main__":
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
-
+	config_path = os.path.join( os.getcwd(), "links_counts.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
+	
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 #	db_check( db )
 
 	print( "host:", HOST )
