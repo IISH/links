@@ -9,7 +9,7 @@ Version:	0.1
 Goal:		export matches for CBG
 
 14-Sep-2016 Created
-16-Sep-2016 Changed
+17-Oct-2017 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -23,18 +23,16 @@ import datetime
 from time import time
 import csv
 import MySQLdb
+import yaml
 
 debug = False
 chunk = 10000		# show progress in processing records
 
-# db
-HOST   = "localhost"
-#HOST   = "10.24.64.154"
-#HOST   = "10.24.64.158"
-
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""				# be explicit in all queries
+# db settings, read values from config file
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
 
 class Database:
@@ -55,15 +53,20 @@ class Database:
 		self.cursor = self.connection.cursor()
 
 	def insert( self, query ):
+		affected_count = None
 		try:
-			resp = self.cursor.execute( query )
+			affected_count = self.cursor.execute( query )
 			self.connection.commit()
 		except:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
 			print( "%s, %s\n" % ( etype, value ) )
+		return affected_count
 
+	def update( self, query ):
+		return self.insert( query )
+	
 	def query( self, query ):
 	#	print( "\n%s" % query )
 		cursor = self.connection.cursor( MySQLdb.cursors.DictCursor )
@@ -256,9 +259,9 @@ def update_cbg( db, id_match_process ):
 
 	query = "UPDATE links_match.MATCHES_CBG_WWW SET Delivering = 'a', Date = '%s' WHERE Delivering = 'y';" % Date
 	if debug: print ( query )
-	resp = db.insert( query )
-	if resp is not None and len( resp ) != 0:
-		print( "resp:", resp )
+	resp = db.update( query )
+	if resp is not None:
+		print( "%d records updated", resp )
 
 
 
@@ -315,7 +318,15 @@ if __name__ == "__main__":
 	
 	time0 = time()		# seconds since the epoch
 	
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	config_path = os.path.join( os.getcwd(), "export_matches.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
+	
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	db = Database( host = HOST_LINKS , user = USER_LINKS , passwd = PASSWD_LINKS , dbname = DBNAME_LINKS )
 	
 	id_match_process = get_id_match_process( db )
 	if id_match_process is None:
