@@ -91,19 +91,22 @@ class Database:
 def create_table( db, mpids, check ):
 	# get info for these ids
 	use_query = "USE links_match;"
-	if debug: print( use_query )
+	if debug: 
+		print( "\n%s" % use_query )
+	
 	use_resp = db.query( use_query )
 	if use_resp is not None and len( use_resp ) != 0:
 		print( use_resp )
 
 	select_query = "SELECT * FROM match_process"
 	for i, mpid in enumerate( mpids ):
-		print( "%d: %s" % ( i, mpid ) )
+		#print( "%d: %s" % ( i, mpid ) )
 		if i == 0:
 			select_query += " WHERE id = %s" % mpid
 		else:
 			select_query += " OR id = %s" % mpid
 	select_query += ";"
+	print( "\n%s" % select_query )
 	
 	s1_source = None
 	s2_source = None
@@ -111,7 +114,6 @@ def create_table( db, mpids, check ):
 	s1_maintype  = None
 	s2_maintype  = None
 	
-	print( select_query )
 	select_resp = db.query( select_query )
 	if select_resp is not None:
 		nrecs = len( select_resp )
@@ -168,7 +170,7 @@ def create_table( db, mpids, check ):
 	
 	create_query += "PRIMARY KEY (id)\n"
 	create_query += ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
-	print( create_query  )
+	print( "\n%s" % create_query  )
 	
 	create_resp = db.query( create_query )
 	if use_resp is not None and len( use_resp ) != 0:
@@ -185,7 +187,7 @@ def fill_table( db, mpids, table_name ):
 	insert_query += "SELECT id_linksbase_1, id_linksbase_2 FROM links_match.matches \n"
 	
 	for i, mpid in enumerate( mpids ):
-		print( "%d: %s" % ( i, mpid ) )
+		#print( "%d: %s" % ( i, mpid ) )
 		if i == 0:
 			insert_query += "WHERE"
 		else:
@@ -193,10 +195,10 @@ def fill_table( db, mpids, table_name ):
 		insert_query += " id_match_process = %s" % mpid
 	insert_query += ";"
 	
-	print( insert_query  )
+	print( "\n%s" % insert_query  )
 	insert_resp = db.insert( insert_query )
 	if insert_resp is not None:
-		print( "%d records inserted" % insert_resp )
+		print( "%d records inserted in table %s" % ( insert_resp, table_name ) )
 
 	# update the mpid columns
 	for i, mpid in enumerate( mpids ):
@@ -207,10 +209,10 @@ def fill_table( db, mpids, table_name ):
 		update_query += "  AND `%s`.id_linksbase_2 = matches.id_linksbase_2 \n" % table_name
 		update_query += "AND matches.id_match_process = %s;" % mpid
 		
-		print( update_query  )
+		print( "\n%s" % update_query  )
 		update_resp = db.update( update_query )
 		if update_resp is not None:
-			print( "%d records updated" % update_resp )
+			print( "%d records updated in table %s" % ( update_resp, table_name ) )
 
 
 
@@ -234,14 +236,6 @@ def format_secs( seconds ):
 if __name__ == "__main__":
 	print( "compare_matches.py" )
 	
-	"""
-	prompt = "id_match_process: "
-	id_match_process = input( "%s" % prompt )
-	if id_match_process is None:
-		print( "EXIT" )
-		sys.exit( 1 )
-	"""
-	
 	time0 = time()		# seconds since the epoch
 	
 	config_path = os.path.join( os.getcwd(), "compare_matches.yaml" )
@@ -254,28 +248,22 @@ if __name__ == "__main__":
 	
 	db = Database( host = HOST_LINKS , user = USER_LINKS , passwd = PASSWD_LINKS , dbname = DBNAME_LINKS )
 	
-	"""
-	id_match_process = get_id_match_process( db )
-	if id_match_process is None:
-		sys.exit( 0 )
-	
-	export( debug, db, id_match_process )
-	"""
-	
-	"""
-	print( "Creating a comparison table for match_process ids." )
-	print( "Please provide a list of match_process ids that you want to compare: " )
-	mpids_str = input( "mpids: " )		# e.g: 322 323, 324
-	mpids = re.split( "[,; ]+", mpids_str )
-	
-	print( "The list is: %s" % mpids )
-	yn = input( "Continue? [n,Y] " )
-	if yn.lower() == 'n':
-		exit( 0 )
-	"""
-	mpids = ['322', '324']				# NB
-	#mpids = ['330', '331']				# NB
-	#mpids = ['5', '6', '7', '8']		# node-154
+	mpids = []
+	prompt = True
+	if prompt:
+		print( "Creating a comparison table for match_process ids." )
+		print( "Please provide a list of match_process ids that you want to compare: " )
+		mpids_str = input( "mpids: " )		# e.g: 322 323, 324
+		mpids = re.split( "[,; ]+", mpids_str )
+		
+		print( "The list is: %s" % mpids )
+		yn = input( "Continue? [n,Y] " )
+		if yn.lower() == 'n':
+			exit( 0 )
+	else:
+		mpids = ['322', '324']				# NB
+		#mpids = ['330', '331']				# NB
+		#mpids = ['5', '6', '7', '8']		# node-154
 	
 	check = False
 #	check = True	# check sources and maintypes: they should not vary
@@ -284,6 +272,6 @@ if __name__ == "__main__":
 	fill_table( db, mpids, table_name )
 	
 	str_elapsed = format_secs( time() - time0 )
-	print( "processing took %s" % str_elapsed )
+	print( "\nprocessing took %s" % str_elapsed )
 		
 # [eof]
