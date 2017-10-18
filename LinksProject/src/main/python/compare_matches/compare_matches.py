@@ -26,7 +26,7 @@ import re
 import yaml
 
 
-debug = True
+debug = False
 
 # db settings, read values from config file
 HOST_LINKS   = ""
@@ -88,7 +88,37 @@ class Database:
 
 
 
-def create_table( db, mpids, check ):
+def get_table_names( db ):
+	if debug: print( "get_table_names()" )
+	
+	query = "USE links_temp;"
+	if debug: 
+		print( "\n%s" % query )
+
+	resp = db.query( query )
+	if resp is not None and len( resp ) != 0:
+		if debug: print( resp )
+
+	query = "SHOW TABLES;"
+	if debug: 
+		print( "\n%s" % query )
+
+	table_names = []
+	resp = db.query( query )
+	if resp is not None and len( resp ) != 0:
+		if debug: print( resp )
+		for entry in resp:
+			table_name = entry[ "Tables_in_links_temp" ]
+			if debug: print( table_name )
+			table_names.append( table_name  )
+
+	return table_names
+
+
+
+def create_table_name( db, mpids, check_mpids ):
+	if debug: print( "create_table_name()" )
+	
 	# get info for these ids
 	use_query = "USE links_match;"
 	if debug: 
@@ -132,7 +162,7 @@ def create_table( db, mpids, check ):
 					s1_maintype  = rec[ "s1_maintype" ]
 					s2_maintype  = rec[ "s2_maintype" ]
 				else:
-					if check:
+					if check_mpids:
 						if s1_source != rec[ "s1_source" ]:
 							print( "s1_source: %s %s" % ( s1_source, rec[ "s1_source" ] ) )
 							print( "varying s1_source not admitted.\nEXIT." )
@@ -160,6 +190,33 @@ def create_table( db, mpids, check ):
 	table_name = "matches_s1_%s_%s_s2_%s_%s" % ( s1_source, s1_maintype, s2_source, s2_maintype )
 	print( "table name: %s" % table_name )
 	
+	return table_name
+
+
+
+def drop_table( table_name ):
+	if debug: print( "drop_table()" )
+	
+	query = "USE links_temp;"
+	if debug: 
+		print( "\n%s" % query )
+
+	resp = db.query( query )
+	if resp is not None and len( resp ) != 0:
+		print( resp )
+
+	query = "DROP TABLE links_temp.`%s`;" % table_name
+	print( "\n%s" % query )
+
+	resp = db.query( query )
+	if resp is not None and len( resp ) != 0:
+		print( resp )
+
+
+
+def create_table( db, mpids, table_name ):
+	if debug: print( "create_table()" )
+	
 	create_query = "CREATE TABLE links_temp.`%s` (\n" % table_name
 	create_query += "id INT UNSIGNED NOT NULL AUTO_INCREMENT, \n"
 	create_query += "id_linksbase_1 INT(10) UNSIGNED DEFAULT NULL, \n"
@@ -168,21 +225,24 @@ def create_table( db, mpids, check ):
 	for mpid in mpids:
 		create_query += "mpid_%s TINYINT UNSIGNED DEFAULT 0, \n" % mpid
 	
-	create_query += "PRIMARY KEY (id)\n"
+	create_query += "PRIMARY KEY (`id`), \n"
+	create_query += "UNIQUE KEY `id_linksbase` (`id_linksbase_1`, `id_linksbase_2`) \n"
+	
 	create_query += ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
 	print( "\n%s" % create_query  )
 	
 	create_resp = db.query( create_query )
-	if use_resp is not None and len( use_resp ) != 0:
+	if create_resp is not None and len( create_resp ) != 0:
 		print( create_resp )
-	
-	return table_name
 
 
 
 def fill_table( db, mpids, table_name ):
+	if debug: print( "fill_table()" )
+	
 	# copy the s1 & s2 links_base ids
-	insert_query  = "INSERT INTO links_temp.`%s`" % table_name
+	# IGNORE to prevent duplicate ( id_linksbase_1, id_linksbase_2 ) combinations
+	insert_query  = "INSERT IGNORE INTO links_temp.`%s`" % table_name
 	insert_query += "( id_linksbase_1, id_linksbase_2 ) \n"
 	insert_query += "SELECT id_linksbase_1, id_linksbase_2 FROM links_match.matches \n"
 	
@@ -234,7 +294,7 @@ def format_secs( seconds ):
 
 
 if __name__ == "__main__":
-	print( "compare_matches.py" )
+	if debug: print( "compare_matches.py" )
 	
 	time0 = time()		# seconds since the epoch
 	
@@ -250,6 +310,7 @@ if __name__ == "__main__":
 	
 	mpids = []
 	prompt = True
+#	prompt = False
 	if prompt:
 		print( "Creating a comparison table for match_process ids." )
 		print( "Please provide a list of match_process ids that you want to compare: " )
@@ -265,10 +326,31 @@ if __name__ == "__main__":
 		#mpids = ['330', '331']				# NB
 		#mpids = ['5', '6', '7', '8']		# node-154
 	
-	check = False
-#	check = True	# check sources and maintypes: they should not vary
-	table_name = create_table( db, mpids, check )
+	check_mpids = False
+#	check_mpids = True	# check sources and maintypes: they should not vary
+	table_name = create_table_name( db, mpids, check_mpids )
 	
+	while True:
+		table_names = get_table_names( db )		# table names in links_temp
+		if table_name in table_names:
+			print( "Table name %s already exists." % table_name )
+			yn = input( "Drop existing table %s ? [N,y] " % table_name )
+			if yn.lower() == 'y':
+				drop_table( table_name )
+			else:
+				table_name = input( "New table name: " )
+				if table_name == '':
+					print( "Invalid table name '%s'.\nEXIT." % table_name )
+					exit( 0 )
+				
+				print( "The new table name is: %s" % table_name )
+				yn = input( "Continue? [n,Y] " )
+				if yn.lower() == 'n':
+					exit( 0 )
+		else:
+			break
+	
+	create_table( db, mpids, table_name)
 	fill_table( db, mpids, table_name )
 	
 	str_elapsed = format_secs( time() - time0 )
