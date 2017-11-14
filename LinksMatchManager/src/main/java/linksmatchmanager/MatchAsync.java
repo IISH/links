@@ -39,7 +39,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-25-Jul-2017 Debug run
  * FL-23-Aug-2017 chk_* flags from qs object
- * FL-15-Sep-2017 dbconMatchLocal
+ * FL-13-Nov-2017 dbconMatchLocal
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -388,23 +388,23 @@ public class MatchAsync extends Thread
             // Outer loop over the records of the s1 query set
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
-                //int s1_id_base = ql.s1_id_base.get( s1_idx );
-                //if( s1_id_base == 57571 || s1_id_base == 64228 || s1_id_base == 356787 || s1_id_base == 649661 || s1_id_base == 1913426 )
-                //{ debug = debugfreq = debugfail = true; }
-                //else { debug = debugfreq = debugfail = false; continue; }
-
-                //int s1_id_registration = ql.s1_id_registration.get( s1_idx );
-                //if( s1_id_registration == 24497594 || s1_id_registration == 32141233 ) { debug = true; debugfreq = true; debugfail = true; }
-                ///else { debugfreq = false; continue; }
+                /*
+                int s1_id_base = ql.s1_id_base.get( s1_idx );
+                if( s1_id_base == 74760790 ) { debug = debugfreq = debugfail = true; }
+                else { debug = debugfreq = debugfail = false; continue; }
+                */
 
                 if( debug || debugfreq) {
                     System.out.println( "***< s1_idx >*******************************************************************" );
-                    System.out.println( String.format( "s1_idx: %d-of-%d", s1_idx, s1_size-1 ) );
+                    int s1_id_base = ql.s1_id_base.get( s1_idx );
+                    int s1_id_registration = ql.s1_id_registration.get( s1_idx );
+                    System.out.println( String.format( "s1_idx: %d-of-%d, s1_id_base: %d, s1_id_registration: %d",
+                        s1_idx, s1_size-1, s1_id_base, s1_id_registration ) );
                 }
 
                 n_recs++;
 
-                s1_idx_cpy = s1_idx;   // copy value to display if exception occurs
+                s1_idx_cpy = s1_idx;   // copy value in order to display if exception occurs
 
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
                 { System.out.println( String.format( "Thread id %02d; records processed: %d-of-%d, total # of matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
@@ -710,6 +710,12 @@ public class MatchAsync extends Thread
                                     // write to match tables
                                     int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
                                     int id_linksbase_2 = ql.s2_id_base.get( s2_idx );
+
+                                    if( debug || debugfreq ) {
+                                        msg = String.format( "MATCH: s1_idx: %d, s2_idx: %d, id_linksbase_1: %d, id_linksbase_2: %d",
+                                            s1_idx, s2_idx, id_linksbase_1, id_linksbase_2 );
+                                            System.out.println( msg ); plog.show( msg );
+                                    }
 
                                     if( match2csv )
                                     {
