@@ -40,6 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-25-Jul-2017 Debug run
  * FL-23-Aug-2017 chk_* flags from qs object
  * FL-13-Nov-2017 dbconMatchLocal
+ * FL-21-Nov-2017 Math.max(lvs1, lvs2)  maximum, not summing
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -415,25 +416,6 @@ public class MatchAsync extends Thread
                     break;
                 }
                 */
-                /*
-                if( s1_idx == 5 ) {
-                    System.out.println( "BREAK" );
-                    break;
-                }
-                */
-                /*
-                int id_registration1 = s1_id_registration_chk;
-                if( id_registration1 == s1_id_registration_chk ) {
-                    System.out.println( "found: id_registration1: " + id_registration1 );
-                    debug = true;
-                }
-                else {
-                    debug = false;
-                    continue;
-                }
-                */
-                //if( ql.s1_id_base.get( s1_idx ) == 21745 ) { debugfreq = true; }
-                //else { debugfreq = false; }
 
                 if( debug || debugfreq ) {
                     System.out.println( String.format( "s1_id_base: %d, s1_id_registration: %d, s1_ego_familyname: %s, s1_ego_firstname1: %s, s1_mother_familyname: %s, s1_mother_firstname1: %s",
@@ -1740,100 +1722,6 @@ public class MatchAsync extends Thread
 
 
     /**
-     * This was the Omar version
-     *
-     * Loop through the whole set of ego familynames to get all ids with names
-     * that are a Levenshtein variant of this name.
-     * Notice: exact matches are also included in this list
-     *
-     * //@param fn                    // an ego familyname from the set s1
-     * //@param potentialMatches      // Levenshtein variants of ego familyname
-     * //param LvPotentialMatches     // Levenshtein distances of potential matches
-     */
-    /*
-    private void variantsToList( int fn, Vector< Integer > potentialMatches, Vector< Integer > LvPotentialMatches )
-    {
-        try
-        {
-            if( debug ) { plog.show( "variantsToList(): ql.s2_ego_familyname.size = " + ql.s2_ego_familyname.size() ); }
-
-            for( int l = 0; l < ql.s2_ego_familyname.size(); l++ )
-            {
-                if( onlyExactMatch ) {
-                    // Use binary search to Check if this name is variant of
-                    if( fn == ql.s2_ego_familyname.get( l ) ) {
-                        potentialMatches.add( l );          // Add ID of name to list
-                        LvPotentialMatches.add( 0 );
-                        continue;                           // exact match, so we are done
-                    }
-                }
-
-                // Do the search in root names or variant names
-                if( isUseRoot )     // root names
-                {
-                    if( fn >= rootFamilyName.length ) { return; }
-
-                    if( ql.s2_ego_familyname.get( l ) >= rootFamilyName.length ) {
-                        continue;
-                    }
-
-                    int[] root1 = rootFamilyName[ fn ];
-                    int[] root2 = rootFamilyName[ ql.s2_ego_familyname.get( l ) ];
-
-                    for( int i = 0; i < root1.length; i++ ) {
-                        for( int j = 0; j < root2.length; j++ ) {
-                            if( root1[ i ] == root2[ j ] ) {
-                                potentialMatches.add( l );
-                                LvPotentialMatches.add( -1 );
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-                else        // variant names
-                {
-                    int large;
-                    int small;
-
-                    if( fn > ql.s2_ego_familyname.get( l ) ) {
-                        large = fn;
-                        small = ql.s2_ego_familyname.get( l );
-                    }
-                    else {
-                        large = ql.s2_ego_familyname.get( l );
-                        small = fn;
-                    }
-
-                    //if( debug ) { plog.show( "small: " + small + ", large: " + fn ); }
-                    //if( debug ) { plog.show( "variantFamilyName.length: " + variantFamilyName.length ); }
-
-                    if( variantFamilyName.length == 0 )
-                    { continue; }
-
-                    if( variantFamilyName.length > small   &&
-                        variantFamilyName[ small ] != null &&
-                        Arrays.binarySearch( variantFamilyName[ small ], large ) > -1
-                    )
-                    {
-                        if( debug ) { plog.show( "add: " + l ); }
-                        potentialMatches.add( l );
-                        LvPotentialMatches.add( -1 );
-                    }
-                }
-            }
-        }
-        catch( Exception ex ) {
-            System.out.println( "Exception in variantsToList: " + ex.getMessage() );
-            System.out.println( "Abort" );
-            System.exit( 1 );
-        }
-
-    } // variantsToList
-    */
-
-
-    /**
      *
      * @param qs
      * @param s1_idx
@@ -2233,7 +2121,6 @@ public class MatchAsync extends Thread
         String lvs_table, int lvs_dist_max
     )
     {
-        //int lvs_dist_name1, lvs_dist_name2, lvs_dist_name3, lvs_dist_name4 = -1;
         int lvs_dist = -1;
 
         if( debug ) {
@@ -2241,22 +2128,6 @@ public class MatchAsync extends Thread
             try { plog.show( "checkFirstName() fn_method = " + fn_method ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
-
-        /*
-        if( fn_method == 1 )
-        {
-            // compare compare firstname1 + firstname2 + firstname3 + firstname4 of s1 & s2
-            int lvs_dist_name1, lvs_dist_name2, lvs_dist_name3, lvs_dist_name4 = -1;
-
-            lvs_dist_name1 = isVariant( s1Name1, s2Name1, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name3 = isVariant( s1Name3, s2Name3, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-            lvs_dist_name4 = isVariant( s1Name4, s2Name4, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
-
-            if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 || lvs_dist_name3 == -1|| lvs_dist_name4 == -1 ) { retval = -1; }  // no match
-            else { retval =  lvs_dist_name1 + lvs_dist_name2 + lvs_dist_name3 + lvs_dist_name4; }
-        }
-        */
 
         if( fn_method == 1 )
         {
@@ -2271,7 +2142,7 @@ public class MatchAsync extends Thread
                 lvs_dist_name2 = isVariant( s1Name2, s2Name2, lvs_table, lvs_dist_max, NameType.FIRSTNAME, method );
 
                 if( lvs_dist_name1 == -1 || lvs_dist_name2 == -1 ) { lvs_dist = -1; }   // no match
-                else { lvs_dist = lvs_dist_name1 + lvs_dist_name2; }
+                else { lvs_dist = Math.max( lvs_dist_name1, lvs_dist_name2 ); }
             }
         }
 

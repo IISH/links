@@ -41,6 +41,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
  * FL-13-Sep-2017 Beginning of SampleLoader use
+ * FL-21-Sep-2017
  */
 
 public class MatchMain
@@ -87,7 +88,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "15-Aug-2017 14:48";
+            String timestamp1 = "21-Nov-2017 11:29";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
