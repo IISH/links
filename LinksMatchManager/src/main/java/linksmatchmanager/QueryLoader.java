@@ -14,13 +14,13 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-30-Jun-2014 Imported from OA backup
  * FL-30-Apr-2015 Free vectors
- * FL-15-Sep-2017 Latest change
+ * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
 public class QueryLoader
 {
-    private Connection dbconPrematch;
+    private Connection db_conn = null;
 
     private boolean use_mother;
     private boolean use_father;
@@ -199,9 +199,13 @@ public class QueryLoader
     /**
      * 
      * @param qs
-     * @param dbconPrematch
+     * @param db_url
+     * @param db_name
+     * @param db_user
+     * @param db_pass
      */
-    public QueryLoader( QuerySet qs, Connection dbconPrematch ) throws Exception
+    public QueryLoader( QuerySet qs, String db_url, String db_name, String db_user, String db_pass )
+    throws Exception
     {
         this.use_mother       = qs.use_mother;
         this.use_father       = qs.use_father;
@@ -214,12 +218,14 @@ public class QueryLoader
 
         System.out.printf( "Thread id %02d; QueryLoader()\n", threadId  );
 
+        db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
+
         // get set 1 from links_base
         long start = System.currentTimeMillis();
         System.out.printf( "Thread id %02d; retrieving set 1 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s1_query );
 
-        set1 = dbconPrematch.createStatement().executeQuery( qs.s1_query );
+        set1 = db_conn.createStatement().executeQuery( qs.s1_query );
         String msg = String.format( "Thread id %02d; retrieving sample 1 from links_base " , threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
@@ -228,7 +234,7 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; retrieving sample 2 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s2_query );
 
-        set2 = dbconPrematch.createStatement().executeQuery( qs.s2_query );
+        set2 = db_conn.createStatement().executeQuery( qs.s2_query );
         //set2 = dbconPrematch.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
         msg = String.format( "Thread id %02d; retrieving sample 2 from links_base " , threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
@@ -236,8 +242,7 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; filling the s1 and s2 vectors...\n", threadId );
         fillArrays();
 
-        this.dbconPrematch = dbconPrematch;
-
+        if( db_conn != null ) { db_conn.close(); }
         System.out.printf( "Thread id %02d; QueryLoader() done\n", threadId );
     }
 

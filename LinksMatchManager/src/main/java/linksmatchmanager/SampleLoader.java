@@ -13,7 +13,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * <p/>
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
- * FL-15-Sep-2017 Latest change
+ * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. Here in SampleLoader we prefer to keep them separate,
@@ -21,7 +21,7 @@ import linksmatchmanager.DataSet.QuerySet;
  */
 public class SampleLoader
 {
-    private Connection dbconPrematch;
+    private Connection db_conn;
 
     private boolean use_mother;
     private boolean use_father;
@@ -142,11 +142,15 @@ public class SampleLoader
 
     /**
      * @param qs
-     * @param dbconPrematch
+     * @param db_url
+     * @param db_name
+     * @param db_user
+     * @param db_pass
      * @param sample_no
      * @throws Exception
      */
-    public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
+    //public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
+    public SampleLoader( QuerySet qs, String db_url, String db_name, String db_user, String db_pass, int sample_no )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -158,7 +162,6 @@ public class SampleLoader
         this.ignore_sex       = qs.ignore_sex;
         this.ignore_minmax    = qs.ignore_minmax;
 
-        this.dbconPrematch = dbconPrematch;
         this.sample_no     = sample_no;
 
         rs = null;
@@ -173,9 +176,13 @@ public class SampleLoader
 
         System.out.printf( "Thread id %02d; SampleLoader() retrieving sample %d...\n", threadId, sample_no );
         System.out.printf( "Thread id %02d; %s\n", threadId, query );
-        rs = dbconPrematch.createStatement().executeQuery( query );
+        db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
+        rs = db_conn.createStatement().executeQuery( query );
 
         fillArrays();
+
+        if( db_conn != null ) { db_conn.close(); }
+        System.out.printf( "Thread id %02d; SampleLoader() done\n", threadId );
     } // SampleLoader
 
 
