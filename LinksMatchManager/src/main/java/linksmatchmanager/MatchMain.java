@@ -92,7 +92,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "03-Jan-2018 11:51";
+            String timestamp1 = "03-Jan-2018 16:28";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -197,6 +197,7 @@ public class MatchMain
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
+                ex.printStackTrace( System.out );
             }
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
@@ -402,7 +403,7 @@ public class MatchMain
                     // Its input is a QuerySet and a database connection object.
                     //ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     //ql = new QueryLoader( qs, dbconPrematch );
-                    ql = new QueryLoader( qs, db_url, dbnamePrematch, db_user, db_pass );
+                    ql = new QueryLoader( plog, qs, db_url, dbnamePrematch, db_user, db_pass );
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 

@@ -20,8 +20,6 @@ import linksmatchmanager.DataSet.QuerySet;
  */
 public class QueryLoader
 {
-    private Connection db_conn = null;
-
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
@@ -34,6 +32,8 @@ public class QueryLoader
 
     private ResultSet set1;
     private ResultSet set2;
+
+    PrintLogger plog;
 
     // Set variables
     public Vector< Integer > s1_id_base              = new Vector< Integer >();
@@ -204,9 +204,11 @@ public class QueryLoader
      * @param db_user
      * @param db_pass
      */
-    public QueryLoader( QuerySet qs, String db_url, String db_name, String db_user, String db_pass )
+    public QueryLoader( PrintLogger plog, QuerySet qs, String db_url, String db_name, String db_user, String db_pass )
     throws Exception
     {
+        this.plog = plog;
+
         this.use_mother       = qs.use_mother;
         this.use_father       = qs.use_father;
         this.use_partner      = qs.use_partner;
@@ -218,12 +220,19 @@ public class QueryLoader
 
         System.out.printf( "Thread id %02d; QueryLoader()\n", threadId  );
 
-        db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
-
         // get set 1 from links_base
         long start = System.currentTimeMillis();
         System.out.printf( "Thread id %02d; retrieving set 1 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s1_query );
+
+        Connection db_conn = null;
+        try { db_conn = General.getConnection( db_url, db_name, db_user, db_pass ); }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
+            System.out.println( msg ); plog.show( msg );
+            ex.printStackTrace( System.out );
+            return;
+        }
 
         set1 = db_conn.createStatement().executeQuery( qs.s1_query );
         String msg = String.format( "Thread id %02d; retrieving sample 1 from links_base " , threadId );
@@ -235,14 +244,14 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s2_query );
 
         set2 = db_conn.createStatement().executeQuery( qs.s2_query );
-        //set2 = dbconPrematch.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
+        //set2 = db_conn.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
         msg = String.format( "Thread id %02d; retrieving sample 2 from links_base " , threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         System.out.printf( "Thread id %02d; filling the s1 and s2 vectors...\n", threadId );
         fillArrays();
 
-        if( db_conn != null ) { db_conn.close(); }
+        db_conn.close();
         System.out.printf( "Thread id %02d; QueryLoader() done\n", threadId );
     }
 
