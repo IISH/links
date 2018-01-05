@@ -92,7 +92,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "05-Jan-2018 09:53";
+            String timestamp1 = "05-Jan-2018 15:37";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
