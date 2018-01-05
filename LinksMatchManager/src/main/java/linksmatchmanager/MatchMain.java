@@ -41,7 +41,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-15-Jan-2015 Each thread its own db connectors
  * FL-07-Jul-2016 Match names from low to high name frequency
  * FL-13-Sep-2017 Beginning of SampleLoader use
- * FL-03-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
+ * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  */
 
 public class MatchMain
@@ -92,7 +92,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "03-Jan-2018 16:28";
+            String timestamp1 = "05-Jan-2018 09:53";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -171,6 +171,7 @@ public class MatchMain
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
+                ex.printStackTrace();
             }
 
             try {
@@ -185,6 +186,7 @@ public class MatchMain
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
+                ex.printStackTrace();
             }
 
             msg = String.format( "Setting MySQL max_heap_table_size to: %s", max_heap_table_size );
@@ -197,7 +199,7 @@ public class MatchMain
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
-                ex.printStackTrace( System.out );
+                ex.printStackTrace();
             }
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
@@ -385,7 +387,11 @@ public class MatchMain
                     msg = String.format( "Thread id %02d; DRY RUN: not deleting, nor writing matches!", mainThreadId );
                     System.out.println( msg ); plog.show( msg );
                 }
-                else { deleteMatches( match_process_id ); }
+                else {
+                    if( dbconMatch != null ) { dbconMatch = General.getConnection( db_url, dbnameMatch, db_user, db_pass ); }
+                    deleteMatches( match_process_id );
+                    dbconMatch.close();
+                }
 
                 // Loop through the subsamples
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
@@ -513,6 +519,7 @@ public class MatchMain
             catch( Exception ex ) {
                 msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
+                ex.printStackTrace();
             }
 
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
@@ -524,6 +531,7 @@ public class MatchMain
         catch( Exception ex ) {
             String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
             System.out.println( msg );
+            ex.printStackTrace();
         }
 
     } // main

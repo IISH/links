@@ -1409,7 +1409,7 @@ public class MatchAsync extends Thread
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
-            ex.printStackTrace( new PrintStream( System.out ) );
+            ex.printStackTrace();
         }
 
         return freq;
@@ -1443,7 +1443,7 @@ public class MatchAsync extends Thread
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequencyStr(): " + ex.getMessage() );
-            ex.printStackTrace( new PrintStream( System.out ) );
+            ex.printStackTrace();
         }
 
         return freq;
