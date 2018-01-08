@@ -112,9 +112,27 @@ public class DatabaseManager
     public static Connection getConnection( String db_host, String db_name, String db_user, String db_pass )
     throws ClassNotFoundException, SQLException
     {
+        /*
+        dontTrackOpenResources
+        The JDBC specification requires the driver to automatically track and close resources, however if your application doesn't do a good job of explicitly calling close() on statements or result sets, this can cause memory leakage. Setting this property to true relaxes this constraint, and can be more memory efficient for some applications. Also the automatic closing of the Statement and current ResultSet in Statement.closeOnCompletion() and Statement.getMoreResults ([Statement.CLOSE_CURRENT_RESULT | Statement.CLOSE_ALL_RESULTS]), respectively, ceases to happen. This property automatically sets holdResultsOpenOverStatementClose=true.
+        Default: false
+        Since version: 3.1.7
+
+        autoReconnect
+        Should the driver try to re-establish stale and/or dead connections? If enabled the driver will throw an exception for a queries issued on a stale or dead connection, which belong to the current transaction, but will attempt reconnect before the next query issued on the connection in a new transaction. The use of this feature is not recommended, because it has side effects related to session state and data consistency when applications don't handle SQLExceptions properly, and is only designed to be used when you are unable to configure your application to handle SQLExceptions resulting from dead and stale connections properly. Alternatively, as a last option, investigate setting the MySQL server variable "wait_timeout" to a high value, rather than the default of 8 hours.
+        Default: false
+        Since version: 1.1
+
+        maxReconnects
+        Maximum number of reconnects to attempt if autoReconnect is true, default is '3'.
+        Default: 3
+        Since version: 1.1
+        */
+
         Class.forName( DEFAULT_DRIVER );
 
-        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + "?dontTrackOpenResources=true&autoReconnect=true";
+        //String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + "?dontTrackOpenResources=true&autoReconnect=true";
+        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name;
 
         if( ( db_user == null ) || ( db_pass == null ) || ( db_user.trim().length() == 0 ) || ( db_pass.trim().length() == 0 ) )
         {
