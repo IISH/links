@@ -30,7 +30,7 @@ import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
-
+import linksmatchmanager.DatabaseManager;
 
 /**
  * @author Omar Azouguagh
@@ -40,7 +40,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-25-Jul-2017 Debug run
  * FL-23-Aug-2017 chk_* flags from qs object
  * FL-13-Nov-2017 dbconMatchLocal
- * FL-21-Nov-2017 Math.max(lvs1, lvs2)  maximum, not summing
+ * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -75,9 +75,9 @@ public class MatchAsync extends Thread
     QueryGroupSet qgs;
     InputSet inputSet;
 
-    String url;
-    String user;
-    String pass;
+    String db_host;
+    String db_user;
+    String db_pass;
 
     String lvs_table_firstname;
     String lvs_table_familyname;
@@ -118,9 +118,9 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        String url,
-        String user,
-        String pass,
+        String db_host,
+        String db_user,
+        String db_pass,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -150,9 +150,9 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.url  = url;
-        this.user = user;
-        this.pass = pass;
+        this.db_host = db_host;
+        this.db_user = db_user;
+        this.db_pass = db_pass;
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -188,9 +188,9 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        String url,
-        String user,
-        String pass,
+        String db_host,
+        String db_user,
+        String db_pass,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -222,9 +222,9 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.url  = url;
-        this.user = user;
-        this.pass = pass;
+        this.db_host = db_host;
+        this.db_user = db_user;
+        this.db_pass = db_pass;
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -317,7 +317,7 @@ public class MatchAsync extends Thread
             */
 
             // database connections
-            dbconPrematch = General.getConnection( url, "links_prematch", user, pass );
+            dbconPrematch = DatabaseManager.getConnection( db_host, "links_prematch", db_user, db_pass );
 
             String csvFilename = "";
             FileWriter writerMatches = null;
@@ -329,13 +329,13 @@ public class MatchAsync extends Thread
                 System.out.println( msg ); plog.show( msg );
 
                 if( debug ) {   // use temp table to collect the matches
-                    dbconTemp = General.getConnection( url, "links_temp", user, pass );
+                    dbconTemp = DatabaseManager.getConnection( db_host, "links_temp", db_user, db_pass );
                     createTempMatchesTable( threadId );                     // Create temp table to collect the matches
                 }
             }
             else    // write matches immediately to matches table
             {
-                dbconMatch = General.getConnection( url, "links_match",    user, pass );
+                dbconMatch = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
             }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
@@ -932,6 +932,7 @@ public class MatchAsync extends Thread
                 int count = rs.getInt( "count" );
                 if( count == 1 ) { exists = true; }
             }
+            rs.close();
         }
         catch( Exception ex ) {
             String err = "Exception in existsMatchTempTable(): " + ex.getMessage();
@@ -1073,7 +1074,7 @@ public class MatchAsync extends Thread
         //System.out.println( query ); plog.show( query );
 
         // do not keep connection endlessly open
-        Connection dbconMatchLocal = General.getConnection( url, "links_match",    user, pass );
+        Connection dbconMatchLocal = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
         dbconMatchLocal.createStatement().execute( query );
         dbconMatchLocal.createStatement().close();
         dbconMatchLocal.close();
@@ -1406,6 +1407,7 @@ public class MatchAsync extends Thread
             ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
             while( rs.next() ) { freq = rs.getInt( "frequency" ); }
+            rs.close();
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
@@ -1440,6 +1442,7 @@ public class MatchAsync extends Thread
                 System.out.println( msg );
                 */
             }
+            rs.close();
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequencyStr(): " + ex.getMessage() );
@@ -1561,6 +1564,7 @@ public class MatchAsync extends Thread
 
                 nrecs++;
             }
+            rs.close();
 
             if( debug && nrecs != 0 ) {
                 String msg = String.format( "getLvsVariants1(): # of LvsVariants = %d\n", nrecs );
@@ -1624,6 +1628,7 @@ public class MatchAsync extends Thread
 
                 nrecs++;
             }
+            rs.close();
 
             if( debug && nrecs != 0 ) {
                 String msg = String.format( "getLvsVariants2(): # of LvsVariants = %d\n", nrecs );
@@ -1704,6 +1709,8 @@ public class MatchAsync extends Thread
 
                 nrecs++;
             }
+            rs.close();
+
             if( debug ) {
                 String msg = "nrecs: " + nrecs;
                 System.out.println( msg ); plog.show( msg );

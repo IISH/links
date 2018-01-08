@@ -6,8 +6,11 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.sql.Connection;
 import java.util.Collections;
+
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.NameAndTypeSet;
+import linksmatchmanager.DatabaseManager;
+
 
 public class FrequencyLoader {
 
@@ -28,7 +31,7 @@ public class FrequencyLoader {
     
     FrequencyLoader(String url, String user, String pass) throws Exception {
 
-        this.con = General.getConnection(url, "links_frequency", user, pass);
+        this.con = DatabaseManager.getConnection(url, "links_frequency", user, pass);
         this.con.setReadOnly(true);
         this.familyname = new ArrayList<Integer>();
         this.familynameFreq = new ArrayList<Integer>();

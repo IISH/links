@@ -31,9 +31,6 @@ public class QueryLoader
 
     private int firstname_method;
 
-    private ResultSet set1;
-    private ResultSet set2;
-
     PrintLogger plog;
 
     // Set variables
@@ -227,7 +224,7 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; retrieving set 1 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s1_query );
 
-        try { db_conn = General.getConnection( db_url, db_name, db_user, db_pass ); }
+        try { db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass ); }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
@@ -235,12 +232,13 @@ public class QueryLoader
             return;
         }
 
-        set1 = db_conn.createStatement().executeQuery( qs.s1_query );
+        ResultSet set1 = db_conn.createStatement().executeQuery( qs.s1_query );
         String msg = String.format( "Thread id %02d; retrieving sample 1 from links_base " , threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         System.out.printf( "Thread id %02d; filling the s1 vectors...\n", threadId );
-        fillArrays_set1();
+        fillArrays_set1( set1 );
+        set1.close();
         db_conn.close();
 
         // get set 2 from links_base
@@ -248,7 +246,7 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; retrieving sample 2 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s2_query );
 
-        try { db_conn = General.getConnection( db_url, db_name, db_user, db_pass ); }
+        try { db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass ); }
         catch( Exception ex ) {
             msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
@@ -256,24 +254,26 @@ public class QueryLoader
             return;
         }
 
-        set2 = db_conn.createStatement().executeQuery( qs.s2_query );
-        //set2 = db_conn.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
+        ResultSet set2 = db_conn.createStatement().executeQuery( qs.s2_query );
+        //ResultSet set2 = db_conn.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
         msg = String.format( "Thread id %02d; retrieving sample 2 from links_base " , threadId );
         elapsedShowMessage( msg, start, System.currentTimeMillis() );
 
         System.out.printf( "Thread id %02d; filling the s2 vectors...\n", threadId );
-        fillArrays_set2();
+        fillArrays_set2( set2 );
+        set2.close();
         db_conn.close();
 
         System.out.printf( "Thread id %02d; QueryLoader() done\n", threadId );
     }
 
 
-    private void fillArrays_set1() throws Exception {
+    private void fillArrays_set1( ResultSet set1 ) throws Exception
+    {
         long threadId = Thread.currentThread().getId();
 
         int s1_record_count = 0;
-        while (set1.next())
+        while( set1.next() )
         {
             s1_record_count++;
 
@@ -593,15 +593,11 @@ public class QueryLoader
             s1_partner_death_max.add(var_s1_partner_death_max);
         }
 
-        // Freeing memory
-        set1.close();
-        set1 = null;
-
         System.out.printf( String.format( "Thread id %02d; s1_record_count: %d\n", threadId, s1_record_count ) );
     } // fillArrays_set1()
 
 
-    private void fillArrays_set2() throws Exception
+    private void fillArrays_set2( ResultSet set2 ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -928,10 +924,6 @@ public class QueryLoader
             s2_partner_death_min   .add( var_s2_partner_death_min );
             s2_partner_death_max   .add( var_s2_partner_death_max );
         }
-
-        // Freeing memory
-        set2.close();
-        set2 = null;
 
         System.out.printf( String.format( "Thread id %02d; s2_record_count: %d\n", threadId, s2_record_count ) );
     } // fillArrays_set2()

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.util.Vector;
 
 import linksmatchmanager.DataSet.QuerySet;
+import linksmatchmanager.DatabaseManager;
 
 /**
  * @author Fons Laan
@@ -14,6 +15,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
  * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
+ * FL-08-Jan-2018
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. Here in SampleLoader we prefer to keep them separate,
@@ -31,8 +33,6 @@ public class SampleLoader
     private String ignore_sex;
 
     private int firstname_method;
-
-    private ResultSet rs;
 
     public int sample_no = 0;
     public String query = "";
@@ -142,7 +142,7 @@ public class SampleLoader
 
     /**
      * @param qs
-     * @param db_url
+     * @param db_host
      * @param db_name
      * @param db_user
      * @param db_pass
@@ -150,7 +150,7 @@ public class SampleLoader
      * @throws Exception
      */
     //public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
-    public SampleLoader( QuerySet qs, String db_url, String db_name, String db_user, String db_pass, int sample_no )
+    public SampleLoader( QuerySet qs, String db_host, String db_name, String db_user, String db_pass, int sample_no )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -164,8 +164,6 @@ public class SampleLoader
 
         this.sample_no     = sample_no;
 
-        rs = null;
-
         // get sample from links_base
              if( sample_no == 1 ) { query = qs.s1_query; }
         else if( sample_no == 2 ) { query = qs.s2_query; }
@@ -176,12 +174,15 @@ public class SampleLoader
 
         System.out.printf( "Thread id %02d; SampleLoader() retrieving sample %d...\n", threadId, sample_no );
         System.out.printf( "Thread id %02d; %s\n", threadId, query );
-        db_conn = General.getConnection( db_url, db_name, db_user, db_pass );
-        rs = db_conn.createStatement().executeQuery( query );
 
-        fillArrays();
+        db_conn = DatabaseManager.getConnection( db_host, db_name, db_user, db_pass );
+        ResultSet rs = db_conn.createStatement().executeQuery( query );
 
+        fillArrays( rs );
+
+        rs.close();
         if( db_conn != null ) { db_conn.close(); }
+
         System.out.printf( "Thread id %02d; SampleLoader() done\n", threadId );
     } // SampleLoader
 
@@ -189,7 +190,7 @@ public class SampleLoader
     /**
      * @throws Exception
      */
-    private void fillArrays() throws Exception
+    private void fillArrays( ResultSet rs ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
@@ -519,10 +520,6 @@ public class SampleLoader
             partner_death_min  .add(  var_partner_death_min );
             partner_death_max  .add(  var_partner_death_max );
         }
-
-        // Freeing memory
-        rs.close();
-        rs = null;
 
         System.out.println( String.format( "Thread id %02d; SampleLoader/fillArrays() sample record_count: %d", threadId, record_count ) );
     } // fillArrays

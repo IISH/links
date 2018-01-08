@@ -26,12 +26,14 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
+import linksmatchmanager.DatabaseManager;
 
 /**
  * @author Omar Azouguagh
@@ -42,6 +44,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-07-Jul-2016 Match names from low to high name frequency
  * FL-13-Sep-2017 Beginning of SampleLoader use
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
+ * FL-08-Jan-2018 New db manager
  */
 
 public class MatchMain
@@ -92,7 +95,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "05-Jan-2018 15:37";
+            String timestamp1 = "08-Jan-2018 11:29";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -111,7 +114,7 @@ public class MatchMain
                 String msg ="Invalid argument length " + args.length + ", it should be 8";
                 plog.show( msg ); System.out.println( msg );
 
-                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_url> <db_username> <db_password> <max_threads> <s1_sample_limit> <s2_sample_limit> <debug>";
+                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_host> <db_username> <db_password> <max_threads> <s1_sample_limit> <s2_sample_limit> <debug>";
                 plog.show( msg ); System.out.println( msg );
 
                 return;
@@ -122,7 +125,7 @@ public class MatchMain
             System.out.println( msg ); plog.show( msg );
 
             // cmd line args
-            String db_url              = args[ 0 ];
+            String db_host             = args[ 0 ];
             String db_user             = args[ 1 ];
             String db_pass             = args[ 2 ];
             String max_threads_str     = args[ 3 ];
@@ -142,8 +145,8 @@ public class MatchMain
             System.out.println( "dry_run: '" + dry_run + "'" );
             System.out.println( "use_memory_tables: '" + use_memory_tables + "'" );
 
-            msg = String.format( "db_url: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, s1_sample_limit: %s, s2_sample_limit: %s, debug: %s",
-                db_url, db_user, db_pass, max_threads_str, max_heap_table_size, s1_sample_limit, s2_sample_limit, debug );
+            msg = String.format( "db_host: %s, db_username: %s, db_password: %s, max_threads: %s, max_heap_table_size: %s, s1_sample_limit: %s, s2_sample_limit: %s, debug: %s",
+                db_host, db_user, db_pass, max_threads_str, max_heap_table_size, s1_sample_limit, s2_sample_limit, debug );
             System.out.println( msg ); plog.show( msg );
 
             //Properties properties = Functions.getProperties();  // Read properties file
@@ -165,8 +168,16 @@ public class MatchMain
 
             System.out.println( "Create database connections" );
             try {
-                dbconPrematch = General.getConnection( db_url, dbnamePrematch, db_user, db_pass );
-                dbconMatch    = General.getConnection( db_url, dbnameMatch,    db_user, db_pass );
+                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
+
+                DatabaseMetaData meta = dbconPrematch.getMetaData();
+                System.out.println( meta.getDatabaseProductName() );
+                System.out.println( meta.getDatabaseProductVersion() );
+
+                int networkTimeout = dbconPrematch.getNetworkTimeout();
+                System.out.printf( "networkTimeout: %d (milliseconds)", networkTimeout );
+
             }
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
@@ -182,6 +193,7 @@ public class MatchMain
                 OLD_max_heap_table_size = rs.getString( "Value" );
                 msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
                 System.out.println( msg ); plog.show( msg );
+                rs.close();
             }
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
@@ -388,7 +400,7 @@ public class MatchMain
                     System.out.println( msg ); plog.show( msg );
                 }
                 else {
-                    if( dbconMatch != null ) { dbconMatch = General.getConnection( db_url, dbnameMatch, db_user, db_pass ); }
+                    if( dbconMatch != null ) { dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass ); }
                     deleteMatches( match_process_id );
                     dbconMatch.close();
                 }
@@ -409,7 +421,7 @@ public class MatchMain
                     // Its input is a QuerySet and a database connection object.
                     //ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     //ql = new QueryLoader( qs, dbconPrematch );
-                    ql = new QueryLoader( plog, qs, db_url, dbnamePrematch, db_user, db_pass );
+                    ql = new QueryLoader( plog, qs, db_host, dbnamePrematch, db_user, db_pass );
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
@@ -418,8 +430,8 @@ public class MatchMain
                     // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
                     //s1 = new SampleLoader( qs, dbconPrematch, 1 );
                     //s2 = new SampleLoader( qs, dbconPrematch, 2 );
-                    s1 = new SampleLoader( qs, db_url, dbnamePrematch, db_user, db_pass, 1 );
-                    s2 = new SampleLoader( qs, db_url, dbnamePrematch, db_user, db_pass, 2 );
+                    s1 = new SampleLoader( qs, db_host, dbnamePrematch, db_user, db_pass, 1 );
+                    s2 = new SampleLoader( qs, db_host, dbnamePrematch, db_user, db_pass, 2 );
                     msg = String.format( "Thread id %02d; s1_size: %d, s2_size: %d", mainThreadId, s1.id_base.size(), s2.id_base.size() );
                     System.out.println( msg ); plog.show( msg );
                     s1.freeVectors();
@@ -468,13 +480,13 @@ public class MatchMain
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
-                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_url, db_user, db_pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             rootFirstName, rootFamilyName, nameLvsVariants, true );
                     }
                     else          // method == 0
                     {
-                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_url, db_user, db_pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             variantFirstName, variantFamilyName, nameLvsVariants );
                     }
@@ -512,7 +524,7 @@ public class MatchMain
             try {
 
                 String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
-                dbconPrematch = General.getConnection( db_url, dbnamePrematch, db_user, db_pass );
+                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 dbconPrematch.createStatement().execute( query );
                 dbconPrematch.close();
             }
@@ -791,6 +803,7 @@ public class MatchMain
                 int count = rs.getInt( "count" );
                 if( count == 1 ) { exists = true; }
             }
+            rs.close();
         }
         catch( Exception ex ) {
             String err = "Exception in memtable_ls_exists(): " + ex.getMessage();

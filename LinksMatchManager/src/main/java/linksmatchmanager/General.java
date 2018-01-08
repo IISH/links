@@ -21,8 +21,8 @@ import java.text.SimpleDateFormat;
 
 import java.util.Calendar;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+//import java.sql.Connection;
+//import java.sql.DriverManager;
 
 /**
  * @author Omar Azouguagh
@@ -79,6 +79,7 @@ public class General {
      * @return
      * @throws Exception 
      */
+    /*
     public static Connection getConnection(String url, String db, String user, String pass) 
             throws Exception {
         String driver = "org.gjt.mm.mysql.Driver";
@@ -89,7 +90,7 @@ public class General {
         Class.forName(driver);
         return DriverManager.getConnection(longUrl, user, pass);
     }
-
+    */
 
     /**
      *
