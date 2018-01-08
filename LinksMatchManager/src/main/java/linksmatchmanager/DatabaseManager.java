@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;       // c3p0 - JDBC3 Connection and Statement Pooling
+
+
 /**
  * @author Fons Laan
  *
@@ -34,14 +37,15 @@ public class DatabaseManager
     private static final String DEFAULT_PASSWORD = "";
     */
 
-    private static final String DEFAULT_DRIVER   = "com.mysql.jdbc.Driver";
+    //private static final String DEFAULT_DRIVER   = "org.gjt.mm.mysql.Driver";   // old
+    private static final String DEFAULT_DRIVER   = "com.mysql.jdbc.Driver";     // current
     private static final String DEFAULT_HOST     = "localhost";
     private static final String DEFAULT_PORT     = "3306";
-    private static final String DEFAULT_DBNAME   = "party";
+    //private static final String DEFAULT_DBNAME   = "party";
     //private static final String DEFAULT_URL      = "jdbc:mysql://localhost:3306/party";
-    private static final String DEFAULT_URL      = "jdbc:mysql://" + DEFAULT_HOST + ":" + DEFAULT_PORT + "/" + DEFAULT_DBNAME;
-    private static final String DEFAULT_USERNAME = "";
-    private static final String DEFAULT_PASSWORD = "";
+    //private static final String DEFAULT_URL      = "jdbc:mysql://" + DEFAULT_HOST + ":" + DEFAULT_PORT + "/" + DEFAULT_DBNAME;
+    //private static final String DEFAULT_USERNAME = "";
+    //private static final String DEFAULT_PASSWORD = "";
 
     /*
     public static void main(String[] args)
@@ -121,6 +125,8 @@ public class DatabaseManager
             return DriverManager.getConnection( db_url, db_user, db_pass );
         }
     }
+
+
 
 
     public static void close( Connection connection )
