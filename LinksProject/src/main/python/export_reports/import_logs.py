@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-17-Oct-2017 Changed
+15-Sep-2016 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -26,26 +26,36 @@ import datetime
 from time import time
 from dateutil.parser import parse
 import MySQLdb
-import yaml
 
 debug = False
 chunk = 100000		# show progress in processing records
 
 #begin_date_default = "2016-04-15"
 #end_date_default   = "2016-05-12"
-begin_date_default = "2016-09-08"
-end_date_default   = "2016-09-09"
+#begin_date_default = "2016-09-08"
+#end_date_default   = "2016-09-09"
+begin_date_default = "2017-01-27"
+end_date_default   = "2017-10-09"
 
-# db settings, read values from config file
-HOST_LINKS   = ""
-USER_LINKS   = ""
-PASSWD_LINKS = ""
-DBNAME_LINKS = ""
+# db
+HOST   = "localhost"
+#HOST   = "10.24.64.154"
+#HOST   = "10.24.64.158"
 
-HOST_REF   = ""
-USER_REF   = ""
-PASSWD_REF = ""
-DBNAME_REF = ""
+USER   = "links"
+PASSWD = "mslinks"
+DBNAME = ""				# be explicit in all queries
+
+"""
+HOST_REF   = "10.24.64.30"
+USER_REF   = "hsnref"
+PASSWD_REF = "refhsn"
+DBNAME_REF = ""				# be explicit in all queries
+"""
+HOST_REF   = "localhost"
+USER_REF   = "links"
+PASSWD_REF = "mslinks"
+DBNAME_REF = ""				# be explicit in all queries
 
 single_quote = "'"
 double_quote = '"'
@@ -418,18 +428,15 @@ if __name__ == "__main__":
 	if begin_date is None or end_date is None:
 		print( "EXIT" )
 		sys.exit( 1 )
+	
+	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
 
-	config_path = os.path.join( os.getcwd(), "import_logs.yaml" )
-#	print( "Config file: %s" % config_path )
-	config = yaml.safe_load( open( config_path ) )
+	db_ref = Database( host = HOST_REF, user = USER_REF, passwd = PASSWD_REF, dbname = DBNAME_REF )
 	
-	HOST_LINKS   = config.get( "HOST_LINKS" )
-	USER_LINKS   = config.get( "USER_LINKS" )
-	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	db_logs = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
 	
-#	db_ref = Database( host = HOST_REF, user = USER_REF, passwd = PASSWD_REF, dbname = DBNAME_REF )
-	db_logs = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
-	
+#	db_check( db )
+
 	log_names = select_log_names( db_logs, begin_date, end_date )
 	process_logs( log_names )
 	

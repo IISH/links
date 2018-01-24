@@ -1,5 +1,15 @@
-FL-14-Sep-2016
+FL-14-Sep-2016 Created
+FL-24-Jan-2018 Changed
 
+FL-24-Jan-2018
+The script import_logs.py contains the 2 variables near the top the file: 
+	begin_date_default
+	end_date_default
+These specify the default date range of the logtables to be used. 
+When running he script, the start and end dates can be changed.
+Log files with creation dates outside this range will be skipped. 
+
+FL-14-Sep-2016
 The contents of selected log tables is collected in the table ERROR_STORE. 
 In order to create such a table in the links_logs db: 
 	$ mysql -u links -p links_logs < ERROR_STORE.schema.sql
