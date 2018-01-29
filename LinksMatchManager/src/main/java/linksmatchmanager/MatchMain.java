@@ -44,7 +44,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-07-Jul-2016 Match names from low to high name frequency
  * FL-13-Sep-2017 Beginning of SampleLoader use
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
- * FL-08-Jan-2018 New db manager
+ * FL-29-Jan-2018 New db manager
  */
 
 public class MatchMain
@@ -95,7 +95,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "08-Jan-2018 11:29";
+            String timestamp1 = "29-Jan-2018 14:40";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );

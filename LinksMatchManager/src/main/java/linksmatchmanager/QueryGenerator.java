@@ -33,6 +33,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-13-Feb-2015 Do not retrieve NULL names from links_base
  * FL-02-Nov-2015 Add maintype to QuerySet
  * FL-16-Aug-2017 Add chk_ booleans derived from minmax 0/1 inputs
+ * FL-29-Jan-2018 Check for id_source = 0 == invalid
  */
 public class QueryGenerator
 {
@@ -159,6 +160,17 @@ public class QueryGenerator
 
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
+
+            if( s1_source.equals( "0") || s2_source.equals( "0") )
+            {
+                String msg = String.format( "QueryGenerator(): match_process id: %d, s1_source = %s, s2_source = %s", id, s1_source, s2_source );
+                plog.show( msg ); System.out.println( msg );
+                msg = "QueryGenerator(): ERROR invalid source specification";
+                plog.show( msg ); System.out.println( msg );
+                msg = "EXIT";
+                plog.show( msg ); System.out.println( msg );
+                System.exit( 0 );
+            }
 
             int method = rs.getInt( "method" );
             String ignore_sex = rs.getString( "ignore_sex" ) != null ? rs.getString( "ignore_sex" ) : "";
