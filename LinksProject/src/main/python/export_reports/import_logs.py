@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-15-Sep-2016 Changed
+24-Jan-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
