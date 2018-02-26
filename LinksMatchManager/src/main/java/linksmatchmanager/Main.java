@@ -45,9 +45,10 @@ import linksmatchmanager.DatabaseManager;
  * FL-13-Sep-2017 Beginning of SampleLoader use
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
+ * FL-26-Feb-2018 MatchMain => Main
  */
 
-public class MatchMain
+public class Main
 {
     // class global vars
     private static boolean debug;
@@ -95,7 +96,7 @@ public class MatchMain
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "29-Jan-2018 14:40";
+            String timestamp1 = "26-Feb-2018 08:52";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -283,9 +284,9 @@ public class MatchMain
 
                 // Create memory tables as copies of the normal tables
                 // create ls_memory tables
-                memtables_ls_create( lvs_table_firstname, lvs_table_familyname, name_postfix );
+                memtables_ls_create( dbconPrematch, lvs_table_firstname, lvs_table_familyname, name_postfix );
                 // create freq__memory tables
-                memtables_freq_create( freq_table_firstname, freq_table_familyname, name_postfix );
+                memtables_freq_create( dbconPrematch, freq_table_firstname, freq_table_familyname, name_postfix );
 
                 // and now change the names to the actual table names used !
                 lvs_table_familyname_use = lvs_table_familyname + name_postfix;
@@ -514,15 +515,16 @@ public class MatchMain
 
             // the memory tables should only be dropped after all threads have finished.
             if( use_memory_tables ) {
-                memtables_drop( lvs_table_familyname,  lvs_table_firstname,  name_postfix );
-                memtables_drop( freq_table_familyname, freq_table_firstname, name_postfix );
+                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                memtables_drop( dbconPrematch, lvs_table_familyname,  lvs_table_firstname,  name_postfix );
+                memtables_drop( dbconPrematch, freq_table_familyname, freq_table_firstname, name_postfix );
+                if( dbconMatch != null ) { dbconMatch.close(); }
             }
             else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
 
             msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
             try {
-
                 String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
                 dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 dbconPrematch.createStatement().execute( query );
@@ -699,7 +701,7 @@ public class MatchMain
     }
 
 
-    private static void memtables_ls_create( String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_ls_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         try
         {
@@ -710,8 +712,8 @@ public class MatchMain
             String table_firstname_dst  = table_firstname_src  + name_postfix;
             String table_familyname_dst = table_familyname_src + name_postfix;
 
-            memtable_ls_name( table_firstname_src,  table_firstname_dst );
-            memtable_ls_name( table_familyname_src, table_familyname_dst );
+            memtable_ls_name( dbcon, table_firstname_src,  table_firstname_dst );
+            memtable_ls_name( dbcon, table_familyname_src, table_familyname_dst );
         }
         catch( Exception ex ) {
             String err = "Exception in memtables_ls_create(): " + ex.getMessage();
@@ -721,7 +723,7 @@ public class MatchMain
     } // memtables_ls_create
 
 
-    private static void memtables_freq_create( String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_freq_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         try
         {
@@ -732,8 +734,8 @@ public class MatchMain
             String table_firstname_dst  = table_firstname_src  + name_postfix;
             String table_familyname_dst = table_familyname_src + name_postfix;
 
-            memtable_freq_name( table_firstname_src,  table_firstname_dst );
-            memtable_freq_name( table_familyname_src, table_familyname_dst );
+            memtable_freq_name( dbcon, table_firstname_src,  table_firstname_dst );
+            memtable_freq_name( dbcon, table_familyname_src, table_familyname_dst );
         }
         catch( Exception ex ) {
             String err = "Exception in memtables_freq_create(): " + ex.getMessage();
@@ -743,7 +745,7 @@ public class MatchMain
     } // memtables_freq_create
 
 
-    private static void memtables_drop( String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_drop( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         try
         {
@@ -760,8 +762,8 @@ public class MatchMain
             String table_firstname_dst  = table_firstname_src  + name_postfix;
             String table_familyname_dst = table_familyname_src + name_postfix;
 
-            if( memtable_ls_exists( table_firstname_dst ) )  { memtable_drop( table_firstname_dst ); }
-            if( memtable_ls_exists( table_familyname_dst ) ) { memtable_drop( table_familyname_dst ); }
+            if( memtable_ls_exists( dbcon, table_firstname_dst ) )  { memtable_drop( dbcon, table_firstname_dst ); }
+            if( memtable_ls_exists( dbcon, table_familyname_dst ) ) { memtable_drop( dbcon, table_familyname_dst ); }
         }
         catch( Exception ex ) {
             String err = "Exception in memtables__drop(): " + ex.getMessage();
@@ -771,7 +773,7 @@ public class MatchMain
     } //memtables_drop
 
 
-    private static void memtable_drop( String table_name )
+    private static void memtable_drop( Connection dbcon, String table_name )
     {
         try {
             String msg = "memtable_drop() " + table_name;
@@ -779,7 +781,7 @@ public class MatchMain
 
             String query = "DROP TABLE " + table_name;
 
-            dbconPrematch.createStatement().execute( query );
+            dbcon.createStatement().execute( query );
         }
         catch( Exception ex ) {
             String err = "Exception in memtables_drop(): " + ex.getMessage();
@@ -789,7 +791,7 @@ public class MatchMain
     } // memtable_drop
 
 
-    private static boolean memtable_ls_exists( String table_name )
+    private static boolean memtable_ls_exists( Connection dbcon, String table_name )
     {
         boolean exists = false;
 
@@ -797,7 +799,7 @@ public class MatchMain
             "WHERE table_schema = 'links_prematch' AND table_name = '" + table_name + "'";
 
         try {
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+            ResultSet rs = dbcon.createStatement().executeQuery( query );
             while( rs.next() )
             {
                 int count = rs.getInt( "count" );
@@ -815,14 +817,14 @@ public class MatchMain
     } // memtable_ls_exists
 
 
-    private static void memtable_freq_name( String src_table, String dst_table )
+    private static void memtable_freq_name( Connection dbcon, String src_table, String dst_table )
     {
-        if( memtable_ls_exists( dst_table ) ) {
+        if( memtable_ls_exists( dbcon, dst_table ) ) {
             String msg = "memtable_freq_name() deleting previous " + dst_table;
             System.out.println( msg );
             try { plog.show( msg ); } catch( Exception ex ) { ; }
 
-            memtable_drop( dst_table );
+            memtable_drop( dbcon, dst_table );
         }
 
         String msg = "memtable_freq_name() copying " + src_table + " -> " + dst_table;
@@ -851,7 +853,7 @@ public class MatchMain
                 "ALTER TABLE " + dst_table + " ENABLE KEYS"
             };
 
-            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
+            for( String query : name_queries ) { dbcon.createStatement().execute( query ); }
         }
         catch( Exception ex ) {
             String err = ex.getMessage();
@@ -871,14 +873,14 @@ public class MatchMain
     } // memtable_freq_name
 
 
-    private static void memtable_ls_name( String src_table, String dst_table )
+    private static void memtable_ls_name( Connection dbcon, String src_table, String dst_table )
     {
-        if( memtable_ls_exists( dst_table ) ) {
+        if( memtable_ls_exists( dbcon, dst_table ) ) {
             String msg = "memtable_ls_name() deleting previous " + dst_table;
             System.out.println( msg );
             try { plog.show( msg ); } catch( Exception ex ) { ; }
 
-            memtable_drop( dst_table );
+            memtable_drop( dbcon, dst_table );
         }
 
         String msg = "memtable_ls_name() copying " + src_table + " -> " + dst_table;
@@ -927,7 +929,7 @@ public class MatchMain
                 "ALTER TABLE " + dst_table + " ENABLE KEYS"
             };
 
-            for( String query : name_queries ) { dbconPrematch.createStatement().execute( query ); }
+            for( String query : name_queries ) { dbcon.createStatement().execute( query ); }
         }
         catch( Exception ex ) {
             String err = ex.getMessage();
