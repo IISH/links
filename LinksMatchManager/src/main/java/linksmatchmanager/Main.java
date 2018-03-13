@@ -46,6 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
+ * FL-03-Mar-2018
  */
 
 public class Main
@@ -96,7 +97,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "26-Feb-2018 08:52";
+            String timestamp1 = "06-Mar-2018 09:10";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
