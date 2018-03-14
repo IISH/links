@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_matches.py
-Version:	0.1
+Version:	0.2
 Goal:		export matches for CBG
 			-1- From table "links_match.MATCHES_CBG_WWW", fetch the records where
 				the column Delivering = 'y'. 
@@ -17,27 +17,18 @@ Goal:		export matches for CBG
 			#	header  = [ "Id", "GUID_1", "GUID_2", "Type_1", "Type_2", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 				header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 			-3- Fetch the records from table "links_match.matches" for the given "id_match_process", 
-				and write the wanted fields to the CSV file, e.g.:
-$ head idmp\=33_MATCHES_EXPORT_2016-09-16.csv 
-Id,GUID_1,GUID_2,Type_1,Type_2,Source_1,Source_2,Quality_link_ego_mo,Quality_link_all,Worth_link
-21741123,{7382a380-2dce-4e68-a59f-32508bee699f},{7f891281-d111-44d9-a717-ba5bbd75aa88},h,h,217,217,0,0,Goed
-21741124,{ca888f8c-a9b1-443b-9a83-8df7fbacec8e},{eb7d5ff2-6a2c-4f13-84da-bbb34d18e0e5},h,h,225,225,1,1,Hoogstwaarschijnlijk
-21741125,{54ffbb0a-f989-43c7-a0a8-655cfcdd86d1},{2fbe2603-03c5-491c-8a58-5d6cb2f8830a},h,h,225,225,0,0,Goed
-21741126,{e31aac15-821a-4331-b2be-2b8a9e0fb082},{b1547b38-570a-44f8-96ca-2f425352671f},h,h,225,225,0,1,Goed
-21741127,{e31aac15-821a-4331-b2be-2b8a9e0fb082},{b284fb94-7621-4959-9a50-b3b41f7d99f4},h,h,225,225,0,1,Goed
-21741128,{a64f5d94-395b-4998-81f2-c280e161b02b},{39bccc3a-6a93-46b3-ab12-91203ec1a599},h,h,225,225,0,2,Goed
-21741129,{e2c77b87-ee27-4939-8707-7e3c5a727c2e},{eb7d5ff2-6a2c-4f13-84da-bbb34d18e0e5},h,h,225,225,1,1,Hoogstwaarschijnlijk
-21741130,{7c809b80-e0c1-4bb7-b3da-164a5082533a},{1398fc1b-dbb0-436d-aba5-dd7128f7987a},h,h,225,225,2,2,Waarschijnlijk
-21741131,{58417977-0d6f-4699-a924-43ae90bc9b2e},{dfe57930-ba3f-459b-bdb2-c1e56a23f896},h,h,221,221,0,1,Goed
+				and write the wanted fields to the CSV file. 
 				For the determination of the contents of the 3 fields Quality_link_ego_mo, Quality_link_all, Worth_link, 
 				see the function export() below. 
 			-4- Update the table "links_match.MATCHES_CBG_WWW":
-			query = "UPDATE links_match.MATCHES_CBG_WWW SET Delivering = 'a', Date = '%s' WHERE Delivering = 'y';" % Date
+				query = "UPDATE links_match.MATCHES_CBG_WWW SET Delivering = 'a', Date = '%s' WHERE Delivering = 'y';" % Date
 			
 14-Sep-2016 Created
 12-Mar-2018 Add column `type_match`
 			ALTER TABLE MATCHES_CBG_WWW ADD type_match INT(10) AFTER id_match_process;
 13-Mar-2016 Export archive names instead of our id_source numbers
+14-Mar-2016 Get archive names now from links_general.ref_source
+14-Mar-2016 YAML db config file
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -51,21 +42,13 @@ import datetime
 from time import time
 import csv
 import MySQLdb
+import yaml
 
 debug = False
 chunk = 10000		# show progress in processing records
 
-# db
-HOST   = "localhost"
-#HOST   = "10.24.64.154"
-#HOST   = "10.24.64.158"
-
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""				# be explicit in all queries
-
 # 13-Mar-2018
-# Now the long and short archive names can be retrieved, 
+# Now the long and short archive names are retrieved, 
 # via the id_source number, fom links_general.ref_source table. 
 short_archive_names = {
 	"211" : "Groningen",
@@ -153,13 +136,13 @@ class Database:
 
 
 
-def get_base_record( id_base ):
+def get_base_record( db_links, id_base ):
 	if debug: print( "get_base_record()" )
 	
 	rec = None
 	query  = "SELECT * FROM links_prematch.links_base WHERE id_base = %s;" % id_base
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		if debug: print( resp )
 		rec = resp[ 0 ]
@@ -168,7 +151,7 @@ def get_base_record( id_base ):
 
 
 
-def get_2base_records( id_base1, id_base2 ):
+def get_2base_records( db_links, id_base1, id_base2 ):
 	if debug: print( "get_2base_records()" )
 	
 	rec_id_base1 = None
@@ -180,7 +163,7 @@ def get_2base_records( id_base1, id_base2 ):
 	else:
 		query = "SELECT * FROM links_prematch.links_base WHERE id_base = %s OR id_base = %s;" % ( id_base1, id_base2 )
 		if debug: print( query )
-		resp = db.query( query )
+		resp = db_links.query( query )
 		if resp is not None:
 			nrec = len( resp )
 			#print( "nrec: %d" % nrec )
@@ -218,12 +201,12 @@ def none2zero( var ):
 
 
 
-def export( debug, db, id_match_process, Type_Match ):
+def export( db_ref, db_links, id_match_process, Type_Match ):
 	if debug: print( "export() for id_match_process %s" % id_match_process )
 
 	query = "SELECT COUNT(*) AS count FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
 	print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		count = resp[ 0 ][ "count" ]
@@ -245,17 +228,18 @@ def export( debug, db, id_match_process, Type_Match ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 
-#	header  = [ "Id", "GUID_1", "GUID_2", "Type_1", "Type_2", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 	writer.writerow( header )
 	
-	query  = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
+	query = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		nrec = len( resp )
 		if debug: print( "number of records: %d" %nrec )
+		
+		
 		for r in range( nrec ):
 			if ( r > 0 and ( r + chunk ) % chunk == 0 ):
 				print( "%d-of-%d records processed" % ( r, nrec ) )
@@ -279,7 +263,7 @@ def export( debug, db, id_match_process, Type_Match ):
 			value_firstname_fa  = none2zero( rec_match[ "value_firstname_fa" ] )
 			value_firstname_pa  = none2zero( rec_match[ "value_firstname_pa" ] )
 			
-			rec_linksbase_1, rec_linksbase_2 = get_2base_records( id_linksbase_1, id_linksbase_2 )
+			rec_linksbase_1, rec_linksbase_2 = get_2base_records( db_links, id_linksbase_1, id_linksbase_2 )
 			if rec_linksbase_1 is None or rec_linksbase_2 is None:
 				print( "rec_linksbase_1:", rec_linksbase_1, "rec_linksbase_2:", rec_linksbase_2 )
 				print( "Could not obtain both links_base values; EXIT" )
@@ -291,8 +275,11 @@ def export( debug, db, id_match_process, Type_Match ):
 			id_source_1 = str( rec_linksbase_1[ "id_source" ] )
 			id_source_2 = str( rec_linksbase_2[ "id_source" ] )
 			
-			Source_1 = short_archive_names.get( id_source_1 )
-			Source_2 = short_archive_names.get( id_source_2 )
+			#Source_1 = short_archive_names.get( id_source_1 )
+			#Source_2 = short_archive_names.get( id_source_2 )
+			
+			source_name_1, short_name_1 = get_archive_name( db_ref, id_source_1 )
+			source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
 			
 			Quality_link_ego_mo = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
 			Quality_link_fa_pa  = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
@@ -307,8 +294,7 @@ def export( debug, db, id_match_process, Type_Match ):
 			elif Quality_link_ego_mo <= 2 and Quality_link_all <= 4:
 				Worth_link = 1			# "Waarschijnlijk"
 			
-		#	line = [ Id, GUID_1, GUID_2, Type_1, Type_2, Source_1, Source_2, Quality_link_ego_mo, Quality_link_all, Worth_link ]
-			line = [ Id, GUID_1, GUID_2, Type_Match, Source_1, Source_2, Quality_link_ego_mo, Quality_link_all, Worth_link ]
+			line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Quality_link_ego_mo, Quality_link_all, Worth_link ]
 			
 			writer.writerow( line )
 		
@@ -316,35 +302,36 @@ def export( debug, db, id_match_process, Type_Match ):
 		
 	csvfile.close()
 
-	update_cbg( db, id_match_process )
+	update_cbg( db_links, id_match_process )
 
 
 
-def update_cbg( db, id_match_process ):
+def update_cbg( db_links, id_match_process ):
 	now = datetime.datetime.now()
 	Date = now.strftime( "%Y-%m-%d" )
 
 	query = "UPDATE links_match.MATCHES_CBG_WWW SET Delivering = 'a', Date = '%s' WHERE Delivering = 'y';" % Date
 	if debug: print ( query )
-	resp = db.insert( query )
+	resp = db_links.insert( query )
 	if resp is not None and len( resp ) != 0:
 		print( "resp:", resp )
 
 
 
-def get_id_match_process( db ):
+def get_id_match_process( db_links ):
 	print( "get_id_match_process()" )
 	id_match_process = None
 	type_match       = None
 	
 	query = "SELECT id_match_process, type_match FROM links_match.MATCHES_CBG_WWW WHERE Delivering = 'y'"
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		nrec = len( resp )
 		if nrec == 0:
-			print( "No valid id_match_process found" )
+			print( "No valid id_match_process found with query:" )
+			print( query )
 		elif nrec == 1:
 			rec = resp[ 0 ]
 			id_match_process = rec[ "id_match_process" ]
@@ -354,6 +341,39 @@ def get_id_match_process( db ):
 			print( "Too many id_match_process records were set to 'y', ignoring them all" )
 			
 	return id_match_process, type_match
+
+
+
+def get_archive_name( db_ref, id_source ):
+	if debug: print( "get_archive()" )
+
+	source_name = "id_source=%s" % id_source
+	short_name  = "id_source=%s" % id_source
+	
+	query = "SELECT source_name, short_name FROM ref_source WHERE id_source = %s" % id_source
+	if debug: print( query )
+	resp = db_ref.query( query )
+	if resp is not None:
+		#print( resp )
+		nrec = len( resp )
+		if nrec == 0:
+			print( "No valid id_source record found" )
+		elif nrec == 1:
+			rec = resp[ 0 ]
+			source_name = rec[ "source_name" ]
+			short_name  = rec[ "short_name" ]
+			
+			if not source_name:
+				source_name = "id_source=%s" % id_source
+			if not short_name:
+				short_name = "id_source=%s" % id_source
+		else:
+			print( "Too many id_source records found, ignoring them all" )
+	
+	if debug:
+		print( "source_name = %s, short_name = %s" % ( source_name, short_name ) )
+	
+	return source_name, short_name
 
 
 
@@ -376,24 +396,30 @@ def format_secs( seconds ):
 
 if __name__ == "__main__":
 	print( "export_matches.py" )
-	
-	"""
-	prompt = "id_match_process: "
-	id_match_process = input( "%s" % prompt )
-	if id_match_process is None:
-		print( "EXIT" )
-		sys.exit( 1 )
-	"""
-	
 	time0 = time()		# seconds since the epoch
 	
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	config_path = os.path.join( os.getcwd(), "export_matches.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
 	
-	id_match_process, type_match = get_id_match_process( db )
+	HOST_REF   = config.get( "HOST_REF" )
+	USER_REF   = config.get( "USER_REF" )
+	PASSWD_REF = config.get( "PASSWD_REF" )
+	DBNAME_REF = config.get( "DBNAME_REF" )
+	
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	DBNAME_LINKS = config.get( "DBNAME_LINKS" )
+	
+	db_ref   = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
+	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
+	
+	id_match_process, type_match = get_id_match_process( db_links )
 	if id_match_process is None:
 		sys.exit( 0 )
 	
-	export( debug, db, id_match_process, type_match )
+	export( db_ref, db_links, id_match_process, type_match )
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "processing took %s" % str_elapsed )

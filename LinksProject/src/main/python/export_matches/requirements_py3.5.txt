@@ -1,12 +1,13 @@
-# FL-13-Sep-2016
+# FL-14-Mar-2018
 # pip requirements file for export_reports with a Python-3.5.2
 # setuptools, pip, and venv are already present in the (virtual) python3.5
 # python-devel and mysql-devel were needed for installing mysqlclient
 # install the packages below from a terminal: 
 # $ pip install -r requirements_py3.5.txt
 
-future >= 0.15.2
-mysqlclient >= 1.3.7
-python-dateutil >= 2.5.3
+future >= 0.16.0
+mysqlclient >= 1.3.12
+python-dateutil >= 2.7.0
+PyYAML >= 3.12
 
 # [eof]
