@@ -70,7 +70,7 @@ import linksmanager.ManagerGui;
  * FL-30-Oct-2015 minMaxCalculation() function C omission
  * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
  * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
- * FL-13-May-2016 split firstnames now in standardFirstnames()
+ * FL-13-May-2016 Split firstnames now in standardFirstnames()
  * FL-21-May-2016 Each thread its own ref table multimaps
  * FL-04-Nov-2016 Small change minMaxCalculation
  * FL-07-Nov-2016 Flag instead of remove registrations
@@ -79,9 +79,9 @@ import linksmanager.ManagerGui;
  * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
  * FL-28-Jun-2017 Local db_ref connections, immediate open/close
  * FL-05-Jul-2017 almmRegistration use
- * FL-11-Jul-2017 more not_linksbase flagging
+ * FL-11-Jul-2017 More not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
- * FL-25-Sep-2017
+ * FL-26-Mar-2018 Missing divorce_date in standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -552,7 +552,7 @@ public class LinksCleanThread extends Thread
 
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; Connecting to databases:", threadId ), false, true );
+        showMessage( String.format( "Thread id %02d; Connecting to databases", threadId ), false, true );
 
         if( debug ) { showMessage( ref_db + " (ref)", false, true ); }
         dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
@@ -5789,7 +5789,7 @@ public class LinksCleanThread extends Thread
                         System.out.println( msg );
                     }
 
-                    String query_p = "SELECT registration_maintype , birth_date , mar_date , death_date FROM person_c WHERE id_registration = " + id_registration;
+                    String query_p = "SELECT registration_maintype , birth_date , mar_date , divorce_date, death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
 
                     DateYearMonthDaySet dymd_event = null;
