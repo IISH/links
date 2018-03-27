@@ -81,7 +81,7 @@ import linksmanager.ManagerGui;
  * FL-05-Jul-2017 almmRegistration use
  * FL-11-Jul-2017 More not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
- * FL-26-Mar-2018 Missing divorce_date in standardRegistrationDate()
+ * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4402,6 +4402,7 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         //msg = "skipping untill minMaxDateMain()";
+        //msg = "skipping untill standardRegistrationDate()";
         //msg = "ONLY flag functions";
         //showMessage( msg, false, true );
         ///*
@@ -4436,7 +4437,7 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type, rmtype );
         msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-
+        //*/
 
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
@@ -4444,7 +4445,6 @@ public class LinksCleanThread extends Thread
         standardRegistrationDate( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
 
         //msg = "skipping remaining date functions";
         //showMessage( msg, false, true );
@@ -4477,7 +4477,6 @@ public class LinksCleanThread extends Thread
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-
         //*/
 
         ///*
@@ -5789,7 +5788,7 @@ public class LinksCleanThread extends Thread
                         System.out.println( msg );
                     }
 
-                    String query_p = "SELECT registration_maintype , birth_date , mar_date , divorce_date, death_date FROM person_c WHERE id_registration = " + id_registration;
+                    String query_p = "SELECT registration_maintype , registration_type, birth_date , mar_date , divorce_date, death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
 
                     DateYearMonthDaySet dymd_event = null;
