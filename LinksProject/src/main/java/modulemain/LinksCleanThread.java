@@ -5788,18 +5788,24 @@ public class LinksCleanThread extends Thread
                         System.out.println( msg );
                     }
 
-                    String query_p = "SELECT registration_maintype , registration_type, birth_date , mar_date , divorce_date, death_date FROM person_c WHERE id_registration = " + id_registration;
+                    String query_p = "SELECT registration_maintype , birth_date , mar_date , divorce_date, death_date FROM person_c WHERE id_registration = " + id_registration;
                     ResultSet rs_p = dbconCleaned.runQueryWithResult( query_p );
 
                     DateYearMonthDaySet dymd_event = null;
                     while( rs_p.next() )
                     {
                         // try to use the event date
+                        if( registration_type == null ) { registration_type = ""; }
                         String event_date = "";
-                             if( registration_maintype == 1 ) { event_date = rs_p.getString( "birth_date" ); }
-                        else if( registration_maintype == 2 && registration_type.equals( 'h' ) ) { event_date = rs_p.getString( "mar_date" ); }
-                        else if( registration_maintype == 2 && registration_type.equals( 's' ) ) { event_date = rs_p.getString( "divorce_date" ); }
-                        else if( registration_maintype == 3 ) { event_date = rs_p.getString( "death_date" ); }
+
+                        if( registration_maintype == 1 ) {
+                            event_date = rs_p.getString( "birth_date" ); }
+                        else if( registration_maintype == 2 && registration_type.equals( 'h' ) ) {
+                            event_date = rs_p.getString( "mar_date" ); }
+                        else if( registration_maintype == 2 && registration_type.equals( 's' ) ) {
+                            event_date = rs_p.getString( "divorce_date" ); }
+                        else if( registration_maintype == 3 ) {
+                            event_date = rs_p.getString( "death_date" ); }
 
                         dymd_event = LinksSpecific.divideCheckDate( event_date );
 
