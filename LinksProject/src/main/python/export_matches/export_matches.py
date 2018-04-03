@@ -28,7 +28,8 @@ Goal:		export matches for CBG
 			ALTER TABLE MATCHES_CBG_WWW ADD type_match INT(10) AFTER id_match_process;
 13-Mar-2016 Export archive names instead of our id_source numbers
 14-Mar-2016 Get archive names now from links_general.ref_source
-14-Mar-2016 YAML db config file
+14-Mar-2018 YAML db config file
+03-Apr-2018 Extra CSV field Type_Link
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -201,7 +202,7 @@ def none2zero( var ):
 
 
 
-def export( db_ref, db_links, id_match_process, Type_Match ):
+def export( db_ref, db_links, id_match_process, Type_Match, Type_link ):
 	if debug: print( "export() for id_match_process %s" % id_match_process )
 
 	query = "SELECT COUNT(*) AS count FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -228,7 +229,8 @@ def export( db_ref, db_links, id_match_process, Type_Match ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 
-	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
+#	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
+	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_B", "Worth_link" ]
 	writer.writerow( header )
 	
 	query = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -275,26 +277,23 @@ def export( db_ref, db_links, id_match_process, Type_Match ):
 			id_source_1 = str( rec_linksbase_1[ "id_source" ] )
 			id_source_2 = str( rec_linksbase_2[ "id_source" ] )
 			
-			#Source_1 = short_archive_names.get( id_source_1 )
-			#Source_2 = short_archive_names.get( id_source_2 )
-			
 			source_name_1, short_name_1 = get_archive_name( db_ref, id_source_1 )
 			source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
 			
-			Quality_link_ego_mo = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
-			Quality_link_fa_pa  = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
+			Quality_link_A = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
+			Quality_link_B = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
 			
-			Quality_link_all    = Quality_link_ego_mo + Quality_link_fa_pa
+			Quality_link_all = Quality_link_A + Quality_link_B
 			
 			Worth_link = ""
-			if Quality_link_ego_mo == 0 and Quality_link_all <= 2:
+			if Quality_link_A == 0 and Quality_link_B <= 2:
 				Worth_link = 3			# "Goed"
-			elif Quality_link_ego_mo <= 1 and Quality_link_all <= 3:
+			elif Quality_link_A <= 1 and Quality_link_B <= 3:
 				Worth_link = 2			# "Hoogstwaarschijnlijk"
-			elif Quality_link_ego_mo <= 2 and Quality_link_all <= 4:
+			elif Quality_link_A <= 2 and Quality_link_B <= 4:
 				Worth_link = 1			# "Waarschijnlijk"
 			
-			line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Quality_link_ego_mo, Quality_link_all, Worth_link ]
+			line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			
 			writer.writerow( line )
 		
@@ -322,11 +321,14 @@ def get_id_match_process( db_links ):
 	print( "get_id_match_process()" )
 	id_match_process = None
 	type_match       = None
+	type_link        = None
 	
-	query = "SELECT id_match_process, type_match FROM links_match.MATCHES_CBG_WWW WHERE Delivering = 'y'"
+	table = "links_match.MATCHES_CBG_WWW"
+	query = "SELECT id_match_process, type_match FROM %s WHERE Delivering = 'y'" % table
 	if debug: print( query )
 	resp = db_links.query( query )
-	if resp is not None:
+	
+	if resp:
 		#print( resp )
 		nrec = len( resp )
 		if nrec == 0:
@@ -339,8 +341,49 @@ def get_id_match_process( db_links ):
 			print( "id_match_process = %s" % id_match_process )
 		else:
 			print( "Too many id_match_process records were set to 'y', ignoring them all" )
-			
-	return id_match_process, type_match
+	else:
+		print( "No records with Delivering = 'y' in table %s" % table )
+	
+	if id_match_process:
+		table = "links_match.match_process"
+		query = "SELECT use_familyname, use_firstname FROM %s WHERE `id` = %s" % ( table, id_match_process )
+		resp = db_links.query( query )
+		
+		if resp:
+			#print( resp )
+			nrec = len( resp )
+			if nrec == 0:
+				print( "No valid id_match_process found with query:" )
+				print( query )
+			elif nrec == 1:
+				rec = resp[ 0 ]
+				use_familyname = rec[ "use_familyname" ]
+				use_firstname  = rec[ "use_firstname" ]
+				
+				if use_familyname != use_firstname:
+					print( "WARNING, unequal: use_familyname = %s, use_firstname = %s" % ( use_familyname, use_firstname ) )
+				
+				# # EMFP order
+				if use_familyname == "1100":
+					type_link = '1'
+				elif use_familyname == "1110":
+					type_link = '2'
+				elif use_familyname == "1101":
+					type_link = '3'
+				elif use_familyname == "1111":
+					type_link = '4'
+				elif use_familyname == "1001":
+					type_link = '5'
+				else:
+					type_link = ''
+				
+				print( "id_match_process = %s" % id_match_process )
+			else:
+				print( "Too many `id` records were set to %s, ignoring them all" % id_match_process )
+		else:
+			print( "No records with id_match_process = %s in table %s" % ( table, id_match_process ) )
+		
+	return id_match_process, type_match, type_link
 
 
 
@@ -415,11 +458,13 @@ if __name__ == "__main__":
 	db_ref   = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
 	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 	
-	id_match_process, type_match = get_id_match_process( db_links )
+	id_match_process, type_match, type_link = get_id_match_process( db_links )
 	if id_match_process is None:
 		sys.exit( 0 )
 	
-	export( db_ref, db_links, id_match_process, type_match )
+	print( "id_match_process: %s, type_match: %s, type_link: %s" % ( id_match_process, type_match, type_link ) )
+	
+	export( db_ref, db_links, id_match_process, type_match, type_link )
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "processing took %s" % str_elapsed )
