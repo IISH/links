@@ -13,7 +13,7 @@ Goal:       Check matches for usability
             the match_process table entries that are outdated. 
             
 17-Apr-2018 Created
-18-Apr-2018 Changed
+23-Apr-2018 Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -24,7 +24,7 @@ from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, m
 import os
 import sys
 import datetime
-import stringdist
+import stringdist			# pip install StringDist
 from time import time
 import MySQLdb
 import yaml
