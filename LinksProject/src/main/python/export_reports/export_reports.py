@@ -5,14 +5,13 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_reports.py
-Version:	0.1
-Goal:		collect error log tables into a single table ERROR_STORE
-Notice:		See the variable x_codes below. If the ref_report table is updated 
-			with new report_type values for 'x' codes, this variable must also 
-			be updated. 
+Version:	0.2
+Goal:		Select records from table ERROR_STORE where flag = 2, 
+            write a selection of fields to csv files, split by 
+            id_source and reg_type. 
 
 07-Sep-2016 Created
-17-Oct-2017 Changed
+25-Apr-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -26,15 +25,15 @@ import datetime
 from time import time
 import csv
 import MySQLdb
-import yaml
 
 debug = False
 
-# db settings, read values from config file
-HOST_LINKS   = ""
-USER_LINKS   = ""
-PASSWD_LINKS = ""
-DBNAME_LINKS = ""
+# db
+HOST   = "localhost"
+
+USER   = "links"
+PASSWD = "mslinks"
+DBNAME = ""				# be explicit in all queries
 
 
 long_archive_names = { 
@@ -197,7 +196,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
-	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "content" ]
+	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date_time", "sequence", "role", "guid", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
@@ -218,7 +217,8 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 			archive      = none2empty( rec[ "archive" ] )
 			location     = none2empty( rec[ "location" ] )
 			reg_type_out = none2empty( rec[ "reg_type" ] )
-			date         = none2empty( rec[ "date" ] )
+			error_type   = none2empty( rec[ "report_type" ] )
+			date_time    = none2empty( rec[ "date_time" ] )
 			sequence     = none2empty( rec[ "sequence" ] )
 			role         = none2empty( rec[ "role" ] )
 			guid         = none2empty( rec[ "guid" ] )
@@ -231,18 +231,19 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 					archive = "missing_archive_name"
 			
 			if debug:
-				print( "id_log    = %s" % id_log )
-				print( "id_source = %s" % id_source  )
-				print( "archive   = %s" % archive )
-				print( "location  = %s" % location )
-				print( "reg_type  = %s" % reg_type_out )
-				print( "date      = %s" % date )
-				print( "sequence  = %s" % sequence )
-				print( "role      = %s" % role )
-				print( "guid      = %s" % guid )
-				print( "content   = %s" % content )
+				print( "id_log     = %s" % id_log )
+				print( "id_source  = %s" % id_source  )
+				print( "archive    = %s" % archive )
+				print( "location   = %s" % location )
+				print( "reg_type   = %s" % reg_type_out )
+				print( "error_type = %s" % error_type )
+				print( "date_time  = %s" % date_time )
+				print( "sequence   = %s" % sequence )
+				print( "role       = %s" % role )
+				print( "guid       = %s" % guid )
+				print( "content    = %s" % content )
 			
-			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, content ]
+			line =  [ id_log, id_source, archive, location, reg_type_out, error_type, date_time, sequence, role, guid, content ]
 			writer.writerow( line )
 
 	csvfile.close()
@@ -309,15 +310,7 @@ def export( debug, db ):
 if __name__ == "__main__":
 	print( "export_reports.py" )
 	
-	config_path = os.path.join( os.getcwd(), "export_reports.yaml" )
-#	print( "Config file: %s" % config_path )
-	config = yaml.safe_load( open( config_path ) )
-	
-	HOST_LINKS   = config.get( "HOST_LINKS" )
-	USER_LINKS   = config.get( "USER_LINKS" )
-	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
-	
-	db = Database( host = HOST_LINKS , user = USER_LINKS , passwd = PASSWD_LINKS , dbname = DBNAME_LINKS )
+	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
 	
 	export( debug, db )
 	
