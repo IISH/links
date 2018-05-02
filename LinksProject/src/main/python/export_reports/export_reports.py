@@ -5,13 +5,12 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_reports.py
-Version:	0.2
+Version:	0.3
 Goal:		Select records from table ERROR_STORE where flag = 2, 
-            write a selection of fields to csv files, split by 
-            id_source and reg_type. 
+            write a selection of fields to csv files, split by id_source and reg_type. 
 
 07-Sep-2016 Created
-25-Apr-2018 Changed
+02-May-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -196,7 +195,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
-	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date_time", "sequence", "role", "guid", "content" ]
+	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
@@ -218,7 +217,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 			location     = none2empty( rec[ "location" ] )
 			reg_type_out = none2empty( rec[ "reg_type" ] )
 			error_type   = none2empty( rec[ "report_type" ] )
-			date_time    = none2empty( rec[ "date_time" ] )
+			date         = none2empty( rec[ "date" ] )
 			sequence     = none2empty( rec[ "sequence" ] )
 			role         = none2empty( rec[ "role" ] )
 			guid         = none2empty( rec[ "guid" ] )
@@ -237,13 +236,13 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 				print( "location   = %s" % location )
 				print( "reg_type   = %s" % reg_type_out )
 				print( "error_type = %s" % error_type )
-				print( "date_time  = %s" % date_time )
+				print( "date       = %s" % date )
 				print( "sequence   = %s" % sequence )
 				print( "role       = %s" % role )
 				print( "guid       = %s" % guid )
 				print( "content    = %s" % content )
 			
-			line =  [ id_log, id_source, archive, location, reg_type_out, error_type, date_time, sequence, role, guid, content ]
+			line =  [ id_log, id_source, archive, location, reg_type_out, error_type, date, sequence, role, guid, content ]
 			writer.writerow( line )
 
 	csvfile.close()

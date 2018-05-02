@@ -13,8 +13,7 @@ Goal:		export matches for CBG
 				If the number of records is 1, fetch the value of column "id_match_process". 
 			-2- Create CSV file with filename from id_match_process and current date: 
 				"idmp=<id_match_process>_MATCHES_EXPORT_<yyyy-mm-dd>.csv"
-				The following fields will be written to the CSV file: 
-			#	header  = [ "Id", "GUID_1", "GUID_2", "Type_1", "Type_2", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
+				The following fields will be written to the CSV file: 			
 				header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 			-3- Fetch the records from table "links_match.matches" for the given "id_match_process", 
 				and write the wanted fields to the CSV file. 
@@ -30,6 +29,7 @@ Goal:		export matches for CBG
 14-Mar-2016 Get archive names now from links_general.ref_source
 14-Mar-2018 YAML db config file
 03-Apr-2018 Extra CSV field Type_Link
+02-May-2018 type_match from links_base ego role
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -46,7 +46,9 @@ import MySQLdb
 import yaml
 
 debug = False
-chunk = 10000		# show progress in processing records
+chunk =  10000		# show progress in processing records
+limit = 200000		# number of records
+
 
 # 13-Mar-2018
 # Now the long and short archive names are retrieved, 
@@ -202,7 +204,28 @@ def none2zero( var ):
 
 
 
-def export( db_ref, db_links, id_match_process, Type_Match, Type_link ):
+def get_type_match( db_ref, rmtype_1, role_1 ):
+	if debug: print( "get_type_match()" )
+
+	type_match = ""
+	
+	query = "SELECT type_match FROM ref_type_match WHERE s1_main_type = %s AND s1_role = %s " % ( rmtype_1, role_1 )
+	if debug: print( query )
+	resp = db_ref.query( query )
+	if resp is not None:
+		#print( resp )
+		nrec = len( resp )
+		if nrec == 0:
+			print( "No valid type_match record found in ref_type_match for s1_main_type = %s and s1_role = %s " % ( rmtype_1, role_1 ) )
+		elif nrec == 1:
+			rec = resp[ 0 ]
+			type_match = rec[ "type_match" ]
+	
+	return type_match
+
+
+
+def export( db_ref, db_links, id_match_process, Type_link ):
 	if debug: print( "export() for id_match_process %s" % id_match_process )
 
 	query = "SELECT COUNT(*) AS count FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -229,7 +252,6 @@ def export( db_ref, db_links, id_match_process, Type_Match, Type_link ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 
-#	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Quality_link_ego_mo", "Quality_link_all", "Worth_link" ]
 	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_B", "Worth_link" ]
 	writer.writerow( header )
 	
@@ -245,6 +267,10 @@ def export( db_ref, db_links, id_match_process, Type_Match, Type_link ):
 		for r in range( nrec ):
 			if ( r > 0 and ( r + chunk ) % chunk == 0 ):
 				print( "%d-of-%d records processed" % ( r, nrec ) )
+			if limit and r >= limit:
+				print( "%d-of-%d records processed" % ( r, nrec ) )
+				print( "limit reached" )
+				break
 			
 			rec_match = resp[ r ]
 			if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
@@ -279,6 +305,15 @@ def export( db_ref, db_links, id_match_process, Type_Match, Type_link ):
 			
 			source_name_1, short_name_1 = get_archive_name( db_ref, id_source_1 )
 			source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
+			
+			rmtype_1 = str( rec_linksbase_1[ "registration_maintype" ] )
+		#	rmtype_2 = str( rec_linksbase_2[ "registration_maintype" ] )
+			
+			role_1 = str( rec_linksbase_1[ "ego_role" ] )
+		#	role_2 = str( rec_linksbase_2[ "ego_role" ] )
+				
+		#	Type_Match = "mt:%s,ro:%s x mt:%s,ro:%s = %s" % ( rmtype_1, role_1, rmtype_2, role_2, tmatch )
+			Type_Match = get_type_match( db_ref, rmtype_1, role_1 )
 			
 			Quality_link_A = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
 			Quality_link_B = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
@@ -320,11 +355,10 @@ def update_cbg( db_links, id_match_process ):
 def get_id_match_process( db_links ):
 	print( "get_id_match_process()" )
 	id_match_process = None
-	type_match       = None
 	type_link        = None
 	
 	table = "links_match.MATCHES_CBG_WWW"
-	query = "SELECT id_match_process, type_match FROM %s WHERE Delivering = 'y'" % table
+	query = "SELECT id_match_process FROM %s WHERE Delivering = 'y'" % table
 	if debug: print( query )
 	resp = db_links.query( query )
 	
@@ -337,7 +371,6 @@ def get_id_match_process( db_links ):
 		elif nrec == 1:
 			rec = resp[ 0 ]
 			id_match_process = rec[ "id_match_process" ]
-			type_match       = rec[ "type_match" ]
 			print( "id_match_process = %s" % id_match_process )
 		else:
 			print( "Too many id_match_process records were set to 'y', ignoring them all" )
@@ -383,7 +416,7 @@ def get_id_match_process( db_links ):
 		else:
 			print( "No records with id_match_process = %s in table %s" % ( table, id_match_process ) )
 		
-	return id_match_process, type_match, type_link
+	return id_match_process, type_link
 
 
 
@@ -400,7 +433,7 @@ def get_archive_name( db_ref, id_source ):
 		#print( resp )
 		nrec = len( resp )
 		if nrec == 0:
-			print( "No valid id_source record found" )
+			print( "No valid id_source record found in ref_source for id_source = %s" % id_source )
 		elif nrec == 1:
 			rec = resp[ 0 ]
 			source_name = rec[ "source_name" ]
@@ -458,13 +491,13 @@ if __name__ == "__main__":
 	db_ref   = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
 	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 	
-	id_match_process, type_match, type_link = get_id_match_process( db_links )
+	id_match_process, type_link = get_id_match_process( db_links )
 	if id_match_process is None:
 		sys.exit( 0 )
 	
-	print( "id_match_process: %s, type_match: %s, type_link: %s" % ( id_match_process, type_match, type_link ) )
+	print( "id_match_process: %s, type_link: %s" % ( id_match_process, type_link ) )
 	
-	export( db_ref, db_links, id_match_process, type_match, type_link )
+	export( db_ref, db_links, id_match_process, type_link )
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "processing took %s" % str_elapsed )
