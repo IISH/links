@@ -10,7 +10,7 @@ Goal:		Select records from table ERROR_STORE where flag = 2,
             write a selection of fields to csv files, split by id_source and reg_type. 
 
 07-Sep-2016 Created
-02-May-2018 Changed
+15-May-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -195,7 +195,8 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
-	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
+#	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
+	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
@@ -216,11 +217,11 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 			archive      = none2empty( rec[ "archive" ] )
 			location     = none2empty( rec[ "location" ] )
 			reg_type_out = none2empty( rec[ "reg_type" ] )
-			error_type   = none2empty( rec[ "report_type" ] )
 			date         = none2empty( rec[ "date" ] )
 			sequence     = none2empty( rec[ "sequence" ] )
 			role         = none2empty( rec[ "role" ] )
 			guid         = none2empty( rec[ "guid" ] )
+			error_type   = none2empty( rec[ "report_type" ] )
 			content      = none2empty( rec[ "content" ] )
 			
 			if archive == '':
@@ -235,14 +236,14 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 				print( "archive    = %s" % archive )
 				print( "location   = %s" % location )
 				print( "reg_type   = %s" % reg_type_out )
-				print( "error_type = %s" % error_type )
 				print( "date       = %s" % date )
 				print( "sequence   = %s" % sequence )
 				print( "role       = %s" % role )
 				print( "guid       = %s" % guid )
+				print( "error_type = %s" % error_type )
 				print( "content    = %s" % content )
 			
-			line =  [ id_log, id_source, archive, location, reg_type_out, error_type, date, sequence, role, guid, content ]
+			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, error_type, content ]
 			writer.writerow( line )
 
 	csvfile.close()
