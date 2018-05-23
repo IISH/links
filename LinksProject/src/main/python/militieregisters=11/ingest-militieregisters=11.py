@@ -8,26 +8,18 @@ Version:	0.1
 Goal:		Ingest miltieregister CSV file into MySQL table
 
 15-May-2018	Created
-22-May-2018	Latest change
+23-May-2018	Latest change
 
 
--- SQL manipulations afterwards (only once):
-USE links_original;
-ALTER TABLE `registration_o` ADD INDEX `id_source` (`id_source`);
-ALTER TABLE `person_o` ADD INDEX `id_source` (`id_source`);
+# Action-4, set corresponding id_registration in person_o
+UPDATE links_original.registration_o, links_original.person_o 
+SET person_o.id_registration = registration_o.id_registration 
+WHERE person_o.id_source = 11 
+AND registration_o.id_source = 11 
+AND person_o.id_person_o = registration_o.id_orig_registration;
 
-USE links_original;
-ALTER TABLE `registration_o` ADD INDEX `id_orig_registration` (`id_orig_registration`);
-USE links_original;
-ALTER TABLE `person_o` ADD INDEX `id_person_o` (`id_person_o`);
-
-
--- Delete previous data
-USE links_original;
-DELETE FROM links_original.registration_o WHERE id_source = 11;
-DELETE FROM links_original.person_o WHERE id_source = 11;
-
--- Copy from temp
+# Action-3
+-- Copy from temp to original
 USE links_temp;
 USE links_original;
 
@@ -37,14 +29,20 @@ INSERT INTO links_original.registration_o
 	name_source,
 	id_orig_registration,
 	registration_maintype,
-	registration_date
+	registration_type, 
+	registration_day,
+	registration_month,
+	registration_year
 )
 SELECT
-	id_source,
+	Id_source,
 	name_source,
-	id,
-	registration_maintype,
-	date
+	Id_orig_registration,
+	Registration_maintype,
+	Registration_type,
+	Registration_day,
+	Registration_month,
+	Registration_year
 FROM
 	links_temp.militieregisters11;
 
@@ -54,74 +52,69 @@ INSERT INTO links_original.person_o
 	registration_maintype,
 	id_person_o,
 	firstname,
-	prefix,
 	familyname,
 	role,
 	sex,
-	birth_date,
+	birth_day,
+	birth_month,
+	birth_year,
 	birth_location
 )
 SELECT
-	id_source,
-	registration_maintype,
-	id,
-	given,
-	prefix,
-	surname,
-	role,
-	sex,
-	date,
-	location
+	Id_source,
+	Registration_maintype,
+	Id_person_o,
+	Voornaam,
+	Achternaam_prefix,
+	Role,
+	Geslacht,
+	Gebdag,
+	Gebmnd,
+	Gebjaar,
+	Gebplaats
 FROM
 	links_temp.militieregisters11;
 
+# Action-2
+-- Delete previous militie data
+USE links_original;
+DELETE FROM links_original.registration_o WHERE id_source = 11;
+DELETE FROM links_original.person_o WHERE id_source = 11;
 
-UPDATE links_original.registration_o, links_original.person_o 
-SET person_o.id_registration = registration_o.id_registration 
-WHERE person_o.id_source = 11 
-AND registration_o.id_source = 11 
-AND person_o.id_person_o = registration_o.id_orig_registration;
-
-
-# Add some columns to table militieregisters, and set default values: 
+# Action-1
+# Add a column to table militieregisters, and set the default value: 
 USE links_temp;
-
-ALTER TABLE links_temp.militieregisters11 ADD id_source INT(10) UNSIGNED DEFAULT NULL AFTER id;
 ALTER TABLE links_temp.militieregisters11 ADD name_source VARCHAR(100) DEFAULT NULL AFTER id_source;
-ALTER TABLE links_temp.militieregisters11 ADD registration_maintype TINYINT(3) UNSIGNED DEFAULT NULL AFTER name_source;
-ALTER TABLE links_temp.militieregisters11 ADD sex CHAR(1) DEFAULT NULL AFTER registration_maintype;
-ALTER TABLE links_temp.militieregisters11 ADD role VARCHAR(50) DEFAULT NULL AFTER sex;
-
-UPDATE links_temp.militieregisters11 SET id_source = 11;
 UPDATE links_temp.militieregisters11 SET name_source = "militieregisters";
-UPDATE links_temp.militieregisters11 SET registration_maintype = 1;
-UPDATE links_temp.militieregisters11 SET sex = "m";
-UPDATE links_temp.militieregisters11 SET role = "Kind";
 
 
 registration_o
 --------------
 id_registration			AUTO
-id_source				11
+id_source				militieregisters11.Id_source
 name_source				"militieregisters"
-id_orig_registration	militieregisters.id
-registration_maintype	1
-registration_date		militieregisters.date	# reverse date string! OK
+id_orig_registration	militieregisters11.Id_orig_registration
+registration_maintype	militieregisters11.Registration_maintype
+registration_type		militieregisters11.Registration_type
+registration_day		militieregisters11.Registration_day
+registration_month		militieregisters11.Registration_month
+registration_year		militieregisters11.Registration_year
 
 person_o
 --------
 id_person				AUTO
 id_registration			registration_o.id_registration
-id_source				11
-registration_maintype	1
-id_person_o				militieregisters.id
-firstname				militieregisters.given
-prefix					militieregisters.prefix
-familyname				militieregisters.surname
-role					1
-sex						"m"
-birth_date				militieregisters.date	# reverse date string! OK
-birth_location			militieregisters.location
+id_source				militieregisters11.Id_source
+registration_maintype	militieregisters11.Registration_maintype
+id_person_o				militieregisters11.Id_person_o
+firstname				militieregisters11.Voornaam
+familyname				militieregisters11.Achternaam_prefix
+role					militieregisters11.Role
+sex						militieregisters11.Geslacht
+birth_day				militieregisters11.Gebdag
+birth_month				militieregisters11.Gebmnd
+birth_year				militieregisters11.Gebjaar
+birth_location			militieregisters11.location
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -301,31 +294,33 @@ def process_csv( db_links, csv_filename ):
 	]
 	
 	map_columns = {
-		"Id"                    : "id",
-		"Blijft"                : "Blijft",
-		"Id_orig_registration"  : "Id_orig_registration",
-		"Id_person_o"           : "Id_person_o",
-		"Id_source"             : "Id_source" ,
-		"Registration_maintype" : "Registration_maintype",
-		"Registration_type"     : "Registration_type",
-		"Registration_day"      : "Registration_day",
-		"Registration_month"    : "Registration_month",
-		"Registration_year"     : "Registration_year",
-		"Role"                  : "Role",
-		"Idnr"                  : "Idnr",
-		"Persnr"                : "Persnr",
-		"Relatie_type"          : "Relatie_type",
-		"Achternaam_prefix"     : "Achternaam_prefix",
-		"Achternaam"            : "Achternaam",
-		"Prefix"                : "Prefix",
-		"Voornaam"              : "Voornaam",
-		"Geslacht"              : "Geslacht",
-		"Gebdag"                : "Gebdag",
-		"Gebmnd"                : "Gebmnd",
-		"Gebjaar"               : "Gebjaar",
-		"Gebplaats"             : "Gebplaats"
+		"Id"                    : "id",						# skip (pk)
+		"Blijft"                : "Blijft",					# skip
+		"Id_orig_registration"  : "Id_orig_registration",	# id_orig_registration	r
+		"Id_person_o"           : "Id_person_o",			# id_person_o			p
+		"Id_source"             : "Id_source",				# id_source				r+p
+		"Registration_maintype" : "Registration_maintype",	# registration_maintype	r+p
+		"Registration_type"     : "Registration_type",		# registration_type		r
+		"Registration_day"      : "Registration_day",		# registration_day		r
+		"Registration_month"    : "Registration_month",		# registration_month	r
+		"Registration_year"     : "Registration_year",		# registration_year		r
+		"Role"                  : "Role",					# role					p
+		"Idnr"                  : "Idnr",					# skip
+		"Persnr"                : "Persnr",					# skip
+		"Relatie_type"          : "Relatie_type",			# skip
+		"Achternaam_prefix"     : "Achternaam_prefix",		# familyname			p
+		"Achternaam"            : "Achternaam",				# empty, skip
+		"Prefix"                : "Prefix",					# empty, skip
+		"Voornaam"              : "Voornaam",				# firstname				p
+		"Geslacht"              : "Geslacht",				# sex					p
+		"Gebdag"                : "Gebdag",					# birth_day				p
+		"Gebmnd"                : "Gebmnd",					# birth_month			p
+		"Gebjaar"               : "Gebjaar",				# birth_year			p
+		"Gebplaats"             : "Gebplaats"				# birth_location		p
 	}
-
+	# added to table            : name_source				# name_source			r
+	
+	
 	nline = 0
 	id_person_o_prev = None
 	csv_file = io.open( csv_pathname, 'r', encoding = encoding )
