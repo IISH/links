@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_matches.py
-Version:	0.2
+Version:	0.21
 Goal:		export matches for CBG
 			-1- From table "links_match.MATCHES_CBG_WWW", fetch the records where
 				the column Delivering = 'y'. 
@@ -30,6 +30,7 @@ Goal:		export matches for CBG
 14-Mar-2018 YAML db config file
 03-Apr-2018 Extra CSV field Type_Link
 02-May-2018 type_match from links_base ego role
+08-May-2018 Strip { and } from GUIDs
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -299,6 +300,10 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 			
 			GUID_1 = rec_linksbase_1[ "id_persist_registration" ]
 			GUID_2 = rec_linksbase_2[ "id_persist_registration" ]
+			
+			# The '{' & '}' come from the CBG XML, but they do not want them in the export data
+			GUID_1 = GUID_1.strip( '{}' )
+			GUID_2 = GUID_2.strip( '{}' )
 			
 			id_source_1 = str( rec_linksbase_1[ "id_source" ] )
 			id_source_2 = str( rec_linksbase_2[ "id_source" ] )
