@@ -13,6 +13,8 @@
 -- 20-Feb-2016 new name: a2a_to_original.sql
 -- 11-Apr-2016 show registration counts from source
 -- 23-May-2016 also copy source.institutionname
+-- 05-Jun-2018 no longer use MysQL FUNCTION: links_functions.regex_replace
+-- 05-Jun-2018  add role = 'other:Gewezen echtgenoot' & 'other:Gewezen echtgenote' for 'Echtscheiding'
 
 TRUNCATE TABLE links_a2a.registration_o_temp ;
 
@@ -189,7 +191,7 @@ SET
 	a.divorce_date = CONCAT( day, '-', month, '-', year ) , 
 	a.divorce_location = b.place 
 WHERE
-	( a.role = 'Bruid' OR a.role = 'Bruidegom' ) AND
+	( a.role = 'Bruid' OR a.role = 'Bruidegom' OR a.role = 'other:Gewezen echtgenoot' OR a.role = 'other:Gewezen echtgenote' ) AND
 	c.registration_type = 'Echtscheiding' AND
 	a.id_registration = c.id_orig_registration AND
 	c.id_orig_registration = b.a2a_id ;
@@ -245,10 +247,10 @@ WHERE
 
 --
 
-UPDATE 
-	links_a2a.person_o_temp AS a
-SET 
-	a.id_person_o = links_functions.regex_replace(a.id_person_o, '[^0-9]+', '' ) ;
+-- UPDATE 
+-- 	links_a2a.person_o_temp AS a
+-- SET 
+-- 	a.id_person_o = links_functions.regex_replace(a.id_person_o, '[^0-9]+', '' ) ;
 --
 
 UPDATE 

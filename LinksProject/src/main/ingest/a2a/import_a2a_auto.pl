@@ -1,30 +1,74 @@
 #!/user/bin/perl
 
+=for comment
+Copyright (C) IISH (www.iisg.nl)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 3.0 of the GNU General Public License as
+published by the Free Software Foundation.
+
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+=cut
+
+# FL-16-Jun-2014 Original script by Omar Azouguagh, changes by Vyacheslav Tykhonov
+# FL-19-Aug-2014 Changed
+# FL-26-Aug-2014 registration_maintype added
+# FL-04-Nov-2014 Cosmetic
+# FL-05-Nov-2014 Try read zipped xml input (unpacked) transparently
+# FL-07-Jan-2015 Error msg num arguments
+# FL-26-Mar-2015 Table defaults: ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin
+# FL-13-Apr-2015 Read a2a input as UTF-8 (default ISO Latin-1 is wrong)
+# FL-23-Apr-2015 Remove DELAYED in first INSERT
+# FL-21-Dec-2016 Skip header lines if header is more than 1 line
+
+# TODO: use strict, use warnings
+#use strict;
+#use warnings;
+
 use DBI;
 use XML::Simple;
+use File::Basename;
+use Encode qw(encode decode);
 
 # Buffer off
 $| = 1;
 
 # Check number of ARGS
-if(@ARGV != 4){
-	print 	"Error:\nWrong #no of arguments\nArgments. Found:" . @ARGV . 
-			"\nPlease use perl import.pl [XML File] [Database] [id_source] [DROP AND CREATE] without '-'";
+#if( @ARGV != 5 ) {
+if( @ARGV != 7 ) {
+	print 	"Error: wrong number of arguments. Arguments found: " . @ARGV . 
+			"\nPlease use: \nperl import_a2a.pl [XML File] [Database URL] [id_source] [registration_maintype] [drop-and-create] [dbuser] [dbpass]\n";
 	
 	# Close program
 	exit;
 }
 
 # MySQL Database Part
-$host = $ARGV[1];
+$pathname     = $ARGV[0];
+$host         = $ARGV[1];
+$id_source    = $ARGV[2];
+$reg_maintype = $ARGV[3];
+$drop_create  = $ARGV[4];
+
 $db = "links_a2a";
 
-# Ask user for user and pass
-print "Please enter database username:";
-$user = <STDIN>;
+## Ask user for user and pass
+#print "Please enter database username: ";
+#$user = <STDIN>;
+#
+#print "Please enter database password: ";
+#$pass = <STDIN>;
 
-print "Please enter database password:";
-$pass = <STDIN>;
+$user = $ARGV[5];
+$pass = $ARGV[6];
 
 # Remove new lines
 chomp $user;
@@ -34,14 +78,50 @@ chomp $pass;
 $dbh = DBI->connect("DBI:mysql:$db:$host", $user, $pass)
 or die "Can't Connect to Database: $dbh->errstr\n";
 
+$dbh->do( 'set names utf8' );
+
 # Create object
 $xml = new XML::Simple;
 
+# Input file
+my ( $basename, $parentdir, $extension ) = fileparse( $pathname, qr/\.[^.]*$/ );
+my $filename = $basename . $extension;
+#print "extension: " . $extension . "\n";
+
 # Read File
-open(XMLFILE , $ARGV[0]);
+if( $extension eq ".xml" ) {
+	print $filename . ": xml file\n";
+#	open( XMLFILE, $pathname ); 
+	open( XMLFILE, '<:encoding(UTF-8)', $pathname );
+}
+elsif( $extension eq ".zip" ) {
+	print $filename . ": zip file\n";
+	open( XMLFILE, "<", "$pathname" ) or die "$zipfile: $!";
+	# unfinished..., will not work in this way
+}
+else {
+	print "not .xml or .zip extension\n";
+}
 
 # Read First line
 $record = <XMLFILE>;
+
+# FL-21-Dec-2016
+# the latest xml files have more than 1 header line
+# we add \r\n in the matching to prevent skipping too many lines
+my $xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n";
+my $xml2 = "<A2ACollection xmlns=\"http://Mindbus.nl/RecordCollectionA2A\">\r\n";
+#\Q          quote regular expression metacharacters till \E
+#\E          end case modification (think vi)    
+if( $record =~ m/\Q$xml1/ ) {
+	print "skip: $record";		# skip the xml1 line
+	$record = <XMLFILE>;		# read next line
+	if( $record =~ m/\Q$xml2/ ) {
+		print "skip: $record";		# skip the xml2 line
+		$record = <XMLFILE>;		# read next line
+		print "start: $record";		# supposed to start with <A2A xmlns=
+	}
+}
 
 # Clean first line
 $record =~ s/^.+?(<A2A\s+)/$1/gsxi;
@@ -49,42 +129,60 @@ $record =~ s/^.+?(<A2A\s+)/$1/gsxi;
 my $snippet .= $record;
 
 # Set Counter
-my $counter = 1;
+my $counter = 0;
 my $step = 10000;
 my $stepper = $step;
 
-# Drop and create table
-if( $ARGV[3] == 1 ){
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.a2a");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.person");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.person_profession");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.event");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.object");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.relation");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.source");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.source_sourceavailablescans_scan");
-	$dbh->do("DROP TABLE IF EXISTS links_a2a.remark");
+# Drop and create tables
+# The 2 remaining tables (person_o_temp and registration_o_temp) are not used by this script, 
+# we might also drop them here, in order to avoid confusion by their old data
+if( $drop_create == 1 ) {
+	print "Dropping and re-creating " . $db . " db\n";
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.a2a" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.event" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.object" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.person" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.person_profession" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.relation" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.remark" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.source" );
+	$dbh->do( "DROP TABLE IF EXISTS links_a2a.source_sourceavailablescans_scan" );
 
-	$dbh->do(create_a2a());
-	$dbh->do(create_person());
-	$dbh->do(create_person_profession());
-	$dbh->do(create_event());
-	$dbh->do(create_object());
-	$dbh->do(create_relation());
-	$dbh->do(create_source());
-	$dbh->do(create_source_sourceavailablescans_scan());
-	$dbh->do(create_remark());
+	$dbh->do( create_a2a() );
+	$dbh->do( create_event() );
+	$dbh->do( create_object() );
+	$dbh->do( create_person() );
+	$dbh->do( create_person_profession() );
+	$dbh->do( create_relation() );
+	$dbh->do( create_remark() );
+	$dbh->do( create_source() );
+	$dbh->do( create_source_sourceavailablescans_scan() );
+}
+else {
+	print "Appending to " . $db . " db\n";
 }
 
+print "Reading A2A records\n";
 while ($record = <XMLFILE>) {
-	
+	# FL-23-Jun-2014 Test for closing tag
+	if( $record =~ m/<\/A2ACollection/ ) {
+	#	print "\nEOF " . $pathname . "\n";
+		print "$counter A2A records loaded.\n\n";
+		next;			# not an A2A record
+	}
+
 	# Add line to snippet
 	$snippet .= $record;
-	
+
 	#Einde
-	if($record =~ m/<\/A2A/ ){
-		
+	if($record =~ m/<\/A2A/ ) {
+		#print $snippet;
+		$snippet = encode( 'utf-8', $snippet );
+		#print $snippet;
+
 		# get id
+		# No INSERT DELAYED here !!
+		# With DELAYED here, the a2a_id columns of the other tables contain only 0's
 		$dbh->do( "INSERT INTO links_a2a.a2a() VALUES ()" );
 		$a2a_id = $dbh->{mysql_insertid};
 		
@@ -107,8 +205,8 @@ while ($record = <XMLFILE>) {
 			$query_object_objectremark,
 			$query_source_sourceremark
 		) = xmlProcess( $snippet, $a2a_id );
-		
-		
+		#print ".";					# FL-19-Aug-2014
+
 		# Execute
 		if ($query_person ne ""){
 			$dbh->do( $query_person );
@@ -158,7 +256,7 @@ while ($record = <XMLFILE>) {
 		if ($query_source_sourceremark ne ""){
 			$dbh->do( $query_source_sourceremark );
 		}
-		
+	
 
 		$snippet = "";
 
@@ -557,7 +655,7 @@ sub xmlProcess{
 	}	
 	
 	
-	# <Source> ounce, but weuse for each for overview
+	# <Source> once, but we use for each for overview
 	my $query_source = query_source() ;
 	
 	foreach my $source(@{$data->{Source}}) {
@@ -598,8 +696,10 @@ sub xmlProcess{
 		# <SourceReference>
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Place}->[0], 1);
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{InstitutionName}->[0], 1);
-		$query_source .= $ARGV[2] . ", " ;
-		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Collection}->[0], 1);
+		#$query_source .= $ARGV[2] . ", " ;
+		$query_source .= $id_source . ", " ;
+		#$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Collection}->[0], 1);
+		$query_source .= $reg_maintype . ", " ;
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Section}->[0], 1);
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Book}->[0], 1);
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Folio}->[0], 1);
@@ -607,7 +707,7 @@ sub xmlProcess{
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{Stack}->[0], 1);
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{RegistryNumber}->[0], 1);
 		$query_source .= xml_to_mysql( $source->{SourceReference}->[0]->{DocumentNumber}->[0], 1);
-	 
+
 		# <SourceAvailableScans> (LOOP)
 		foreach my $source_SourceAvailableScans_Scan (@{$source->{SourceAvailableScans}->[0]->{Scan}}) {
 			$query_source_sourceavailablescans_scan .= "(";
@@ -944,16 +1044,19 @@ sub query_remark {
 #
 #
 # Query Create
-sub create_a2a{
+sub create_a2a
+{
 	return
 		"CREATE TABLE a2a (
   		a2a_id int(11) NOT NULL AUTO_INCREMENT,
   		PRIMARY KEY (a2a_id)
-		)"
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_person{
+sub create_person
+{
 	return 
 		"CREATE TABLE links_a2a.person(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1034,22 +1137,28 @@ sub create_person{
 		birthplace_longitude VARCHAR(100) NULL DEFAULT NULL ,
 		birthplace_latitude VARCHAR(100) NULL DEFAULT NULL ,
 		maritalstatus VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_person_profession{
+sub create_person_profession
+{
 	return
 		"CREATE TABLE  links_a2a.person_profession(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
 		a2a_id INT UNSIGNED NULL ,
 		pid VARCHAR(100) NULL DEFAULT NULL ,
 		content VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_event{
+sub create_event
+{
 	return
 		"CREATE TABLE links_a2a.event(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1079,22 +1188,29 @@ sub create_event{
 		longitude VARCHAR(100) NULL DEFAULT NULL ,
 		latitude VARCHAR(100) NULL DEFAULT NULL ,
 		religionliteral VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id), 
+		KEY eventtype (eventtype)
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_object{
+sub create_object
+{
 	return
 		"CREATE TABLE links_a2a.object(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
 		a2a_id INT UNSIGNED NULL ,
 		oid VARCHAR(100) NULL DEFAULT NULL ,
 		description VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )" 
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin" 
 	;
 }
 
-sub create_relation{
+sub create_relation
+{
 	return 
 		"CREATE TABLE links_a2a.relation(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1104,11 +1220,14 @@ sub create_relation{
 		keyref_2 VARCHAR(100) NULL DEFAULT NULL ,
 		relationtype VARCHAR(100) NULL DEFAULT NULL ,
 		extendedrelationtype VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )" 
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin" 
 	;
 }
 
-sub create_source{
+sub create_source
+{
 	return 
 		"CREATE TABLE links_a2a.source(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1146,11 +1265,14 @@ sub create_source{
 		sourcedigitaloriginal VARCHAR(100) NULL DEFAULT NULL ,
 		recordidentifier VARCHAR(100) NULL DEFAULT NULL ,
 		recordguid VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_source_sourceavailablescans_scan {
+sub create_source_sourceavailablescans_scan 
+{
 	return 
 		"CREATE TABLE links_a2a.source_sourceavailablescans_scan(
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1159,11 +1281,14 @@ sub create_source_sourceavailablescans_scan {
 		Uri VARCHAR(100) NULL DEFAULT NULL ,
 		UriViewer VARCHAR(100) NULL DEFAULT NULL ,
 		UriPreview VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }
 
-sub create_remark {
+sub create_remark 
+{
 	return
 		"CREATE TABLE links_a2a.remark (
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
@@ -1172,6 +1297,8 @@ sub create_remark {
 		parent_id VARCHAR(100) NULL DEFAULT NULL ,
 		remark_key VARCHAR(100) NULL DEFAULT NULL ,
 		value VARCHAR(100) NULL DEFAULT NULL ,
-		PRIMARY KEY (id) )"
+		PRIMARY KEY (id) 
+		)
+		ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin"
 	;
 }

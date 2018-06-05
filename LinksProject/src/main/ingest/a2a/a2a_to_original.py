@@ -13,7 +13,7 @@ Goal:		Read the sql file with MySQL queries to fill the 2 table of
 04-Dec-2014	Created
 18-Jan-2016	Update for Python-3
 10-Apr-2017	Get sources/rmtypes from links_a2a, and delete them accordingly from links_original
-11-Apr-2017	Changed
+05-Jun-2018	Changed
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -232,18 +232,18 @@ def delete_from_orig( db, log, rmtypes ):
 		rmtype = int( dict_src[ "rmtype" ] )
 		
 		table = "registration_o"
-		query_r  = "DELETE * FROM %s.%s " % ( db_name, table )
+		query_r  = "DELETE FROM %s.%s " % ( db_name, table )
 		query_r += "WHERE id_source = %d AND registration_maintype = %d;" % ( source, rmtype )
-		log.write("%s\n" % query_r )
+		log.write( "%s\n" % query_r )
 		count = db.delete( query_r )
-		log.write("%d records deleted\n" % count )
+		log.write( "%d records deleted\n" % count )
 		
 		table = "person_o"
-		query_p  = "DELETE * FROM %s.%s " % ( db_name, table )
+		query_p  = "DELETE FROM %s.%s " % ( db_name, table )
 		query_p += "WHERE id_source = %d AND registration_maintype = %d;" % ( source, rmtype )
-		log.write("%s\n" % query_p )
+		log.write( "%s\n" % query_p )
 		count = db.delete( query_p )
-		log.write("%d records deleted\n" % count )
+		log.write( "%d records deleted\n" % count )
 
 
 
@@ -304,7 +304,7 @@ if __name__ == "__main__":
 	rmtypes = sources_from_a2a( db_links, log )
 	delete_from_orig( db_links, log, rmtypes )
 
-#	queries( db_links, log )		# queries from existing sql file
+	queries( db_links, log )		# queries from existing sql file
 	
 	str_elapsed = format_secs( time() - t1 )
 	log.write( "Done in %s\n" % str_elapsed )
