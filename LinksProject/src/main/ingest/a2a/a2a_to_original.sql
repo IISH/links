@@ -14,7 +14,8 @@
 -- 11-Apr-2016 show registration counts from source
 -- 23-May-2016 also copy source.institutionname
 -- 05-Jun-2018 no longer use MysQL FUNCTION: links_functions.regex_replace
--- 05-Jun-2018  add role = 'other:Gewezen echtgenoot' & 'other:Gewezen echtgenote' for 'Echtscheiding'
+-- 05-Jun-2018 add role = 'other:Gewezen echtgenoot' & 'other:Gewezen echtgenote' for 'Echtscheiding'
+-- 11-Jun-2018 copy divorce_date from person_o_temp
 
 TRUNCATE TABLE links_a2a.registration_o_temp ;
 
@@ -348,8 +349,9 @@ INSERT INTO links_original.person_o
 		age_week,
 		age_day,
 		birth_date,
-		death_date,
-		mar_date
+		mar_date,
+		divorce_date,
+		death_date
 	)
 SELECT
 	id_registration,
@@ -382,8 +384,9 @@ SELECT
 	age_week,
 	age_day,
 	birth_date,
-	death_date,
-	mar_date
+	mar_date,
+	divorce_date,
+	death_date
 FROM
 	links_a2a.person_o_temp ;
 
