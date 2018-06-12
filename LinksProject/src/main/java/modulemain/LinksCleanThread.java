@@ -82,7 +82,7 @@ import linksmanager.ManagerGui;
  * FL-11-Jul-2017 More not_linksbase flagging
  * FL-01-Sep-2017 registration_type also in person_c
  * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
- * FL-11-Jun-2018 Echtscheiding: registration_maintype = 4
+ * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
  *
  * TODO:
  * - check all occurrences of TODO
@@ -7130,11 +7130,11 @@ public class LinksCleanThread extends Thread
             dbconCleaned.runQuery( queryP4 );
 
             if( debug ) { showMessage( queryP5, false, true ); }
-            else { showMessage( String.format( "Thread id %02d; 5-of-9: death_date_min", threadId ), false, true ); }
+            else { showMessage( String.format( "Thread id %02d; 5-of-9: divorce_date_min", threadId ), false, true ); }
             dbconCleaned.runQuery( queryP5 );
 
             if( debug ) { showMessage( queryP6, false, true ); }
-            else { showMessage( String.format( "Thread id %02d; 6-of-9: death_date_max", threadId ), false, true ); }
+            else { showMessage( String.format( "Thread id %02d; 6-of-9: divorce_date_max", threadId ), false, true ); }
             dbconCleaned.runQuery( queryP6 );
 
             if( debug ) { showMessage( queryP7, false, true ); }
