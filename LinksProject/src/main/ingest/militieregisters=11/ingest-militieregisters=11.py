@@ -8,8 +8,9 @@ Version:	0.1
 Goal:		Ingest miltieregister CSV file into MySQL table
 
 15-May-2018	Created
-23-May-2018	Latest change
-
+23-May-2018	Changed, different input file from Kees
+27-Aug-2018	Changed again, different input file from Kees; 
+			Notice: some records have negativeday or month numbers. 
 
 # Action-4, set corresponding id_registration in person_o
 UPDATE links_original.registration_o, links_original.person_o 
@@ -65,7 +66,7 @@ SELECT
 	Registration_maintype,
 	Id_person_o,
 	Voornaam,
-	Achternaam_prefix,
+	Achternaam,
 	Role,
 	Geslacht,
 	Gebdag,
@@ -84,9 +85,14 @@ DELETE FROM links_original.person_o WHERE id_source = 11;
 # Action-1
 # Add a column to table militieregisters, and set the default value: 
 USE links_temp;
-ALTER TABLE links_temp.militieregisters11 ADD name_source VARCHAR(100) DEFAULT NULL AFTER id_source;
+# Column now already present, but still has to be filled
+#ALTER TABLE links_temp.militieregisters11 ADD name_source VARCHAR(100) DEFAULT NULL AFTER id_source;
 UPDATE links_temp.militieregisters11 SET name_source = "militieregisters";
 
+# Action-0
+# Dump/Restore table schema
+$ mysqldump -u links -pmslinks --no-data links_temp militieregisters11 > links_temp.militieregisters11.schema.sql
+$ mysql --user=links --password=mslinks links_temp < links_temp.militieregisters11.schema.sql
 
 registration_o
 --------------
@@ -143,7 +149,11 @@ USER_LINKS   = ""
 PASSWD_LINKS = ""
 DBNAME_LINKS = ""
 
-csv_filename = "All_Cases_to be matched.csv"
+csv_filename  = "All_Cases_to be matched_naar_LINKS.csv"
+csv_separator = ','
+id_source = 11
+debug = True
+
 
 class Database:
 	def __init__( self, host, user, passwd, dbname ):
@@ -224,7 +234,7 @@ def escape( s ):
 	return s_esc
 
 
-
+"""
 def store_record( record_id, file_id, coords, given, prefix, surname, ev_type, location, date ): 
 	given_esc    = escape( given )
 	prefix_esc   = escape( prefix )
@@ -245,7 +255,7 @@ def store_record( record_id, file_id, coords, given, prefix, surname, ev_type, l
 	
 	resp = db_links.insert( query )
 	logging.debug( resp )
-
+"""
 
 
 def check_encoding( csv_pathname ):
@@ -269,7 +279,6 @@ def process_csv( db_links, csv_filename ):
 	
 	csv_header_names = [
 		"Id",
-		"Blijft",
 		"Id_orig_registration",
 		"Id_person_o",
 		"Id_source",
@@ -282,7 +291,6 @@ def process_csv( db_links, csv_filename ):
 		"Idnr",
 		"Persnr",
 		"Relatie_type",
-		"Achternaam_prefix",
 		"Achternaam",
 		"Prefix",
 		"Voornaam",
@@ -290,12 +298,12 @@ def process_csv( db_links, csv_filename ):
 		"Gebdag",
 		"Gebmnd",
 		"Gebjaar",
-		"Gebplaats"
+		"Gebplaats",
+		"temp"
 	]
 	
 	map_columns = {
 		"Id"                    : "id",						# skip (pk)
-		"Blijft"                : "Blijft",					# skip
 		"Id_orig_registration"  : "Id_orig_registration",	# id_orig_registration	r
 		"Id_person_o"           : "Id_person_o",			# id_person_o			p
 		"Id_source"             : "Id_source",				# id_source				r+p
@@ -308,15 +316,15 @@ def process_csv( db_links, csv_filename ):
 		"Idnr"                  : "Idnr",					# skip
 		"Persnr"                : "Persnr",					# skip
 		"Relatie_type"          : "Relatie_type",			# skip
-		"Achternaam_prefix"     : "Achternaam_prefix",		# familyname			p
-		"Achternaam"            : "Achternaam",				# empty, skip
-		"Prefix"                : "Prefix",					# empty, skip
+		"Achternaam"            : "Achternaam",				# familyname
+		"Prefix"                : "Prefix",					# prefix
 		"Voornaam"              : "Voornaam",				# firstname				p
 		"Geslacht"              : "Geslacht",				# sex					p
 		"Gebdag"                : "Gebdag",					# birth_day				p
 		"Gebmnd"                : "Gebmnd",					# birth_month			p
 		"Gebjaar"               : "Gebjaar",				# birth_year			p
-		"Gebplaats"             : "Gebplaats"				# birth_location		p
+		"Gebplaats"             : "Gebplaats",				# birth_location		p
+		"temp"                  : "temp"					# skip
 	}
 	# added to table            : name_source				# name_source			r
 	
@@ -338,9 +346,10 @@ def process_csv( db_links, csv_filename ):
 		
 		reg_dict = {}
 
-		fields = line.split( ';' )
+		fields = line.split( csv_separator )
 		if nline == 1:
 			line_header = line
+			logging.debug( line )
 			nfields_header = len( fields )		# nfields of header line
 			continue	# do not store header line
 		else:
@@ -357,20 +366,29 @@ def process_csv( db_links, csv_filename ):
 				value = fields[ i ]
 				if not value:
 					value = '\"\"'
+				else:
+					try:
+						ival = int( value )
+					except ValueError:
+						if value == '"':
+							value = '\"\"'
+						else:
+							value = '\"%s\"' % value
+				
 				reg_dict[ tbl_header_name ] = value
-				#print( "name: %s, value: %s" % ( tbl_header_name, str( value ) ) )
+				#if debug: print( "name: %s, value: %s" % ( tbl_header_name, str( value ) ) )
 		
-		#if nline > 2:
-		#	break
+			#if nline > 3:
+			#	break
 		
-		#print( nline )
+		#if debug: print( nline )
 		
 		table = "militieregisters11"
 		cols = reg_dict.keys()
 		vals = reg_dict.values()
 		sql = "INSERT INTO `%s` (%s) VALUES (%s)" % ( table, ",".join( cols ), ",".join( vals ) )
 		#print( sql )
-		#logging.debug( "sql: %s" % sql )
+		logging.debug( "sql %d: %s" % ( nline, sql ) )
 		affected_count = db_links.insert( sql )
 		
 		if not affected_count:
@@ -389,7 +407,6 @@ def process_csv( db_links, csv_filename ):
 				else:
 					logging.warning( "%s" % warning[ 2 ] )
 	
-	id_source = 11
 	query_cnt = "SELECT COUNT(*) as count FROM %s WHERE id_source = %d" % ( table, id_source )
 	print( query_cnt ); logging.info( query_cnt )
 	
