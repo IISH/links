@@ -152,8 +152,10 @@ PASSWD_LINKS = ""
 DBNAME_LINKS = ""
 
 csv_filename  = "All_Cases_to be matched_naar_LINKS.csv"
-csv_separator = ','
+csv_separator = ';'
+# and assuming "" quoted input strings (not needed for numbers)
 id_source = 11
+
 debug = False
 
 
@@ -368,6 +370,7 @@ def process_csv( db_links, csv_filename ):
 				value = fields[ i ]
 				if not value:
 					value = '\"\"'
+				"""
 				else:
 					try:
 						ival = int( value )
@@ -376,14 +379,14 @@ def process_csv( db_links, csv_filename ):
 							value = '\"\"'
 						else:
 							value = '\"%s\"' % value
-				
+				"""
 				reg_dict[ tbl_header_name ] = value
-				#if debug: print( "name: %s, value: %s" % ( tbl_header_name, str( value ) ) )
+				if debug: print( "name: %s, value: %s" % ( tbl_header_name, str( value ) ) )
 		
 			#if nline > 3:
 			#	break
 		
-		#if debug: print( nline )
+		if debug: print( nline )
 		
 		table = "militieregisters11"
 		cols = reg_dict.keys()
