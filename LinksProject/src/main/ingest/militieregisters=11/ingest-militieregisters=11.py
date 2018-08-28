@@ -9,7 +9,7 @@ Goal:		Ingest miltieregister CSV file into MySQL table
 
 15-May-2018	Created
 23-May-2018	Changed, different input file from Kees
-27-Aug-2018	Changed again, different input file from Kees; 
+28-Aug-2018	Changed again, different input file from Kees; 
 			Notice: some records have negativeday or month numbers. 
 
 # Action-4, set corresponding id_registration in person_o
@@ -53,6 +53,7 @@ INSERT INTO links_original.person_o
 	registration_maintype,
 	id_person_o,
 	firstname,
+	prefix,
 	familyname,
 	role,
 	sex,
@@ -66,6 +67,7 @@ SELECT
 	Registration_maintype,
 	Id_person_o,
 	Voornaam,
+	Prefix,
 	Achternaam,
 	Role,
 	Geslacht,
@@ -152,7 +154,7 @@ DBNAME_LINKS = ""
 csv_filename  = "All_Cases_to be matched_naar_LINKS.csv"
 csv_separator = ','
 id_source = 11
-debug = True
+debug = False
 
 
 class Database:
@@ -388,7 +390,7 @@ def process_csv( db_links, csv_filename ):
 		vals = reg_dict.values()
 		sql = "INSERT INTO `%s` (%s) VALUES (%s)" % ( table, ",".join( cols ), ",".join( vals ) )
 		#print( sql )
-		logging.debug( "sql %d: %s" % ( nline, sql ) )
+		if debug: logging.debug( "sql %d: %s" % ( nline, sql ) )
 		affected_count = db_links.insert( sql )
 		
 		if not affected_count:

@@ -30,9 +30,9 @@ CREATE TABLE `militieregisters11` (
   `name_source` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `Registration_maintype` tinyint(3) unsigned DEFAULT NULL,
   `Registration_type` varchar(50) COLLATE utf8_bin DEFAULT NULL,
-  `Registration_day` tinyint(3) unsigned DEFAULT NULL,
-  `Registration_month` tinyint(3) unsigned DEFAULT NULL,
-  `Registration_year` smallint(3) unsigned DEFAULT NULL,
+  `Registration_day` tinyint(3) DEFAULT NULL,
+  `Registration_month` tinyint(3) DEFAULT NULL,
+  `Registration_year` smallint(3) DEFAULT NULL,
   `Role` varchar(50) COLLATE utf8_bin DEFAULT NULL,
   `Idnr` int(10) unsigned DEFAULT NULL,
   `Persnr` varchar(100) COLLATE utf8_bin DEFAULT NULL,
@@ -41,9 +41,9 @@ CREATE TABLE `militieregisters11` (
   `Prefix` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `Voornaam` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `Geslacht` char(1) COLLATE utf8_bin DEFAULT NULL,
-  `Gebdag` tinyint(3) unsigned DEFAULT NULL,
-  `Gebmnd` tinyint(3) unsigned DEFAULT NULL,
-  `Gebjaar` smallint(3) unsigned DEFAULT NULL,
+  `Gebdag` tinyint(3) DEFAULT NULL,
+  `Gebmnd` tinyint(3) DEFAULT NULL,
+  `Gebjaar` smallint(3) DEFAULT NULL,
   `Gebplaats` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   `temp` varchar(100) COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -59,4 +59,4 @@ CREATE TABLE `militieregisters11` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-08-27 16:28:41
+-- Dump completed on 2018-08-28 10:37:06
