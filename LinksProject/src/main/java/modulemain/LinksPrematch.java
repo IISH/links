@@ -32,6 +32,7 @@ import prematch.Lvs;
  * FL-31-Jan-2017 Two more name frequency count queries
  * FL-21-Aug-2017 NamesToNumbers per id_source & rmtype
  * FL-04-Sep-2017 Frequency tables per source & rmtype
+ * FL-28-Aug-2018 Cosmetic update in links_base update
  */
 
 public class LinksPrematch extends Thread
@@ -1179,7 +1180,7 @@ public class LinksPrematch extends Thread
         try {
             conPrematch.runQuery( qdelete );
             int rowsAffected = conPrematch.runQueryUpdate( qdelete );
-            System.out.println( "# of records deleted: " + rowsAffected );
+            showMessage( "Number of records deleted: " + rowsAffected, false, true );
         }
         catch( Exception ex ) { showMessage( ex.getMessage(), false, true ); }
         elapsedShowMessage( "delete done in", start_del, System.currentTimeMillis() );
