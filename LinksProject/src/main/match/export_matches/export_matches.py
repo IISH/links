@@ -32,6 +32,7 @@ Goal:		export matches for CBG
 02-May-2018 type_match from links_base ego role
 08-May-2018 Strip { and } from GUIDs
 17-Sep-2018 Skip records without a GUID
+18-Sep-2018 Latest change
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -49,7 +50,9 @@ import yaml
 
 debug = False
 chunk =  10000		# show progress in processing records
-limit = 200000		# number of records
+
+#limit = 200000		# max number of records, for testing
+limit = None		# production
 
 
 # 13-Mar-2018
@@ -254,7 +257,8 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 
-	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_B", "Worth_link" ]
+	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+#	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
 	writer.writerow( header )
 	
 	query = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -303,12 +307,18 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 			GUID_2 = rec_linksbase_2[ "id_persist_registration" ]
 			
 			if not GUID_1 or not GUID_2:
-				# not usable for CBG, skip
-				continue
+				continue		# not usable for CBG, skip
 			
 			# The '{' & '}' come from the CBG XML, but they do not want them in the export data
-			GUID_1 = GUID_1.strip( '{}' )
-			GUID_2 = GUID_2.strip( '{}' )
+			if GUID_1:
+				GUID_1 = GUID_1.strip( '{}' )
+			else:
+				GUID_1 = ''
+			
+			if GUID_2:
+				GUID_2 = GUID_2.strip( '{}' )
+			else:
+				GUID_2 = ''
 			
 			id_source_1 = str( rec_linksbase_1[ "id_source" ] )
 			id_source_2 = str( rec_linksbase_2[ "id_source" ] )
@@ -339,6 +349,7 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 				Worth_link = 1			# "Waarschijnlijk"
 			
 			line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+		#	line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			
 			writer.writerow( line )
 		
