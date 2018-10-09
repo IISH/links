@@ -34,6 +34,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-02-Nov-2015 Add maintype to QuerySet
  * FL-16-Aug-2017 Add chk_ booleans derived from minmax 0/1 inputs
  * FL-29-Jan-2018 Check for id_source = 0 == invalid
+ * FL-01-Oct-2018 Add id_persist_registration to the s1&2 queries to be retrieved from links_base
  */
 public class QueryGenerator
 {
@@ -734,7 +735,7 @@ public class QueryGenerator
     {
         String query;
 
-        query = "SELECT id_base , id_registration , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
+        query = "SELECT id_base , id_registration , id_persist_registration , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
 
         query += ", mother_familyname_str , mother_firstname1_str ";        // debugging
 

@@ -41,6 +41,8 @@ import linksmatchmanager.DatabaseManager;
  * FL-23-Aug-2017 chk_* flags from qs object
  * FL-13-Nov-2017 dbconMatchLocal
  * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
+ * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
+ * FL-09-Oct-2018 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -689,9 +691,12 @@ public class MatchAsync extends Thread
                                     n_match++;                      // number of matches of this thread
                                     n_variant_match++;
 
-                                    // write to match tables
+                                    // write to matches table
                                     int id_linksbase_1 = ql.s1_id_base.get( s1_idx );
                                     int id_linksbase_2 = ql.s2_id_base.get( s2_idx );
+
+                                    String id_persist_registration_1 = ql.s1_id_persist_registration.get( s1_idx );
+                                    String id_persist_registration_2 = ql.s2_id_persist_registration.get( s2_idx );
 
                                     if( debug || debugfreq ) {
                                         msg = String.format( "MATCH: s1_idx: %d, s2_idx: %d, id_linksbase_1: %d, id_linksbase_2: %d",
@@ -716,9 +721,12 @@ public class MatchAsync extends Thread
                                         String flag_quality  = "\\N";   // not used in matching, but completes the csv record
                                         String ids           = "\\N";   // not used in matching, but completes the csv record
 
-                                        // notice: in order to let the \N properperly work, avoid leading or trailing whitespace
-                                        String str = String.format( "%d, %d, %d,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                                        // notice: in order to let the \N properly work, avoid leading or trailing whitespace
+                                      //String str = String.format( "%d, %d, %d, %s,%s, %s,%s,%s,%s,%s,%s,%s,%s\n",
+                                        // We got a spurious initial space before id_persist_registration_1
+                                        String str = String.format( "%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                                             id_match_process , id_linksbase_1 , id_linksbase_2 ,
+                                            id_persist_registration_1 , id_persist_registration_2 ,
                                             lvs_dist_first_ego , lvs_dist_family_ego ,
                                             lvs_dist_first_mot , lvs_dist_family_mot ,
                                             lvs_dist_first_fat , lvs_dist_family_fat ,
@@ -733,11 +741,13 @@ public class MatchAsync extends Thread
                                     else
                                     {
                                         String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
+                                            "id_persist_registration_1, id_persist_registration_2, " +
                                             "value_firstname_ego, value_familyname_ego, " +
                                             "value_firstname_mo , value_familyname_mo , " +
                                             "value_firstname_fa , value_familyname_fa , " +
                                             "value_firstname_pa , value_familyname_pa ) " +
                                             "VALUES ( " + id_match_process + "," + id_linksbase_1 + "," + id_linksbase_2 + "," +
+                                            id_persist_registration_1 + "," + id_persist_registration_2 + "," +
                                             lvs_dist_first_ego + "," + lvs_dist_family_ego + "," +
                                             lvs_dist_first_mot + "," + lvs_dist_family_mot + "," +
                                             lvs_dist_first_fat + "," + lvs_dist_family_fat + "," +
@@ -885,7 +895,8 @@ public class MatchAsync extends Thread
 
             msg = String.format( "Thread id %02d; freeing s1 and s2 vectors", threadId );
             System.out.println( msg ); plog.show( msg );
-            ql.freeVectors();
+            ql.freeVectors_set1();
+            ql.freeVectors_set2();
             ql = null;
             qs = null;
 
@@ -1034,6 +1045,7 @@ public class MatchAsync extends Thread
             + " INTO TABLE " + tablename
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
             + "( id_match_process , id_linksbase_1 , id_linksbase_2 ,"
+            + " id_persist_registration_1 , id_persist_registration_2 ,"
             + " value_firstname_ego , value_familyname_ego ,"
             + " value_firstname_mo , value_familyname_mo ,"
             + " value_firstname_fa , value_familyname_fa ,"
@@ -1063,6 +1075,7 @@ public class MatchAsync extends Thread
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
             + "("
             + " id_match_process , id_linksbase_1 , id_linksbase_2"
+            + " ,id_persist_registration_1 , id_persist_registration_2"
             + " ,value_firstname_ego , value_familyname_ego"
             + " ,value_firstname_mo , value_familyname_mo"
             + " ,value_firstname_fa , value_familyname_fa"
