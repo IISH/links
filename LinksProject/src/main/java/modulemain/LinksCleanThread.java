@@ -83,6 +83,7 @@ import linksmanager.ManagerGui;
  * FL-01-Sep-2017 registration_type also in person_c
  * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
  * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
+ * FL-15-Oct-2018 Strip {} from id_persist_registration
  *
  * TODO:
  * - check all occurrences of TODO
@@ -1077,6 +1078,23 @@ public class LinksCleanThread extends Thread
         showMessage( msg, false, true );
         if( debug ) { showMessage( keysRegistration, false, true ); }
         dbconCleaned.runQuery( keysRegistration );
+
+        // Strip {} from id_persist_registration
+        String Update_id_persist_registration = ""
+            + "UPDATE links_cleaned.registration_c"
+            + " SET id_persist_registration = SUBSTR(id_persist_registration, 2, 36)"
+            + " WHERE registration_c.id_source = " + source;
+
+        Update_id_persist_registration += " AND LENGTH(id_persist_registration) = 38";      // only CBG data have this string
+
+        if( ! rmtype.isEmpty() )
+        { Update_id_persist_registration += String.format( " AND registration_maintype = %s", rmtype ); }
+
+        msg = String.format( "Thread id %02d; Removing {} from id_persist_registration", threadId );
+        showMessage( msg, false, true );
+        if( debug ) { showMessage( Update_id_persist_registration, false, true ); }
+        dbconCleaned.runQuery( Update_id_persist_registration );
+
 
         String keysPerson = ""
             + "INSERT INTO links_cleaned.person_c"
