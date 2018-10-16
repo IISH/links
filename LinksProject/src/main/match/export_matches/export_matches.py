@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_matches.py
-Version:	0.21
+Version:	0.22
 Goal:		export matches for CBG
 			-1- From table "links_match.MATCHES_CBG_WWW", fetch the records where
 				the column Delivering = 'y'. 
@@ -32,7 +32,8 @@ Goal:		export matches for CBG
 02-May-2018 type_match from links_base ego role
 08-May-2018 Strip { and } from GUIDs
 17-Sep-2018 Skip records without a GUID
-18-Sep-2018 Latest change
+16-Oct-2018 type_match from table match_process
+16-Oct-2018 UNFINISHED FUNCTIONS
 """
 
 # future-0.16.0 imports for Python 2/3 compatibility
@@ -53,6 +54,9 @@ chunk =  10000		# show progress in processing records
 
 #limit = 200000		# max number of records, for testing
 limit = None		# production
+
+export_source = False	# CBG export
+#export_source = True	# our debug
 
 
 # 13-Mar-2018
@@ -209,19 +213,20 @@ def none2zero( var ):
 
 
 
-def get_type_match( db_ref, rmtype_1, role_1 ):
+def get_type_match( db_ref, rmtype_1, rmtype_2, role_1, role_2 ):
 	if debug: print( "get_type_match()" )
 
 	type_match = ""
 	
-	query = "SELECT type_match FROM ref_type_match WHERE s1_main_type = %s AND s1_role = %s " % ( rmtype_1, role_1 )
+	query  = "SELECT type_match FROM ref_type_match " 
+	query += "WHERE s1_maintype = %s AND s2_maintype = %s AND s1_role_ego = %s AND s2_role_ego = %s " % ( rmtype_1, rmtype_2, role_1, role_2 )
 	if debug: print( query )
 	resp = db_ref.query( query )
 	if resp is not None:
 		#print( resp )
 		nrec = len( resp )
 		if nrec == 0:
-			print( "No valid type_match record found in ref_type_match for s1_main_type = %s and s1_role = %s " % ( rmtype_1, role_1 ) )
+			print( "No valid type_match record found in ref_type_match for s1_maintype = %s, s2_maintype = %s, s1_role_ego = %s, s2_role_ego = %s " % ( rmtype_1, rmtype_2, role_1, role_2 ) )
 		elif nrec == 1:
 			rec = resp[ 0 ]
 			type_match = rec[ "type_match" ]
@@ -230,7 +235,10 @@ def get_type_match( db_ref, rmtype_1, role_1 ):
 
 
 
-def export( db_ref, db_links, id_match_process, Type_link ):
+def export1( db_ref, db_links, id_match_process, Type_link ):
+	# export1: GUIDs from links_base table via id_base
+	# but if links_base has been updated after the matching, 
+	# this is no longer correct for the updated source/rmtype. 
 	if debug: print( "export() for id_match_process %s" % id_match_process )
 
 	query = "SELECT COUNT(*) AS count FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -256,9 +264,11 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 	
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
-
-	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
-#	header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+	
+	if export_source: 
+		header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+	else:	# CBG does not want these 2 columns: source_name_1, source_name_2
+		header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
 	writer.writerow( header )
 	
 	query = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
@@ -327,13 +337,13 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 			source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
 			
 			rmtype_1 = str( rec_linksbase_1[ "registration_maintype" ] )
-		#	rmtype_2 = str( rec_linksbase_2[ "registration_maintype" ] )
+			rmtype_2 = str( rec_linksbase_2[ "registration_maintype" ] )
 			
 			role_1 = str( rec_linksbase_1[ "ego_role" ] )
-		#	role_2 = str( rec_linksbase_2[ "ego_role" ] )
+			role_2 = str( rec_linksbase_2[ "ego_role" ] )
 				
 		#	Type_Match = "mt:%s,ro:%s x mt:%s,ro:%s = %s" % ( rmtype_1, role_1, rmtype_2, role_2, tmatch )
-			Type_Match = get_type_match( db_ref, rmtype_1, role_1 )
+			Type_Match = get_type_match( db_ref, rmtype_1, rmtype_2, role_1, role_2  )
 			
 			Quality_link_A = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
 			Quality_link_B = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
@@ -348,8 +358,148 @@ def export( db_ref, db_links, id_match_process, Type_link ):
 			elif Quality_link_A <= 2 and Quality_link_B <= 4:
 				Worth_link = 1			# "Waarschijnlijk"
 			
-			line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
-		#	line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+			if export_source:
+				line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+			else:	# CBG does not want these 2 columns: source_name_1, source_name_2*
+				line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+			
+			writer.writerow( line )
+		
+		print( "%d-of-%d records processed" % ( nrec, nrec ) )
+		
+	csvfile.close()
+
+	update_cbg( db_links, id_match_process )
+
+
+
+def export2( db_ref, db_links, id_match_process, Type_link ):
+	# export2: GUIDs directly from matches table
+	# links_base only needed if we also want to export the source names
+	if debug: print( "export() for id_match_process %s" % id_match_process )
+
+	query = "SELECT COUNT(*) AS count FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
+	print( query )
+	resp = db_links.query( query )
+	if resp is not None:
+		#print( resp )
+		count = resp[ 0 ][ "count" ]
+		print( "number of matches for id_match_process %s is %d" % ( id_match_process, count ) )
+
+	now = datetime.datetime.now()
+	today = now.strftime("%Y-%m-%d")
+	filename = "idmp=%s_MATCHES_EXPORT_%s.csv" % ( id_match_process, today )
+	print( filename )
+	
+	filepath =  os.path.join( os.path.dirname(__file__), 'csv', filename )
+	if not os.path.exists( os.path.dirname( filepath ) ):
+		try:
+			os.makedirs( os.path.dirname( filepath ) )
+		except: 
+			raise
+	
+	
+	csvfile = open( filepath, "w" )
+	writer = csv.writer( csvfile )
+	
+	if export_source: 
+		header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+	else:	# CBG does not want these 2 columns: source_name_1, source_name_2
+		header  = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+	writer.writerow( header )
+	
+	query = "SELECT * FROM links_match.matches WHERE id_match_process = %s;" % id_match_process
+	if debug: print( query )
+	resp = db_links.query( query )
+	if resp is not None:
+		#print( resp )
+		nrec = len( resp )
+		if debug: print( "number of records: %d" %nrec )
+		
+		
+		for r in range( nrec ):
+			if ( r > 0 and ( r + chunk ) % chunk == 0 ):
+				print( "%d-of-%d records processed" % ( r, nrec ) )
+			if limit and r >= limit:
+				print( "%d-of-%d records processed" % ( r, nrec ) )
+				print( "limit reached" )
+				break
+			
+			rec_match = resp[ r ]
+			if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
+			if debug: print( rec_match )
+			
+			Id = none2empty( rec_match[ "id_matches" ] )
+			
+			Type_Match = none2zero( rec_match[ "type_match" ] )
+			
+			GUID_1 = none2zero( rec_match[ "id_persist_registration" ] )
+			GUID_2 = none2zero( rec_match[ "id_persist_registration" ] )
+			
+			if not GUID_1 or not GUID_2:
+				continue		# not usable for CBG, skip
+			
+			
+			value_familyname_ego = none2zero( rec_match[ "value_familyname_ego" ] )
+			value_familyname_mo  = none2zero( rec_match[ "value_familyname_mo" ] )
+			value_familyname_fa  = none2zero( rec_match[ "value_familyname_fa" ] )
+			value_familyname_pa  = none2zero( rec_match[ "value_familyname_pa" ] )
+			
+			value_firstname_ego = none2zero( rec_match[ "value_firstname_ego" ] )
+			value_firstname_mo  = none2zero( rec_match[ "value_firstname_mo" ] )
+			value_firstname_fa  = none2zero( rec_match[ "value_firstname_fa" ] )
+			value_firstname_pa  = none2zero( rec_match[ "value_firstname_pa" ] )
+			
+			"""
+			id_linksbase_1 = none2empty( rec_match[ "id_linksbase_1" ] )
+			id_linksbase_2 = none2empty( rec_match[ "id_linksbase_2" ] )
+			
+			rec_linksbase_1, rec_linksbase_2 = get_2base_records( db_links, id_linksbase_1, id_linksbase_2 )
+			if rec_linksbase_1 is None or rec_linksbase_2 is None:
+				print( "rec_linksbase_1:", rec_linksbase_1, "rec_linksbase_2:", rec_linksbase_2 )
+				print( "Could not obtain both links_base values; EXIT" )
+				sys.exit( 1 )
+			
+			rmtype_1 = str( rec_linksbase_1[ "registration_maintype" ] )
+			rmtype_2 = str( rec_linksbase_2[ "registration_maintype" ] )
+			
+			role_1 = str( rec_linksbase_1[ "ego_role" ] )
+			role_2 = str( rec_linksbase_2[ "ego_role" ] )
+			
+			rmtype_1, role_1 = get_rmtype_role( GUID_1 )
+			rmtype_2, role_2 = get_rmtype_role( GUID_2 )
+			
+		#	Type_Match = "mt:%s,ro:%s x mt:%s,ro:%s = %s" % ( rmtype_1, role_1, rmtype_2, role_2, tmatch )
+			Type_Match = get_type_match( db_ref, rmtype_1, rmtype_2, role_1, role_2  )
+			"""
+			
+			Quality_link_A = value_familyname_ego + value_firstname_ego + value_familyname_mo + value_firstname_mo
+			Quality_link_B = value_familyname_fa  + value_firstname_fa  + value_familyname_pa + value_firstname_pa
+			
+			Quality_link_all = Quality_link_A + Quality_link_B
+			
+			Worth_link = ""
+			if Quality_link_A == 0 and Quality_link_B <= 2:
+				Worth_link = 3			# "Goed"
+			elif Quality_link_A <= 1 and Quality_link_B <= 3:
+				Worth_link = 2			# "Hoogstwaarschijnlijk"
+			elif Quality_link_A <= 2 and Quality_link_B <= 4:
+				Worth_link = 1			# "Waarschijnlijk"
+			
+			if export_source:
+				#id_source_1 = str( rec_linksbase_1[ "id_source" ] )
+				#id_source_2 = str( rec_linksbase_2[ "id_source" ] )
+				
+				# TODO
+				#id_source_1 = source_from_guid( GUID_1 )
+				#id_source_2 = source_from_guid( GUID_2 )
+				
+				source_name_1, short_name_1 = get_archive_name( db_ref, id_source_1 )
+				source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
+			
+				line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+			else:	# CBG does not want these 2 columns: source_name_1, source_name_2*
+				line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			
 			writer.writerow( line )
 		
@@ -441,6 +591,19 @@ def get_id_match_process( db_links ):
 
 
 
+def get_idmp_list( db_links ):
+	idmp_list = []
+	# ...
+	return idmp_list
+
+
+
+def get_type_link( id_match_process )
+	# ...
+	return type_link
+
+
+
 def get_archive_name( db_ref, id_source ):
 	if debug: print( "get_archive()" )
 
@@ -512,13 +675,21 @@ if __name__ == "__main__":
 	db_ref   = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
 	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 	
+	"""
 	id_match_process, type_link = get_id_match_process( db_links )
 	if id_match_process is None:
 		sys.exit( 0 )
 	
-	print( "id_match_process: %s, type_link: %s" % ( id_match_process, type_link ) )
+	#	export1( db_ref, db_links, id_match_process, type_link )	# also using links_base
+	"""
 	
-	export( db_ref, db_links, id_match_process, type_link )
+	idmp_list = get_idmp_list( db_links )
+	for id_match_process in idmp_list:
+		type_link = get_type_link( id_match_process )
+		
+		#print( "id_match_process: %s, type_link: %s" % ( id_match_process, type_link ) )
+		print( "id_match_process: %s" % id_match_process )
+		export2( db_ref, db_links, id_match_process, type_link )	# not needing links_base
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "processing took %s" % str_elapsed )
