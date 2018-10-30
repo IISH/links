@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_matches.py
-Version:	0.22
+Version:	0.3
 Goal:		export matches for CBG
 			-1- From table "links_match.MATCHES_CBG_WWW", fetch the records where
 				the column Delivering = 'y'. 
@@ -33,13 +33,12 @@ Goal:		export matches for CBG
 08-May-2018 Strip { and } from GUIDs
 17-Sep-2018 Skip records without a GUID
 16-Oct-2018 type_match from table match_process
-16-Oct-2018 UNFINISHED FUNCTIONS
+30-Oct-2018 id_match_process 'y' records now from links_match.MATCHES_CBG_WWW
 """
 
-# future-0.16.0 imports for Python 2/3 compatibility
+# future-0.17.0 imports for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
-from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
-    next, object, oct, open, pow, range, round, super, str, zip )
+from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, oct, open, pow, range, round, str, super, zip )
 
 import os
 import sys
@@ -373,7 +372,7 @@ def export1( db_ref, db_links, id_match_process, Type_link ):
 
 
 
-def export2( db_ref, db_links, id_match_process, Type_link ):
+def export2( db_ref, db_links, id_match_process, type_match, Type_link ):
 	# export2: GUIDs directly from matches table
 	# links_base only needed if we also want to export the source names
 	if debug: print( "export() for id_match_process %s" % id_match_process )
@@ -431,10 +430,10 @@ def export2( db_ref, db_links, id_match_process, Type_link ):
 			
 			Id = none2empty( rec_match[ "id_matches" ] )
 			
-			Type_Match = none2zero( rec_match[ "type_match" ] )
+			#Type_Match = none2zero( rec_match[ "type_match" ] )
 			
-			GUID_1 = none2zero( rec_match[ "id_persist_registration" ] )
-			GUID_2 = none2zero( rec_match[ "id_persist_registration" ] )
+			GUID_1 = rec_match[ "id_persist_registration_1" ]
+			GUID_2 = rec_match[ "id_persist_registration_2" ]
 			
 			if not GUID_1 or not GUID_2:
 				continue		# not usable for CBG, skip
@@ -497,9 +496,9 @@ def export2( db_ref, db_links, id_match_process, Type_link ):
 				source_name_1, short_name_1 = get_archive_name( db_ref, id_source_1 )
 				source_name_2, short_name_2 = get_archive_name( db_ref, id_source_2 )
 			
-				line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+				line = [ Id, GUID_1, GUID_2, type_match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			else:	# CBG does not want these 2 columns: source_name_1, source_name_2*
-				line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+				line = [ Id, GUID_1, GUID_2, type_match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			
 			writer.writerow( line )
 		
@@ -522,7 +521,7 @@ def update_cbg( db_links, id_match_process ):
 		print( "resp:", resp )
 
 
-
+"""
 def get_id_match_process( db_links ):
 	print( "get_id_match_process()" )
 	id_match_process = None
@@ -588,19 +587,62 @@ def get_id_match_process( db_links ):
 			print( "No records with id_match_process = %s in table %s" % ( table, id_match_process ) )
 		
 	return id_match_process, type_link
-
+"""
 
 
 def get_idmp_list( db_links ):
+	print( "get_idmp_list()" )
 	idmp_list = []
-	# ...
+	
+	table = "links_match.MATCHES_CBG_WWW"
+	query = "SELECT id_match_process FROM %s WHERE Delivering = 'y'" % table
+	if debug: print( query )
+	resp = db_links.query( query )
+	for rec in resp:
+		idmp = rec[ "id_match_process" ]
+		idmp_list.append( idmp )
+	
+	print( "get_idmp_list: %d idmp 'y' entries" % len( idmp_list ) )
 	return idmp_list
 
 
 
-def get_type_link( id_match_process )
-	# ...
-	return type_link
+def get_type_match_link( id_match_process ):
+	print( "get_type_match_link()" )
+
+	table = "links_match.match_process"
+	query = "SELECT type_match, use_familyname, use_firstname FROM %s WHERE `id` = %s" % ( table, id_match_process )
+	resp = db_links.query( query )
+	
+	type_match = ''
+	type_link  = ''
+	if resp:
+		rec = resp[ 0 ]
+		type_match = rec[ "type_match" ]
+		
+		use_familyname = rec[ "use_familyname" ]
+		use_firstname  = rec[ "use_firstname" ]
+		
+		if use_familyname != use_firstname:
+			print( "WARNING, unequal: use_familyname = %s, use_firstname = %s" % ( use_familyname, use_firstname ) )
+		
+		# # EMFP order
+		if use_familyname == "1100":
+			type_link = '1'
+		elif use_familyname == "1110":
+			type_link = '2'
+		elif use_familyname == "1101":
+			type_link = '3'
+		elif use_familyname == "1111":
+			type_link = '4'
+		elif use_familyname == "1001":
+			type_link = '5'
+		else:
+			type_link = ''
+		
+		print( "id_match_process = %s" % id_match_process )
+	
+	return type_match, type_link
 
 
 
@@ -685,11 +727,11 @@ if __name__ == "__main__":
 	
 	idmp_list = get_idmp_list( db_links )
 	for id_match_process in idmp_list:
-		type_link = get_type_link( id_match_process )
+		type_match, type_link = get_type_match_link( id_match_process )
 		
 		#print( "id_match_process: %s, type_link: %s" % ( id_match_process, type_link ) )
 		print( "id_match_process: %s" % id_match_process )
-		export2( db_ref, db_links, id_match_process, type_link )	# not needing links_base
+		export2( db_ref, db_links, id_match_process, type_match, type_link )	# not needing links_base
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "processing took %s" % str_elapsed )
