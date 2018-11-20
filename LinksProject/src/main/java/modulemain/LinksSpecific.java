@@ -383,7 +383,7 @@ public class LinksSpecific
 
         if( m.find() ) { day   = Integer.parseInt( m.group() ); }   // day
         if( m.find() ) { month = Integer.parseInt( m.group() ); }   // month
-        if( m.find() ) { year  = Integer.parseInt( m.group() ); }   //year
+        if( m.find() ) { year  = Integer.parseInt( m.group() ); }   // year
 
         // check components
         // year: we have "TROUWEN" records from Leiden going back to 1575
@@ -442,6 +442,7 @@ public class LinksSpecific
 
         return dymd;
     }
+
 
 
      /**
