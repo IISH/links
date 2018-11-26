@@ -10,11 +10,11 @@ import java.time.format.DateTimeParseException;
  * @author Fons Laan
  *
  * FL-20-Nov-2018 new function validateDateString()
- * FL-20-Nov-2018 Latest change
+ * FL-26-Nov-2018 Latest change
  */
 public final class DateYearMonthDaySet
 {
-    boolean debug = true;
+    boolean debug = false;
 
     private boolean dateIsValid;
 
@@ -37,10 +37,10 @@ public final class DateYearMonthDaySet
         boolean valid = false;
 
         // parser/formatter for day-month-year
-        DateTimeFormatter dd_MM_yyyy = DateTimeFormatter.ofPattern( "dd-MM-yyyy" );
+        DateTimeFormatter dd_MM_yyyy = DateTimeFormatter.ofPattern( "dd-MM-yyyy" ); // default
 
         // parser for multiple patterns
-        // TODO Create static parser once finished: it does not change
+        // TODO Create static parser once finished: it does not change dynamically
         DateTimeFormatter parser = new DateTimeFormatterBuilder()
             .appendOptional( dd_MM_yyyy )     // optional "dd-MM-yyyy"
             .appendOptional( DateTimeFormatter.ofPattern( "d-MM-yyyy" ) )
@@ -52,7 +52,17 @@ public final class DateYearMonthDaySet
             .appendOptional( DateTimeFormatter.ofPattern( "dd/M/yyyy" ) )
             .appendOptional( DateTimeFormatter.ofPattern( "d/M/yyyy" ) )
 
-            .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )      // optional built-in formatter
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-d" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-dd" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-d" ) )
+
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/dd" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/d" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/dd" ) )
+            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/d" ) )
+
+            //.appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )      // optional built-in formatter
             .toFormatter();                 // create formatter
 
         // parse input string
