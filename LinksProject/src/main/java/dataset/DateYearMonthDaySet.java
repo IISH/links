@@ -5,16 +5,19 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @author Omar Azouguagh
  * @author Fons Laan
  *
  * FL-20-Nov-2018 new function validateDateString()
- * FL-26-Nov-2018 Latest change
+ * FL-27-Nov-2018 Latest change
  */
 public final class DateYearMonthDaySet
 {
-    boolean debug = false;
+    boolean debug = true;
 
     private boolean dateIsValid;
 
@@ -28,6 +31,33 @@ public final class DateYearMonthDaySet
     private String reportsMonth = "";
     private String reportsDay   = "";
 
+    // default formatter for day-month-year
+    static DateTimeFormatter dd_MM_yyyy = DateTimeFormatter.ofPattern( "dd-MM-yyyy" );
+
+    // parser for multiple patterns
+    static DateTimeFormatter parser = new DateTimeFormatterBuilder()
+        .appendOptional( dd_MM_yyyy )     // optional "dd-MM-yyyy"
+        .appendOptional( DateTimeFormatter.ofPattern( "d-MM-yyyy" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "dd-M-yyyy" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "d-M-yyyy" ) )
+
+        .appendOptional( DateTimeFormatter.ofPattern( "dd/MM/yyyy" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "d/MM/yyyy" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "dd/M/yyyy" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "d/M/yyyy" ) )
+
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-d" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-dd" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-d" ) )
+
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/dd" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/d" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/dd" ) )
+        .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/d" ) )
+
+        //.appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )      // optional built-in formatter
+        .toFormatter();                 // create formatter
 
     /**
      * @param dateString
@@ -36,49 +66,62 @@ public final class DateYearMonthDaySet
     {
         boolean valid = false;
 
-        // parser/formatter for day-month-year
-        DateTimeFormatter dd_MM_yyyy = DateTimeFormatter.ofPattern( "dd-MM-yyyy" ); // default
-
-        // parser for multiple patterns
-        // TODO Create static parser once finished: it does not change dynamically
-        DateTimeFormatter parser = new DateTimeFormatterBuilder()
-            .appendOptional( dd_MM_yyyy )     // optional "dd-MM-yyyy"
-            .appendOptional( DateTimeFormatter.ofPattern( "d-MM-yyyy" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "dd-M-yyyy" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "d-M-yyyy" ) )
-
-            .appendOptional( DateTimeFormatter.ofPattern( "dd/MM/yyyy" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "d/MM/yyyy" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "dd/M/yyyy" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "d/M/yyyy" ) )
-
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-d" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-dd" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy-M-d" ) )
-
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/dd" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/MM/d" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/dd" ) )
-            .appendOptional( DateTimeFormatter.ofPattern( "yyyy/M/d" ) )
-
-            //.appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )      // optional built-in formatter
-            .toFormatter();                 // create formatter
-
-        // parse input string
-        try {
-            LocalDate ld = LocalDate.parse( dateString, parser );
-            valid = true;
-            if( debug ) { System.out.println( "validateDateString(): " + dd_MM_yyyy.format( ld ) ); }
-        }
-        catch( DateTimeParseException ex )
+        // could add a length condition based on parser when dateString not null
+        if( dateString == null ) { valid = false; }
+        else    // parse input string
         {
-            valid = false;
-            if( debug ) { System.out.println( "validateDateString(): " + ex.getMessage() ); }
+            try
+            {
+                LocalDate ld = LocalDate.parse( dateString, parser );
+                valid = true;
+                if( debug ) { System.out.println( "validateDateString(): " + dd_MM_yyyy.format( ld ) ); }
+            }
+            catch( DateTimeParseException ex )
+            {
+                valid = false;
+                if( debug ) { System.out.println( "validateDateString(): " + ex.getMessage() ); }
+            }
         }
 
         return valid;
     } // validateDateString
+
+
+    /**
+     * @param dateString
+     */
+    private boolean validateDatePieces( String dateString )
+    {
+        boolean valid = false;
+
+        // FL-27-Nov-2018 hack: try to replace with its numeric pieces
+        Pattern regex = Pattern.compile( "[0-9]+" );
+        Matcher m = regex.matcher( dateString );
+
+        int day   = 0;
+        int month = 0;
+        int year  = 0;
+
+        if( m.find() ) { day   = Integer.parseInt( m.group() ); }   // day
+        if( m.find() ) { month = Integer.parseInt( m.group() ); }   // month
+        if( m.find() ) { year  = Integer.parseInt( m.group() ); }   // year
+
+        String dateReplace = String.format( "%d-%d-%d", day, month, year );
+        try
+        {
+            LocalDate ld = LocalDate.parse( dateReplace, parser );
+            valid = true;
+            reportsDate = dd_MM_yyyy.format( ld );
+            if( debug ) { System.out.println( "validateDatePieces(): " + reportsDate ); }
+        }
+        catch( DateTimeParseException ex )
+        {
+            valid = false;
+            if( debug ) { System.out.println( "validateDatePieces(): " + ex.getMessage() ); }
+        }
+
+        return valid;
+    } // validateDatePieces
 
 
     /**
@@ -93,6 +136,9 @@ public final class DateYearMonthDaySet
         //this.dateIsValid = false;     // Fons
 
         this.dateIsValid = validateDateString( reportsDate );
+
+        // try to replace with its numeric pieces, ignoring junk
+        if( ! this.dateIsValid ) { this.dateIsValid = validateDatePieces( reportsDate ); }
     }
 
     /**
