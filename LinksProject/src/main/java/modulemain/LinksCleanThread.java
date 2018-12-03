@@ -87,7 +87,7 @@ import linksmanager.ManagerGui;
  * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
  * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
  * FL-15-Oct-2018 Strip {} from id_persist_registration
- * FL-27-Nov-2018 Debug standardRegistrationDate()
+ * FL-03-Dec-2018 Debug standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -560,22 +560,45 @@ public class LinksCleanThread extends Thread
 
         showMessage( String.format( "Thread id %02d; Connecting to databases", threadId ), false, true );
 
-        if( use_links_logs ) {
-            if (debug) { showMessage("links_logs", false, true); }
+        if( use_links_logs )
+        {
+            if (debug)
+            {
+                String msg = String.format( "Thread id %02d; links_logs", threadId );
+                showMessage(msg, false, true);
+            }
             dbconLog = new MySqlConnector(url, "links_logs", user, pass);
         }
 
-        if( debug ) { showMessage( ref_db + " (ref)", false, true ); }
+        if( debug )
+        {
+            String msg = String.format( "Thread id %02d; %s", ref_db, threadId );
+            showMessage( msg, false, true );
+        }
         dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
-        if( debug ) { showMessage( "links_general", false, true ); }
-        if( dbconref_single ) { dbconRefRead = dbconRefWrite; } // same ref for reading and writing
-        else {  dbconRefRead = new MySqlConnector( url, "links_general", user, pass ); }
+        if( debug )
+        {
+            String msg = String.format( "Thread id %02d; links_general", threadId );
+            showMessage( "links_general", false, true );
+        }
+        if( dbconref_single )       // same connector for reading and writing
+        { dbconRefRead = dbconRefWrite; }
+        else                        // separate connector for reading
+        { dbconRefRead = new MySqlConnector( url, "links_general", user, pass ); }
 
-        if( debug ) { showMessage( "links_original", false, true ); }
+        if( debug )
+        {
+            String msg = String.format( "Thread id %02d; links_original", threadId );
+            showMessage( msg, false, true );
+        }
         dbconOriginal = new MySqlConnector( url, "links_original", user, pass );
 
-        if( debug ) { showMessage( "links_cleaned", false, true ); }
+        if( debug )
+        {
+            String msg = String.format( "Thread id %02d; links_cleaned", threadId );
+            showMessage( msg, false, true );
+        }
         dbconCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
 
     } // connectToDatabases
@@ -4421,10 +4444,10 @@ public class LinksCleanThread extends Thread
         String msg = "";
 
         //msg = "skipping untill minMaxDateMain()";
-        msg = "skipping untill standardRegistrationDate()";
+        //msg = "skipping untill standardRegistrationDate()";
         //msg = "ONLY flag functions";
-        showMessage( msg, false, true );
-        /*
+        //showMessage( msg, false, true );
+        ///*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
@@ -4456,7 +4479,7 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type, rmtype );
         msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
@@ -4465,9 +4488,9 @@ public class LinksCleanThread extends Thread
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
-        msg = "skipping remaining date functions";
-        showMessage( msg, false, true );
-        /*
+        //msg = "skipping remaining date functions";
+        //showMessage( msg, false, true );
+        ///*
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
@@ -4488,18 +4511,18 @@ public class LinksCleanThread extends Thread
 
         msg = String.format( "Thread id %02d; Flagging empty dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
-        /*
+        ///*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateValid for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
-        /*
+        ///*
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
@@ -4508,7 +4531,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5699,7 +5722,6 @@ public class LinksCleanThread extends Thread
             query_r += "FROM registration_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( query_r, false, true ); }
-            { showMessage( query_r, false, true ); }
 
             ResultSet rs_r = dbconOriginal.runQueryWithResult( query_r );
             rs_r.last();
@@ -5725,14 +5747,11 @@ public class LinksCleanThread extends Thread
                 int regist_month = rs_r.getInt( "registration_month" );
                 int regist_year  = rs_r.getInt( "registration_year" );
 
-                if( id_registration == 65873061 ) { debug = true; }
-                else { debug = false; continue; }
+                //if( id_registration == 65873061 ) { debug = true; }
+                //else { debug = false; continue; }
 
                 if( debug )
                 {
-                    //registration_date = "28/4/1952";
-                    //registration_date = "1952/04/28";
-
                     System.out.println( "id_registration: "    + id_registration );
                     System.out.println( "registration_date: "  + registration_date );
                     System.out.println( "registration_day: "   + regist_day );
@@ -5763,8 +5782,14 @@ public class LinksCleanThread extends Thread
                 //registration_date = "28-04-1952";
 
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
+                if( dymd.isFixedDate() )
+                {
+                    registration_date = dymd.getDate();     // wrong registration_date, but corrected
+                    addToReportRegistration( id_registration, source, 203, dymd.getReports() );     // EC 203
+                }
 
                 if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }
+                if( debug ) { System.out.println( "dymd.isFixedDate(): " + dymd.isFixedDate() ); }
                 if( debug ) { System.out.println( dymd.getReports() ); }
 
                 // date object from links_original date components
@@ -6479,7 +6504,7 @@ public class LinksCleanThread extends Thread
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
-                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                String msg = String.format( "Thread id %02d; query %d-of-%d, %d flags set to %d", threadId, nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
@@ -6573,7 +6598,7 @@ public class LinksCleanThread extends Thread
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
-                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                String msg = String.format( "Thread id %02d; query %d-of-%d, %d flags set to %d", threadId, nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {
@@ -6662,7 +6687,7 @@ public class LinksCleanThread extends Thread
                 if( debug ) { showMessage( query, false, true ); }
 
                 int nrec = dbconCleaned.runQueryUpdate( query );
-                String msg = String.format( "query %d-of-%d, %d flags set to %d", nq, queries.length, nrec, flag );
+                String msg = String.format( "Thread id %02d; query %d-of-%d, %d flags set to %d", threadId, nq, queries.length, nrec, flag );
                 elapsedShowMessage( msg, ts, System.currentTimeMillis() );
             }
             catch( Exception ex ) {

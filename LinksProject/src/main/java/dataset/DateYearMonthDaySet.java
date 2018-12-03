@@ -13,20 +13,21 @@ import java.util.regex.Pattern;
  * @author Fons Laan
  *
  * FL-20-Nov-2018 new function validateDateString()
- * FL-27-Nov-2018 Latest change
+ * FL-03-Dec-2018 Latest change
  */
 public final class DateYearMonthDaySet
 {
-    boolean debug = true;
+    boolean debug = false;
 
-    private boolean dateIsValid;
+    private boolean dateIsValid = false;
+    private boolean dateIsFixed = false;    // fixed to valid from invalid input string
 
+    private String date = "";
     private int year;
     private int month;
     private int day;
 
     private String reportsDate  = "";
-
     private String reportsYear  = "";
     private String reportsMonth = "";
     private String reportsDay   = "";
@@ -59,31 +60,49 @@ public final class DateYearMonthDaySet
         //.appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )      // optional built-in formatter
         .toFormatter();                 // create formatter
 
+
+    /**
+     * @param reportsDate
+     */
+    public DateYearMonthDaySet( String reportsDate )
+    {
+        this.reportsDate = reportsDate;
+        //this.dateIsValid = true;      // Omar
+
+        dateIsValid = validateDateString( reportsDate );
+
+        // try to replace with its numeric pieces, ignoring junk
+        if( ! dateIsValid )
+        {
+            dateIsValid = validateDatePieces( reportsDate );
+        }
+    }
+
+
     /**
      * @param dateString
      */
     public boolean validateDateString( String dateString )
     {
-        boolean valid = false;
-
         // could add a length condition based on parser when dateString not null
-        if( dateString == null ) { valid = false; }
+        if( dateString == null ) { dateIsValid = false; }
         else    // parse input string
         {
             try
             {
                 LocalDate ld = LocalDate.parse( dateString, parser );
-                valid = true;
-                if( debug ) { System.out.println( "validateDateString(): " + dd_MM_yyyy.format( ld ) ); }
+                dateIsValid = true;
+                date = dd_MM_yyyy.format( ld );
+                if( debug ) { System.out.println( "validateDateString(): " + date ); }
             }
             catch( DateTimeParseException ex )
             {
-                valid = false;
+                dateIsValid = false;
                 if( debug ) { System.out.println( "validateDateString(): " + ex.getMessage() ); }
             }
         }
 
-        return valid;
+        return dateIsValid;
     } // validateDateString
 
 
@@ -92,57 +111,46 @@ public final class DateYearMonthDaySet
      */
     private boolean validateDatePieces( String dateString )
     {
-        boolean valid = false;
-
-        // FL-27-Nov-2018 hack: try to replace with its numeric pieces
-        Pattern regex = Pattern.compile( "[0-9]+" );
-        Matcher m = regex.matcher( dateString );
-
-        int day   = 0;
-        int month = 0;
-        int year  = 0;
-
-        if( m.find() ) { day   = Integer.parseInt( m.group() ); }   // day
-        if( m.find() ) { month = Integer.parseInt( m.group() ); }   // month
-        if( m.find() ) { year  = Integer.parseInt( m.group() ); }   // year
-
-        String dateReplace = String.format( "%d-%d-%d", day, month, year );
-        try
+        // FL-27-Nov-2018 hack: try to replace invalid date string with its numeric pieces, if any.
+        if( dateString == null )
         {
-            LocalDate ld = LocalDate.parse( dateReplace, parser );
-            valid = true;
-            reportsDate = dd_MM_yyyy.format( ld );
-            if( debug ) { System.out.println( "validateDatePieces(): " + reportsDate ); }
+            dateIsValid = false;
+            dateIsFixed = false;
         }
-        catch( DateTimeParseException ex )
+        else
         {
-            valid = false;
-            if( debug ) { System.out.println( "validateDatePieces(): " + ex.getMessage() ); }
+            Pattern regex = Pattern.compile( "[0-9]+" );
+            Matcher m = regex.matcher( dateString );
+
+            int day   = 0;
+            int month = 0;
+            int year  = 0;
+
+            if( m.find() ) { day   = Integer.parseInt( m.group() ); }   // day
+            if( m.find() ) { month = Integer.parseInt( m.group() ); }   // month
+            if( m.find() ) { year  = Integer.parseInt( m.group() ); }   // year
+
+            String dateReplace = String.format( "%d-%d-%d", day, month, year );
+            try
+            {
+                LocalDate ld = LocalDate.parse( dateReplace, parser );
+                dateIsValid = true;
+                dateIsFixed = true;
+                date = dd_MM_yyyy.format( ld );
+                if( debug ) { System.out.println( "validateDatePieces(): " + date ); }
+            }
+            catch( DateTimeParseException ex )
+            {
+                dateIsValid = false;
+                dateIsFixed = false;
+                if( debug ) { System.out.println( "validateDatePieces(): " + ex.getMessage() ); }
+            }
         }
 
-        return valid;
+        return dateIsValid;
     } // validateDatePieces
 
-
     /**
-     *
-     * @param reportsDate
-     */
-    public DateYearMonthDaySet( String reportsDate )
-    {
-        this.reportsDate = reportsDate;
-
-        //this.dateIsValid = true;      // Omar
-        //this.dateIsValid = false;     // Fons
-
-        this.dateIsValid = validateDateString( reportsDate );
-
-        // try to replace with its numeric pieces, ignoring junk
-        if( ! this.dateIsValid ) { this.dateIsValid = validateDatePieces( reportsDate ); }
-    }
-
-    /**
-     *
      * @return
      */
     public boolean isValidDate() {
@@ -150,7 +158,6 @@ public final class DateYearMonthDaySet
     }
 
     /**
-     *
      * @param valid
      */
     public void setValidDate( boolean valid )
@@ -160,7 +167,14 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
+     * @return
+     */
+    public boolean isFixedDate() {
+        return this.dateIsFixed;
+    }
+
+
+    /**
      * @param value
      */
     public void setReportYear( String value )
@@ -171,7 +185,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setReportMonth( String value )
@@ -182,7 +195,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setReportDay( String value )
@@ -193,7 +205,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setReportDate( String value ) {
@@ -202,7 +213,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setYear( int value ) {
@@ -211,7 +221,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setMonth( int value ){
@@ -220,7 +229,6 @@ public final class DateYearMonthDaySet
 
 
     /**
-     *
      * @param value
      */
     public void setDay( int value ){
@@ -232,66 +240,57 @@ public final class DateYearMonthDaySet
      *
      * @return
      */
-    public String getReportYear( ){
+    public String getReportYear(){
         return reportsYear;
     }
 
 
     /**
-     *
      * @return
      */
-    public String getReportMonth( ){
+    public String getReportMonth(){
         return reportsMonth;
     }
 
 
     /**
-     *
      * @return
      */
-    public String getReportDay( ){
+    public String getReportDay(){
         return reportsDay;
     }
 
 
     /**
-     *
      * @return
      */
-    public String getReports( )
+    public String getReports()
     {
+        //  getReports() used for addToReportRegistration()
         if( reportsDate == null || reportsDate.isEmpty() )
         { return "[ Day: " + reportsDay + " ; Month: " + reportsMonth + " ; Year: " + reportsYear + " ]"; }
         else
         { return "[ Date: " + reportsDate + " ]"; }
     }
 
-
     /**
-     *
      * @return
      */
-    public int getYear( ){
-        return year;
-    }
-
+    public String getDate() { return date; }
 
     /**
-     *
      * @return
      */
-    public int getMonth( ){
-        return month;
-    }
-
+    public int getYear() { return year; }
 
     /**
-     *
      * @return
      */
-    public int getDay( ){
-        return day;
-    }
+    public int getMonth() { return month; }
+
+    /**
+     * @return
+     */
+    public int getDay() { return day; }
 }
 
