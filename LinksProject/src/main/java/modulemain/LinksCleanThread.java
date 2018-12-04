@@ -87,7 +87,7 @@ import linksmanager.ManagerGui;
  * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
  * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
  * FL-15-Oct-2018 Strip {} from id_persist_registration
- * FL-03-Dec-2018 Debug standardRegistrationDate()
+ * FL-04-Dec-2018 Debug standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -572,15 +572,15 @@ public class LinksCleanThread extends Thread
 
         if( debug )
         {
-            String msg = String.format( "Thread id %02d; %s", ref_db, threadId );
+            String msg = String.format( "Thread id %02d; %s writing", threadId, ref_db );
             showMessage( msg, false, true );
         }
         dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
         if( debug )
         {
-            String msg = String.format( "Thread id %02d; links_general", threadId );
-            showMessage( "links_general", false, true );
+            String msg = String.format( "Thread id %02d; %s reading", threadId, ref_db );
+            showMessage( msg, false, true );
         }
         if( dbconref_single )       // same connector for reading and writing
         { dbconRefRead = dbconRefWrite; }
@@ -4445,9 +4445,9 @@ public class LinksCleanThread extends Thread
 
         //msg = "skipping untill minMaxDateMain()";
         //msg = "skipping untill standardRegistrationDate()";
-        //msg = "ONLY flag functions";
-        //showMessage( msg, false, true );
-        ///*
+        msg = "ONLY flag functions";
+        showMessage( msg, false, true );
+        /*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
@@ -4479,14 +4479,16 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type, rmtype );
         msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
+        /*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+        */
 
         //msg = "skipping remaining date functions";
         //showMessage( msg, false, true );
@@ -4513,16 +4515,16 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
-        ///*
+        /*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateValid for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
-        ///*
+        /*
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
@@ -4531,7 +4533,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+        */
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
@@ -5701,7 +5703,6 @@ public class LinksCleanThread extends Thread
 
 
 
-
     /**
      * @param debug
      * @param source
@@ -5747,7 +5748,7 @@ public class LinksCleanThread extends Thread
                 int regist_month = rs_r.getInt( "registration_month" );
                 int regist_year  = rs_r.getInt( "registration_year" );
 
-                //if( id_registration == 65873061 ) { debug = true; }
+                //if( id_registration == 42515287 ) { debug = true; }
                 //else { debug = false; continue; }
 
                 if( debug )
@@ -5779,13 +5780,13 @@ public class LinksCleanThread extends Thread
                 // date object from links_original date string
                 // -1- FIRST dymd
                 if( debug ) { System.out.println( "-1- FIRST dymd" ); }
-                //registration_date = "28-04-1952";
 
                 DateYearMonthDaySet dymd = LinksSpecific.divideCheckDate( registration_date );
-                if( dymd.isFixedDate() )
+                if( dymd.isFixedDate() || dymd.isReformattedDate() )
                 {
-                    registration_date = dymd.getDate();     // wrong registration_date, but corrected
-                    addToReportRegistration( id_registration, source, 203, dymd.getReports() );     // EC 203
+                    registration_date = dymd.getDate();     // input string string changed
+                    if( dymd.isFixedDate() )                // input string was invalid, but the date could be fixed
+                    { addToReportRegistration( id_registration, source, 203, dymd.getReports() ); }     // EC 203
                 }
 
                 if( debug ) { System.out.println( "dymd.isValidDate(): " + dymd.isValidDate() ); }

@@ -13,16 +13,18 @@ import java.util.regex.Pattern;
  * @author Fons Laan
  *
  * FL-20-Nov-2018 new function validateDateString()
- * FL-03-Dec-2018 Latest change
+ * FL-04-Dec-2018 Latest change
  */
 public final class DateYearMonthDaySet
 {
     boolean debug = false;
 
-    private boolean dateIsValid = false;
-    private boolean dateIsFixed = false;    // fixed to valid from invalid input string
+    private boolean dateIsValid       = false;
+    private boolean dateIsFixed       = false;      // fixed to valid from invalid input string
+    private boolean dateIsReformatted = false;      // input string was not in default format
 
-    private String date = "";
+    private String localDateStr = "";
+
     private int year;
     private int month;
     private int day;
@@ -91,13 +93,21 @@ public final class DateYearMonthDaySet
             try
             {
                 LocalDate ld = LocalDate.parse( dateString, parser );
+                localDateStr = dd_MM_yyyy.format( ld );
                 dateIsValid = true;
-                date = dd_MM_yyyy.format( ld );
-                if( debug ) { System.out.println( "validateDateString(): " + date ); }
+                if( debug ) { System.out.println( "validateDateString(): " + localDateStr ); }
+
+                // Notice that LocalDate.parse() may silently ignore leading 0's which "officially" fall outside the
+                // specified format patterns! => compare input and parsed strings.
+                // Notice that if a valid input string has a different format that the default format, we also mark it
+                // as "fixed" so that the default format is used for links_cleaned.
+                if( dateString.equals( localDateStr ) ) { dateIsReformatted = false; }
+                else { dateIsReformatted = true; }
             }
             catch( DateTimeParseException ex )
             {
                 dateIsValid = false;
+                dateIsReformatted = false;
                 if( debug ) { System.out.println( "validateDateString(): " + ex.getMessage() ); }
             }
         }
@@ -136,8 +146,8 @@ public final class DateYearMonthDaySet
                 LocalDate ld = LocalDate.parse( dateReplace, parser );
                 dateIsValid = true;
                 dateIsFixed = true;
-                date = dd_MM_yyyy.format( ld );
-                if( debug ) { System.out.println( "validateDatePieces(): " + date ); }
+                localDateStr = dd_MM_yyyy.format( ld );
+                if( debug ) { System.out.println( "validateDatePieces(): " + localDateStr ); }
             }
             catch( DateTimeParseException ex )
             {
@@ -150,28 +160,32 @@ public final class DateYearMonthDaySet
         return dateIsValid;
     } // validateDatePieces
 
+
     /**
      * @return
      */
-    public boolean isValidDate() {
-        return this.dateIsValid;
-    }
+    public boolean isValidDate()
+    { return this.dateIsValid; }
 
     /**
      * @param valid
      */
     public void setValidDate( boolean valid )
-    {
-        this.dateIsValid = valid;
-    }
+    { this.dateIsValid = valid; }
 
 
     /**
      * @return
      */
-    public boolean isFixedDate() {
-        return this.dateIsFixed;
-    }
+    public boolean isFixedDate()
+    { return this.dateIsFixed; }
+
+
+    /**
+     * @return
+     */
+    public boolean isReformattedDate()
+    { return this.dateIsReformatted; }
 
 
     /**
@@ -276,7 +290,7 @@ public final class DateYearMonthDaySet
     /**
      * @return
      */
-    public String getDate() { return date; }
+    public String getDate() { return localDateStr; }
 
     /**
      * @return
