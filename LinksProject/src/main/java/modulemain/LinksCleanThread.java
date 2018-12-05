@@ -87,7 +87,7 @@ import linksmanager.ManagerGui;
  * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
  * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
  * FL-15-Oct-2018 Strip {} from id_persist_registration
- * FL-04-Dec-2018 Debug standardRegistrationDate()
+ * FL-05-Dec-2018 Debug standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4445,9 +4445,9 @@ public class LinksCleanThread extends Thread
 
         //msg = "skipping untill minMaxDateMain()";
         //msg = "skipping untill standardRegistrationDate()";
-        msg = "ONLY flag functions";
-        showMessage( msg, false, true );
-        /*
+        //msg = "ONLY flag functions";
+        //showMessage( msg, false, true );
+        ///*
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
@@ -4479,16 +4479,16 @@ public class LinksCleanThread extends Thread
         standardDate( debug, source, type, rmtype );
         msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
-        /*
+        ///*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         //msg = "skipping remaining date functions";
         //showMessage( msg, false, true );
@@ -4515,16 +4515,16 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
-        /*
+        ///*
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateValid for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
-        /*
+        ///*
         // Make minMaxDateMain() a separate GUI option:
         // we often have date issues, and redoing the whole date cleaning takes so long.
         ts = System.currentTimeMillis();
@@ -4533,7 +4533,7 @@ public class LinksCleanThread extends Thread
         minMaxDateMain( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        */
+        //*/
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
