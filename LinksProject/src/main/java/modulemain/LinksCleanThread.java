@@ -88,6 +88,7 @@ import linksmanager.ManagerGui;
  * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
  * FL-15-Oct-2018 Strip {} from id_persist_registration
  * FL-05-Dec-2018 Debug standardRegistrationDate()
+ * FL-10-Dec-2018 Escape trailing backslash in ReportRegistration()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -764,7 +765,7 @@ public class LinksCleanThread extends Thread
         con = con.replaceAll( "<.*>", value );
         //con = LinksSpecific.prepareForMysql( con );
         con = con.replace( "'",  "\\'" );             // escape single quotes
-        con = con.replace( "\"", "\\\"" );            // escape quotes quotes
+        con = con.replace( "\"", "\\\"" );            // escape double quotes
 
         // get registration values from links_original.registration_o
         String location  = "";
@@ -804,19 +805,24 @@ public class LinksCleanThread extends Thread
         if( guid     == null) { guid     = ""; }
 
         location = location.replace( "'",  "\\'" );     // escape single quotes
-        location = location.replace( "\"", "\\\"" );    // escape quotes quotes
+        location = location.replace( "\"", "\\\"" );    // escape double quotes
+        location = location.replace( "\\", "\\\\" );    // escape backslash
 
         reg_type = reg_type.replace( "'",  "\\'" );     // escape single quotes
-        reg_type = reg_type.replace( "\"", "\\\"" );    // escape quotes quotes
+        reg_type = reg_type.replace( "\"", "\\\"" );    // escape double quotes
+        reg_type = reg_type.replace( "\\", "\\\\" );    // escape backslash
 
         date = date.replace( "'",  "\\'" );             // escape single quotes
-        date = date.replace( "\"", "\\\"" );            // escape quotes quotes
+        date = date.replace( "\"", "\\\"" );            // escape double quotes
+        date = date.replace( "\\", "\\\\" );            // escape backslash
 
         sequence = sequence.replace( "'",  "\\'" );     // escape single quotes
-        sequence = sequence.replace( "\"", "\\\"" );    // escape quotes quotes
+        sequence = sequence.replace( "\"", "\\\"" );    // escape double quotes
+        sequence = sequence.replace( "\\", "\\\\" );    // escape backslash
 
         guid = guid.replace( "'",  "\\'" );             // escape single quotes
-        guid = guid.replace( "\"", "\\\"" );            // escape quotes quotes
+        guid = guid.replace( "\"", "\\\"" );            // escape double quotes
+        guid = guid.replace( "\\", "\\\\" );            // escape backslash
 
         String s = "INSERT INTO links_logs.`" + logTableName + "`"
             + " ( reg_key , id_source , report_class , report_type , content ,"
@@ -896,7 +902,7 @@ public class LinksCleanThread extends Thread
         con = con.replaceAll( "<.*>", value );
         //con = LinksSpecific.prepareForMysql( con );
         con = con.replace( "'",  "\\'" );             // escape single quotes
-        con = con.replace( "\"", "\\\"" );            // escape quotes quotes
+        con = con.replace( "\"", "\\\"" );            // escape double quotes
 
         // get id_registration from links_original.person_o
         String id_registration = "";
@@ -5748,8 +5754,8 @@ public class LinksCleanThread extends Thread
                 int regist_month = rs_r.getInt( "registration_month" );
                 int regist_year  = rs_r.getInt( "registration_year" );
 
-                //if( id_registration == 42515287 ) { debug = true; }
-                //else { debug = false; continue; }
+                if( id_registration == 65557816 ) { debug = true; }
+                else { debug = false; continue; }
 
                 if( debug )
                 {
@@ -6093,9 +6099,19 @@ public class LinksCleanThread extends Thread
                     dbconCleaned.runQuery( query );
                 }
                 else
-                {
+                {   /*
                     String query = ""
                         + "UPDATE person_c SET "
+                        + "person_c." + type + "_date_valid = 0 "
+                        + "WHERE person_c.id_person = " + id_person;
+                    */
+                    // clear existing contents of date fields
+                    String query = ""
+                        + "UPDATE person_c SET "
+                        + "person_c." + type + "_date = NULL , "
+                        + "person_c." + type + "_day = NULL , "
+                        + "person_c." + type + "_month = NULL , "
+                        + "person_c." + type + "_year = NULL , "
                         + "person_c." + type + "_date_valid = 0 "
                         + "WHERE person_c.id_person = " + id_person;
 
