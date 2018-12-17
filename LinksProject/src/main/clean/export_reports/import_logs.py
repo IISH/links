@@ -12,7 +12,7 @@ Notice:		See the variable x_codes below. If the ref_report table is updated
 			be updated. 
 
 05-Sep-2016 Created
-24-Jan-2018 Changed
+17-Dec-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -20,42 +20,33 @@ from __future__ import ( absolute_import, division, print_function, unicode_lite
 from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
 	oct, open, pow, range, round, str, super, zip )
 
+import datetime
+import MySQLdb
 import os
 import sys
-import datetime
-from time import time
+import yaml
+
 from dateutil.parser import parse
-import MySQLdb
+from time import time
 
 debug = False
 chunk = 100000		# show progress in processing records
 
 #begin_date_default = "2016-04-15"
 #end_date_default   = "2016-05-12"
-#begin_date_default = "2016-09-08"
-#end_date_default   = "2016-09-09"
-begin_date_default = "2017-01-27"
-end_date_default   = "2017-10-09"
+begin_date_default = "2016-09-08"
+end_date_default   = "2016-09-09"
 
-# db
-HOST   = "localhost"
-#HOST   = "10.24.64.154"
-#HOST   = "10.24.64.158"
+# settings, read from config file
+HOST_LINKS   = ""
+USER_LINKS   = ""
+PASSWD_LINKS = ""
+DBNAME_LINKS = ""
 
-USER   = "links"
-PASSWD = "mslinks"
-DBNAME = ""				# be explicit in all queries
-
-"""
-HOST_REF   = "10.24.64.30"
-USER_REF   = "hsnref"
-PASSWD_REF = "refhsn"
-DBNAME_REF = ""				# be explicit in all queries
-"""
-HOST_REF   = "localhost"
-USER_REF   = "links"
-PASSWD_REF = "mslinks"
-DBNAME_REF = ""				# be explicit in all queries
+HOST_REF   = ""
+USER_REF   = ""
+PASSWD_REF = ""
+DBNAME_REF = ""
 
 single_quote = "'"
 double_quote = '"'
@@ -423,22 +414,40 @@ def format_secs( seconds ):
 
 if __name__ == "__main__":
 	print( "import_logs.py" )
+	time0 = time()		# seconds since the epoch
+	msg = "Start: %s" % datetime.datetime.now()
+	
+	config_path = os.path.join( os.getcwd(), "import_logs.yaml" )
+#	print( "Config file: %s" % config_path )
+	config = yaml.safe_load( open( config_path ) )
 
 	begin_date, end_date = get_date_limits()
 	if begin_date is None or end_date is None:
 		print( "EXIT" )
 		sys.exit( 1 )
 	
-	db = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	HOST_LINKS   = config.get( "HOST_LINKS" )
+	USER_LINKS   = config.get( "USER_LINKS" )
+	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	
+	HOST_REF   = config.get( "HOST_REF" )
+	USER_REF   = config.get( "USER_REF" )
+	PASSWD_REF = config.get( "PASSWD_REF" )
+	
+	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 
 	db_ref = Database( host = HOST_REF, user = USER_REF, passwd = PASSWD_REF, dbname = DBNAME_REF )
 	
-	db_logs = Database( host = HOST, user = USER, passwd = PASSWD, dbname = DBNAME )
+	db_logs = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 	
 #	db_check( db )
 
 	log_names = select_log_names( db_logs, begin_date, end_date )
 	process_logs( log_names )
 	
+	msg = "Stop: %s" % datetime.datetime.now()
+	
+	str_elapsed = format_secs( time() - time0 )
+	print( "Importing Logs took %s" % str_elapsed )
 
 # [eof]

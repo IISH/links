@@ -5,11 +5,12 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		links_counts.py
-Version:	0.1
-Goal:		Count and compare links original & cleaned record counts
+Version:	0.3
+Goal:		Count and compare links original, cleaned and base record counts
+TODO:		Read archive_names directly from HOST_REF db
 
 29-Mar-2016 Created
-17-Oct-2017 Changed
+17-Dec-2018 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -17,98 +18,114 @@ from __future__ import ( absolute_import, division, print_function, unicode_lite
 from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
 	oct, open, pow, range, round, str, super, zip )
 
+import datetime
+import MySQLdb
 import os
 import sys
-import datetime
-from time import time
-import MySQLdb
 import yaml
 
-debug = True
+from time import time
 
-# db settings, read values from config file
+debug = False
+
+# settings, read from config file
 HOST_LINKS   = ""
 USER_LINKS   = ""
 PASSWD_LINKS = ""
 DBNAME_LINKS = ""
 
+HOST_REF   = ""
+USER_REF   = ""
+PASSWD_REF = ""
+DBNAME_REF = ""
 
-"""
-# incomplete
-full_archive_names = [ 															# counts in 2016
-	{ "id_source" : 211, "name" : "" },
-	{ "id_source" : 212, "name" : "" },
-	{ "id_source" : 213, "name" : "" },
-	{ "id_source" : 214, "name" : "" },
-	{ "id_source" : 215, "name" : "" },
-	{ "id_source" : 216, "name" : "" },
-	{ "id_source" : 217, "name" : "" },
-	{ "id_source" : 218, "name" : "" },
-	{ "id_source" : 219, "name" : "219-is-not-used" },
-	{ "id_source" : 220, "name" : "" },
-	{ "id_source" : 221, "name" : "" },
-	{ "id_source" : 222, "name" : "" },
-	{ "id_source" : 223, "name" : "" },
-	{ "id_source" : 224, "name" : "" },
-	{ "id_source" : 225, "name" : "" },
-	{ "id_source" : 226, "name" : "" },
-	{ "id_source" : 227, "name" : "" },
-	{ "id_source" : 228, "name" : "" },
-	{ "id_source" : 229, "name" : "" },
-	{ "id_source" : 230, "name" : "" },
-	{ "id_source" : 231, "name" : "Gemeentearchief Oegstgeest" },				# 21278 / ( 21278 + 837 ) = 0.96
-#	{ "id_source" : 231, "name" : "Gemeentearchief Leidschendam-Voorburg" },	#   837 / ( 21278 + 837 ) = 0.04
-	{ "id_source" : 232, "name" : "" },
-	{ "id_source" : 233, "name" : "" },
-	{ "id_source" : 234, "name" : "" },
-	{ "id_source" : 235, "name" : "" },
-	{ "id_source" : 236, "name" : "" },
-	{ "id_source" : 237, "name" : "" },
-	{ "id_source" : 238, "name" : "" },
-	{ "id_source" : 239, "name" : "" },
-	{ "id_source" : 240, "name" : "" },
-	{ "id_source" : 241, "name" : "" },
-	{ "id_source" : 242, "name" : "Gemeentearchief Wassenaar" },				# 29598 = 1.00
-	{ "id_source" : 243, "name" : "Regionaal Archief Leiden" },
-	{ "id_source" : 244, "name" : "" }
-]
-"""
+# SELECT id_source, source_name, short_name FROM links_general.ref_source WHERE source_type = "BS" AND WWW_CollID IS NOT NULL AND id_source > 201 ORDER BY id_source;
+long_archive_names = {
+	"211" : "Groninger Archieven",
+	"213" : "Drents Archief",
+	"214" : "Historisch Centrum Overijssel",
+	"215" : "Gelders Archief",
+	"216" : "Het Utrechts Archief",
+	"217" : "Noord-Hollands Archief",
+	"218" : "Rijksarchief Zuid-Holland",
+	"219" : "Alle Friezen",
+	"220" : "Brabants Historisch Informatie Centrum",
+	"221" : "Regionaal Historisch Centrum Limburg",
+	"222" : "Het Flevolands Archief",
+	"223" : "Stadsarchief Rotterdam",
+	"224" : "Stadsarchief Breda",
+	"225" : "Zeeuws Archief",
+	"226" : "Regionaal Archief Eindhoven",
+	"229" : "Regionaal Archief Alkmaar",
+	"230" : "Nederlandse Antillen",
+	"231" : "Gemeentearchief Oegstgeest",
+	"232" : "Regionaal Archief Dordrecht",
+	"233" : "Streekarchief Voorne-Putten en Rozenburg",
+	"234" : "Streekarchief Goeree-Overflakkee",
+	"235" : "Streekarchief Rijnstreek",
+	"236" : "Streekarchief Midden-Holland",
+	"237" : "Stadsarchief Vlaardingen",
+	"238" : "Streekarchief Rijnlands Midden",
+	"239" : "Regionaal Archief Gorinchem",
+	"240" : "Historisch Archief Westland",
+	"241" : "Gemeentearchief Leidschendam-Voorburg",
+	"242" : "Gemeentearchief Wassenaar",
+	"244" : "Gemeentearchief Delft",
+	"245" : "Gemeentearchief Ede",
+	"246" : "Gemeentearchief Gemert-Bakel",
+	"247" : "Gemeentearchief Schouwen-Duiveland",
+	"248" : "Gemeentearchief Venray",
+	"249" : "Gemeentearchief Zoetermeer",
+	"250" : "Gemeentearchief Lisse",
+	"251" : "Haags Gemeentearchief",
+	"252" : "Regionaal Archief Tilburg",
+	"253" : "Rijckheyt Centrum voor Regionale Geschiedenis",
+	"254" : "West-Brabants Archief",
+	"255" : "Erfgoed Leiden en Omstreken"
+}
 
 short_archive_names = {
-	"211" : "Groningen",
-	"212" : "Fri_Tresoar",
-	"213" : "Drenthe",
-	"214" : "Overijssel",
-	"215" : "Gelderland",
-	"216" : "Utrecht",
-	"217" : "N-H_Haarlem",
-	"218" : "Z-H_Nat-Archief",
-	"219" : "219-is-not-used",
-	"220" : "NBr_BHIC",
-	"221" : "Limburg",
-	"222" : "Flevoland",
-	"223" : "Z-H_Rotterdam",
-	"224" : "NBr_Breda",
-	"225" : "Zeeland",
-	"226" : "NBr_Eindhoven",
-	"227" : "Utr_Eemland",
-	"228" : "Fri_Leeuwarden",
-	"229" : "N-H_Alkmaar",
+	"211" : "GR_Groningen",
+	"213" : "DR_Assen",
+	"214" : "OV_Zwolle",
+	"215" : "GD_Arnhem",
+	"216" : "UT_Utrecht",
+	"217" : "NH_Haarlem",
+	"218" : "ZH_Nat-Archief",
+	"219" : "FR_Friesland",
+	"220" : "NB_Den_Bosch",
+	"221" : "LB_Maastricht",
+	"222" : "FL_Lelystad",
+	"223" : "ZH_Rotterdam",
+	"224" : "NB_Breda",
+	"225" : "ZL_Middelburg",
+	"226" : "NB_Eindhoven",
+	"229" : "NH_Alkmaar",
 	"230" : "Ned-Antillen",
-	"231" : "Z-H_Oegstgeest",
-	"232" : "Z-H_Dordrecht",
-	"233" : "Z-H_Voorne",
-	"234" : "Z-H_Goeree",
-	"235" : "Z-H_Rijnstreek",
-	"236" : "Z-H_Midden-Holland",
-	"237" : "Z-H_Vlaardingen",
-	"238" : "Z-H_Midden",
-	"239" : "Z-H_Gorinchem",
-	"240" : "Z-H_Westland",
-	"241" : "Z-H_Leidschendam",
-	"242" : "Z-H_Wassenaar",
-	"243" : "Z-H_Leiden",
-	"244" : "Z-H_Delft"
+	"231" : "ZH_Oegstgeest",
+	"232" : "ZH_Dordrecht",
+	"233" : "ZH_Brielle",
+	"234" : "ZH_Middelharnis",
+	"235" : "ZH_Oudewater",
+	"236" : "ZH_Gouda",
+	"237" : "ZH_Vlaardingen",
+	"238" : "ZH_Alphen_adR",
+	"239" : "ZH_Gorinchem",
+	"240" : "ZH_Naaldwijk",
+	"241" : "ZH_Leidschendam",
+	"242" : "ZH_Wassenaar",
+	"244" : "ZH_Delft",
+	"245" : "GD_Ede",
+	"246" : "NB_Gemert",
+	"247" : "ZL_Zierikzee",
+	"248" : "LB_Venray",
+	"249" : "ZH_Zoetermeer",
+	"250" : "ZH_Lisse",
+	"251" : "ZH_Den_Haag",
+	"252" : "NB_Tilburg",
+	"253" : "LB_Heerlen",
+	"254" : "NB_Bergen_op_Zoom",
+	"255" : "ZH_Leiden"
 }
 
 archive_names = short_archive_names
@@ -199,6 +216,7 @@ def registration_counts( debug, db ):
 	table = "registration_o"
 	query_id = "query_o"
 	query_o = "SELECT id_source, COUNT(*) AS count FROM links_original." + table + " GROUP BY id_source" + ";"
+#	query_o = "SELECT id_source, registration_maintype, COUNT(*) AS count FROM links_original." + table + " GROUP BY id_source, registration_maintype" + ";"
 	print( query_o )
 	
 	resp_o = db.query( query_o )
@@ -227,6 +245,7 @@ def registration_counts( debug, db ):
 	table = "registration_c"
 	query_id = "query_c"
 	query_c = "SELECT id_source, COUNT(*) AS count FROM links_cleaned." + table + " GROUP BY id_source" + ";"
+#	query_c = "SELECT id_source, registration_maintype, COUNT(*) AS count FROM links_cleaned." + table + " GROUP BY id_source, registration_maintype" + ";"
 	print( query_c )
 	
 	resp_c = db.query( query_c )
@@ -257,7 +276,7 @@ def registration_counts( debug, db ):
 	
 	now = datetime.datetime.now()
 	print( "" )
-	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
+	print( "host: %s, date: %s" % ( HOST_LINKS, str( now.strftime( "%Y-%m-%d" ) ) ) )
 	print( "============================================================================" )
 	print( "     id        short        registration_o  registration_c  --- o/c loss ---" )
 	print( " # source  archive name      record count    record count   diff     procent" )
@@ -376,7 +395,7 @@ def person_counts( debug, db ):
 	
 	now = datetime.datetime.now()
 	print( "" )
-	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
+	print( "host: %s, date: %s" % ( HOST_LINKS, str( now.strftime( "%Y-%m-%d" ) ) ) )
 	print( "============================================================================" )
 	print( "     id        short           person_o        person_c     --- o/c loss ---" )
 	print( " # source  archive name      record count    record count   diff     procent" )
@@ -427,7 +446,7 @@ def person_counts( debug, db ):
 		else:
 			procent_cb_str = "     "
 		
-		print( "%2d %4s   %-20s %7d         %7d   %7d    %5s" % 
+		print( "%2d %4s   %-20s %8d       %8d   %7d    %5s" % 
 			( n, id_source_str, name, orig, clean, diff_oc, procent_oc_str ) )
 			
 	print( "============================================================================\n" )
@@ -590,10 +609,10 @@ def base_counts( debug, db, sources_person ):
 
 	now = datetime.datetime.now()
 	print( "" )
-	print( "host: %s, date: %s" % ( HOST, str( now.strftime( "%Y-%m-%d" ) ) ) )
+	print( "host: %s, date: %s" % ( HOST_LINKS, str( now.strftime( "%Y-%m-%d" ) ) ) )
 	print( "============================================================================================" )
-	print( "     id        short         links_base   -- c/b loss --  missing  missing  -- b/b loss --" )
-	print( " # source  archive name     record count  diff   procent  ego fam  days sb  diff   procent" )
+	print( "     id        short         links_base   -- c/b loss --  missing  missing   -- b/b loss --" )
+	print( " # source  archive name     record count  diff   procent  ego fam  days sb   diff   procent" )
 	print( "--------------------------------------------------------------------------------------------" )
 		
 	n = 0
@@ -662,14 +681,33 @@ def base_counts( debug, db, sources_person ):
 		else:
 			procent_bb_str = "     "
 		
-		print( "%2d %4s   %-20s %7d %7d  %5s %7d %7d %7d  %5s" % 
+		print( "%2d %4s   %-20s %8d %8d %5s %7d %7d %7d  %5s" % 
 			( n, id_source_str, name, base1, diff_cb, procent_cb_str, ego, days, diff_bb, procent_bb_str ) )
 
 	print( "============================================================================================\n" )
 
 
 
+def format_secs( seconds ):
+	nmin, nsec  = divmod( seconds, 60 )
+	nhour, nmin = divmod( nmin, 60 )
+
+	if nhour > 0:
+		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+	else:
+		if nmin > 0:
+			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		else:
+			str_elapsed = "%d (sec)" % nsec
+
+	return str_elapsed
+
+
+
 if __name__ == "__main__":
+	time0 = time()		# seconds since the epoch
+	msg = "Start: %s" % datetime.datetime.now()
+	
 	config_path = os.path.join( os.getcwd(), "links_counts.yaml" )
 #	print( "Config file: %s" % config_path )
 	config = yaml.safe_load( open( config_path ) )
@@ -678,12 +716,22 @@ if __name__ == "__main__":
 	USER_LINKS   = config.get( "USER_LINKS" )
 	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
 	
+	HOST_REF   = config.get( "HOST_REF" )
+	USER_REF   = config.get( "USER_REF" )
+	PASSWD_REF = config.get( "PASSWD_REF" )
+	
 	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
+
 #	db_check( db )
 
-	print( "host:", HOST )
+	print( "host:", HOST_LINKS )
 	registration_counts( debug, db )
 	sources_person = person_counts( debug, db )
 	base_counts( debug, db, sources_person )
-
+	
+	msg = "Stop: %s" % datetime.datetime.now()
+	
+	str_elapsed = format_secs( time() - time0 )
+	print( "Counting took %s" % str_elapsed )
+	
 # [eof]
