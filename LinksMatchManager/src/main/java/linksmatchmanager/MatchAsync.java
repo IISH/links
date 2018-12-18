@@ -42,7 +42,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-13-Nov-2017 dbconMatchLocal
  * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
- * FL-09-Oct-2018 Latest change
+ * FL-18-Dec-2018 Latest change
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -393,7 +393,17 @@ public class MatchAsync extends Thread
             {
                 /*
                 int s1_id_base = ql.s1_id_base.get( s1_idx );
-                if( s1_id_base == 74760790 ) { debug = debugfreq = debugfail = true; }
+                if( s1_id_base == 27380494 || s1_id_base == 27476967 || s1_id_base == 27829616 || s1_id_base == 58149492 )
+                { debug = debugfreq = debugfail = true; }
+                else
+                { debug = debugfreq = debugfail = false; continue; }
+                */
+
+                /*
+                // In the matching result, we have many id_registration's other than the 4 specified ???
+                int s1_id_regist = ql.s1_id_registration.get( s1_idx );
+                if( s1_id_regist == 42413136 || s1_id_regist == 42429418 || s1_id_regist == 42488992 || s1_id_regist == 51922050 )
+                { debug = debugfreq = debugfail = true; }
                 else { debug = debugfreq = debugfail = false; continue; }
                 */
 
