@@ -28,6 +28,9 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;       // c3p0 - JDBC3 Connecti
  * FL-06-Mar-2018 again lost connection, so try again autoReconnect=true
  * started with the code from:
  * https://stackoverflow.com/questions/4059004/why-is-java-sql-drivermanager-getconnection-hanging
+ * FL-07-Jan-2019
+ * Again "Communications link failure", changed connection options.
+ * https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
  */
 public class DatabaseManager
 {
@@ -133,7 +136,12 @@ public class DatabaseManager
         Class.forName( DEFAULT_DRIVER );
 
         // 06-Mar-2018: again lost connection, so try again autoReconnect=true
-        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + "?dontTrackOpenResources=true&autoReconnect=true";
+        //String options = "?dontTrackOpenResources=true&autoReconnect=true";
+        // 07-Jan-2019: again lost connection with autoReconnect=true; change options string, see:
+        //https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
+        String options = "&autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
+
+        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + options;
         //String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name;
 
         if( ( db_user == null ) || ( db_pass == null ) || ( db_user.trim().length() == 0 ) || ( db_pass.trim().length() == 0 ) )
@@ -145,8 +153,6 @@ public class DatabaseManager
             return DriverManager.getConnection( db_url, db_user, db_pass );
         }
     }
-
-
 
 
     public static void close( Connection connection )
