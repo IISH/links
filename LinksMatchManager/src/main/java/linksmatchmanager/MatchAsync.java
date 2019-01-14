@@ -10,6 +10,9 @@ import java.lang.management.ThreadMXBean;
 import java.sql.Connection;
 import java.sql.ResultSet;
 
+import java.text.SimpleDateFormat;
+
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.concurrent.Semaphore;
 import java.util.List;
@@ -42,7 +45,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-13-Nov-2017 dbconMatchLocal
  * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
- * FL-18-Dec-2018 Latest change
+ * FL-17-Jan-2019 Also date in timestamp
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -283,7 +286,12 @@ public class MatchAsync extends Thread
             long nanoseconds_begin  = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
             long milliseconds_begin = TimeUnit.SECONDS.convert( nanoseconds_begin, TimeUnit.MILLISECONDS );
 
-            String msg = String.format( "\nThread id %02d; MatchAsync/run(): thread started running", threadId );
+            //String format = "HH:mm:ss";
+            String format = "yyyy.MM.dd HH:mm:ss";
+            String ts = getTimeStamp2( format );
+            System.out.println( ts ); plog.show( "" );
+
+            String msg = String.format( "Thread id %02d; MatchAsync/run(): thread started running", threadId );
             System.out.println( msg ); plog.show( msg );
 
             msg = String.format( "Thread id %02d; process id: %d", threadId, qgs.get( 0 ).id );
@@ -420,7 +428,12 @@ public class MatchAsync extends Thread
                 s1_idx_cpy = s1_idx;   // copy value in order to display if exception occurs
 
                 if( s1_chunk != 0 && ( ( s1_idx + s1_chunk ) % s1_chunk == 0 ) )        // show progress
-                { System.out.println( String.format( "Thread id %02d; records processed: %d-of-%d, total # of matches found: %d", threadId , s1_idx, s1_size, n_match ) ); }
+                {
+                    ts = getTimeStamp2( format );
+                    msg = String.format( "%s Thread id %02d; records processed: %d-of-%d, total # of matches found: %d",
+                        ts, threadId , s1_idx, s1_size, n_match );
+                    System.out.println( msg );
+                }
 
                 /*
                 if( n_match > 100 ) {
@@ -808,7 +821,8 @@ public class MatchAsync extends Thread
 
             sem.release();
             int npermits = sem.availablePermits();
-            plog.show( "Semaphore: # of permits: " + npermits );
+            msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", threadId, npermits );
+            plog.show( msg );
 
             msg = String.format( "Thread id %02d; s1 records processed:         %10d", threadId, n_recs );
             System.out.println( msg ); plog.show( msg );
@@ -938,6 +952,15 @@ public class MatchAsync extends Thread
         }
     } // run
 
+    /**
+     *
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
+        return sdf.format(cal.getTime());
+    }
 
     private boolean existsMatchTempTable( String table_name )
     {

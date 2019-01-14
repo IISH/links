@@ -27,7 +27,7 @@ import com.google.common.base.Strings;
  *  This Class contains logging procedures 
  * @author Omar Azouguagh
  * @author Fons Laan
- * FL-04-Dec-2014 Latest Change
+ * FL-14-Jan-2019 Also date in timestamp
  */
 public class PrintLogger
 {
@@ -68,8 +68,12 @@ public class PrintLogger
 
         String text = intext;
         // empty line without timestamp
-        if( ! Strings.isNullOrEmpty( intext ) && ! intext.trim().isEmpty() ) {
-            String ts = getTimeStamp2( "HH:mm:ss" );
+        if( ! Strings.isNullOrEmpty( intext ) && ! intext.trim().isEmpty() )
+        {
+            //String format = "HH:mm:ss";
+            String format = "yyyy.MM.dd HH:mm:ss";
+            String ts = getTimeStamp2( format );
+
             text = ts + " " + text;
         }
 

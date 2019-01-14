@@ -46,7 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-17-Jan-2019
+ * FL-14-Jan-2019
  */
 
 public class Main
@@ -97,7 +97,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "07-Jan-2019 09:52";
+            String timestamp1 = "14-Jan-2019 12:16";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -497,7 +497,8 @@ public class Main
                     threads.add( ma );
 
                     long threadId = ma.getId();
-                    msg = String.format( "\nThread id %02d; Main(): thread id %2d was started", mainThreadId, threadId );
+                    System.out.println( "" ); plog.show( "" );
+                    msg = String.format( "Thread id %02d; Main(): thread id %02d was started", mainThreadId, threadId );
                     System.out.println( msg ); plog.show( msg );
 
                     nthreads_started++;
@@ -639,7 +640,6 @@ public class Main
         SimpleDateFormat sdf = new SimpleDateFormat( format );
         return sdf.format(cal.getTime());
     } // getTimeStamp2
-
 
     public static String millisec2hms( long millisec_start, long millisec_stop ) {
         long millisec = millisec_stop - millisec_start;
@@ -967,7 +967,7 @@ public class Main
             System.out.println( query ); try { plog.show( query ); } catch( Exception ex2 ) { ; }
 
             long threadId = Thread.currentThread().getId();
-            String err = String.format( "Thread id %2d; LinksMatchManager/deleteMatches() Exception: %s", threadId, ex.getMessage() );
+            String err = String.format( "Thread id %02d; LinksMatchManager/deleteMatches() Exception: %s", threadId, ex.getMessage() );
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
@@ -980,51 +980,53 @@ public class Main
      */
     private static void showQuerySet( QuerySet qs )
     {
+        long threadId = Thread.currentThread().getId();
+
         try
         {
-            plog.show( String.format( "match_process settings: for id = %d", qs.id ) );
-            plog.show( String.format( "id = %d", qs.id ) );
-            plog.show( String.format( "query1 = %s", qs.s1_query ) );
-            plog.show( String.format( "query2 = %s", qs.s2_query ) );
+            plog.show( String.format( "Thread id %02d; match_process settings: for id = %d", threadId, qs.id ) );
+            plog.show( String.format( "Thread id %02d; id = %d", threadId, qs.id ) );
+            plog.show( String.format( "Thread id %02d; query1 = %s", threadId, qs.s1_query ) );
+            plog.show( String.format( "Thread id %02d; query2 = %s", threadId, qs.s2_query ) );
 
-            plog.show( String.format( "s1_days_low ............. = %s", qs.s1_days_low ) );
-            plog.show( String.format( "s1_days_high ............ = %s", qs.s1_days_high ) );
-            plog.show( String.format( "s2_days_low ............. = %s", qs.s2_days_low ) );
-            plog.show( String.format( "s2_days_high ............ = %s", qs.s2_days_high ) );
+            plog.show( String.format( "Thread id %02d; s1_days_low ............. = %s", threadId, qs.s1_days_low ) );
+            plog.show( String.format( "Thread id %02d; s1_days_high ............ = %s", threadId, qs.s1_days_high ) );
+            plog.show( String.format( "Thread id %02d; s2_days_low ............. = %s", threadId, qs.s2_days_low ) );
+            plog.show( String.format( "Thread id %02d; s2_days_high ............ = %s", threadId, qs.s2_days_high ) );
 
-            plog.show( String.format( "use_mother .............. = %s", qs.use_mother ) );
-            plog.show( String.format( "use_father .............. = %s", qs.use_father ) );
-            plog.show( String.format( "use_partner ............. = %s", qs.use_partner ) );
+            plog.show( String.format( "Thread id %02d; use_mother .............. = %s", threadId, qs.use_mother ) );
+            plog.show( String.format( "Thread id %02d; use_father .............. = %s", threadId, qs.use_father ) );
+            plog.show( String.format( "Thread id %02d; use_partner ............. = %s", threadId, qs.use_partner ) );
 
-            plog.show( String.format( "method .................. = %d", qs.method ) );
+            plog.show( String.format( "Thread id %02d; method .................. = %d", threadId, qs.method ) );
 
-            plog.show( String.format( "ignore_sex .............. = %s", qs.ignore_sex ) );
-            plog.show( String.format( "ignore_minmax ........... = %s", qs.ignore_minmax ) );
-            plog.show( String.format( "firstname (method)....... = %d", qs.firstname_method ) );
+            plog.show( String.format( "Thread id %02d; ignore_sex .............. = %s", threadId, qs.ignore_sex ) );
+            plog.show( String.format( "Thread id %02d; ignore_minmax ........... = %s", threadId, qs.ignore_minmax ) );
+            plog.show( String.format( "Thread id %02d; firstname (method)....... = %d", threadId, qs.firstname_method ) );
 
-            plog.show( String.format( "prematch_familyname ..... = %s", qs.prematch_familyname ) );
-            plog.show( String.format( "prematch_familyname_value = %d", qs.lvs_dist_max_familyname ) );
-            plog.show( String.format( "prematch_firstname ...... = %s", qs.prematch_firstname ) );
-            plog.show( String.format( "prematch_firstname_value  = %d", qs.lvs_dist_max_firstname ) );
+            plog.show( String.format( "Thread id %02d; prematch_familyname ..... = %s", threadId, qs.prematch_familyname ) );
+            plog.show( String.format( "Thread id %02d; prematch_familyname_value = %d", threadId, qs.lvs_dist_max_familyname ) );
+            plog.show( String.format( "Thread id %02d; prematch_firstname ...... = %s", threadId, qs.prematch_firstname ) );
+            plog.show( String.format( "Thread id %02d; prematch_firstname_value  = %d", threadId, qs.lvs_dist_max_firstname ) );
 
-            //plog.show( String.format( "use_familyname .......... = %s", qs.use_familyname ) );
-            //plog.show( String.format( "use_firstname ........... = %s", qs.use_firstname ) );
-            //plog.show( String.format( "use_minmax .............  = %s", qs.use_minmax ) );
+            //plog.show( String.format( "Thread id %02d; use_familyname .......... = %s", threadId, qs.use_familyname ) );
+            //plog.show( String.format( "Thread id %02d; use_firstname ........... = %s", threadId, qs.use_firstname ) );
+            //plog.show( String.format( "Thread id %02d; use_minmax .............  = %s", threadId, qs.use_minmax ) );
 
-            plog.show( String.format( "int_familyname_e ........ = %d", qs.int_familyname_e ) );
-            plog.show( String.format( "int_familyname_m .......  = %d", qs.int_familyname_m ) );
-            plog.show( String.format( "int_familyname_f ........ = %d", qs.int_familyname_f ) );
-            plog.show( String.format( "int_familyname_p ........ = %d", qs.int_familyname_p ) );
+            plog.show( String.format( "Thread id %02d; int_familyname_e ........ = %d", threadId, qs.int_familyname_e ) );
+            plog.show( String.format( "Thread id %02d; int_familyname_m .......  = %d", threadId, qs.int_familyname_m ) );
+            plog.show( String.format( "Thread id %02d; int_familyname_f ........ = %d", threadId, qs.int_familyname_f ) );
+            plog.show( String.format( "Thread id %02d; int_familyname_p ........ = %d", threadId, qs.int_familyname_p ) );
 
-            plog.show( String.format( "int_firstname_e ......... = %d", qs.int_firstname_e ) );
-            plog.show( String.format( "int_firstname_m ......... = %d", qs.int_firstname_m ) );
-            plog.show( String.format( "int_firstname_f ......... = %d", qs.int_firstname_f ) );
-            plog.show( String.format( "int_firstname_p ......... = %d", qs.int_firstname_p ) );
+            plog.show( String.format( "Thread id %02d; int_firstname_e ......... = %d", threadId, qs.int_firstname_e ) );
+            plog.show( String.format( "Thread id %02d; int_firstname_m ......... = %d", threadId, qs.int_firstname_m ) );
+            plog.show( String.format( "Thread id %02d; int_firstname_f ......... = %d", threadId, qs.int_firstname_f ) );
+            plog.show( String.format( "Thread id %02d; int_firstname_p ......... = %d", threadId, qs.int_firstname_p ) );
 
-            plog.show( String.format( "int_minmax_e ............ = %d", qs.int_minmax_e ) );
-            plog.show( String.format( "int_minmax_m ............ = %d", qs.int_minmax_m ) );
-            plog.show( String.format( "int_minmax_f ............ = %d", qs.int_minmax_f ) );
-            plog.show( String.format( "int_minmax_p ............ = %d", qs.int_minmax_p ) );
+            plog.show( String.format( "Thread id %02d; int_minmax_e ............ = %d", threadId, qs.int_minmax_e ) );
+            plog.show( String.format( "Thread id %02d; int_minmax_m ............ = %d", threadId, qs.int_minmax_m ) );
+            plog.show( String.format( "Thread id %02d; int_minmax_f ............ = %d", threadId, qs.int_minmax_f ) );
+            plog.show( String.format( "Thread id %02d; int_minmax_p ............ = %d", threadId, qs.int_minmax_p ) );
         }
         catch( Exception ex ) { ex.getMessage(); }
     } // showQuerySet

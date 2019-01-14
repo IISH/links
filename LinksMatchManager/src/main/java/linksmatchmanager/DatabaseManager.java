@@ -11,8 +11,11 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import java.text.SimpleDateFormat;
+
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +100,17 @@ public class DatabaseManager
     */
 
 
+    /**
+     * @param format
+     * @return
+     */
+    public static String getTimeStamp2( String format ) {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat( format );
+        return sdf.format( cal.getTime() );
+    }
+
+
     public static Connection createConnection( String driver, String url, String username, String password )
     throws ClassNotFoundException, SQLException
     {
@@ -135,23 +149,35 @@ public class DatabaseManager
 
         Class.forName( DEFAULT_DRIVER );
 
+        long threadId = Thread.currentThread().getId();
+
         // 06-Mar-2018: again lost connection, so try again autoReconnect=true
         //String options = "?dontTrackOpenResources=true&autoReconnect=true";
         // 07-Jan-2019: again lost connection with autoReconnect=true; change options string, see:
         //https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
-        String options = "&autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
+        String options = "?autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
 
-        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + options;
         //String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name;
+        String db_url = "jdbc:mysql://" + db_host + ":" + DEFAULT_PORT + "/" + db_name + options;
+
+        //String format = "HH:mm:ss";
+        String format = "yyyy.MM.dd HH:mm:ss";
+        String ts = getTimeStamp2( format );
+        String msg = String.format( "%s Thread id %02d; db_url: %s", ts, threadId, db_url );
+        System.out.println( msg );
+
+        Connection connection;
 
         if( ( db_user == null ) || ( db_pass == null ) || ( db_user.trim().length() == 0 ) || ( db_pass.trim().length() == 0 ) )
-        {
-            return DriverManager.getConnection( db_url );
-        }
+        { connection = DriverManager.getConnection( db_url ); }
         else
-        {
-            return DriverManager.getConnection( db_url, db_user, db_pass );
-        }
+        { connection = DriverManager.getConnection( db_url, db_user, db_pass ); }
+
+        ts = getTimeStamp2( format );
+        msg = String.format( "%s Thread id %02d; connection created", ts, threadId );
+        System.out.println( msg );
+
+        return connection;
     }
 
 
