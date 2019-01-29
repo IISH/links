@@ -46,6 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
+ * FL-28-Jan-2019
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -1532,9 +1533,9 @@ public class MatchAsync extends Thread
                 //hms = String.format("[%d sec]", rsec );
                 hms = String.format("[%.1f sec]", fsec );
             }
-            else { hms = String.format( "[%02d:%02d mm:ss]", rmin, rsec ); }
+            else { hms = String.format( "%02d:%02d [mm:ss]", rmin, rsec ); }
         }
-        else { hms = String.format( "[%02d:%02d:%02d HH:mm:ss]", hour, rmin, rsec ); }
+        else { hms = String.format( "%02d:%02d:%02d [HH:mm:ss]", hour, rmin, rsec ); }
 
         return hms;
     } // millisec2hms

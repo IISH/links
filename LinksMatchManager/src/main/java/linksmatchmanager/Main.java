@@ -46,7 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-14-Jan-2019
+ * FL-28-Jan-2019
  */
 
 public class Main
@@ -97,7 +97,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "14-Jan-2019 12:16";
+            String timestamp1 = "28-Jan-2019 10:27";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -308,8 +308,6 @@ public class Main
             msg = "Before threading";
             elapsedShowMessage( msg, matchStart, System.currentTimeMillis() );
 
-            show_memory();   // show some memory stats
-
             int skipped_threads = 0;            // zero sample size(s)
             int total_match_threads = 0;        // total number of threads
             for( int n_mp = 0; n_mp < isSize; n_mp++ )
@@ -327,6 +325,8 @@ public class Main
             {
                 System.out.println( "" );
                 plog.show( "" );
+
+                show_java_memory();   // show some java memory stats
 
                 // The VariantLoader is broken.
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
@@ -426,6 +426,7 @@ public class Main
                     ql = new QueryLoader( plog, qs, db_host, dbnamePrematch, db_user, db_pass );
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
+                    show_java_memory();   // show some java memory stats
 
                     /*
                     long sStart = System.currentTimeMillis();
@@ -679,7 +680,7 @@ public class Main
     } // elapsedShowMessage
 
 
-    private static void show_memory()
+    private static void show_java_memory()
     {
         final int MegaBytes = 10241024;
 
@@ -699,7 +700,7 @@ public class Main
             try { plog.show( msg ); }
             catch( Exception ex ) { System.out.println( ex.getMessage() ); }
         }
-    }
+    } // show_java_memory
 
 
     private static void memtables_ls_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )

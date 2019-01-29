@@ -110,7 +110,7 @@ public class DatabaseManager
         return sdf.format( cal.getTime() );
     }
 
-
+    /*
     public static Connection createConnection( String driver, String url, String username, String password )
     throws ClassNotFoundException, SQLException
     {
@@ -125,7 +125,7 @@ public class DatabaseManager
             return DriverManager.getConnection( url, username, password );
         }
     }
-
+    */
 
     public static Connection getConnection( String db_host, String db_name, String db_user, String db_pass )
     throws ClassNotFoundException, SQLException
