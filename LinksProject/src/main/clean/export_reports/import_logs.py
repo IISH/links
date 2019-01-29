@@ -5,20 +5,23 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		import_logs.py
-Version:	0.1
-Goal:		collect error log tables into a single table ERROR_STORE
+Version:	0.1.1
+Goal:		Collect error log tables into a single table ERROR_STORE. 
+			The records are written with flag value = 1. 
+Database:	Create table links_logs.ERROR_STORE from schema: 
+			$ mysql --user=USER_LINKS --password=PASSWD_LINKS links_logs < ERROR_STORE.schema.sql
 Notice:		See the variable x_codes below. If the ref_report table is updated 
 			with new report_type values for 'x' codes, this variable must also 
 			be updated. 
 
 05-Sep-2016 Created
-17-Dec-2018 Changed
+29-Jan-2019 Changed
 """
 
-# python-future for Python 2/3 compatibility
+# future-0.17.1 imports for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
-from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
-	oct, open, pow, range, round, str, super, zip )
+from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
+    next, object, oct, open, pow, range, round, super, str, zip )
 
 import datetime
 import MySQLdb
@@ -26,7 +29,7 @@ import os
 import sys
 import yaml
 
-from dateutil.parser import parse
+from dateutil.parser import parse		# $ pip install python-dateutil
 from time import time
 
 debug = False

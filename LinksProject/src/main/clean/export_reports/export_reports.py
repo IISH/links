@@ -5,19 +5,21 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_reports.py
-Version:	0.3
-Goal:		Select records from table ERROR_STORE where flag = 2, 
-			write a selection of fields to csv files, split by id_source and reg_type. 
+Version:	0.4
+Goal:		Select records from table links_logs.ERROR_STORE where flag = 2, 
+			write a selection of fields to csv files, grouped by reg_type (and 
+			optionally id_source). 
+			Finally, update the flag value to 3 of the affected records. 
 TODO:		Read archive_names directly from HOST_REF db
 
 07-Sep-2016 Created
-17-Dec-2018 Changed
+29-Jan-2019 Changed
 """
 
-# python-future for Python 2/3 compatibility
+# future-0.17.1 imports for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
-from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
-	oct, open, pow, range, round, str, super, zip )
+from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
+    next, object, oct, open, pow, range, round, super, str, zip )
 
 import csv
 import datetime
@@ -29,6 +31,7 @@ import yaml
 from time import time
 
 debug = False
+groupby_source = False
 
 # settings, read from config file
 HOST_LINKS   = ""
@@ -279,6 +282,92 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 
 
 
+def export_type( debug, db, table, reg_type_in ):
+	if debug: print( "export_type() reg_type: %s" % reg_type_in )
+	
+	rtype_fname = none2empty( reg_type_in )
+	if rtype_fname == '':
+		rtype_fname = "no_type"
+				
+	now = datetime.datetime.now()
+	today = now.strftime( "%Y-%m-%d" )
+	filename = "%s_%s.csv" % ( rtype_fname, today )
+	print( filename )
+	
+	filepath =  os.path.join( os.path.dirname(__file__), 'csv', filename )
+	if not os.path.exists( os.path.dirname( filepath ) ):
+		try:
+			os.makedirs( os.path.dirname( filepath ) )
+		except: 
+			raise
+	
+	
+	csvfile = open( filepath, "w" )
+	writer = csv.writer( csvfile )
+	
+#	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
+	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
+	writer.writerow( header )
+	
+	query  = "SELECT * FROM links_logs.`%s` " % table
+	query += "WHERE reg_type = '%s' AND flag = 2;" % reg_type_in
+	if debug: print( query )
+	resp = db.query( query )
+	if resp is not None:
+		#print( resp )
+		nrec = len( resp )
+		if debug: print( "number of records: %d" %nrec )
+		for r in range( nrec ):
+			rec = resp[ r ]
+			if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
+			if debug: print( rec )
+			
+			id_log       = none2empty( rec[ "id_log" ] )
+			id_source    = none2empty( rec[ "id_source" ] )
+			archive      = none2empty( rec[ "archive" ] )
+			location     = none2empty( rec[ "location" ] )
+			reg_type_out = none2empty( rec[ "reg_type" ] )
+			date         = none2empty( rec[ "date" ] )
+			sequence     = none2empty( rec[ "sequence" ] )
+			role         = none2empty( rec[ "role" ] )
+			guid         = none2empty( rec[ "guid" ] )
+			error_type   = none2empty( rec[ "report_type" ] )
+			content      = none2empty( rec[ "content" ] )
+			
+			if archive == '':
+				try:
+					archive = long_archive_names[ str(id_source) ]
+				except:
+					archive = "missing_archive_name"
+			
+			if debug:
+				print( "id_log     = %s" % id_log )
+				print( "id_source  = %s" % id_source  )
+				print( "archive    = %s" % archive )
+				print( "location   = %s" % location )
+				print( "reg_type   = %s" % reg_type_out )
+				print( "date       = %s" % date )
+				print( "sequence   = %s" % sequence )
+				print( "role       = %s" % role )
+				print( "guid       = %s" % guid )
+				print( "error_type = %s" % error_type )
+				print( "content    = %s" % content )
+			
+			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, error_type, content ]
+			writer.writerow( line )
+
+	csvfile.close()
+
+	# update the ERROR_STORE table
+	query  = "UPDATE links_logs.ERROR_STORE SET flag = 3, date_export = '%s', destination = '%s' " % ( today, archive )
+	query += "WHERE reg_type = '%s' AND flag = 2;" % reg_type_in
+	if debug: print( query )
+	resp = db.insert( query )
+	if resp is not None and len(resp) != 0:
+		print( resp )
+
+
+
 def export( debug, db ):
 	if debug: print( "export()" )
 
@@ -308,9 +397,13 @@ def export( debug, db ):
 		if count == 0:
 			return
 
-	# which id_source's are involved?
+	# which id_source's and reg_type's are involved?
 	query  = "SELECT id_source, reg_type, COUNT(*) AS count FROM links_logs.`%s` " % table
-	query += "WHERE flag = 2 GROUP BY id_source, reg_type;"
+	if groupby_source:
+		query += "WHERE flag = 2 GROUP BY id_source, reg_type;"
+	else:
+		query += "WHERE flag = 2 GROUP BY reg_type;"
+	
 	if debug: print( query )
 	resp = db.query( query )
 	if resp is not None and len(resp) != 0:
@@ -319,12 +412,15 @@ def export( debug, db ):
 		for n in range( ndict ):
 			rec = resp[ n ]
 			count = rec[ "count" ]
-			id_source = rec[ "id_source" ]
 			reg_type  = rec[ "reg_type" ]
 			
-			print( "\nnumber of report records for id_source %3s, reg_type %s is %s" % ( id_source, reg_type, count ) )
-	
-			export_source_type( debug, db, table, id_source, reg_type )
+			if groupby_source:
+				id_source = rec[ "id_source" ]
+				print( "\nnumber of report records for id_source %3s, reg_type %s = %s" % ( id_source, reg_type, count ) )
+				export_source_type( debug, db, table, id_source, reg_type )
+			else:
+				print( "\nnumber of report records for reg_type %s = %s" % ( reg_type, count ) )
+				export_type( debug, db, table, reg_type )
 
 
 
