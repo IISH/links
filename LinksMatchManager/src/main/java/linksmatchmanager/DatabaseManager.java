@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;       // c3p0 - JDBC3 Connection and Statement Pooling
-
 
 /**
  * @author Fons Laan

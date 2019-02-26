@@ -46,7 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-08-Jan-2018 Math.max(lvs1, lvs2)  maximum, not summing
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
- * FL-28-Jan-2019
+ * FL-19-Feb-2019 Heap memory leak?
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -257,6 +257,10 @@ public class MatchAsync extends Thread
         ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
         threadMXB.setThreadCpuTimeEnabled( true );
 
+        // 13-Feb-2919 debug heap memory leak
+        //boolean debug_hmemleak = true;
+        //int loop_hmemleak = 0;
+
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
         int s2_hit_cpy  = 0;
@@ -282,7 +286,7 @@ public class MatchAsync extends Thread
 
         try
         {
-            long threadStart = System.currentTimeMillis();      // ? clock time or process time
+            long threadStart = System.currentTimeMillis();      // clock time
 
             long nanoseconds_begin  = ManagementFactory.getThreadMXBean().getThreadCpuTime( Thread.currentThread().getId() );
             long milliseconds_begin = TimeUnit.SECONDS.convert( nanoseconds_begin, TimeUnit.MILLISECONDS );
@@ -401,6 +405,17 @@ public class MatchAsync extends Thread
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
                 /*
+                if( debug_hmemleak )    // check-1 = OK
+                {
+                    if( loop_hmemleak == 0 ) {
+                        loop_hmemleak += 1;
+                        System.out.println( "debug_hmemleak-1: skip s1_idx loop" );
+                    }
+                    continue;
+                }
+                */
+
+                /*
                 int s1_id_base = ql.s1_id_base.get( s1_idx );
                 if( s1_id_base == 27380494 || s1_id_base == 27476967 || s1_id_base == 27829616 || s1_id_base == 58149492 )
                 { debug = debugfreq = debugfail = true; }
@@ -454,7 +469,7 @@ public class MatchAsync extends Thread
                 // get the frequencies of names used for matching, ordered from low to high frequency
                 ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
 
-                Multiset< Integer> keys = nameFreqMap.keys();
+                Multiset  < Integer> keys   = nameFreqMap.keys();
                 Collection< String > values = nameFreqMap.values();
 
                 if( debugfreq ) {
@@ -577,13 +592,24 @@ public class MatchAsync extends Thread
                 s2_idx_matches.clear();
 
                 // Loop over the found variant names
-                for( int lvn_idx = 0; lvn_idx < lvsVariantsName.size(); lvn_idx++ )
+                for( int lvs_idx = 0; lvs_idx < lvsVariantsName.size(); lvs_idx++ )
                 {
-                    if( debugfreq ) { System.out.println( "---< lvs_idx >------------------------------------------------------------------" ); }
-                    if( debug || debugfreq ) { System.out.println( String.format( "variant %d-of-%d", lvn_idx + 1, lvsVariantsName.size() ) ); }
+                    /*
+                    if( debug_hmemleak )    // check-2 = OK
+                    {
+                        if( loop_hmemleak == 0 ) {
+                            loop_hmemleak += 1;
+                            System.out.println( "debug_hmemleak-2: skip lvs_idx loop" );
+                        }
+                        continue;
+                    }
+                    */
 
-                    int var_name = lvsVariantsName .get( lvn_idx );
-                    int var_dist = lvsDistancesName.get( lvn_idx );
+                    if( debugfreq ) { System.out.println( "---< lvs_idx >------------------------------------------------------------------" ); }
+                    if( debug || debugfreq ) { System.out.println( String.format( "variant %d-of-%d", lvs_idx + 1, lvsVariantsName.size() ) ); }
+
+                    int var_name = lvsVariantsName .get( lvs_idx );
+                    int var_dist = lvsDistancesName.get( lvs_idx );
 
                     // search s1 variant name in s2
                     int s2_offset = 0;
@@ -605,6 +631,9 @@ public class MatchAsync extends Thread
                         if( s2_idx == -1 ) { break; }           // no more variants
                         else
                         {
+                            // @ FL-18-Feb-2019 hmemleak-4 test
+                            if( 1 == 1 ) { continue; }
+
                             boolean names_matched = true;       // optimistic
 
                             if( debug || debugfreq ) {
@@ -778,7 +807,7 @@ public class MatchAsync extends Thread
                                             lvs_dist_first_par + "," + lvs_dist_family_par + ")";
 
                                         if( debug || debugfreq ) {
-                                            msg = String.format( "lvn_idx %2d: %s", lvn_idx, query );
+                                            msg = String.format( "lvs_idx %2d: %s", lvs_idx, query );
                                             System.out.println( msg ); plog.show( msg );
                                         }
 
@@ -788,12 +817,12 @@ public class MatchAsync extends Thread
                                             dbconMatch = null;
                                         }
                                     }
-                                } // insert
+                                } // write match
                             } // names_matched
-                            else { n_int_name++; }
-                        } // match block
-                    } // while loop
-                } // lvs_idx loop
+                            else { n_int_name++; }  // names did not all match
+                        } // s2_idx != -1
+                    } // while true loop: search s1 variant name in s2
+                } // lvs_idx loop: Levenshtein variants
 
                 // display n_variant_match
 

@@ -46,7 +46,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-28-Jan-2019
+ * FL-19-Feb-2019
  */
 
 public class Main
@@ -97,7 +97,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "28-Jan-2019 10:27";
+            String timestamp1 = "21-Feb-2019 19:42";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -144,6 +144,10 @@ public class Main
                 dry_run = true;
                 use_memory_tables = false;
             }
+            // @ FL-18-Feb-2019 hmemleak TEST
+            //dry_run = true;
+            //use_memory_tables = false;
+
             System.out.println( "dry_run: '" + dry_run + "'" );
             System.out.println( "use_memory_tables: '" + use_memory_tables + "'" );
 
@@ -419,7 +423,7 @@ public class Main
 
                     long qlStart = System.currentTimeMillis();
                     // Notice: SampleLoader becomes a replacement of QueryLoader, but it is not finished.
-                    // Create a new instance of the queryLoader. Queryloader is used to use the queries to load data into the sets.
+                    // Create a new instance of the queryLoader. Queryloader loads the s1 & s2 sample data into Vectors.
                     // Its input is a QuerySet and a database connection object.
                     //ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     //ql = new QueryLoader( qs, dbconPrematch );
@@ -445,7 +449,7 @@ public class Main
 
                     /*
                     if( debug ) {
-                        msg = "SKIPPING MatchAsyncs !!!";
+                        msg = "SKIPPING MatchAsync !!!";
                         System.out.println( msg ); plog.show( msg );
                         if( 1 == 1 ) { continue; }
                     }

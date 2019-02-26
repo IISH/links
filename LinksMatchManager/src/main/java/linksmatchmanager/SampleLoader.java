@@ -15,11 +15,11 @@ import linksmatchmanager.DatabaseManager;
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
  * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
- * FL-08-Jan-2018
+ * FL-18-Feb-2019 SampleLoader not finished? What has to be done?
  *
  * Replacement of QueryLoader:
- * QueryLoader combines the s1 & s2 samples. Here in SampleLoader we prefer to keep them separate,
- * because in general they need not be filled together all the time.
+ * QueryLoader combines the s1 & s2 samples. SampleLoader keeps them separate,
+ * because in general they need not be updated together all the time.
  */
 public class SampleLoader
 {
