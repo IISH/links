@@ -33,7 +33,8 @@ import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
-import linksmatchmanager.DatabaseManager;
+//import linksmatchmanager.DatabaseManager;
+import linksmatchmanager.HikariCPDataSource;
 
 /**
  * @author Omar Azouguagh
@@ -47,6 +48,7 @@ import linksmatchmanager.DatabaseManager;
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
  * FL-19-Feb-2019 Heap memory leak?
+ * FL-04-Mar-2019 HikariCPDataSource
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -332,7 +334,8 @@ public class MatchAsync extends Thread
             */
 
             // database connections
-            dbconPrematch = DatabaseManager.getConnection( db_host, "links_prematch", db_user, db_pass );
+            //dbconPrematch = DatabaseManager.getConnection( db_host, "links_prematch", db_user, db_pass );
+            dbconPrematch = HikariCPDataSource.getConnection( db_host, "links_prematch", db_user, db_pass );
 
             String csvFilename = "";
             FileWriter writerMatches = null;
@@ -344,13 +347,15 @@ public class MatchAsync extends Thread
                 System.out.println( msg ); plog.show( msg );
 
                 if( debug ) {   // use temp table to collect the matches
-                    dbconTemp = DatabaseManager.getConnection( db_host, "links_temp", db_user, db_pass );
+                    //dbconTemp = DatabaseManager.getConnection( db_host, "links_temp", db_user, db_pass );
+                    dbconTemp = HikariCPDataSource.getConnection( db_host, "links_temp", db_user, db_pass );
                     createTempMatchesTable( threadId );                     // Create temp table to collect the matches
                 }
             }
             else    // write matches immediately to matches table
             {
-                dbconMatch = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
+                //dbconMatch = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
+                dbconMatch = HikariCPDataSource.getConnection( db_host, "links_match", db_user, db_pass );
             }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
@@ -631,8 +636,8 @@ public class MatchAsync extends Thread
                         if( s2_idx == -1 ) { break; }           // no more variants
                         else
                         {
-                            // @ FL-18-Feb-2019 hmemleak-4 test
-                            if( 1 == 1 ) { continue; }
+                            // @ FL-18-Feb-2019 hmemleak-4,5 test
+                            //if( 1 == 1 ) { continue; }
 
                             boolean names_matched = true;       // optimistic
 
@@ -1150,7 +1155,8 @@ public class MatchAsync extends Thread
         //System.out.println( query ); plog.show( query );
 
         // do not keep connection endlessly open
-        Connection dbconMatchLocal = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
+        //Connection dbconMatchLocal = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
+        Connection dbconMatchLocal = HikariCPDataSource.getConnection( db_host, "links_match", db_user, db_pass );
         dbconMatchLocal.createStatement().execute( query );
         dbconMatchLocal.createStatement().close();
         dbconMatchLocal.close();

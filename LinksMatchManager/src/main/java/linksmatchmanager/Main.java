@@ -24,16 +24,21 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
+
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
-import linksmatchmanager.DatabaseManager;
+//import linksmatchmanager.DatabaseManager;
+import linksmatchmanager.HikariCPDataSource;
 
 /**
  * @author Omar Azouguagh
@@ -46,12 +51,15 @@ import linksmatchmanager.DatabaseManager;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-19-Feb-2019
+ * FL-FL-04-Mar-2019 HikariCPDataSource
  */
 
 public class Main
 {
     // class global vars
+    //private static final Logger logger = LoggerFactory.getLogger( Main.class );
+    private static Logger logger = Logger.getLogger( Main.class.getName() );
+
     private static boolean debug;
 
     private static String dbnameMatch    = "links_match";
@@ -74,6 +82,8 @@ public class Main
     private static int[][] rootFamilyName;
     private static int[][] rootFirstName;
 
+
+
     /**
      * Main method of the Match Manager software
      * @param args It is mandatory to use three arguments which are
@@ -81,6 +91,8 @@ public class Main
      */
     public static void main( String[] args )
     {
+        logger.info( "LinksMatchManager Main/main()" );
+
         // Notice: if debug = true (see below), dry_run => true, use_memory_tables => false
         boolean dry_run = false;     // true: do not delete former matches, + do not write new matches
         boolean use_memory_tables = true;
@@ -97,7 +109,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "21-Feb-2019 19:42";
+            String timestamp1 = "05-Mar-2019 15:16";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -174,8 +186,10 @@ public class Main
 
             System.out.println( "Create database connections" );
             try {
-                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
-                dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
+                //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
+                dbconPrematch = HikariCPDataSource.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                dbconMatch    = HikariCPDataSource.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
                 DatabaseMetaData meta = dbconPrematch.getMetaData();
                 System.out.println( meta.getDatabaseProductName() );

@@ -6,7 +6,8 @@ import java.sql.ResultSet;
 import java.util.Vector;
 
 import linksmatchmanager.DataSet.QuerySet;
-import linksmatchmanager.DatabaseManager;
+//import linksmatchmanager.DatabaseManager;
+import linksmatchmanager.HikariCPDataSource;
 
 /**
  * @author Fons Laan
@@ -15,7 +16,8 @@ import linksmatchmanager.DatabaseManager;
  * FL-09-Nov-2015 Created
  * FL-22-Mar-2016 Sex: f, m, u
  * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
- * FL-18-Feb-2019 SampleLoader not finished? What has to be done?
+ * FL-04-Mar-2019 HikariCPDataSource
+ * FL-04-Mar-2019 SampleLoader not finished? What has to be done?
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. SampleLoader keeps them separate,
@@ -23,6 +25,7 @@ import linksmatchmanager.DatabaseManager;
  */
 public class SampleLoader
 {
+    PrintLogger plog;
     private Connection db_conn;
 
     private boolean use_mother;
@@ -150,11 +153,11 @@ public class SampleLoader
      * @throws Exception
      */
     //public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
-    public SampleLoader( QuerySet qs, String db_host, String db_name, String db_user, String db_pass, int sample_no )
+    public SampleLoader( PrintLogger plog, QuerySet qs, String db_host, String db_name, String db_user, String db_pass, int sample_no )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
-
+        this.plog = plog;
         this.use_mother       = qs.use_mother;
         this.use_father       = qs.use_father;
         this.use_partner      = qs.use_partner;
@@ -175,7 +178,18 @@ public class SampleLoader
         System.out.printf( "Thread id %02d; SampleLoader() retrieving sample %d...\n", threadId, sample_no );
         System.out.printf( "Thread id %02d; %s\n", threadId, query );
 
-        db_conn = DatabaseManager.getConnection( db_host, db_name, db_user, db_pass );
+        try {
+            //db_conn = DatabaseManager.getConnection( db_host, db_name, db_user, db_pass );
+            db_conn = HikariCPDataSource.getConnection( db_host, db_name, db_user, db_pass );
+        }
+        catch( Exception ex ) {
+            String msg = String.format( "Thread id %02d; SampleLoader() Exception: %s", threadId, ex.getMessage() );
+            System.out.println( msg ); plog.show( msg );
+            ex.printStackTrace( System.out );
+            return;
+        }
+
+
         ResultSet rs = db_conn.createStatement().executeQuery( query );
 
         fillArrays( rs );

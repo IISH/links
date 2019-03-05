@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.util.Vector;
 
 import linksmatchmanager.DataSet.QuerySet;
+//import linksmatchmanager.DatabaseManager;
+import linksmatchmanager.HikariCPDataSource;
 
 /**
  * @author Omar Azouguagh
@@ -17,6 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-04-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  * FL-05-Jan-2018 Split fillArrays()
  * FL-02-Oct-2018 Added s1_id_persist_registration & s2_id_persist_registration to the vector zoo
+ * FL-04-Mar-2019 HikariCPDataSource
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -227,7 +230,10 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; retrieving set 1 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s1_query );
 
-        try { db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass ); }
+        try {
+            //db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass );
+            db_conn = HikariCPDataSource.getConnection( db_url, db_name, db_user, db_pass );
+        }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
