@@ -51,7 +51,7 @@ import linksmatchmanager.HikariCPDataSource;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-FL-04-Mar-2019 HikariCPDataSource
+ * FL-10-Mar-2019 HikariCPDataSource
  */
 
 public class Main
@@ -109,7 +109,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "05-Mar-2019 15:16";
+            String timestamp1 = "10-Mar-2019 11:36";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -205,10 +205,19 @@ public class Main
                 ex.printStackTrace();
             }
 
-            try {
-                String query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size%'";
+            try
+            {
+                String query = "SHOW GLOBAL VARIABLES LIKE 'max_connections'";
                 System.out.println( query );
                 ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+                rs.first();
+                int max_connections = rs.getInt( "Value" );
+                msg = String.format( "MySQL max_connections: %s", max_connections );
+                System.out.println( msg ); plog.show( msg );
+
+                query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size'";
+                System.out.println( query );
+                rs = dbconPrematch.createStatement().executeQuery( query );
                 rs.first();
                 OLD_max_heap_table_size = rs.getString( "Value" );
                 msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );

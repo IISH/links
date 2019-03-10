@@ -17,7 +17,8 @@ import com.zaxxer.hikari.HikariDataSource;
  * for each database. It just doesn't make any sense to use the same pool for different databases as a connection to
  * one database will never be able to be re-used for another database.
  *
- * FL-05-Mar-2019
+ * FL-08-Mar-2019
+ * FL-10-Mar-2019
  */
 public class HikariCPDataSource
 {
@@ -31,6 +32,18 @@ public class HikariCPDataSource
     private static HikariDataSource ds_links_match;
     private static HikariDataSource ds_links_prematch;
     private static HikariDataSource ds_links_temp;
+
+    private static int ds_count = 0;
+    private static int ds_links_match_count = 0;
+    private static int ds_links_prematch_count = 0;
+    private static int ds_links_temp_count = 0;
+
+    // Notice: in case of the mysql error "ERROR 1040 (08004): Too many connections",
+    // - increase the value of the mysql variable max_connections (default 151 in our case) in the config file, or
+    // - decrease the requested number of connections, via the HikariCPD maximumPoolSize (default 10)
+    // max_connections; 151 => 200
+    // maximumPoolSize: // default: 10 => 24 => 48 => 64 => 32
+    private static int maximumPoolSize = 32;
 
     /*
     See: https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
@@ -77,7 +90,7 @@ public class HikariCPDataSource
         config.addDataSourceProperty( "cacheServerConfiguration", true );
         config.addDataSourceProperty( "elideSetAutoCommits",      true );
         config.addDataSourceProperty( "maintainTimeStats",        false );
-        config.addDataSourceProperty( "maximumPoolSize",          24 );     // default: 10
+        config.addDataSourceProperty( "maximumPoolSize",          maximumPoolSize );
         config.addDataSourceProperty( "prepStmtCacheSize",        250 );
         config.addDataSourceProperty( "prepStmtCacheSqlLimit",    2048 );
         config.addDataSourceProperty( "rewriteBatchedStatements", true );
@@ -90,22 +103,30 @@ public class HikariCPDataSource
         {
             ds_links_match = new HikariDataSource( config );
             connection = ds_links_match.getConnection();
+            ds_links_match_count += 1;
+            logger.info( String.format( "ds_links_match_count: %d", ds_links_match_count ) );
         }
         else if( db_name.equals( "links_prematch" ) )
         {
             ds_links_prematch = new HikariDataSource( config );
             connection = ds_links_prematch.getConnection();
+            ds_links_prematch_count += 1;
+            logger.info( String.format( "ds_links_prematch_count: %d", ds_links_prematch_count ) );
         }
 
         else if( db_name.equals( "links_temp" ) )
         {
             ds_links_temp = new HikariDataSource( config );
             connection = ds_links_match.getConnection();
+            ds_links_temp_count += 1;
+            logger.info( String.format( "ds_links_temp_count: %d", ds_links_temp_count ) );
         }
         else
         {
             ds = new HikariDataSource( config );
             connection = ds.getConnection();
+            ds_count += 1;
+            logger.info( String.format( "ds_count: %d", ds_count ) );
         }
 
         if( connection == null ) {
