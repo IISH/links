@@ -5,9 +5,9 @@ import java.sql.ResultSet;
 
 import java.util.Vector;
 
-import linksmatchmanager.DataSet.QuerySet;
+import com.zaxxer.hikari.HikariDataSource;
 //import linksmatchmanager.DatabaseManager;
-import linksmatchmanager.HikariCPDataSource;
+import linksmatchmanager.DataSet.QuerySet;
 
 /**
  * @author Fons Laan
@@ -18,6 +18,7 @@ import linksmatchmanager.HikariCPDataSource;
  * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  * FL-04-Mar-2019 HikariCPDataSource
  * FL-04-Mar-2019 SampleLoader not finished? What has to be done?
+ * FL-11-Mar-2019 HikariDataSource
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. SampleLoader keeps them separate,
@@ -145,15 +146,12 @@ public class SampleLoader
 
     /**
      * @param qs
-     * @param db_host
-     * @param db_name
-     * @param db_user
-     * @param db_pass
+     * @param dsrcPrematch
      * @param sample_no
      * @throws Exception
      */
     //public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
-    public SampleLoader( PrintLogger plog, QuerySet qs, String db_host, String db_name, String db_user, String db_pass, int sample_no )
+    public SampleLoader( PrintLogger plog, QuerySet qs, HikariDataSource dsrcPrematch, int sample_no )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -180,7 +178,7 @@ public class SampleLoader
 
         try {
             //db_conn = DatabaseManager.getConnection( db_host, db_name, db_user, db_pass );
-            db_conn = HikariCPDataSource.getConnection( db_host, db_name, db_user, db_pass );
+            db_conn = dsrcPrematch.getConnection();
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; SampleLoader() Exception: %s", threadId, ex.getMessage() );

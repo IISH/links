@@ -33,7 +33,7 @@ import java.util.Map;
  * Again "Communications link failure", changed connection options.
  * https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
  */
-public class DatabaseManager
+public class DatabaseManager_not_used
 {
     /*
     private static final String DEFAULT_DRIVER   = "org.postgresql.Driver";

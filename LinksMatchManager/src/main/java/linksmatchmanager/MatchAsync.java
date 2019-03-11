@@ -28,13 +28,15 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Collections2;
 
+import com.zaxxer.hikari.HikariDataSource;
+//import linksmatchmanager.DatabaseManager;
+
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
-//import linksmatchmanager.DatabaseManager;
-import linksmatchmanager.HikariCPDataSource;
+
 
 /**
  * @author Omar Azouguagh
@@ -48,7 +50,7 @@ import linksmatchmanager.HikariCPDataSource;
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
  * FL-19-Feb-2019 Heap memory leak?
- * FL-04-Mar-2019 HikariCPDataSource
+ * FL-11-Mar-2019 HikariDataSource
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -83,9 +85,12 @@ public class MatchAsync extends Thread
     QueryGroupSet qgs;
     InputSet inputSet;
 
-    String db_host;
-    String db_user;
-    String db_pass;
+    //String db_host;
+    //String db_user;
+    //String db_pass;
+    HikariDataSource dsrcPrematch;
+    HikariDataSource dsrcMatch;
+    HikariDataSource dsrcTemp;
 
     String lvs_table_firstname;
     String lvs_table_familyname;
@@ -126,9 +131,12 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        String db_host,
-        String db_user,
-        String db_pass,
+        //String db_host,
+        //String db_user,
+        //String db_pass,
+        HikariDataSource dsrcPrematch,
+        HikariDataSource dsrcMatch,
+        HikariDataSource dsrcTemp,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -158,9 +166,13 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.db_host = db_host;
-        this.db_user = db_user;
-        this.db_pass = db_pass;
+        //this.db_host = db_host;
+        //this.db_user = db_user;
+        //this.db_pass = db_pass;
+        this.dsrcPrematch = dsrcPrematch;
+        this.dsrcMatch    = dsrcMatch;
+        this.dsrcTemp     = dsrcTemp;
+
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -196,9 +208,12 @@ public class MatchAsync extends Thread
         QueryGroupSet qgs,
         InputSet inputSet,
 
-        String db_host,
-        String db_user,
-        String db_pass,
+        //String db_host,
+        //String db_user,
+        //String db_pass,
+        HikariDataSource dsrcPrematch,
+        HikariDataSource dsrcMatch,
+        HikariDataSource dsrcTemp,
 
         String lvs_table_firstname,
         String lvs_table_familyname,
@@ -230,9 +245,12 @@ public class MatchAsync extends Thread
         this.qgs = qgs;
         this.inputSet = inputSet;
 
-        this.db_host = db_host;
-        this.db_user = db_user;
-        this.db_pass = db_pass;
+        //this.db_host = db_host;
+        //this.db_user = db_user;
+        //this.db_pass = db_pass;
+        this.dsrcPrematch = dsrcPrematch;
+        this.dsrcMatch    = dsrcMatch;
+        this.dsrcTemp     = dsrcTemp;
 
         this.lvs_table_firstname  = lvs_table_firstname;
         this.lvs_table_familyname = lvs_table_familyname;
@@ -335,7 +353,19 @@ public class MatchAsync extends Thread
 
             // database connections
             //dbconPrematch = DatabaseManager.getConnection( db_host, "links_prematch", db_user, db_pass );
-            dbconPrematch = HikariCPDataSource.getConnection( db_host, "links_prematch", db_user, db_pass );
+            dbconPrematch = dsrcPrematch.getConnection();
+
+            // Show some db thread related stats
+            String query = "SHOW STATUS WHERE variable_name LIKE 'Threads_%' OR variable_name = 'Connections'";
+            System.out.println( query );
+            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+            while( rs.next() )
+            {
+                String name = rs.getString("Variable_name");
+                int value   = rs.getInt("Value");
+                msg = String.format( "Thread id %02d; MySQL %s: %d", threadId, name, value );
+                System.out.println(msg); plog.show(msg);
+            }
 
             String csvFilename = "";
             FileWriter writerMatches = null;
@@ -348,14 +378,14 @@ public class MatchAsync extends Thread
 
                 if( debug ) {   // use temp table to collect the matches
                     //dbconTemp = DatabaseManager.getConnection( db_host, "links_temp", db_user, db_pass );
-                    dbconTemp = HikariCPDataSource.getConnection( db_host, "links_temp", db_user, db_pass );
+                    dbconTemp = dsrcTemp.getConnection();
                     createTempMatchesTable( threadId );                     // Create temp table to collect the matches
                 }
             }
             else    // write matches immediately to matches table
             {
                 //dbconMatch = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
-                dbconMatch = HikariCPDataSource.getConnection( db_host, "links_match", db_user, db_pass );
+                dbconMatch = dsrcMatch.getConnection();
             }
 
             int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
@@ -798,7 +828,7 @@ public class MatchAsync extends Thread
                                     }
                                     else
                                     {
-                                        String query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
+                                        query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
                                             "id_persist_registration_1, id_persist_registration_2, " +
                                             "value_firstname_ego, value_familyname_ego, " +
                                             "value_firstname_mo , value_familyname_mo , " +
@@ -1156,7 +1186,7 @@ public class MatchAsync extends Thread
 
         // do not keep connection endlessly open
         //Connection dbconMatchLocal = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
-        Connection dbconMatchLocal = HikariCPDataSource.getConnection( db_host, "links_match", db_user, db_pass );
+        Connection dbconMatchLocal = dsrcMatch.getConnection();
         dbconMatchLocal.createStatement().execute( query );
         dbconMatchLocal.createStatement().close();
         dbconMatchLocal.close();

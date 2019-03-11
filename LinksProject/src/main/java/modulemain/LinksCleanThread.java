@@ -32,7 +32,7 @@ import javax.swing.JTextField;
 
 import com.google.common.base.Splitter;
 
-import com.joestelmach.natty.Parser;    // NLP date parser
+//import com.joestelmach.natty.Parser;    // NLP date parser
 
 //import org.threeten.extra.Date
 
@@ -9516,13 +9516,14 @@ public class LinksCleanThread extends Thread
      * @param inputStr
      * @throws Exception
      */
+    /*
     private void nattyDateParser( boolean debug, String inputStr )
     {
         java.util.List<java.util.Date> dates = new Parser().parse( inputStr ).get( 0 ).getDates();
         int ndates = dates.size();
         for( int i = 0; i < ndates; i++ ) { System.out.println( "Natty date: " + dates.get( i ) ); }
     }
-
+    */
 
     /**
      * @param debug

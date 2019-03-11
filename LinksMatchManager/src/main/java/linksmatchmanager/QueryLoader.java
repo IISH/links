@@ -5,9 +5,10 @@ import java.sql.ResultSet;
 
 import java.util.Vector;
 
-import linksmatchmanager.DataSet.QuerySet;
+import com.zaxxer.hikari.HikariDataSource;
 //import linksmatchmanager.DatabaseManager;
-import linksmatchmanager.HikariCPDataSource;
+
+import linksmatchmanager.DataSet.QuerySet;
 
 /**
  * @author Omar Azouguagh
@@ -19,7 +20,7 @@ import linksmatchmanager.HikariCPDataSource;
  * FL-04-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  * FL-05-Jan-2018 Split fillArrays()
  * FL-02-Oct-2018 Added s1_id_persist_registration & s2_id_persist_registration to the vector zoo
- * FL-04-Mar-2019 HikariCPDataSource
+ * FL-11-Mar-2019 HikariDataSource
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -201,14 +202,12 @@ public class QueryLoader
 
 
     /**
-     * 
+     * @param plog
      * @param qs
-     * @param db_url
-     * @param db_name
-     * @param db_user
-     * @param db_pass
+     * @param dsrcPrematch
      */
-    public QueryLoader( PrintLogger plog, QuerySet qs, String db_url, String db_name, String db_user, String db_pass )
+    //public QueryLoader( PrintLogger plog, QuerySet qs, String db_url, String db_name, String db_user, String db_pass )
+    public QueryLoader( PrintLogger plog, QuerySet qs, HikariDataSource dsrcPrematch )
     throws Exception
     {
         this.plog = plog;
@@ -232,7 +231,7 @@ public class QueryLoader
 
         try {
             //db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass );
-            db_conn = HikariCPDataSource.getConnection( db_url, db_name, db_user, db_pass );
+            db_conn = dsrcPrematch.getConnection();
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
@@ -255,7 +254,10 @@ public class QueryLoader
         System.out.printf( "Thread id %02d; retrieving sample 2 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s2_query );
 
-        try { db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass ); }
+        try {
+            //db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass );
+            db_conn = dsrcPrematch.getConnection();
+        }
         catch( Exception ex ) {
             msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );

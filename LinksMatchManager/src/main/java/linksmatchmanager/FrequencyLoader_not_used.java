@@ -9,10 +9,9 @@ import java.util.Collections;
 
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.NameAndTypeSet;
-import linksmatchmanager.DatabaseManager;
 
 
-public class FrequencyLoader {
+public class FrequencyLoader_not_used {
 
     private Connection con;
     private boolean load = false;
@@ -29,9 +28,10 @@ public class FrequencyLoader {
     private Exception nameNotFound;
     private Exception namesNotLoaded;
     
-    FrequencyLoader(String url, String user, String pass) throws Exception {
+    FrequencyLoader_not_used(String url, String user, String pass) throws Exception {
 
-        this.con = DatabaseManager.getConnection(url, "links_frequency", user, pass);
+        //this.con = DatabaseManager.getConnection(url, "links_frequency", user, pass);
+        this.con = null;
         this.con.setReadOnly(true);
         this.familyname = new ArrayList<Integer>();
         this.familynameFreq = new ArrayList<Integer>();

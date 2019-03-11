@@ -33,12 +33,15 @@ import java.sql.ResultSet;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
+import com.zaxxer.hikari.HikariDataSource;
+
+//import linksmatchmanager.DatabaseManager;
+
 import linksmatchmanager.DataSet.InputSet;
 import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
-//import linksmatchmanager.DatabaseManager;
-import linksmatchmanager.HikariCPDataSource;
+
 
 /**
  * @author Omar Azouguagh
@@ -51,7 +54,7 @@ import linksmatchmanager.HikariCPDataSource;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-10-Mar-2019 HikariCPDataSource
+ * FL-11-Mar-2019 HikariCPDataSource
  */
 
 public class Main
@@ -62,13 +65,20 @@ public class Main
 
     private static boolean debug;
 
+    //private static final String hikariConfigPathname = "/data/links/match/hikaricp.properties";
+    //private static final String hikariConfigPathname = "/home/fons/projects/links/match/hikaricp.properties";
+    private static final String hikariConfigPathname = null;
+
     private static String dbnameMatch    = "links_match";
     private static String dbnamePrematch = "links_prematch";
     private static String dbnameTemp     = "links_temp";
 
+    private static HikariDataSource dsrcPrematch = null;
+    private static HikariDataSource dsrcMatch    = null;
+    private static HikariDataSource dsrcTemp     = null;
+
     private static Connection dbconPrematch = null;
     private static Connection dbconMatch    = null;
-    private static Connection dbconTemp     = null;
 
     private static QueryLoader ql;
     private static SampleLoader s1, s2;
@@ -109,7 +119,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "10-Mar-2019 11:36";
+            String timestamp1 = "11-Mar-2019 17:10";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -185,11 +195,19 @@ public class Main
             System.out.println( msg ); plog.show( msg );
 
             System.out.println( "Create database connections" );
-            try {
+            try
+            {
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
-                dbconPrematch = HikariCPDataSource.getConnection( db_host, dbnamePrematch, db_user, db_pass );
-                dbconMatch    = HikariCPDataSource.getConnection( db_host, dbnameMatch,    db_user, db_pass );
+
+                HikariCP hikariCP = new HikariCP( hikariConfigPathname, db_host, db_user, db_pass );
+
+                dsrcPrematch = hikariCP.getDataSource( "links_prematch" );
+                dsrcMatch    = hikariCP.getDataSource( "links_match" );
+                dsrcTemp     = hikariCP.getDataSource( "links_temp" );
+
+                dbconPrematch = dsrcPrematch.getConnection();
+                dbconMatch    = dsrcMatch.getConnection();
 
                 DatabaseMetaData meta = dbconPrematch.getMetaData();
                 System.out.println( meta.getDatabaseProductName() );
@@ -245,6 +263,8 @@ public class Main
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
+            // dbconMatch: read match_process table from links_match;
+            // dbconPrematch: get record counts for the generated queries for chunking the samples
             QueryGenerator queryGen = new QueryGenerator( plog, dbconPrematch, dbconMatch, s1_sample_limit, s2_sample_limit );
 
             // The InputSet 'is', is the only accessible object from the queryGen object.
@@ -429,7 +449,10 @@ public class Main
                     System.out.println( msg ); plog.show( msg );
                 }
                 else {
-                    if( dbconMatch != null ) { dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass ); }
+                    if( dbconMatch == null ) {
+                        //dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass );
+                        dbconMatch = dsrcMatch.getConnection();
+                    }
                     deleteMatches( match_process_id );
                     dbconMatch.close();
                 }
@@ -450,7 +473,9 @@ public class Main
                     // Its input is a QuerySet and a database connection object.
                     //ql = new QueryLoader( Thread.currentThread().getId(), qs, dbconPrematch );
                     //ql = new QueryLoader( qs, dbconPrematch );
-                    ql = new QueryLoader( plog, qs, db_host, dbnamePrematch, db_user, db_pass );
+                    //ql = new QueryLoader( plog, qs, db_host, dbnamePrematch, db_user, db_pass );
+                    ql = new QueryLoader( plog, qs, dsrcPrematch );
+
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
                     show_java_memory();   // show some java memory stats
@@ -510,13 +535,15 @@ public class Main
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
-                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
+                        //ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, dsrcPrematch, dsrcMatch, dsrcTemp,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             rootFirstName, rootFamilyName, nameLvsVariants, true );
                     }
                     else          // method == 0
                     {
-                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
+                        //ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
+                        ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, dsrcPrematch, dsrcMatch, dsrcTemp,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
                             variantFirstName, variantFamilyName, nameLvsVariants );
                     }
@@ -545,9 +572,11 @@ public class Main
 
             // the memory tables should only be dropped after all threads have finished.
             if( use_memory_tables ) {
-                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                dbconPrematch = dsrcPrematch.getConnection();
                 memtables_drop( dbconPrematch, lvs_table_familyname,  lvs_table_firstname,  name_postfix );
                 memtables_drop( dbconPrematch, freq_table_familyname, freq_table_firstname, name_postfix );
+
                 if( dbconMatch != null ) { dbconMatch.close(); }
             }
             else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
@@ -556,7 +585,7 @@ public class Main
             System.out.println( msg ); plog.show( msg );
             try {
                 String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
-                dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
+                dbconPrematch = dsrcPrematch.getConnection();
                 dbconPrematch.createStatement().execute( query );
                 dbconPrematch.close();
             }
@@ -565,6 +594,10 @@ public class Main
                 System.out.println( msg );
                 ex.printStackTrace();
             }
+
+            if( dsrcPrematch != null ) { dsrcPrematch.close(); };
+            if( dsrcMatch    != null ) { dsrcMatch.close(); };
+            if( dsrcTemp     != null ) { dsrcTemp.close(); };
 
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Matching was started at: " + timestamp2 );
@@ -985,11 +1018,14 @@ public class Main
     private static void deleteMatches( int id_match_process )
     {
         String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
-        try {
+
+        try
+        {
+            if( dbconMatch == null ) { dbconMatch = dsrcMatch.getConnection(); }
+
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
 
             dbconMatch.createStatement().execute( query );
-            dbconMatch.createStatement().close();
         }
         catch( Exception ex ) {
             System.out.println( query ); try { plog.show( query ); } catch( Exception ex2 ) { ; }
