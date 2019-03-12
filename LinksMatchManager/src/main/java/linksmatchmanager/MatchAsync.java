@@ -50,7 +50,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
  * FL-19-Feb-2019 Heap memory leak?
- * FL-11-Mar-2019 HikariDataSource
+ * FL-12-Mar-2019 HikariDataSource
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -109,8 +109,8 @@ public class MatchAsync extends Thread
     NameLvsVariants nameLvsVariants;
 
     Connection dbconPrematch = null;
-    Connection dbconMatch = null;
-    Connection dbconTemp = null;
+    Connection dbconMatch    = null;
+    Connection dbconTemp     = null;
 
 
     public MatchAsync       // for variant names
@@ -876,10 +876,10 @@ public class MatchAsync extends Thread
 
                 if( debug )
                 {
-                    if( dbconTemp != null ) {
-                        loadCsvFileToTempTable( threadId, csvFilename );
-                        dbconTemp.close();
-                    }
+                    if( dbconTemp == null || dbconTemp.isClosed() ) { dbconTemp = dsrcMatch.getConnection(); }
+                    loadCsvFileToTempTable( threadId, csvFilename );
+                    dbconTemp.close();
+                    dbconTemp = null;
                 }
                 else { loadCsvFileToMatchTable( threadId, csvFilename, removeCsv ); }
             }
@@ -984,14 +984,14 @@ public class MatchAsync extends Thread
 
             msg = String.format( "Thread id %02d; freeing s1 and s2 vectors", threadId );
             System.out.println( msg ); plog.show( msg );
-            ql.freeVectors_set1();
-            ql.freeVectors_set2();
+            ql.freeVectors_rs1();
+            ql.freeVectors_rs2();
             ql = null;
             qs = null;
 
-            if( dbconPrematch != null ) { dbconPrematch.close(); }
-            if( dbconMatch    != null ) { dbconMatch.close(); }
-            if( dbconTemp     != null ) { dbconTemp.close(); }
+            if( dbconPrematch != null ) { dbconPrematch.close(); dbconPrematch = null; }
+            if( dbconMatch    != null ) { dbconMatch.close();    dbconMatch    = null; }
+            if( dbconTemp     != null ) { dbconTemp.close();     dbconTemp     = null; }
 
             msg = String.format( "Thread id %02d; clock time", threadId );
             elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
@@ -1034,7 +1034,8 @@ public class MatchAsync extends Thread
         String query = "SELECT COUNT(*) AS count FROM information_schema.tables " +
             "WHERE table_schema = 'links_temp' AND table_name = '" + table_name + "'";
 
-        try {
+        try
+        {
             ResultSet rs = dbconTemp.createStatement().executeQuery( query );
             while( rs.next() )
             {
@@ -1042,6 +1043,7 @@ public class MatchAsync extends Thread
                 if( count == 1 ) { exists = true; }
             }
             rs.close();
+            rs = null;
         }
         catch( Exception ex ) {
             String err = "Exception in existsMatchTempTable(): " + ex.getMessage();
@@ -1190,6 +1192,7 @@ public class MatchAsync extends Thread
         dbconMatchLocal.createStatement().execute( query );
         dbconMatchLocal.createStatement().close();
         dbconMatchLocal.close();
+        dbconMatchLocal = null;
 
         if( removeCsv ) {
             msg = String.format( "Thread id %02d; Deleting file %s", threadId, filenameCsv );
@@ -1520,6 +1523,7 @@ public class MatchAsync extends Thread
 
             while( rs.next() ) { freq = rs.getInt( "frequency" ); }
             rs.close();
+            rs = null;
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
@@ -1555,6 +1559,7 @@ public class MatchAsync extends Thread
                 */
             }
             rs.close();
+            rs = null;
         }
         catch( Exception ex ) {
             System.out.println( "Exception in getFrequencyStr(): " + ex.getMessage() );
@@ -1677,6 +1682,7 @@ public class MatchAsync extends Thread
                 nrecs++;
             }
             rs.close();
+            rs = null;
 
             if( debug && nrecs != 0 ) {
                 String msg = String.format( "getLvsVariants1(): # of LvsVariants = %d\n", nrecs );
@@ -1741,6 +1747,7 @@ public class MatchAsync extends Thread
                 nrecs++;
             }
             rs.close();
+            rs = null;
 
             if( debug && nrecs != 0 ) {
                 String msg = String.format( "getLvsVariants2(): # of LvsVariants = %d\n", nrecs );
@@ -1822,6 +1829,7 @@ public class MatchAsync extends Thread
                 nrecs++;
             }
             rs.close();
+            rs = null;
 
             if( debug ) {
                 String msg = "nrecs: " + nrecs;

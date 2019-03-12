@@ -1,9 +1,8 @@
 package linksmatchmanager;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
+//import java.util.Enumeration;
 import java.util.logging.Logger;
+//import java.util.Properties;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -17,8 +16,7 @@ import com.zaxxer.hikari.HikariDataSource;
  * for each database. It just doesn't make any sense to use the same pool for different databases as a connection to
  * one database will never be able to be re-used for another database.
  *
- * FL-08-Mar-2019
- * FL-11-Mar-2019 NOT FINISHED
+ * FL-12-Mar-2019
  */
 public class HikariCP
 {
@@ -36,6 +34,7 @@ public class HikariCP
     private static int ds_links_prematch_count = 0;
     private static int ds_links_temp_count = 0;
 
+    private static int num_proc = 1;                // (assumed) number of processors, determines pool size
     private static String configPathname = null;
 
     private static String db_host = DEFAULT_HOST;
@@ -45,46 +44,24 @@ public class HikariCP
 
     private static Logger logger = Logger.getLogger( HikariCP.class.getName() );
 
-    public HikariCP( String configPathname, String db_host, String db_user, String db_pass )
+    public HikariCP( int num_proc, String configPathname, String db_host, String db_user, String db_pass )
     {
         String fname = "HikariCP/HikariCP()";
         logger.info( fname );
-        logger.info( configPathname );
+        if( configPathname != null && ! configPathname.isEmpty() ) { logger.info( configPathname ); }
 
+        this.num_proc = num_proc;
         this.configPathname = configPathname;
         this.db_host = db_host;
         this.db_user = db_user;
         this.db_pass = db_pass;
-
-        /*
-        See: https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
-        and: https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html
-
-        A typical MySQL configuration for HikariCP might look something like this:
-        jdbcUrl=jdbc:mysql://localhost:3306/simpsons
-        user = test
-        password = test
-
-        dataSource.cachePrepStmts = true
-        dataSource.prepStmtCacheSize = 250
-        dataSource.prepStmtCacheSqlLimit = 2048
-        dataSource.useServerPrepStmts = true
-        dataSource.useLocalSessionState = true
-        dataSource.rewriteBatchedStatements = true
-        dataSource.cacheResultSetMetadata = true
-        dataSource.cacheServerConfiguration = true
-        dataSource.elideSetAutoCommits = true
-        dataSource.maintainTimeStats = false
-        */
     }
 
 
     public static HikariConfig getConfig( String db_name )
     {
-        String fname = "HikariCP/getConfig()";
-        logger.info( fname );
-
-        //String msg = String.format( "%s() db_user: %s, db_pass: %s ", fname, db_user, db_pass );
+        //String fname = "HikariCP/getConfig()";
+        //logger.info( fname );
 
         //https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
         String options = "?autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
@@ -102,38 +79,68 @@ public class HikariCP
         config.setUsername( db_user );
         config.setPassword( db_pass );
 
-        int maximumPoolSize = 32;       // default = 10
+        String poolName = "HikariPool-" + db_name;
+        config.setPoolName( poolName );
+
+        int maximumPoolSize = 2 + 2 * num_proc;       // default = 10
         config.setMaximumPoolSize( maximumPoolSize );
 
-        // I do not see these properties in the HikariConfig setters/getters ?
-        config.addDataSourceProperty( "cachePrepStmts",           true );
-        config.addDataSourceProperty( "cacheResultSetMetadata",   true );
-        config.addDataSourceProperty( "cacheServerConfiguration", true );
-        config.addDataSourceProperty( "elideSetAutoCommits",      true );
-        config.addDataSourceProperty( "maintainTimeStats",        false );
-        config.addDataSourceProperty( "prepStmtCacheSize",        250 );
-        config.addDataSourceProperty( "prepStmtCacheSqlLimit",    2048 );
-        config.addDataSourceProperty( "rewriteBatchedStatements", true );
-        config.addDataSourceProperty( "useServerPrepStmts",       true );
-        config.addDataSourceProperty( "useLocalSessionState",     true );
+        // See: https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration           // defaults:
+        // and: https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html
+        config.addDataSourceProperty( "cachePrepStmts",           true );   // false
+        config.addDataSourceProperty( "cacheResultSetMetadata",   true );   // false
+        config.addDataSourceProperty( "cacheServerConfiguration", true );   // false
+        config.addDataSourceProperty( "elideSetAutoCommits",      true );   // false
+        config.addDataSourceProperty( "maintainTimeStats",        false );  // true
+        config.addDataSourceProperty( "prepStmtCacheSize",        250 );    // 25
+        config.addDataSourceProperty( "prepStmtCacheSqlLimit",    2048 );   // 256
+        config.addDataSourceProperty( "rewriteBatchedStatements", true );   // false
+        config.addDataSourceProperty( "useServerPrepStmts",       true );   // false
+        config.addDataSourceProperty( "useLocalSessionState",     true );   //  false
 
         return config;
     }
 
 
+    public static void showConfig( HikariConfig config )
+    {
+        //String fname = "HikariCP/showConfig()";
+        //logger.info( fname );
+
+        String poolName = config.getPoolName();
+        String msg = String.format( "DataSource PoolName: %s", poolName );
+        logger.info( msg );
+
+        int maximumPoolSize = config.getMaximumPoolSize();
+        msg = String.format( "maximumPoolSize: %d", maximumPoolSize );
+        logger.info( msg );
+        // ... other params from config
+
+        /*
+        Properties properties = config.getDataSourceProperties();
+        Enumeration<?> enumeration = properties.propertyNames();
+        while( enumeration.hasMoreElements() ) {
+            Object object = enumeration.nextElement();
+            String name = object.toString();
+            String value = properties.getProperty( name );      // why only null values?
+            msg = String.format( "%s: %d", name, value );
+            logger.info( msg );
+        }
+        */
+    }
+
+
     public static HikariDataSource getDataSource( String db_name )
     {
-        String fname = "HikariCP/getDataSource()";
-        logger.info( fname );
+        //String fname = "HikariCP/getDataSource()";
+        //logger.info( fname );
 
         HikariConfig config = getConfig( db_name );
 
-        int maximumPoolSize = config.getMaximumPoolSize();
-
-        String msg = String.format( "maximumPoolSize: %d", maximumPoolSize );
-        logger.info( msg );
-
         HikariDataSource dataSource = new HikariDataSource( config );
+
+        showConfig( config );
+
         return dataSource;
     }
 

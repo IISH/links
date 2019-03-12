@@ -54,7 +54,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-05-Jan-2018 Do not keep db connections endlessly open (connection timeouts)
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
- * FL-11-Mar-2019 HikariCPDataSource
+ * FL-12-Mar-2019 HikariCPDataSource
  */
 
 public class Main
@@ -65,8 +65,6 @@ public class Main
 
     private static boolean debug;
 
-    //private static final String hikariConfigPathname = "/data/links/match/hikaricp.properties";
-    //private static final String hikariConfigPathname = "/home/fons/projects/links/match/hikaricp.properties";
     private static final String hikariConfigPathname = null;
 
     private static String dbnameMatch    = "links_match";
@@ -119,7 +117,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "11-Mar-2019 17:10";
+            String timestamp1 = "12-Mar-2019 11:51";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -134,11 +132,11 @@ public class Main
             //System.exit( 0 );
 
             // Load cmd line arguments; check length
-            if( args.length != 8 ) {
-                String msg ="Invalid argument length " + args.length + ", it should be 8";
+            if( args.length != 9 ) {
+                String msg ="Invalid argument length " + args.length + ", it should be 9";
                 plog.show( msg ); System.out.println( msg );
 
-                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_host> <db_username> <db_password> <max_threads> <s1_sample_limit> <s2_sample_limit> <debug>";
+                msg = "Usage: java -jar LinksMatchManager-2.0.jar <db_host> <db_username> <db_password> <nproc> <max_threads> <s1_sample_limit> <s2_sample_limit> <debug>";
                 plog.show( msg ); System.out.println( msg );
 
                 return;
@@ -152,11 +150,12 @@ public class Main
             String db_host             = args[ 0 ];
             String db_user             = args[ 1 ];
             String db_pass             = args[ 2 ];
-            String max_threads_str     = args[ 3 ];
-            String max_heap_table_size = args[ 4 ];
-            String s1_sample_limit     = args[ 5 ];
-            String s2_sample_limit     = args[ 6 ];
-            String debug_str           = args[ 7 ];
+            String num_proc_str        = args[ 3 ];
+            String max_threads_str     = args[ 4 ];
+            String max_heap_table_size = args[ 5 ];
+            String s1_sample_limit     = args[ 6 ];
+            String s2_sample_limit     = args[ 7 ];
+            String debug_str           = args[ 8 ];
 
             //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
@@ -180,6 +179,11 @@ public class Main
             //Properties properties = Functions.getProperties();  // Read properties file
 
             plog.show( "Matching process started." );
+
+            int num_proc = Integer.parseInt( num_proc_str );
+            msg = String.format( "Assumed number of processors: %d", num_proc );
+            System.out.println( msg ); plog.show( msg );
+
             int max_threads_simul = Integer.parseInt( max_threads_str );
             msg = String.format( "Max simultaneous active matching threads: %d", max_threads_simul );
             System.out.println( msg ); plog.show( msg );
@@ -200,7 +204,7 @@ public class Main
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
-                HikariCP hikariCP = new HikariCP( hikariConfigPathname, db_host, db_user, db_pass );
+                HikariCP hikariCP = new HikariCP( num_proc, hikariConfigPathname, db_host, db_user, db_pass );
 
                 dsrcPrematch = hikariCP.getDataSource( "links_prematch" );
                 dsrcMatch    = hikariCP.getDataSource( "links_match" );
@@ -241,6 +245,7 @@ public class Main
                 msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
                 System.out.println( msg ); plog.show( msg );
                 rs.close();
+                rs = null;
             }
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
@@ -373,7 +378,7 @@ public class Main
                 System.out.println( "" );
                 plog.show( "" );
 
-                show_java_memory();   // show some java memory stats
+                show_java_memory( mainThreadId );   // show some java memory stats
 
                 // The VariantLoader is broken.
                 // And we will get the Levenshtein variants for each name of s1 one-by-one
@@ -448,13 +453,15 @@ public class Main
                     msg = String.format( "Thread id %02d; DRY RUN: not deleting, nor writing matches!", mainThreadId );
                     System.out.println( msg ); plog.show( msg );
                 }
-                else {
-                    if( dbconMatch == null ) {
+                else
+                {
+                    if( dbconMatch == null || dbconMatch.isClosed() ) {
                         //dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass );
                         dbconMatch = dsrcMatch.getConnection();
                     }
                     deleteMatches( match_process_id );
                     dbconMatch.close();
+                    dbconMatch = null;
                 }
 
                 // Loop through the subsamples
@@ -478,7 +485,6 @@ public class Main
 
                     msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
-                    show_java_memory();   // show some java memory stats
 
                     /*
                     long sStart = System.currentTimeMillis();
@@ -526,6 +532,8 @@ public class Main
                         Thread.sleep( 60000 );
                     }
 
+                    show_java_memory( mainThreadId );   // show some java memory stats
+
                     npermits = sem.availablePermits();
                     msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", mainThreadId, npermits );
                     plog.show( msg );
@@ -571,7 +579,8 @@ public class Main
             System.out.println( msg ); plog.show( msg );
 
             // the memory tables should only be dropped after all threads have finished.
-            if( use_memory_tables ) {
+            if( use_memory_tables )
+            {
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 dbconPrematch = dsrcPrematch.getConnection();
                 memtables_drop( dbconPrematch, lvs_table_familyname,  lvs_table_firstname,  name_postfix );
@@ -583,11 +592,13 @@ public class Main
 
             msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
-            try {
+            try
+            {
                 String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
                 dbconPrematch = dsrcPrematch.getConnection();
                 dbconPrematch.createStatement().execute( query );
                 dbconPrematch.close();
+                dbconPrematch = null;
             }
             catch( Exception ex ) {
                 msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
@@ -740,19 +751,20 @@ public class Main
     } // elapsedShowMessage
 
 
-    private static void show_java_memory()
+    private static void show_java_memory( long threadId )
     {
         final int MegaBytes = 10241024;
 
         long freeMemory  = Runtime.getRuntime().freeMemory()  / MegaBytes;
         long totalMemory = Runtime.getRuntime().totalMemory() / MegaBytes;
         long maxMemory   = Runtime.getRuntime().maxMemory()   / MegaBytes;
-
-        String[] msgs = {
-            "used  memory in JVM: " + ( maxMemory - freeMemory ) + " MB",
-            "free  memory in JVM: " + freeMemory + " MB",
-            "total memory in JVM: " + totalMemory + " MB",     // shows current size of java heap
-            "max   memory in JVM: " + maxMemory + " MB"
+        //Thread id %02d;
+        String[] msgs =
+        {
+            String.format( "Thread id %02d; used  memory in JVM: %d MB", threadId, (maxMemory - freeMemory) ),
+            String.format( "Thread id %02d; free  memory in JVM: %d MB", threadId, freeMemory),
+            String.format( "Thread id %02d; total memory in JVM: %d MB", threadId, totalMemory ),   // shows current size of java heap
+            String.format( "Thread id %02d; max   memory in JVM: %d MB", threadId, maxMemory )
         };
 
         for( String msg : msgs )
@@ -868,6 +880,7 @@ public class Main
                 if( count == 1 ) { exists = true; }
             }
             rs.close();
+            rs = null;
         }
         catch( Exception ex ) {
             String err = "Exception in memtable_ls_exists(): " + ex.getMessage();
@@ -1021,7 +1034,7 @@ public class Main
 
         try
         {
-            if( dbconMatch == null ) { dbconMatch = dsrcMatch.getConnection(); }
+            if( dbconMatch == null || dbconMatch.isClosed() ) { dbconMatch = dsrcMatch.getConnection(); }
 
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
 

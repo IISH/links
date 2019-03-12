@@ -193,7 +193,9 @@ public class SampleLoader
         fillArrays( rs );
 
         rs.close();
+        rs = null;
         if( db_conn != null ) { db_conn.close(); }
+        db_conn = null;
 
         System.out.printf( "Thread id %02d; SampleLoader() done\n", threadId );
     } // SampleLoader
