@@ -302,6 +302,8 @@ public class MatchAsync extends Thread
         long n_minmax = 0;
         long n_sex    = 0;
 
+        ListMultimap< Integer, String > nameFreqMap = null;
+
         long threadId = Thread.currentThread().getId();
 
         try
@@ -436,6 +438,22 @@ public class MatchAsync extends Thread
             // matches is done once, only the first time.
             int previous_s1EgoFamilyName = 0;
 
+
+            //ListMultimap< Integer, String > nameFreqMap = Multimaps.synchronizedListMultimap    // concurrent wrapper call
+            nameFreqMap = Multimaps.synchronizedListMultimap    // concurrent wrapper call
+            (
+                Multimaps.newListMultimap
+                    (
+                        //new TreeMap< Integer, Collection< String > >(),                             // not thread-save
+                        new ConcurrentSkipListMap< Integer, Collection< String > >(),               // concurrent
+                        new Supplier< List< String > >()
+                        {
+                            //public List< String > get() { return Lists.newArrayList(); }            // not thread-save
+                            public List< String > get() { return Lists.newCopyOnWriteArrayList(); } // concurrent
+                        }
+                    )
+            );
+
             // Outer loop over the records of the s1 query set
             for( int s1_idx = 0; s1_idx < s1_size; s1_idx++ )
             {
@@ -502,7 +520,8 @@ public class MatchAsync extends Thread
                 }
 
                 // get the frequencies of names used for matching, ordered from low to high frequency
-                ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
+                //ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
+                check_frequencies( debugfreq, qs, s1_idx, nameFreqMap );
 
                 Multiset  < Integer> keys   = nameFreqMap.keys();
                 Collection< String > values = nameFreqMap.values();
@@ -861,12 +880,15 @@ public class MatchAsync extends Thread
 
                 // display n_variant_match
 
-                nameFreqMap.clear();
-                nameFreqMap = null;
+                //nameFreqMap.clear();
+                //nameFreqMap = null;
 
                 System.out.flush();
                 System.err.flush();
             } // s1_idx loop
+
+            nameFreqMap.clear();
+            nameFreqMap = null;
 
             if( match2csv ) {
                 writerMatches.close();
@@ -1014,6 +1036,12 @@ public class MatchAsync extends Thread
             ex1.printStackTrace();
             try { plog.show( err ); }
             catch( Exception ex2 ) { ex2.printStackTrace(); }
+        }
+        finally
+        {
+            if( nameFreqMap != null ) {
+            nameFreqMap.clear();
+            nameFreqMap = null;}
         }
     } // run
 
@@ -1407,7 +1435,8 @@ public class MatchAsync extends Thread
      * @param s1_idx
      * @return
      */
-    public ListMultimap<Integer, String> check_frequencies( boolean debug, QuerySet qs, int s1_idx )
+    //public ListMultimap<Integer, String> check_frequencies( boolean debug, QuerySet qs, int s1_idx )
+    public void check_frequencies( boolean debug, QuerySet qs, int s1_idx, ListMultimap< Integer, String > nameFreqMap )
     {
         int s1_id_base = ql.s1_id_base.get( s1_idx );
 
@@ -1420,6 +1449,8 @@ public class MatchAsync extends Thread
         // the Multimaps.synchronizedListMultimap makes the ListMultimap thread-save,
         // TreeMap and ArrayList are not thread-save, replace with ConcurrentSkipListMap and CopyOnWriteArrayList
         // should they be replaced by concurrent alternatives?
+        /*
+        // searching for memory leak: single nameFreqMap outside s1 loop
         ListMultimap< Integer, String > nameFreqMap = Multimaps.synchronizedListMultimap    // concurrent wrapper call
         (
             Multimaps.newListMultimap
@@ -1433,6 +1464,9 @@ public class MatchAsync extends Thread
                 }
             )
         );
+        */
+
+        nameFreqMap.clear();
 
         // Ego (always used)
         if( qs.int_familyname_e > 0 ) {
@@ -1502,7 +1536,8 @@ public class MatchAsync extends Thread
 
         if( ! msg.isEmpty() ) { System.out.println( msg ); }
 
-        return nameFreqMap;
+        //return nameFreqMap;
+        return;
     } // check_frequencies
 
 

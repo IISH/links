@@ -16,7 +16,8 @@ import com.zaxxer.hikari.HikariDataSource;
  * for each database. It just doesn't make any sense to use the same pool for different databases as a connection to
  * one database will never be able to be re-used for another database.
  *
- * FL-12-Mar-2019
+ * FL-12-Mar-2019 Created
+ * FL-18-Mar-2019 Changed
  */
 public class HikariCP
 {
@@ -34,7 +35,7 @@ public class HikariCP
     private static int ds_links_prematch_count = 0;
     private static int ds_links_temp_count = 0;
 
-    private static int num_proc = 1;                // (assumed) number of processors, determines pool size
+    private static int maximumPoolSize = 10;                // default
     private static String configPathname = null;
 
     private static String db_host = DEFAULT_HOST;
@@ -44,14 +45,15 @@ public class HikariCP
 
     private static Logger logger = Logger.getLogger( HikariCP.class.getName() );
 
-    public HikariCP( int num_proc, String configPathname, String db_host, String db_user, String db_pass )
+    public HikariCP( int maximumPoolSize, String configPathname, String db_host, String db_user, String db_pass )
     {
         String fname = "HikariCP/HikariCP()";
         logger.info( fname );
         if( configPathname != null && ! configPathname.isEmpty() ) { logger.info( configPathname ); }
 
-        this.num_proc = num_proc;
-        this.configPathname = configPathname;
+        this.maximumPoolSize = maximumPoolSize;
+        this.configPathname  = configPathname;
+
         this.db_host = db_host;
         this.db_user = db_user;
         this.db_pass = db_pass;
@@ -82,7 +84,6 @@ public class HikariCP
         String poolName = "HikariPool-" + db_name;
         config.setPoolName( poolName );
 
-        int maximumPoolSize = 2 + 2 * num_proc;       // default = 10
         config.setMaximumPoolSize( maximumPoolSize );
 
         // See: https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration           // defaults:

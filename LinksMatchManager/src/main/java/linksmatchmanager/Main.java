@@ -18,6 +18,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package linksmatchmanager;
 
+import java.lang.management.ThreadMXBean;
+import java.lang.management.ManagementFactory;
+
 import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
@@ -112,12 +115,17 @@ public class Main
         long mainThreadId = Thread.currentThread().getId();
         ArrayList< MatchAsync > threads = new ArrayList();
 
+        ThreadMXBean threadmxBean = ManagementFactory.getThreadMXBean();
+        int threadCount = threadmxBean.getThreadCount();
+        // see https://www.programcreek.com/java-api-examples/?class=java.lang.management.ThreadMXBean&method=getThreadCount
+        // to extract additional memory info
+
         try
         {
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "12-Mar-2019 11:51";
+            String timestamp1 = "18-Mar-2019 12:20";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -201,10 +209,15 @@ public class Main
             System.out.println( "Create database connections" );
             try
             {
+                threadCount = threadmxBean.getThreadCount();
+                System.out.printf( "threadCount: %d\n", threadCount );
+
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
-                HikariCP hikariCP = new HikariCP( num_proc, hikariConfigPathname, db_host, db_user, db_pass );
+                int maximumPoolSize = 2 + 2 * num_proc;
+
+                HikariCP hikariCP = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
 
                 dsrcPrematch = hikariCP.getDataSource( "links_prematch" );
                 dsrcMatch    = hikariCP.getDataSource( "links_match" );
@@ -220,6 +233,8 @@ public class Main
                 int networkTimeout = dbconPrematch.getNetworkTimeout();
                 System.out.printf( "networkTimeout: %d (milliseconds)\n", networkTimeout );
 
+                threadCount = threadmxBean.getThreadCount();
+                System.out.printf( "threadCount: %d\n", threadCount );
             }
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
