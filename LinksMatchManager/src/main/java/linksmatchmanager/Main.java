@@ -18,8 +18,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package linksmatchmanager;
 
-import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.ThreadMXBean;
 
 import java.text.SimpleDateFormat;
 
@@ -116,16 +118,13 @@ public class Main
         ArrayList< MatchAsync > threads = new ArrayList();
 
         ThreadMXBean threadmxBean = ManagementFactory.getThreadMXBean();
-        int threadCount = threadmxBean.getThreadCount();
-        // see https://www.programcreek.com/java-api-examples/?class=java.lang.management.ThreadMXBean&method=getThreadCount
-        // to extract additional memory info
 
         try
         {
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "18-Mar-2019 12:20";
+            String timestamp1 = "19-Mar-2019 13:57";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -209,13 +208,13 @@ public class Main
             System.out.println( "Create database connections" );
             try
             {
-                threadCount = threadmxBean.getThreadCount();
-                System.out.printf( "threadCount: %d\n", threadCount );
+                showJVMInfo( threadmxBean );
 
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
-                int maximumPoolSize = 2 + 2 * num_proc;
+                //int maximumPoolSize = 2 + 2 * num_proc;
+                int maximumPoolSize = 2 + 2 * max_threads_simul;
 
                 HikariCP hikariCP = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
 
@@ -233,8 +232,7 @@ public class Main
                 int networkTimeout = dbconPrematch.getNetworkTimeout();
                 System.out.printf( "networkTimeout: %d (milliseconds)\n", networkTimeout );
 
-                threadCount = threadmxBean.getThreadCount();
-                System.out.printf( "threadCount: %d\n", threadCount );
+                showJVMInfo( threadmxBean );
             }
             catch( Exception ex ) {
                 msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
@@ -641,7 +639,33 @@ public class Main
 
 
     /**
-     *
+     * @param threadmxBean
+     * see: https://www.programcreek.com/java-api-examples/?class=java.lang.management.ThreadMXBean&method=getThreadCount
+     */
+    public static void showJVMInfo( ThreadMXBean threadmxBean )
+    {
+        int threadCount = threadmxBean.getThreadCount();
+
+        MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
+
+        MemoryUsage memHeapUsage = memBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapUsage = memBean.getNonHeapMemoryUsage();
+
+        System.out.printf( "threadCount:   %d\n", threadCount );
+
+        System.out.printf( "heapInit:      %s\n", String.valueOf( memHeapUsage.getInit() ) );
+        System.out.printf( "heapMax:       %s\n", String.valueOf( memHeapUsage.getCommitted() ) );
+        System.out.printf( "heapCommit:    %s\n", String.valueOf( memHeapUsage.getCommitted() ) );
+        System.out.printf( "heapUsed:      %s\n", String.valueOf( memHeapUsage.getUsed() ) );
+
+        System.out.printf( "nonHeapInit:   %s\n", String.valueOf( nonHeapUsage.getInit() ) );
+        System.out.printf( "nonHeapMax:    %s\n", String.valueOf( nonHeapUsage.getMax() ) );
+        System.out.printf( "nonHeapCommit: %s\n", String.valueOf( nonHeapUsage.getCommitted() ) );
+        System.out.printf( "nonHeapUsed:   %s\n", String.valueOf( nonHeapUsage.getUsed() ) );
+    }
+
+
+    /**
      * @param inputSet
      */
     public static void checkInputSet( InputSet inputSet )
