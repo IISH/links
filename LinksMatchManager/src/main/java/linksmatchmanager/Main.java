@@ -60,6 +60,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
+ * FL-08-Apr-2019 Latest change
  */
 
 public class Main
@@ -124,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "19-Mar-2019 13:57";
+            String timestamp1 = "09-Apr-2019 14:52";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -213,8 +214,9 @@ public class Main
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
+                int maximumPoolSize = 10;                       // default
                 //int maximumPoolSize = 2 + 2 * num_proc;
-                int maximumPoolSize = 2 + 2 * max_threads_simul;
+                //int maximumPoolSize = 2 + 2 * max_threads_simul;
 
                 HikariCP hikariCP = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
 
