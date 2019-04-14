@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "09-Apr-2019 14:52";
+            String timestamp1 = "14-Apr-2019 12:55";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -214,8 +214,12 @@ public class Main
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
-                int maximumPoolSize = 10;                       // default
+                // Notice: If maximumPoolSize is less than max_threads_simul,
+                // the number of simultaneous matching threads is limited to maximumPoolSize
+                //int maximumPoolSize = 5;
+                //int maximumPoolSize = 10;                       // default
                 //int maximumPoolSize = 2 + 2 * num_proc;
+                int maximumPoolSize = 2 + max_threads_simul;
                 //int maximumPoolSize = 2 + 2 * max_threads_simul;
 
                 HikariCP hikariCP = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
@@ -470,7 +474,8 @@ public class Main
                 }
                 else
                 {
-                    if( dbconMatch == null || dbconMatch.isClosed() ) {
+                    if( dbconMatch == null || dbconMatch.isClosed() )
+                    {
                         //dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass );
                         dbconMatch = dsrcMatch.getConnection();
                     }
@@ -547,6 +552,7 @@ public class Main
                         Thread.sleep( 60000 );
                     }
 
+
                     show_java_memory( mainThreadId );   // show some java memory stats
 
                     npermits = sem.availablePermits();
@@ -590,6 +596,8 @@ public class Main
             // join the threads: main thread must wait for children to finish
             for( MatchAsync ma : threads ) { ma.join(); }
 
+            show_java_memory( mainThreadId );   // show some java memory stats
+
             msg = String.format( "Thread id %02d; Matching Finished.", mainThreadId );
             System.out.println( msg ); plog.show( msg );
 
@@ -629,6 +637,9 @@ public class Main
             plog.show( "Matching was started at: " + timestamp2 );
             plog.show( "Matching now stopped at: " + timestamp3 );
 
+            show_java_memory( mainThreadId );   // show some java memory stats
+            msg = String.format( "Thread id %02d; End.", mainThreadId );
+            System.out.println( msg );
         } // try
 
         catch( Exception ex ) {

@@ -17,7 +17,7 @@ import com.zaxxer.hikari.HikariDataSource;
  * one database will never be able to be re-used for another database.
  *
  * FL-12-Mar-2019 Created
- * FL-18-Mar-2019 Changed
+ * FL-13-Apr-2019 Changed
  */
 public class HikariCP
 {
@@ -66,10 +66,11 @@ public class HikariCP
         //logger.info( fname );
 
         //https://stackoverflow.com/questions/6865538/solving-a-communications-link-failure-with-jdbc-and-mysql/21717674
-        String options = "?autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
+        //String options = "?autoReconnect=true&failOverReadOnly=false&maxReconnects=10";
+        // brettwooldridge: Don't use autoReconnect, it is not meant for pools.
 
         //String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name + options;
-        String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name + options;
+        String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name;
         logger.info( jdbc_url );
 
         // Does not yet work...?
@@ -85,6 +86,17 @@ public class HikariCP
         config.setPoolName( poolName );
 
         config.setMaximumPoolSize( maximumPoolSize );
+        // timings in milliseconds
+        //config.setMinimumIdle( 0 );
+        config.setIdleTimeout( 60000 );             // 1 min
+        //config.setConnectionTimeout( 3600000 );     // 1 hour
+        //config.setConnectionTimeout( 7200000 );     // 2 hours
+        //config.setConnectionTimeout( 86400000 );     // 1 day
+        config.setConnectionTimeout( 604800000 );     // 1 week
+
+        // Debug problems:
+        // https://github.com/brettwooldridge/HikariCP/issues/1111
+        config.setLeakDetectionThreshold( 60 * 1000 );
 
         // See: https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration           // defaults:
         // and: https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html
@@ -98,6 +110,8 @@ public class HikariCP
         config.addDataSourceProperty( "rewriteBatchedStatements", true );   // false
         config.addDataSourceProperty( "useServerPrepStmts",       true );   // false
         config.addDataSourceProperty( "useLocalSessionState",     true );   //  false
+
+        config.addDataSourceProperty( "tcpKeepAlive", true);
 
         return config;
     }

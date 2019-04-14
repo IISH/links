@@ -278,8 +278,8 @@ public class MatchAsync extends Thread
         threadMXB.setThreadCpuTimeEnabled( true );
 
         // 13-Feb-2919 debug heap memory leak
-        //boolean debug_hmemleak = true;
-        //int loop_hmemleak = 0;
+        boolean debug_hmemleak = true;
+        int loop_hmemleak = 0;
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
@@ -460,7 +460,7 @@ public class MatchAsync extends Thread
                 /*
                 if( debug_hmemleak )    // check-1 = OK
                 {
-                    if( loop_hmemleak == 0 ) {
+                    if( loop_hmemleak == 0 && s1_idx == 0 ) {
                         loop_hmemleak += 1;
                         System.out.println( "debug_hmemleak-1: skip s1_idx loop" );
                     }
@@ -651,7 +651,7 @@ public class MatchAsync extends Thread
                     /*
                     if( debug_hmemleak )    // check-2 = OK
                     {
-                        if( loop_hmemleak == 0 ) {
+                        if( loop_hmemleak == 0 && s1_idx == 0 ) {
                             loop_hmemleak += 1;
                             System.out.println( "debug_hmemleak-2: skip lvs_idx loop" );
                         }
@@ -685,8 +685,16 @@ public class MatchAsync extends Thread
                         if( s2_idx == -1 ) { break; }           // no more variants
                         else
                         {
-                            // @ FL-18-Feb-2019 hmemleak-4,5 test
-                            //if( 1 == 1 ) { continue; }
+                            ///*
+                            if( debug_hmemleak )    // check-3 =
+                            {
+                                if( loop_hmemleak == 0 && s1_idx == 0 ) {
+                                    loop_hmemleak += 1;
+                                    System.out.println( "debug_hmemleak-3: skip comparisons" );
+                                }
+                                continue;
+                            }
+                            //*/
 
                             boolean names_matched = true;       // optimistic
 
@@ -1040,8 +1048,9 @@ public class MatchAsync extends Thread
         finally
         {
             if( nameFreqMap != null ) {
-            nameFreqMap.clear();
-            nameFreqMap = null;}
+                nameFreqMap.clear();
+                nameFreqMap = null;
+            }
         }
     } // run
 
