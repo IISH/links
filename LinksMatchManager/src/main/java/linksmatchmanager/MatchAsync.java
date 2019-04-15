@@ -50,7 +50,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-02-Oct-2018 Add s1&2 id_persist_registration to matches table
  * FL-17-Jan-2019 Also date in timestamp
  * FL-19-Feb-2019 Heap memory leak?
- * FL-12-Mar-2019 HikariDataSource
+ * FL-12-Mar-2019 Use HikariDataSource
+ * FL-15-Apr-2019
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -685,8 +686,8 @@ public class MatchAsync extends Thread
                         if( s2_idx == -1 ) { break; }           // no more variants
                         else
                         {
-                            ///*
-                            if( debug_hmemleak )    // check-3 =
+                            /*
+                            if( debug_hmemleak )    // check-3 = OK (Kees requested premature stop, but it seemed OK)
                             {
                                 if( loop_hmemleak == 0 && s1_idx == 0 ) {
                                     loop_hmemleak += 1;
@@ -694,7 +695,7 @@ public class MatchAsync extends Thread
                                 }
                                 continue;
                             }
-                            //*/
+                            */
 
                             boolean names_matched = true;       // optimistic
 
@@ -793,7 +794,19 @@ public class MatchAsync extends Thread
                                     else { if( debugfail ) { System.out.println( "matched _sex: s1_sex=" + s1_sex + ", s2_sex=" + s2_sex ); } }
                                 }
 
-                                // also passed minmax & gender test
+                                // Requested comparisons done
+                                ///*
+                                if( debug_hmemleak )    // check-4 =
+                                {
+                                    if( loop_hmemleak == 0 && s1_idx == 0 ) {
+                                        loop_hmemleak += 1;
+                                        System.out.println( "debug_hmemleak-4: after comparisons" );
+                                    }
+                                    continue;
+                                }
+                                //*/
+
+                                // Also passed minmax & gender test
                                 if( s2_idx_matches.indexOf( s2_idx ) != -1 )
                                 {
                                     System.out.println( "MATCH doublure; EXIT" );
@@ -837,7 +850,7 @@ public class MatchAsync extends Thread
                                         String ids           = "\\N";   // not used in matching, but completes the csv record
 
                                         // notice: in order to let the \N properly work, avoid leading or trailing whitespace
-                                      //String str = String.format( "%d, %d, %d, %s,%s, %s,%s,%s,%s,%s,%s,%s,%s\n",
+                                        //String str = String.format( "%d, %d, %d, %s,%s, %s,%s,%s,%s,%s,%s,%s,%s\n",
                                         // We got a spurious initial space before id_persist_registration_1
                                         String str = String.format( "%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                                             id_match_process , id_linksbase_1 , id_linksbase_2 ,

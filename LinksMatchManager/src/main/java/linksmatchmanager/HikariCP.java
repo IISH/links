@@ -17,7 +17,7 @@ import com.zaxxer.hikari.HikariDataSource;
  * one database will never be able to be re-used for another database.
  *
  * FL-12-Mar-2019 Created
- * FL-13-Apr-2019 Changed
+ * FL-15-Apr-2019 Now using mariadb-java-client instead of mysql-connector-java
  */
 public class HikariCP
 {
@@ -70,7 +70,8 @@ public class HikariCP
         // brettwooldridge: Don't use autoReconnect, it is not meant for pools.
 
         //String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name + options;
-        String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name;
+        //String jdbc_url = "jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name;      // Maven: mysql-connector-java
+        String jdbc_url = "jdbc:mariadb://" + db_host + ":" + db_port + "/" + db_name;      // Maven: mariadb-java-client
         logger.info( jdbc_url );
 
         // Does not yet work...?
@@ -78,9 +79,11 @@ public class HikariCP
 
         HikariConfig config = new HikariConfig();
 
+        config.setDriverClassName("org.mariadb.jdbc.Driver");   // Maven: mariadb-java-client
         config.setJdbcUrl( jdbc_url );
         config.setUsername( db_user );
         config.setPassword( db_pass );
+        //config.setAutoCommit( false );                        // choose?
 
         String poolName = "HikariPool-" + db_name;
         config.setPoolName( poolName );
@@ -89,6 +92,7 @@ public class HikariCP
         // timings in milliseconds
         //config.setMinimumIdle( 0 );
         config.setIdleTimeout( 60000 );             // 1 min
+
         //config.setConnectionTimeout( 3600000 );     // 1 hour
         //config.setConnectionTimeout( 7200000 );     // 2 hours
         //config.setConnectionTimeout( 86400000 );     // 1 day

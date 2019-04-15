@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "14-Apr-2019 12:55";
+            String timestamp1 = "15-Apr-2019 15:22";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -222,11 +222,13 @@ public class Main
                 int maximumPoolSize = 2 + max_threads_simul;
                 //int maximumPoolSize = 2 + 2 * max_threads_simul;
 
-                HikariCP hikariCP = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
+                // TODO use connection pool from mariaDB
+                // https://mariadb.com/kb/en/library/pool-datasource-implementation/
+                HikariCP conPool = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
 
-                dsrcPrematch = hikariCP.getDataSource( "links_prematch" );
-                dsrcMatch    = hikariCP.getDataSource( "links_match" );
-                dsrcTemp     = hikariCP.getDataSource( "links_temp" );
+                dsrcPrematch = conPool.getDataSource( "links_prematch" );
+                dsrcMatch    = conPool.getDataSource( "links_match" );
+                dsrcTemp     = conPool.getDataSource( "links_temp" );
 
                 dbconPrematch = dsrcPrematch.getConnection();
                 dbconMatch    = dsrcMatch.getConnection();
