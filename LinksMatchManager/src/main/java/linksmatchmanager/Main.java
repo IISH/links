@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "15-Apr-2019 15:22";
+            String timestamp1 = "16-Apr-2019 13:51";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -217,9 +217,10 @@ public class Main
                 // Notice: If maximumPoolSize is less than max_threads_simul,
                 // the number of simultaneous matching threads is limited to maximumPoolSize
                 //int maximumPoolSize = 5;
-                //int maximumPoolSize = 10;                       // default
+                //int maximumPoolSize = 10;                         // default
                 //int maximumPoolSize = 2 + 2 * num_proc;
-                int maximumPoolSize = 2 + max_threads_simul;
+                //int maximumPoolSize = 2 + max_threads_simul;
+                int maximumPoolSize = 2 + 2 * max_threads_simul;
                 //int maximumPoolSize = 2 + 2 * max_threads_simul;
 
                 // TODO use connection pool from mariaDB

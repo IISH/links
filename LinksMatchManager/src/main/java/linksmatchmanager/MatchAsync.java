@@ -524,20 +524,20 @@ public class MatchAsync extends Thread
                 //ListMultimap<Integer, String> nameFreqMap = check_frequencies( debugfreq, qs, s1_idx );
                 check_frequencies( debugfreq, qs, s1_idx, nameFreqMap );
 
-                Multiset  < Integer> keys   = nameFreqMap.keys();
-                Collection< String > values = nameFreqMap.values();
+                Multiset  < Integer> nfmKeys   = nameFreqMap.keys();
+                Collection< String > nfmValues = nameFreqMap.values();
 
                 if( debugfreq ) {
                     System.out.println( "nameFreqMap entries: " + nameFreqMap.size() );
-                    System.out.println( String.format( "ordered keys: %s, ordered values: %s", keys.toString(), values.toString() ) );
+                    System.out.println( String.format( "ordered keys: %s, ordered values: %s", nfmKeys.toString(), nfmValues.toString() ) );
                 }
 
                 boolean recheck_firstnames = false;
                 if( qs.firstname_method != 2 ) { recheck_firstnames = true; }   // not only firstname1 used
 
                 // Use the first emfp_name (lowest frequency, i.e. index = 0) category to determine the variant names
-                Integer freq_key0 = (Integer)  keys.toArray()[ 0 ];
-                String emfp_name0 = (String) values.toArray()[ 0 ];
+                Integer freq_key0 = (Integer)  nfmKeys.toArray()[ 0 ];
+                String emfp_name0 = (String) nfmValues.toArray()[ 0 ];
 
                 if( emfp_name0.endsWith( "_firstname" ) )
                 {
@@ -571,7 +571,7 @@ public class MatchAsync extends Thread
                         if( debugfreq ) {
                             System.out.println( "===< new firstname >============================================================" );
                             System.out.println( String.format( "s1_firstname1 = %d, s1_firstname1_str = %s", s1_firstname1, s1_firstname1_str ) );
-                            System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", keys.size(), freq_key0, emfp_name0 ) );
+                            System.out.println( String.format( "match name 0-of-%d: key: %d, name: %s", nfmKeys.size(), freq_key0, emfp_name0 ) );
                             System.out.println( "changed firstname: get Levenshtein variants..." );
                         }
 
@@ -623,7 +623,7 @@ public class MatchAsync extends Thread
                         if( debugfreq ) {
                             System.out.println( "===< new familyname >===========================================================" );
                             System.out.println( String.format( "s1_familyname = %d, s1_familyname_str = %s", s1_familyname, s1_familyname_str ) );
-                            System.out.println( String.format( "match name 0-of-%d: key: freq = %d, value: emfp_name = %s", keys.size(), freq_key0, emfp_name0 ) );
+                            System.out.println( String.format( "match name 0-of-%d: key: freq = %d, value: emfp_name = %s", nfmKeys.size(), freq_key0, emfp_name0 ) );
                             System.out.println( "changed familyname: get Levenshtein variants..." );
                         }
 
@@ -708,16 +708,16 @@ public class MatchAsync extends Thread
                             }
 
                             // compare the used names
-                            if( debugfreq ) { System.out.println( "keys.size(): " + keys.size() ); }
-                            for( int n = 0; n < keys.size(); n++ )    // other names in increasing frequency order
+                            if( debugfreq ) { System.out.println( "nfmKeys.size(): " + nfmKeys.size() ); }
+                            for( int n = 0; n < nfmKeys.size(); n++ )    // other names in increasing frequency order
                             {
-                                Integer freq_key = (Integer)  keys.toArray()[ n ];
-                                String emfp_name = (String) values.toArray()[ n ];
+                                Integer freq_key = (Integer)  nfmKeys.toArray()[ n ];
+                                String emfp_name = (String) nfmValues.toArray()[ n ];
 
                                 if( debugfreq ) {
                                     System.out.println( "...< names >...................................................................." );
                                     System.out.println( "n: " + n );
-                                    System.out.println( String.format( "match name, step %d-of-%d: key: freq = %d, value = emfp_name: %s", n+1, keys.size(), freq_key, emfp_name ) );
+                                    System.out.println( String.format( "match name, step %d-of-%d: key: freq = %d, value = emfp_name: %s", n+1, nfmKeys.size(), freq_key, emfp_name ) );
                                 }
 
                                 int lvs_dist = -1;
@@ -765,6 +765,18 @@ public class MatchAsync extends Thread
                                 }
                             }
 
+                            // Name comparisons done
+                            ///*
+                            if( debug_hmemleak )    // check-5 = FAIL
+                            {
+                                if( loop_hmemleak == 0 && s1_idx == 0 ) {
+                                    loop_hmemleak += 1;
+                                    System.out.println( "debug_hmemleak-5: after comparisons" );
+                                }
+                                continue;
+                            }
+                            //*/
+
                             if( names_matched )   // passed all name pairs comparisons
                             {
                                 // Check min max
@@ -795,8 +807,8 @@ public class MatchAsync extends Thread
                                 }
 
                                 // Requested comparisons done
-                                ///*
-                                if( debug_hmemleak )    // check-4 =
+                                /*
+                                if( debug_hmemleak )    // check-4 = FAIL
                                 {
                                     if( loop_hmemleak == 0 && s1_idx == 0 ) {
                                         loop_hmemleak += 1;
@@ -804,7 +816,7 @@ public class MatchAsync extends Thread
                                     }
                                     continue;
                                 }
-                                //*/
+                                */
 
                                 // Also passed minmax & gender test
                                 if( s2_idx_matches.indexOf( s2_idx ) != -1 )
@@ -903,6 +915,9 @@ public class MatchAsync extends Thread
 
                 //nameFreqMap.clear();
                 //nameFreqMap = null;
+
+                nfmKeys.clear();
+                nfmValues.clear();
 
                 System.out.flush();
                 System.err.flush();
