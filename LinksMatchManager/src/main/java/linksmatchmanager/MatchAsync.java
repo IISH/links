@@ -51,7 +51,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-17-Jan-2019 Also date in timestamp
  * FL-19-Feb-2019 Heap memory leak?
  * FL-12-Mar-2019 Use HikariDataSource
- * FL-15-Apr-2019
+ * FL-20-Apr-2019 Use intern() on levenshtein query strings
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -68,6 +68,10 @@ public class MatchAsync extends Thread
 
     //boolean debugfail = false;     // debug match failures
     //boolean debugfreq = false;     // debug name frequencies
+
+    // 13-Feb-2919 debug heap memory leak
+    boolean debug_hmemleak = true;
+    int loop_hmemleak = 0;
 
     boolean debug;
     boolean dry_run;
@@ -277,10 +281,6 @@ public class MatchAsync extends Thread
         // the wall clock time then you can get this via ThreadMXBean. Basically, do this at the start:
         ThreadMXBean threadMXB = ManagementFactory.getThreadMXBean();
         threadMXB.setThreadCpuTimeEnabled( true );
-
-        // 13-Feb-2919 debug heap memory leak
-        boolean debug_hmemleak = true;
-        int loop_hmemleak = 0;
 
         // in order to show the indexes when an exception occurs, we define copies outside the try/catch
         int s1_idx_cpy  = 0;
@@ -766,7 +766,7 @@ public class MatchAsync extends Thread
                             }
 
                             // Name comparisons done
-                            ///*
+                            /*
                             if( debug_hmemleak )    // check-5 = FAIL
                             {
                                 if( loop_hmemleak == 0 && s1_idx == 0 ) {
@@ -775,7 +775,7 @@ public class MatchAsync extends Thread
                                 }
                                 continue;
                             }
-                            //*/
+                            */
 
                             if( names_matched )   // passed all name pairs comparisons
                             {
@@ -1062,6 +1062,8 @@ public class MatchAsync extends Thread
             //long userTimeNsec = thx.getCurrentThreadUserTime();  // elapsed user time in nanoseconds
             //long userTimeMsec = TimeUnit.NANOSECONDS.toMillis( userTimeNsec );
             //elapsedShowMessage( "user m time elapsed", 0, userTimeMsec );   // user mode part of thread time
+
+            System.gc();    // request Garbage Collection
         }
         catch( Exception ex1 )
         {
@@ -1845,6 +1847,19 @@ public class MatchAsync extends Thread
     {
         int lvs_dist = -1;      // -1 = no match, otherwise the found distance
 
+        // Skip compareLvsNames
+        /*
+        if( debug_hmemleak )    // check-6 = OK
+        {
+            if( loop_hmemleak == 0 ) {
+                loop_hmemleak += 1;
+                System.out.println( "debug_hmemleak-6: after comparisons" );
+            }
+            //continue;
+            return lvs_dist;
+        }
+        */
+
         try
         {
             if( debug ) {
@@ -1873,6 +1888,14 @@ public class MatchAsync extends Thread
                 query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
                 query += "ORDER BY value;";
             }
+
+            // It appears that the multitude of these queries lead to extreme heap usage.
+            // https://stackify.com/memory-leaks-java/
+            // Use of query.intern() avoids duplicate strings.
+            // Combine intern() with Java-8 (or better),
+            // which puts these strings in Metaspace instead of PermGen space.
+            // Finally we put a System.gc(); at the end of the thread and hope that helps also.
+            query.intern();
 
             ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
 
@@ -1914,6 +1937,19 @@ public class MatchAsync extends Thread
             ex.printStackTrace();
             System.exit( 1 );
         }
+
+        // Ignore compareLvsNames
+        /*
+        if( debug_hmemleak )    // check-7 = FAIL [without intern()]
+        {
+            if( loop_hmemleak == 0 ) {
+                loop_hmemleak += 1;
+                System.out.println( "debug_hmemleak-7: after comparisons" );
+            }
+            //continue;
+            lvs_dist = -1;
+        }
+        */
 
         if( debug ) { System.out.println( "compareLvsNames(): lvs_dist = " + lvs_dist );  }
         return lvs_dist;
