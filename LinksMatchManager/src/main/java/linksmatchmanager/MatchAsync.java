@@ -8,6 +8,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.text.SimpleDateFormat;
@@ -1853,82 +1854,71 @@ public class MatchAsync extends Thread
         {
             if( loop_hmemleak == 0 ) {
                 loop_hmemleak += 1;
-                System.out.println( "debug_hmemleak-6: after comparisons" );
+                System.out.println( "debug_hmemleak-6: skip compareLvsNames" );
             }
-            //continue;
             return lvs_dist;
         }
         */
 
-        try
+        //if( debug ) {
+        //    String msg = "compareLvsNames(): s1Name = " + s1Name + ", s2Name = " + s2Name;
+        //    System.out.println( msg ); plog.show( msg );
+        //}
+
+        // the "ORDER BY value" gives us the smallest lvs distances first
+        String query = "";
+
+        // this query assumes the lvs_table is a symmetric (double-sized) lvs table
+        //query += "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";   // old version
+        //query += "SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";
+
+        // this query assumes the lvs_table is an asymmetric (single-sized) lvs table
+        if( debug )
         {
-            if( debug ) {
-                String msg = "compareLvsNames(): s1Name = " + s1Name + ", s2Name = " + s2Name;
-                System.out.println( msg ); plog.show( msg );
-            }
+            query += "( SELECT name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
+            query += "UNION ALL ";
+            query += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
+            query += "ORDER BY value;";
+            System.out.println( query );
+        }
+        else
+        {
+            query += "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
+            query += "UNION ALL ";
+            query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
+            query += "ORDER BY value;";
+        }
 
-            // the "ORDER BY value" gives us the smallest lvs distances first
-            String query = "";
-
-            // this query assumes the lvs_table is a symmetric (double-sized) lvs table
-            //query += "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";   // old version
-            //query += "SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value";
-
-            // this query assumes the lvs_table is an asymmetric (single-sized) lvs table
-            if( debug ) {
-                query += "( SELECT name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
-                query += "UNION ALL ";
-                query += "( SELECT name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
-                query += "ORDER BY value;";
-                System.out.println( query );
-            }
-            else {
-                query += "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + s2Name + " ORDER BY value ) ";
-                query += "UNION ALL ";
-                query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + s2Name + " AND value <> 0 ) ";
-                query += "ORDER BY value;";
-            }
-
-            // It appears that the multitude of these queries lead to extreme heap usage.
-            // https://stackify.com/memory-leaks-java/
-            // Use of query.intern() avoids duplicate strings.
-            // Combine intern() with Java-8 (or better),
-            // which puts these strings in Metaspace instead of PermGen space.
-            // Finally we put a System.gc(); at the end of the thread and hope that helps also.
-            query.intern();
-
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
-
-            int nrecs = 0;
-            while( rs.next() )
+        try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
+        {
+            try( ResultSet rs = ps.executeQuery() )
             {
-                int name_int = rs.getInt( "name_int" );     // new
-
-                int lvs_dist_nrec = rs.getInt( "value" );
-
-                if( debug )
+                int nrecs = 0;
+                while( rs.next() )
                 {
-                    String name_str = rs.getString( "name_str" );
+                    int name_int = rs.getInt( "name_int" );     // new
+                    int lvs_dist_nrec = rs.getInt( "value" );
 
-                    if( nrecs == 0 ) { System.out.printf( lvs_table + " variant for %s (%d): ", name_str, name_int ); }
-                    System.out.printf( "%s (%d) ", name_str, name_int );
+                    if( debug )
+                    {
+                        String name_str = rs.getString( "name_str" );
+                        if( nrecs == 0 ) { System.out.printf( lvs_table + " variant for %s (%d): ", name_str, name_int ); }
+                        System.out.printf( "%s (%d) ", name_str, name_int );
+                    }
+
+                    if( s1Name == name_int )        // new
+                    {
+                        lvs_dist = lvs_dist_nrec;
+                        if( debug ) { System.out.println( "compareLvsNames(): match" );  }
+                        break;
+                    }
+
+                    nrecs++;
                 }
-
-                if( s1Name == name_int )        // new
-                {
-                    lvs_dist = lvs_dist_nrec;
-                    if( debug ) { System.out.println( "compareLvsNames(): match" );  }
-                    break;
-                }
-
-                nrecs++;
-            }
-            rs.close();
-            rs = null;
-
-            if( debug ) {
-                String msg = "nrecs: " + nrecs;
-                System.out.println( msg ); plog.show( msg );
+                //if( debug ) {
+                //    String msg = "nrecs: " + nrecs;
+                //    System.out.println( msg ); plog.show( msg );
+                //}
             }
         }
         catch( Exception ex ) {
@@ -1944,9 +1934,8 @@ public class MatchAsync extends Thread
         {
             if( loop_hmemleak == 0 ) {
                 loop_hmemleak += 1;
-                System.out.println( "debug_hmemleak-7: after comparisons" );
+                System.out.println( "debug_hmemleak-7: ignore compareLvsNames" );
             }
-            //continue;
             lvs_dist = -1;
         }
         */
