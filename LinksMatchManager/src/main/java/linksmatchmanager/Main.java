@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "23-Apr-2019 10:31";
+            String timestamp1 = "23-Apr-2019 16:02";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -158,7 +158,7 @@ public class Main
             String db_host             = args[ 0 ];
             String db_user             = args[ 1 ];
             String db_pass             = args[ 2 ];
-            String num_proc_str        = args[ 3 ];
+            String max_pool_size_str   = args[ 3 ];
             String max_threads_str     = args[ 4 ];
             String max_heap_table_size = args[ 5 ];
             String s1_sample_limit     = args[ 6 ];
@@ -188,8 +188,8 @@ public class Main
 
             plog.show( "Matching process started." );
 
-            int num_proc = Integer.parseInt( num_proc_str );
-            msg = String.format( "Assumed number of processors: %d", num_proc );
+            int max_pool_size = Integer.parseInt( max_pool_size_str );
+            msg = String.format( "MySQL Connection Pool: Maximum pool size (per db): %d", max_pool_size );
             System.out.println( msg ); plog.show( msg );
 
             int max_threads_simul = Integer.parseInt( max_threads_str );
@@ -214,18 +214,14 @@ public class Main
                 //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 //dbconMatch    = DatabaseManager.getConnection( db_host, dbnameMatch,    db_user, db_pass );
 
-                // Notice: If maximumPoolSize is less than max_threads_simul,
-                // the number of simultaneous matching threads is limited to maximumPoolSize
-                //int maximumPoolSize = 5;
-                //int maximumPoolSize = 10;                         // default
-                //int maximumPoolSize = 2 + 2 * num_proc;
-                //int maximumPoolSize = 2 + max_threads_simul;
-                int maximumPoolSize = 2 + 2 * max_threads_simul;
-                //int maximumPoolSize = 2 + 2 * max_threads_simul;
+                // Notice: If max_pool_size is less than max_threads_simul,
+                // the number of simultaneous matching threads is limited to max_pool_size
+                //int max_pool_size = 10;                         // default
+                //int max_pool_size = 2 + 2 * max_threads_simul;    // via command line
 
                 // TODO use connection pool from mariaDB
                 // https://mariadb.com/kb/en/library/pool-datasource-implementation/
-                HikariCP conPool = new HikariCP( maximumPoolSize, hikariConfigPathname, db_host, db_user, db_pass );
+                HikariCP conPool = new HikariCP( max_pool_size, hikariConfigPathname, db_host, db_user, db_pass );
 
                 dsrcPrematch = conPool.getDataSource( "links_prematch" );
                 dsrcMatch    = conPool.getDataSource( "links_match" );
