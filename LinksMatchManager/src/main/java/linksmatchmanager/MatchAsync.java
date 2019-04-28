@@ -53,6 +53,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-19-Feb-2019 Heap memory leak?
  * FL-12-Mar-2019 Use HikariDataSource
  * FL-20-Apr-2019 Use intern() on levenshtein query strings
+ * FL-27-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
+ *  TODO getLvsVariants2()
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -1714,54 +1716,53 @@ public class MatchAsync extends Thread
      */
     private void getLvsVariants1( int name_int, String lvs_table, int lvs_dist_max, Vector< Integer > lvsVariants, Vector< Integer > lvsDistances )
     {
-        try
+        String query = "";
+        if( debug ) {
+            query  = "( SELECT *, name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + " ) ";
+            query += "UNION ALL ";
+            query += "( SELECT *, name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 ) ";
+            query += "ORDER BY name_str;";
+        }
+        else {
+            query  = "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + ") ";
+            query += "UNION ALL ";
+            query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 );";
+        }
+
+        try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
         {
-            String query = "";
-            if( debug ) {
-                query  = "( SELECT *, name_int_2 AS name_int, name_str_2 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + " ) ";
-                query += "UNION ALL ";
-                query += "( SELECT *, name_int_1 AS name_int, name_str_1 AS name_str, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 ) ";
-                query += "ORDER BY name_str;";
-            }
-            else {
-                query  = "( SELECT name_int_2 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int + ") ";
-                query += "UNION ALL ";
-                query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 );";
-            }
-
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
-
-            if( debug ) {
-                String msg = String.format( "getLvsVariants1(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
-                System.out.println( msg ); plog.show( msg );
-                System.out.println( query ); plog.show( query );
-            }
-
-            int nrecs = 0;
-            while( rs.next() )
+            try( ResultSet rs = ps.executeQuery() )
             {
-                int name_int_rs = rs.getInt( "name_int" );
-                int lvs_dist_rs = rs.getInt( "value" );
-
                 if( debug ) {
-                    String name_str_1 = rs.getString( "name_str_1" );
-                    String name_str_2 = rs.getString( "name_str_2" );
-
-                    String msg = String.format( "variants for name_int = %d, name_str_1 = %s, name_str_2 = %s, lvs_dist: %d", name_int_rs, name_str_1, name_str_2, lvs_dist_rs );
+                    String msg = String.format( "getLvsVariants1(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
                     System.out.println( msg ); plog.show( msg );
+                    System.out.println( query ); plog.show( query );
                 }
 
-                lvsVariants .add( name_int_rs );
-                lvsDistances.add( lvs_dist_rs );
+                int nrecs = 0;
+                while( rs.next() )
+                {
+                    int name_int_rs = rs.getInt( "name_int" );
+                    int lvs_dist_rs = rs.getInt( "value" );
 
-                nrecs++;
-            }
-            rs.close();
-            rs = null;
+                    if( debug ) {
+                        String name_str_1 = rs.getString( "name_str_1" );
+                        String name_str_2 = rs.getString( "name_str_2" );
 
-            if( debug && nrecs != 0 ) {
-                String msg = String.format( "getLvsVariants1(): # of LvsVariants = %d\n", nrecs );
-                System.out.println( msg ); plog.show( msg );
+                        String msg = String.format( "variants for name_int = %d, name_str_1 = %s, name_str_2 = %s, lvs_dist: %d", name_int_rs, name_str_1, name_str_2, lvs_dist_rs );
+                        System.out.println( msg ); plog.show( msg );
+                    }
+
+                    lvsVariants .add( name_int_rs );
+                    lvsDistances.add( lvs_dist_rs );
+
+                    nrecs++;
+                }
+
+                if( debug && nrecs != 0 ) {
+                    String msg = String.format( "getLvsVariants1(): # of LvsVariants = %d\n", nrecs );
+                    System.out.println( msg ); plog.show( msg );
+                }
             }
         }
         catch( Exception ex ) {

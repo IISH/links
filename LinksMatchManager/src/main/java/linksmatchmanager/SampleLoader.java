@@ -1,6 +1,7 @@
 package linksmatchmanager;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.util.Vector;
@@ -27,7 +28,7 @@ import linksmatchmanager.DataSet.QuerySet;
 public class SampleLoader
 {
     PrintLogger plog;
-    private Connection db_conn;
+    private Connection dbconPrematch;
 
     private boolean use_mother;
     private boolean use_father;
@@ -150,7 +151,6 @@ public class SampleLoader
      * @param sample_no
      * @throws Exception
      */
-    //public SampleLoader( QuerySet qs, Connection dbconPrematch, int sample_no )
     public SampleLoader( PrintLogger plog, QuerySet qs, HikariDataSource dsrcPrematch, int sample_no )
     throws Exception
     {
@@ -173,12 +173,25 @@ public class SampleLoader
             return;
         }
 
+        long start = System.currentTimeMillis();
         System.out.printf( "Thread id %02d; SampleLoader() retrieving sample %d...\n", threadId, sample_no );
         System.out.printf( "Thread id %02d; %s\n", threadId, query );
 
-        try {
-            //db_conn = DatabaseManager.getConnection( db_host, db_name, db_user, db_pass );
-            db_conn = dsrcPrematch.getConnection();
+        try
+        {
+            dbconPrematch = dsrcPrematch.getConnection();
+
+            try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
+            {
+                try( ResultSet rs = ps.executeQuery() )
+                {
+                    String msg = String.format( "Thread id %02d; retrieved sample from links_base " , threadId );
+                    elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+                    System.out.printf( "Thread id %02d; filling the s1 vectors...\n", threadId );
+                    fillArrays( rs );
+                }
+            }
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; SampleLoader() Exception: %s", threadId, ex.getMessage() );
@@ -186,16 +199,11 @@ public class SampleLoader
             ex.printStackTrace( System.out );
             return;
         }
-
-
-        ResultSet rs = db_conn.createStatement().executeQuery( query );
-
-        fillArrays( rs );
-
-        rs.close();
-        rs = null;
-        if( db_conn != null ) { db_conn.close(); }
-        db_conn = null;
+        finally
+        {
+            dbconPrematch.close();
+            dbconPrematch = null;
+        }
 
         System.out.printf( "Thread id %02d; SampleLoader() done\n", threadId );
     } // SampleLoader

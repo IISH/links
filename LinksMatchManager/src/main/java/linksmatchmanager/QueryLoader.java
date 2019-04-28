@@ -1,6 +1,7 @@
 package linksmatchmanager;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.util.Vector;
@@ -21,6 +22,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-05-Jan-2018 Split fillArrays()
  * FL-02-Oct-2018 Added s1_id_persist_registration & s2_id_persist_registration to the vector zoo
  * FL-12-Mar-2019 HikariDataSource
+ * FL-28-Apr-2019 Using PreparedStatement
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -222,62 +224,75 @@ public class QueryLoader
         long threadId = Thread.currentThread().getId();
 
         System.out.printf( "Thread id %02d; QueryLoader()\n", threadId  );
-        Connection db_conn = null;
+        Connection dbconPrematch = null;
 
         // get set 1 from links_base
         long start = System.currentTimeMillis();
-        System.out.printf( "Thread id %02d; retrieving set 1 from links_base...\n", threadId );
+        System.out.printf( "Thread id %02d; retrieving sample 1 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s1_query );
 
-        try {
-            //db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass );
-            db_conn = dsrcPrematch.getConnection();
+        try
+        {
+            dbconPrematch = dsrcPrematch.getConnection();
+
+            try( PreparedStatement ps1 = dbconPrematch.prepareStatement( qs.s1_query ) )
+            {
+                try( ResultSet rs1 = ps1.executeQuery() )
+                {
+                    String msg = String.format( "Thread id %02d; retrieved sample 1 from links_base " , threadId );
+                    elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+                    System.out.printf( "Thread id %02d; filling the s1 vectors...\n", threadId );
+                    fillArrays_rs1( rs1 );
+                }
+            }
         }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
+        catch( Exception ex )
+        {
+            String msg = String.format( "Thread id %02d; QueryLoader() sample 1 Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
             ex.printStackTrace( System.out );
             return;
         }
-
-        ResultSet rs1 = db_conn.createStatement().executeQuery( qs.s1_query );
-        String msg = String.format( "Thread id %02d; retrieving sample 1 from links_base " , threadId );
-        elapsedShowMessage( msg, start, System.currentTimeMillis() );
-
-        System.out.printf( "Thread id %02d; filling the s1 vectors...\n", threadId );
-        fillArrays_rs1( rs1 );
-        rs1.close();
-        rs1 = null;
-        db_conn.close();
-        db_conn = null;
+        finally
+        {
+            dbconPrematch.close();
+            dbconPrematch = null;
+        }
 
         // get set 2 from links_base
         start = System.currentTimeMillis();
         System.out.printf( "Thread id %02d; retrieving sample 2 from links_base...\n", threadId );
         System.out.printf( "Thread id %02d; %s\n", threadId, qs.s2_query );
 
-        try {
-            //db_conn = DatabaseManager.getConnection( db_url, db_name, db_user, db_pass );
-            db_conn = dsrcPrematch.getConnection();
+        try
+        {
+            dbconPrematch = dsrcPrematch.getConnection();
+
+            try( PreparedStatement ps2 = dbconPrematch.prepareStatement( qs.s2_query ) )
+            {
+                try( ResultSet rs2 = ps2.executeQuery() )
+                {
+                    String msg = String.format( "Thread id %02d; retrieved sample 2 from links_base " , threadId );
+                    elapsedShowMessage( msg, start, System.currentTimeMillis() );
+
+                    System.out.printf( "Thread id %02d; filling the s2 vectors...\n", threadId );
+                    fillArrays_rs2( rs2 );
+                }
+            }
         }
-        catch( Exception ex ) {
-            msg = String.format( "Thread id %02d; QueryLoader() Exception: %s", threadId, ex.getMessage() );
+        catch( Exception ex )
+        {
+            String msg = String.format( "Thread id %02d; QueryLoader() sample 2 Exception: %s", threadId, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
             ex.printStackTrace( System.out );
             return;
         }
-
-        ResultSet rs2 = db_conn.createStatement().executeQuery( qs.s2_query );
-        //ResultSet rs2 = db_conn.createStatement().executeQuery( qs.query1data );     // only for matching TEST !
-        msg = String.format( "Thread id %02d; retrieving sample 2 from links_base " , threadId );
-        elapsedShowMessage( msg, start, System.currentTimeMillis() );
-
-        System.out.printf( "Thread id %02d; filling the s2 vectors...\n", threadId );
-        fillArrays_rs2( rs2 );
-        rs2.close();
-        rs2 = null;
-        db_conn.close();
-        db_conn = null;
+        finally
+        {
+            dbconPrematch.close();
+            dbconPrematch = null;
+        }
 
         System.out.printf( "Thread id %02d; QueryLoader() done\n", threadId );
     }
