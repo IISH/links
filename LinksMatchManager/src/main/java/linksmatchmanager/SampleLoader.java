@@ -19,7 +19,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-03-Jan-2018 Local db connection, no longer as function parameters (connections timeouts)
  * FL-04-Mar-2019 HikariCPDataSource
  * FL-04-Mar-2019 SampleLoader not finished? What has to be done?
- * FL-11-Mar-2019 HikariDataSource
+ * FL-29-Apr-2019 HikariDataSource
  *
  * Replacement of QueryLoader:
  * QueryLoader combines the s1 & s2 samples. SampleLoader keeps them separate,
@@ -181,9 +181,9 @@ public class SampleLoader
         {
             dbconPrematch = dsrcPrematch.getConnection();
 
-            try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
+            try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
             {
-                try( ResultSet rs = ps.executeQuery() )
+                try( ResultSet rs = pstmt.executeQuery() )
                 {
                     String msg = String.format( "Thread id %02d; retrieved sample from links_base " , threadId );
                     elapsedShowMessage( msg, start, System.currentTimeMillis() );

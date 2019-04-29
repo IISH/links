@@ -33,17 +33,17 @@ import java.util.logging.Logger;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
+//import linksmatchmanager.DatabaseManager;
 import com.zaxxer.hikari.HikariDataSource;
 
-//import linksmatchmanager.DatabaseManager;
-
 import linksmatchmanager.DataSet.InputSet;
-import linksmatchmanager.DataSet.NameLvsVariants;
+//import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
 
@@ -60,7 +60,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
- * FL-28-Apr-2019 Using PreparedStatement in QueryLoade(), TODO SampleLoader()
+ * FL-29-Apr-2019 Switching to PreparedStatement
  */
 
 public class Main
@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "28-Apr-2019 09:39";
+            String timestamp1 = "29-Apr-2019 11:48";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -245,44 +245,7 @@ public class Main
                 ex.printStackTrace();
             }
 
-            try
-            {
-                String query = "SHOW GLOBAL VARIABLES LIKE 'max_connections'";
-                System.out.println( query );
-                ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
-                rs.first();
-                int max_connections = rs.getInt( "Value" );
-                msg = String.format( "MySQL max_connections: %s", max_connections );
-                System.out.println( msg ); plog.show( msg );
-
-                query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size'";
-                System.out.println( query );
-                rs = dbconPrematch.createStatement().executeQuery( query );
-                rs.first();
-                OLD_max_heap_table_size = rs.getString( "Value" );
-                msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
-                System.out.println( msg ); plog.show( msg );
-                rs.close();
-                rs = null;
-            }
-            catch( Exception ex ) {
-                msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
-                System.out.println( msg );
-                ex.printStackTrace();
-            }
-
-            msg = String.format( "Setting MySQL max_heap_table_size to: %s", max_heap_table_size );
-            System.out.println( msg ); plog.show( msg );
-            try {
-                String query = "SET max_heap_table_size = " + max_heap_table_size;
-                System.out.println( query );
-                dbconPrematch.createStatement().execute( query );
-            }
-            catch( Exception ex ) {
-                msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
-                System.out.println( msg );
-                ex.printStackTrace();
-            }
+            OLD_max_heap_table_size = showMySqlInfo( mainThreadId, dbconPrematch, max_heap_table_size );
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
@@ -559,21 +522,22 @@ public class Main
                     plog.show( msg );
 
                     MatchAsync ma;          // Here begins threading
-                    NameLvsVariants nameLvsVariants = new NameLvsVariants();    // but no longer used
+
+                    //NameLvsVariants nameLvsVariants = new NameLvsVariants();    // but no longer used
 
                     if( qgs.get( n_qs ).method == 1 )
                     {
                         //ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
                         ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, dsrcPrematch, dsrcMatch, dsrcTemp,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
-                            rootFirstName, rootFamilyName, nameLvsVariants, true );
+                            rootFirstName, rootFamilyName, true );
                     }
                     else          // method == 0
                     {
                         //ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, db_host, db_user, db_pass,
                         ma = new MatchAsync( debug, dry_run, plog, sem, n_mp, n_qs, ql, s1, s2, qgs, inputSet, dsrcPrematch, dsrcMatch, dsrcTemp,
                             lvs_table_firstname_use, lvs_table_familyname_use, freq_table_firstname_use, freq_table_familyname_use,
-                            variantFirstName, variantFamilyName, nameLvsVariants );
+                            variantFirstName, variantFamilyName );
                     }
 
                     ma.start();
@@ -603,7 +567,6 @@ public class Main
             // the memory tables should only be dropped after all threads have finished.
             if( use_memory_tables )
             {
-                //dbconPrematch = DatabaseManager.getConnection( db_host, dbnamePrematch, db_user, db_pass );
                 dbconPrematch = dsrcPrematch.getConnection();
                 memtables_drop( dbconPrematch, lvs_table_familyname,  lvs_table_firstname,  name_postfix );
                 memtables_drop( dbconPrematch, freq_table_familyname, freq_table_firstname, name_postfix );
@@ -614,18 +577,27 @@ public class Main
 
             msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
+
             try
             {
-                String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
                 dbconPrematch = dsrcPrematch.getConnection();
-                dbconPrematch.createStatement().execute( query );
-                dbconPrematch.close();
-                dbconPrematch = null;
+
+                String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
+
+                try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+                {
+                    try( ResultSet rs = pstmt.executeQuery() ) { }
+                }
             }
             catch( Exception ex ) {
                 msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
                 System.out.println( msg );
                 ex.printStackTrace();
+            }
+            finally
+            {
+                dbconPrematch.close();
+                dbconPrematch = null;
             }
 
             if( dsrcPrematch != null ) { dsrcPrematch.close(); };
@@ -648,6 +620,83 @@ public class Main
         }
 
     } // main
+
+
+    /**
+     * Show some MySQL info
+     * @param mainThreadId
+     * @param dbcon
+     * @param NEW_max_heap_table_size
+     */
+    public static String showMySqlInfo( long mainThreadId, Connection dbcon, String NEW_max_heap_table_size )
+    {
+        String OLD_max_heap_table_size = "";
+
+        String query = "SHOW GLOBAL VARIABLES LIKE 'max_connections'";
+        System.out.println( query );
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            try( ResultSet rs = pstmt.executeQuery() )
+            {
+                rs.first();
+                int max_connections = rs.getInt( "Value" );
+                String msg = String.format( "MySQL max_connections: %s", max_connections );
+                System.out.println( msg ); plog.show( msg );
+            }
+        }
+        catch( Exception ex )
+        {
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+            ex.printStackTrace();
+        }
+
+        query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size'";
+        System.out.println( query );
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            try( ResultSet rs = pstmt.executeQuery() )
+            {
+                rs.first();
+                OLD_max_heap_table_size = rs.getString( "Value" );
+                String msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
+                System.out.println( msg ); plog.show( msg );
+            }
+        }
+        catch( Exception ex )
+        {
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+            ex.printStackTrace();
+        }
+
+        query = "SET max_heap_table_size = " + NEW_max_heap_table_size;
+        System.out.println( query );
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            String msg = String.format( "Setting MySQL max_heap_table_size to: %s", NEW_max_heap_table_size );
+            System.out.println( msg ); plog.show( msg );
+
+            try( ResultSet rs = pstmt.executeQuery() )
+            {
+                rs.first();
+                OLD_max_heap_table_size = rs.getString( "Value" );
+                msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
+                System.out.println( msg ); plog.show( msg );
+            }
+        }
+        catch( Exception ex )
+        {
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+            ex.printStackTrace();
+        }
+
+        return OLD_max_heap_table_size;
+    } // showMySqlInfo
 
 
     /**
@@ -674,7 +723,31 @@ public class Main
         System.out.printf( "nonHeapMax:    %s\n", String.valueOf( nonHeapUsage.getMax() ) );
         System.out.printf( "nonHeapCommit: %s\n", String.valueOf( nonHeapUsage.getCommitted() ) );
         System.out.printf( "nonHeapUsed:   %s\n", String.valueOf( nonHeapUsage.getUsed() ) );
-    }
+    } // showJVMInfo
+
+
+    private static void show_java_memory( long threadId )
+    {
+        final int MegaBytes = 10241024;
+
+        long freeMemory  = Runtime.getRuntime().freeMemory()  / MegaBytes;
+        long totalMemory = Runtime.getRuntime().totalMemory() / MegaBytes;
+        long maxMemory   = Runtime.getRuntime().maxMemory()   / MegaBytes;
+
+        String[] msgs =
+        {
+            String.format( "Thread id %02d; used  memory in JVM: %d MB", threadId, (maxMemory - freeMemory) ),
+            String.format( "Thread id %02d; free  memory in JVM: %d MB", threadId, freeMemory),
+            String.format( "Thread id %02d; total memory in JVM: %d MB", threadId, totalMemory ),   // shows current size of java heap
+            String.format( "Thread id %02d; max   memory in JVM: %d MB", threadId, maxMemory )
+        };
+
+        for( String msg : msgs )
+        {
+            try { plog.show( msg ); }
+            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+        }
+    } // show_java_memory
 
 
     /**
@@ -802,30 +875,6 @@ public class Main
     } // elapsedShowMessage
 
 
-    private static void show_java_memory( long threadId )
-    {
-        final int MegaBytes = 10241024;
-
-        long freeMemory  = Runtime.getRuntime().freeMemory()  / MegaBytes;
-        long totalMemory = Runtime.getRuntime().totalMemory() / MegaBytes;
-        long maxMemory   = Runtime.getRuntime().maxMemory()   / MegaBytes;
-        //Thread id %02d;
-        String[] msgs =
-        {
-            String.format( "Thread id %02d; used  memory in JVM: %d MB", threadId, (maxMemory - freeMemory) ),
-            String.format( "Thread id %02d; free  memory in JVM: %d MB", threadId, freeMemory),
-            String.format( "Thread id %02d; total memory in JVM: %d MB", threadId, totalMemory ),   // shows current size of java heap
-            String.format( "Thread id %02d; max   memory in JVM: %d MB", threadId, maxMemory )
-        };
-
-        for( String msg : msgs )
-        {
-            try { plog.show( msg ); }
-            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
-        }
-    } // show_java_memory
-
-
     private static void memtables_ls_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
         try
@@ -900,15 +949,17 @@ public class Main
 
     private static void memtable_drop( Connection dbcon, String table_name )
     {
-        try {
+        String query = "DROP TABLE " + table_name;
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
             String msg = "memtable_drop() " + table_name;
             System.out.println( msg ); plog.show( msg );
 
-            String query = "DROP TABLE " + table_name;
-
-            dbcon.createStatement().execute( query );
+            try( ResultSet rs = pstmt.executeQuery() ) { }
         }
-        catch( Exception ex ) {
+        catch( Exception ex )
+        {
             String err = "Exception in memtables_drop(): " + ex.getMessage();
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
@@ -923,15 +974,16 @@ public class Main
         String query = "SELECT COUNT(*) AS count FROM information_schema.tables " +
             "WHERE table_schema = 'links_prematch' AND table_name = '" + table_name + "'";
 
-        try {
-            ResultSet rs = dbcon.createStatement().executeQuery( query );
-            while( rs.next() )
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            try( ResultSet rs = pstmt.executeQuery() )
             {
-                int count = rs.getInt( "count" );
-                if( count == 1 ) { exists = true; }
+                while( rs.next() )
+                {
+                    int count = rs.getInt( "count" );
+                    if( count == 1 ) { exists = true; }
+                }
             }
-            rs.close();
-            rs = null;
         }
         catch( Exception ex ) {
             String err = "Exception in memtable_ls_exists(): " + ex.getMessage();
@@ -957,43 +1009,39 @@ public class Main
         System.out.println( msg );
         try { plog.show( msg ); } catch( Exception ex ) { ; }
 
-        try
+        String[] name_queries =
         {
-            String[] name_queries =
+            "CREATE TABLE " + dst_table
+                + " ( "
+                + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                + " `name_str` varchar(100) DEFAULT NULL,"
+                + " `frequency` int(10) unsigned DEFAULT NULL,"
+                + " PRIMARY KEY (`id`)"
+                + " )"
+                + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+            "TRUNCATE TABLE " + dst_table,
+
+            "ALTER TABLE " + dst_table + " DISABLE KEYS",
+
+            "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
+
+            "ALTER TABLE " + dst_table + " ENABLE KEYS"
+        };
+
+        for( String query : name_queries )
+        {
+            try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
             {
-                "CREATE TABLE " + dst_table
-                    + " ( "
-                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
-                    + " `name_str` varchar(100) DEFAULT NULL,"
-                    + " `frequency` int(10) unsigned DEFAULT NULL,"
-                    + " PRIMARY KEY (`id`)"
-                    + " )"
-                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
-
-                "TRUNCATE TABLE " + dst_table,
-
-                "ALTER TABLE " + dst_table + " DISABLE KEYS",
-
-                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
-
-                "ALTER TABLE " + dst_table + " ENABLE KEYS"
-            };
-
-            for( String query : name_queries ) { dbcon.createStatement().execute( query ); }
-        }
-        catch( Exception ex ) {
-            String err = ex.getMessage();
-            msg = "Exception in memtable_freq_name(): " + err;
-            System.out.println( msg );
-
-            try {
-                plog.show( msg );
-                System.out.println( "EXIT" ); plog.show( "EXIT" );
-                System.exit( 1 );       // should not continue; would give wrong matching results.
+                try( ResultSet rs = pstmt.executeQuery() ) { }
             }
-            catch( Exception ex1 ) {
+            catch( Exception ex )
+            {
+                String err = ex.getMessage();
+                msg = "Exception in memtable_freq_name(): " + err;
+                System.out.println( msg );
                 System.out.println( "EXIT" );
-                System.exit( 1 );
+                System.exit( 1 );       // should not continue; would give wrong matching results.
             }
         }
     } // memtable_freq_name
@@ -1025,51 +1073,47 @@ public class Main
                     + "  KEY `name_int_1` (`name_int_1`)"
         */
 
-        try
+        String[] name_queries =
         {
-            String[] name_queries =
+            "CREATE TABLE " + dst_table
+                + " ( "
+                + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
+                + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
+                + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
+                + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
+                + "  `name_int_1` int(11) DEFAULT NULL,"
+                + "  `name_int_2` int(11) DEFAULT NULL,"
+                + "  `value` tinyint(3) unsigned DEFAULT NULL,"
+                + "  PRIMARY KEY (`id`),"
+                + "  KEY `name_int_1` (`name_int_1`),"
+                + "  KEY `name_int_2` (`name_int_2`),"
+                + "  KEY `value` (`value`)"
+                + " )"
+                + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
+
+            "TRUNCATE TABLE " + dst_table,
+
+            "ALTER TABLE " + dst_table + " DISABLE KEYS",
+
+            "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
+
+            "ALTER TABLE " + dst_table + " ENABLE KEYS"
+        };
+
+        for( String query : name_queries )
+        {
+            try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
             {
-                "CREATE TABLE " + dst_table
-                    + " ( "
-                    + " `id` int(10) unsigned NOT NULL AUTO_INCREMENT,"
-                    + "  `name_str_1` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                    + "  `name_str_2` varchar(100) COLLATE utf8_bin DEFAULT NULL,"
-                    + "  `length_1` mediumint(8) unsigned DEFAULT NULL,"
-                    + "  `length_2` mediumint(8) unsigned DEFAULT NULL,"
-                    + "  `name_int_1` int(11) DEFAULT NULL,"
-                    + "  `name_int_2` int(11) DEFAULT NULL,"
-                    + "  `value` tinyint(3) unsigned DEFAULT NULL,"
-                    + "  PRIMARY KEY (`id`),"
-                    + "  KEY `name_int_1` (`name_int_1`),"
-                    + "  KEY `name_int_2` (`name_int_2`),"
-                    + "  KEY `value` (`value`)"
-                    + " )"
-                    + " ENGINE = MEMORY DEFAULT CHARSET = utf8 COLLATE = utf8_bin",
-
-                "TRUNCATE TABLE " + dst_table,
-
-                "ALTER TABLE " + dst_table + " DISABLE KEYS",
-
-                "INSERT INTO " + dst_table + " SELECT * FROM " + src_table,
-
-                "ALTER TABLE " + dst_table + " ENABLE KEYS"
-            };
-
-            for( String query : name_queries ) { dbcon.createStatement().execute( query ); }
-        }
-        catch( Exception ex ) {
-            String err = ex.getMessage();
-            msg = "Exception in memtable_ls_name(): " + err;
-            System.out.println( msg );
-
-            try {
-                plog.show( msg );
-                System.out.println( "EXIT" ); plog.show( "EXIT" );
-                System.exit( 1 );       // should not continue; would give wrong matching results.
+                try( ResultSet rs = pstmt.executeQuery() ) { }
             }
-            catch( Exception ex1 ) {
+            catch( Exception ex )
+            {
+                String err = ex.getMessage();
+                msg = "Exception in memtable_ls_name(): " + err;
+                System.out.println( msg );
                 System.out.println( "EXIT" );
-                System.exit( 1 );
+                System.exit( 1 );       // should not continue; would give wrong matching results.
             }
         }
     } // memtable_ls_name
@@ -1089,15 +1133,21 @@ public class Main
 
             plog.show( String.format( "Deleting matches for match_process id: %d", id_match_process ) );
 
-            dbconMatch.createStatement().execute( query );
+            try( PreparedStatement pstmt = dbconMatch.prepareStatement( query ) )
+            {
+                try( ResultSet rs = pstmt.executeQuery() ) { }
+            }
+
         }
-        catch( Exception ex ) {
+        catch( Exception ex )
+        {
             System.out.println( query ); try { plog.show( query ); } catch( Exception ex2 ) { ; }
 
             long threadId = Thread.currentThread().getId();
             String err = String.format( "Thread id %02d; LinksMatchManager/deleteMatches() Exception: %s", threadId, ex.getMessage() );
             System.out.println( err );
-            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+            System.out.println( "EXIT" );
+            System.exit( 1 );       // should not continue; would give wrong matching results.
         }
     } // deleteMatches
 

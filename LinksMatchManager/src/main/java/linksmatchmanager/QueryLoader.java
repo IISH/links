@@ -22,7 +22,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-05-Jan-2018 Split fillArrays()
  * FL-02-Oct-2018 Added s1_id_persist_registration & s2_id_persist_registration to the vector zoo
  * FL-12-Mar-2019 HikariDataSource
- * FL-28-Apr-2019 Using PreparedStatement
+ * FL-29-Apr-2019 Using PreparedStatement
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -235,9 +235,9 @@ public class QueryLoader
         {
             dbconPrematch = dsrcPrematch.getConnection();
 
-            try( PreparedStatement ps1 = dbconPrematch.prepareStatement( qs.s1_query ) )
+            try( PreparedStatement pstmt1 = dbconPrematch.prepareStatement( qs.s1_query ) )
             {
-                try( ResultSet rs1 = ps1.executeQuery() )
+                try( ResultSet rs1 = pstmt1.executeQuery() )
                 {
                     String msg = String.format( "Thread id %02d; retrieved sample 1 from links_base " , threadId );
                     elapsedShowMessage( msg, start, System.currentTimeMillis() );
@@ -269,9 +269,9 @@ public class QueryLoader
         {
             dbconPrematch = dsrcPrematch.getConnection();
 
-            try( PreparedStatement ps2 = dbconPrematch.prepareStatement( qs.s2_query ) )
+            try( PreparedStatement pstmt2 = dbconPrematch.prepareStatement( qs.s2_query ) )
             {
-                try( ResultSet rs2 = ps2.executeQuery() )
+                try( ResultSet rs2 = pstmt2.executeQuery() )
                 {
                     String msg = String.format( "Thread id %02d; retrieved sample 2 from links_base " , threadId );
                     elapsedShowMessage( msg, start, System.currentTimeMillis() );

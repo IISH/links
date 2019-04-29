@@ -33,7 +33,7 @@ import com.zaxxer.hikari.HikariDataSource;
 //import linksmatchmanager.DatabaseManager;
 
 import linksmatchmanager.DataSet.InputSet;
-import linksmatchmanager.DataSet.NameLvsVariants;
+//import linksmatchmanager.DataSet.NameLvsVariants;
 import linksmatchmanager.DataSet.NameType;
 import linksmatchmanager.DataSet.QueryGroupSet;
 import linksmatchmanager.DataSet.QuerySet;
@@ -53,8 +53,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-19-Feb-2019 Heap memory leak?
  * FL-12-Mar-2019 Use HikariDataSource
  * FL-20-Apr-2019 Use intern() on levenshtein query strings
- * FL-27-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
- *  TODO getLvsVariants2()
+ * FL-29-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -114,7 +113,7 @@ public class MatchAsync extends Thread
 
     boolean isUseRoot = false;      // false for variant
 
-    NameLvsVariants nameLvsVariants;
+    //NameLvsVariants nameLvsVariants;
 
     Connection dbconPrematch = null;
     Connection dbconMatch    = null;
@@ -153,9 +152,9 @@ public class MatchAsync extends Thread
         String freq_table_familyname,
 
         int[][] variantFirstName,
-        int[][] variantFamilyName,
+        int[][] variantFamilyName
 
-        NameLvsVariants nameLvsVariants
+        //NameLvsVariants nameLvsVariants
     )
     {
         this.debug = debug;
@@ -191,7 +190,7 @@ public class MatchAsync extends Thread
         this.variantFirstName  = variantFirstName;
         this.variantFamilyName = variantFamilyName;
 
-        this.nameLvsVariants = nameLvsVariants;
+        //this.nameLvsVariants = nameLvsVariants;
 
         long threadId = Thread.currentThread().getId();
         System.out.printf( "Thread id %02d; MatchAsync: using variant names (instead of root names)\n", threadId );
@@ -232,7 +231,7 @@ public class MatchAsync extends Thread
         int[][] rootFirstName,
         int[][] rootFamilyName,
 
-        NameLvsVariants nameLvsVariants,
+        //NameLvsVariants nameLvsVariants,
 
         boolean root
     )
@@ -269,7 +268,7 @@ public class MatchAsync extends Thread
         this.rootFirstName  = rootFirstName;
         this.rootFamilyName = rootFamilyName;
 
-        this.nameLvsVariants = nameLvsVariants;
+        //this.nameLvsVariants = nameLvsVariants;
 
         this.isUseRoot = true;      // true for root
 
@@ -358,19 +357,23 @@ public class MatchAsync extends Thread
             */
 
             // database connections
-            //dbconPrematch = DatabaseManager.getConnection( db_host, "links_prematch", db_user, db_pass );
             dbconPrematch = dsrcPrematch.getConnection();
 
             // Show some db thread related stats
             String query = "SHOW STATUS WHERE variable_name LIKE 'Threads_%' OR variable_name = 'Connections'";
             System.out.println( query );
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
-            while( rs.next() )
+            try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
             {
-                String name = rs.getString("Variable_name");
-                int value   = rs.getInt("Value");
-                msg = String.format( "Thread id %02d; MySQL %s: %d", threadId, name, value );
-                System.out.println(msg); plog.show(msg);
+                try( ResultSet rs = pstmt.executeQuery() )
+                {
+                    while( rs.next() )
+                    {
+                        String name = rs.getString("Variable_name");
+                        int value   = rs.getInt("Value");
+                        msg = String.format( "Thread id %02d; MySQL %s: %d", threadId, name, value );
+                        System.out.println(msg); plog.show(msg);
+                    }
+                }
             }
 
             String csvFilename = "";
@@ -1593,58 +1596,23 @@ public class MatchAsync extends Thread
     {
         int freq = 0;
 
-        try
-        {
-            String query = "SELECT * FROM links_prematch." + freq_tablename + " WHERE id = " + id + ";";
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+        String query = "SELECT * FROM links_prematch." + freq_tablename + " WHERE id = " + id + ";";
 
-            while( rs.next() ) { freq = rs.getInt( "frequency" ); }
-            rs.close();
-            rs = null;
+        try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+        {
+            try( ResultSet rs = pstmt.executeQuery() )
+            {
+                while( rs.next() ) { freq = rs.getInt( "frequency" ); }
+            }
         }
-        catch( Exception ex ) {
+        catch( Exception ex )
+        {
             System.out.println( "Exception in getFrequency(): " + ex.getMessage() );
             ex.printStackTrace();
         }
 
         return freq;
-    } //
-
-
-    /**
-     * @param freq_tablename
-     * @param id_name
-     * @param id
-     * @return
-     */
-    public int getFrequencyStr( String freq_tablename, String id_name, int id )
-    {
-        int freq = 0;
-
-        try
-        {
-            String query = "SELECT * FROM links_prematch." + freq_tablename + " WHERE id = " + id + ";";
-            //System.out.println( id_name + ", query: " + query );
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
-
-            while( rs.next() ) {
-                freq = rs.getInt( "frequency" );
-                /*
-                String name = rs.getString( "name_str" );
-                String msg = String.format( "getFrequency() name: %s, freq: %d", name, freq );
-                System.out.println( msg );
-                */
-            }
-            rs.close();
-            rs = null;
-        }
-        catch( Exception ex ) {
-            System.out.println( "Exception in getFrequencyStr(): " + ex.getMessage() );
-            ex.printStackTrace();
-        }
-
-        return freq;
-    } // getFrequencyStr
+    } // getFrequency
 
 
     /**
@@ -1729,9 +1697,9 @@ public class MatchAsync extends Thread
             query += "( SELECT name_int_1 AS name_int, value FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_2 = " + name_int + " AND value <> 0 );";
         }
 
-        try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
+        try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
         {
-            try( ResultSet rs = ps.executeQuery() )
+            try( ResultSet rs = pstmt.executeQuery() )
             {
                 if( debug ) {
                     String msg = String.format( "getLvsVariants1(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
@@ -1765,7 +1733,8 @@ public class MatchAsync extends Thread
                 }
             }
         }
-        catch( Exception ex ) {
+        catch( Exception ex )
+        {
             System.out.println( "Exception in getLvsVariants1(): " + ex.getMessage() );
             System.out.println( "Abort" );
             System.exit( 1 );
@@ -1787,52 +1756,52 @@ public class MatchAsync extends Thread
      */
     private void getLvsVariants2( int name_int, String lvs_table, int lvs_dist_max, Vector< Integer > lvsVariants, Vector< Integer > lvsDistances )
     {
-        try
-        {
-            String query = "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int ;
-            ResultSet rs = dbconPrematch.createStatement().executeQuery( query );
+        String query = "SELECT * FROM links_prematch." + lvs_table + " WHERE value <= " + lvs_dist_max + " AND name_int_1 = " + name_int ;
 
-             if( debug ) {
+        try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+        {
+            if( debug ) {
                 String msg = String.format( "getLvsVariants2(): lvs_dist_max = %d, name_int = %d", lvs_dist_max, name_int );
                 System.out.println( msg ); plog.show( msg );
                 System.out.println( query ); plog.show( query );
-             }
+            }
 
-            int nrecs = 0;
-            while( rs.next() )
+            try( ResultSet rs = pstmt.executeQuery() )
             {
-                int name_int_2 = rs.getInt( "name_int_2" );
-                int lvs_dist   = rs.getInt( "value" );
+                int nrecs = 0;
+                while( rs.next() )
+                {
+                    int name_int_2 = rs.getInt( "name_int_2" );
+                    int lvs_dist   = rs.getInt( "value" );
 
-                if( debug ) {
-                    String name_str_1 = rs.getString( "name_str_1" );
-                    String name_str_2 = rs.getString( "name_str_2" );
+                    if( debug ) {
+                        String name_str_1 = rs.getString( "name_str_1" );
+                        String name_str_2 = rs.getString( "name_str_2" );
 
-                    if( nrecs == 0 ) {
-                        String msg = String.format( "variants for name_str_1 = %s (name_int_1 = %d): ", name_str_1, name_int );
+                        if( nrecs == 0 ) {
+                            String msg = String.format( "variants for name_str_1 = %s (name_int_1 = %d): ", name_str_1, name_int );
+                            System.out.println( msg ); plog.show( msg );
+                        }
+
+                        String msg = String.format( "name_str_2: %s (name_int_2: %d), lvs_dist: %d", name_str_2, name_int_2, lvs_dist );
                         System.out.println( msg ); plog.show( msg );
                     }
 
-                    String msg = String.format( "name_str_2: %s (name_int_2: %d), lvs_dist: %d", name_str_2, name_int_2, lvs_dist );
-                    System.out.println( msg ); plog.show( msg );
+                    lvsVariants .add( name_int_2 );
+                    lvsDistances.add( lvs_dist );
+
+                    nrecs++;
                 }
 
-                lvsVariants .add( name_int_2 );
-                lvsDistances.add( lvs_dist );
-
-                nrecs++;
+                if( debug && nrecs != 0 ) {
+                    String msg = String.format( "getLvsVariants2(): # of LvsVariants = %d\n", nrecs );
+                    System.out.println( msg ); plog.show( msg );
+                }
             }
-            rs.close();
-            rs = null;
-
-            if( debug && nrecs != 0 ) {
-                String msg = String.format( "getLvsVariants2(): # of LvsVariants = %d\n", nrecs );
-                System.out.println( msg ); plog.show( msg );
-            }
-
             //System.out.println( String.format( "getLvsVariants2(): # of LvsVariants = %d for name_int: %d\n", nrecs, name_int ) );
         }
-        catch( Exception ex ) {
+        catch( Exception ex )
+        {
             System.out.println( "Exception in getLvsVariants2(): " + ex.getMessage() );
             System.out.println( "Abort" );
             System.exit( 1 );
@@ -1890,9 +1859,9 @@ public class MatchAsync extends Thread
             query += "ORDER BY value;";
         }
 
-        try( PreparedStatement ps = dbconPrematch.prepareStatement( query ) )
+        try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
         {
-            try( ResultSet rs = ps.executeQuery() )
+            try( ResultSet rs = pstmt.executeQuery() )
             {
                 int nrecs = 0;
                 while( rs.next() )
