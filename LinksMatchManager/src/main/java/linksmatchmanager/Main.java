@@ -60,7 +60,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-29-Jan-2018 New db manager
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
- * FL-29-Apr-2019 Switching to PreparedStatement
+ * FL-13-May-2019 Switching to PreparedStatement
  */
 
 public class Main
@@ -125,7 +125,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "29-Apr-2019 11:48";
+            String timestamp1 = "13-May-2019 09:15";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -680,13 +680,7 @@ public class Main
             String msg = String.format( "Setting MySQL max_heap_table_size to: %s", NEW_max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
 
-            try( ResultSet rs = pstmt.executeQuery() )
-            {
-                rs.first();
-                OLD_max_heap_table_size = rs.getString( "Value" );
-                msg = String.format( "Getting MySQL max_heap_table_size: %s", OLD_max_heap_table_size );
-                System.out.println( msg ); plog.show( msg );
-            }
+            try( ResultSet rs = pstmt.executeQuery() ) { }
         }
         catch( Exception ex )
         {
