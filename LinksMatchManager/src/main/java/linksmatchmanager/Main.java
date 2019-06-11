@@ -61,6 +61,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
+ * FL-11-Jun-2019 Latest change
  */
 
 public class Main
@@ -125,7 +126,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "13-May-2019 09:15";
+            String timestamp1 = "11-Jun-2019 14:18";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );

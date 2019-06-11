@@ -35,6 +35,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-16-Aug-2017 Add chk_ booleans derived from minmax 0/1 inputs
  * FL-29-Jan-2018 Check for id_source = 0 == invalid
  * FL-01-Oct-2018 Add id_persist_registration to the s1&2 queries to be retrieved from links_base
+ * FL-11-Jun-2019 AND id_source IN (...) syntax
  */
 public class QueryGenerator
 {
@@ -494,6 +495,7 @@ public class QueryGenerator
                 // s1 id_source
                 if( ! s1_source.isEmpty() && ! s1_source.equals( "0" ) )
                 {
+                    /*
                     String s1_source_where = "";    // where string
 
                     if( s1_source.contains( "," ) )
@@ -510,11 +512,24 @@ public class QueryGenerator
                     else { s1_source_where += " id_source = " + s1_source; }
 
                     qs.s1_query += " AND " + s1_source_where;
+                    */
+                    String s1_source_in = "";    // where string
+                    if( s1_source.contains( "," ) )
+                    {
+                        for( String s : s1_source.split( "," ) ) {
+                            if( s1_source_in.isEmpty() ) { s1_source_in = s; }
+                            else { s1_source_in += ", " + s;}
+                        }
+                    }
+                    else { s1_source_in = s1_source; }
+
+                    qs.s1_query += " AND id_source IN (" + s1_source_in + ")";
                 }
 
                 // s2 id_source
                 if( ! s2_source.isEmpty() && ! s2_source.equals( "0" ) )
                 {
+                    /*
                     String s2_source_where = "";          // where string
 
                     if( s2_source.contains( "," ) )
@@ -532,6 +547,18 @@ public class QueryGenerator
                     else { s2_source_where += " id_source = " + s2_source; }
 
                     qs.s2_query += " AND " + s2_source_where;
+                    */
+                    String s2_source_in = "";    // where string
+                    if( s2_source.contains( "," ) )
+                    {
+                        for( String s : s2_source.split( "," ) ) {
+                            if( s2_source_in.isEmpty() ) { s2_source_in = s; }
+                            else { s2_source_in += ", " + s;}
+                        }
+                    }
+                    else { s2_source_in = s2_source; }
+
+                    qs.s2_query += " AND id_source IN (" + s2_source_in + ")";
                 }
 
                 // begin registration days
