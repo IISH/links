@@ -89,6 +89,7 @@ import linksmanager.ManagerGui;
  * FL-15-Oct-2018 Strip {} from id_persist_registration
  * FL-05-Dec-2018 Debug standardRegistrationDate()
  * FL-10-Dec-2018 Escape trailing backslash in ReportRegistration()
+ * FL-22-Jul-2019 StandardAgeLiteral bug
  *
  * TODO:
  * - check all occurrences of TODO
@@ -3815,25 +3816,99 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person        = rs.getInt( "id_person" );
                 int id_registration  = rs.getInt( "id_registration" );
+                int id_person        = rs.getInt( "id_person" );
 
-                String age_literal   = rs.getString( "age_literal" );
                 String role          = rs.getString( "role" );
+                String age_literal   = rs.getString( "age_literal" );
                 String age_day_str   = rs.getString( "age_day" );
                 String age_week_str  = rs.getString( "age_week" );
                 String age_month_str = rs.getString( "age_month" );
                 String age_year_str  = rs.getString( "age_year" );
 
-                if( age_literal == null || age_literal.isEmpty() ) { continue; }    // nothing to do
+                // clear destination fields
+                String updateQuery = ""
+                    + "UPDATE links_cleaned.person_c SET"
+                    + " age_literal = null,"
+                    + " age_day = null,"
+                    + " age_week = null,"
+                    + " age_month = null,"
+                    + " age_year = null"
+                    + " WHERE id_person = " + "" + id_person;
+                //if( debug ) { showMessage( updateQuery, false, true ); }
+                dbconCleaned.runQuery( updateQuery );
 
+                if( ( age_literal   == null || age_literal.isEmpty() ) &&
+                    ( age_day_str   == null || age_day_str.isEmpty() ) &&
+                    ( age_week_str  == null || age_week_str.isEmpty() ) &&
+                    ( age_month_str == null || age_month_str.isEmpty() ) &&
+                    ( age_year_str  == null || age_year_str.isEmpty() )
+                )
+                { continue; }           // nothing (more) to do
+
+                if( age_literal == null ) { age_literal = ""; }
                 if( role == null ) { role = ""; }
 
-                //if(  id_person == 3258692 ) { debug = true; }
+                //if(  id_registration == 36229656 ) { debug = true; }
                 //else { debug = false; continue; }
 
-                //if(  id_registration == 3517195 ) { debug = true; }
+                //if(  id_person == 117528653 ) { debug = true; }
                 //else { debug = false; continue; }
+
+                // strings to ints
+                int age_day   = 0;
+                int age_week  = 0;
+                int age_month = 0;
+                int age_year  = 0;
+
+                updateQuery = "UPDATE links_cleaned.person_c SET";
+
+                if( age_day_str == null )
+                { updateQuery += " age_day = null"; }
+                else
+                {
+                    try { age_day = Integer.parseInt( age_day_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                    updateQuery += " age_day = " + age_day;
+                }
+
+                if( age_week_str == null )
+                { updateQuery += ", age_week = null"; }
+                else
+                {
+                    try { age_week = Integer.parseInt( age_week_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                    updateQuery += ", age_week = " + age_week;
+                }
+
+                if( age_month_str == null )
+                { updateQuery += ", age_month = null"; }
+                else
+                {
+                    try { age_month = Integer.parseInt( age_month_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                    updateQuery += ", age_month = " + age_month;
+                }
+
+                if( age_year_str == null )
+                { updateQuery += ", age_year = null"; }
+                else
+                {
+                    try { age_year = Integer.parseInt( age_year_str ); }
+                    catch( NumberFormatException nfe ) { ; }
+                    updateQuery += ", age_year = " + age_year;
+                }
+                updateQuery += " WHERE id_person = " + "" + id_person;
+
+
+                if( age_literal.isEmpty() )     // write date components, and done
+                {
+                    if( debug ) { showMessage( updateQuery, false, true ); }
+                    dbconCleaned.runQuery( updateQuery );
+                    continue;
+                }
+
+                if( debug ) { showMessage( "id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
 
                 // birth certificates with role = Kind must have empty age_literal
                 if( ! ( age_literal.isEmpty() ) && role.equalsIgnoreCase( "kind" ) )
@@ -3844,56 +3919,8 @@ public class LinksCleanThread extends Thread
                     }
 
                     addToReportPerson( id_person, source, 267, age_literal + " Not empty" );    // warning 267
-
-                    // zero destination fields
-                    String value = "0";
-                    String query = "";
-
-                    query = PersonC.updateQuery( "age_literal", value, id_person );
-                    dbconCleaned.runQuery( query );
-
-                    query = PersonC.updateQuery( "age_year",    value, id_person );
-                    dbconCleaned.runQuery( query );
-
-                    query = PersonC.updateQuery( "age_month",   value, id_person );
-                    dbconCleaned.runQuery( query );
-
-                    query = PersonC.updateQuery( "age_week",    value, id_person );
-                    dbconCleaned.runQuery( query );
-
-                    query = PersonC.updateQuery( "age_day",     value, id_person );
-                    dbconCleaned.runQuery( query );
-
                     continue;
                 }
-
-                if( debug ) { showMessage( "id_person: " + id_person + ", age_literal: " + age_literal, false, true ); }
-
-                int age_day   = 0;
-                int age_week  = 0;
-                int age_month = 0;
-                int age_year  = 0;
-
-                if( ! ( age_day_str == null || age_day_str.isEmpty() ) ) {
-                    try { age_day = Integer.parseInt( age_day_str ); }
-                    catch( NumberFormatException nfe ) { ; }
-                }
-
-                if( ! ( age_week_str == null || age_week_str.isEmpty() ) ) {
-                    try { age_week = Integer.parseInt( age_week_str ); }
-                    catch( NumberFormatException nfe ) { ; }
-                }
-
-                if( ! ( age_month_str == null || age_month_str.isEmpty() ) ) {
-                    try { age_month = Integer.parseInt( age_month_str ); }
-                    catch( NumberFormatException nfe ) { ; }
-                }
-
-                if( ! ( age_year_str == null || age_year_str.isEmpty() ) ) {
-                    try { age_year = Integer.parseInt( age_year_str ); }
-                    catch( NumberFormatException nfe ) { ; }
-                }
-
 
                 boolean numeric = true;
                 int lit_year = 0;
@@ -4056,7 +4083,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , age_year , age_month , age_week , age_day ";
+            String selectQuery = "SELECT id_registration, id_person , age_year , age_month , age_week , age_day ";
             selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
@@ -4076,10 +4103,21 @@ public class LinksCleanThread extends Thread
                     stepstate += count_step;
                 }
 
-                int id_person = rs.getInt( "id_person" );
+                int id_registration = rs.getInt( "id_registration" );
+                int id_person       = rs.getInt( "id_person" );
 
-                //if(  id_person == 3258692 ) { debug = true; }
+                //if(  id_person == 117528653 ) { debug = true; }
                 //else { debug = false; continue; }
+
+                //String msg = String.format( "id_registration: %d, ", id_registration );
+                //    showMessage( msg, true, true );
+                /*
+                if(  id_registration == 36229656 ) {
+                    debug = true;
+                    { showMessage( "id_registration == 36229656", false, true ); }
+                }
+                else { debug = false; continue; }
+                */
 
                 int age_day   = 0;
                 int age_week  = 0;
