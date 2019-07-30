@@ -58,6 +58,300 @@
 
     //private int teller = 0;
 
+
+/**
+ * @param id
+ * @param id_source
+ * @param errorCode
+ * @param value
+ * @throws Exception
+ */
+    /*
+    private void addToReportRegistration_old( int id, String id_source, int errorCode, String value )
+    {
+        if( ! use_links_logs ) { return; }
+
+        boolean debug = false;
+        if( debug ) { showMessage( "addToReportRegistration()", false, true ); }
+
+        String errorCodeStr = Integer.toString( errorCode );
+
+        String cla = almmReport.value( "class",   errorCodeStr );
+        String con = almmReport.value( "content", errorCodeStr );
+
+        if( debug ) { System.out.println( "cla: " + cla + ", con: " + con ); }
+
+        // WORKAROUND
+        // replace error chars
+        value = value.replaceAll( "\\\\", "" );
+        value = value.replaceAll( "\\$", "" );
+        value = value.replaceAll( "\\*", "" );
+
+        con = con.replaceAll( "<.*>", value );
+        //con = LinksSpecific.prepareForMysql( con );
+        con = con.replace( "'",  "\\'" );             // escape single quotes
+        con = con.replace( "\"", "\\\"" );            // escape double quotes
+
+        // get registration values from links_original.registration_o
+        String location  = "";
+        String reg_type  = "";
+        String date      = "";
+        String sequence  = "";
+        String guid      = "";
+
+        String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+            + " FROM registration_o WHERE id_registration = " + id;
+
+        if( debug ) {
+            System.out.println( selectQuery );
+            showMessage( selectQuery, false, true );
+        }
+
+        try {
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+
+            rs.first();
+            location = rs.getString( "registration_location" );
+            reg_type = rs.getString( "registration_type" );
+            date     = rs.getString( "registration_date" );
+            sequence = rs.getString( "registration_seq" );
+            guid     = rs.getString( "id_persist_registration" );
+        }
+        catch( Exception ex ) {
+            showMessage( selectQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+        if( location == null) { location = ""; }
+        if( reg_type == null) { reg_type = ""; }
+        if( date     == null) { date     = ""; }
+        if( sequence == null) { sequence = ""; }
+        if( guid     == null) { guid     = ""; }
+
+        location = location.replace( "'",  "\\'" );     // escape single quotes
+        location = location.replace( "\"", "\\\"" );    // escape double quotes
+        location = location.replace( "\\", "\\\\" );    // escape backslash
+
+        reg_type = reg_type.replace( "'",  "\\'" );     // escape single quotes
+        reg_type = reg_type.replace( "\"", "\\\"" );    // escape double quotes
+        reg_type = reg_type.replace( "\\", "\\\\" );    // escape backslash
+
+        date = date.replace( "'",  "\\'" );             // escape single quotes
+        date = date.replace( "\"", "\\\"" );            // escape double quotes
+        date = date.replace( "\\", "\\\\" );            // escape backslash
+
+        sequence = sequence.replace( "'",  "\\'" );     // escape single quotes
+        sequence = sequence.replace( "\"", "\\\"" );    // escape double quotes
+        sequence = sequence.replace( "\\", "\\\\" );    // escape backslash
+
+        guid = guid.replace( "'",  "\\'" );             // escape single quotes
+        guid = guid.replace( "\"", "\\\"" );            // escape double quotes
+        guid = guid.replace( "\\", "\\\\" );            // escape backslash
+
+        String s = "INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( reg_key , id_source , report_class , report_type , content ,"
+            + " date_time , location , reg_type , date , sequence , guid )"
+            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+
+        if( debug ) {
+            System.out.println( s );
+            showMessage( s, false, true );
+        }
+
+        String insertQuery = "";
+        try {
+            insertQuery = String.format ( s,
+                id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, guid );
+            if( debug ) {
+                System.out.println( insertQuery );
+                showMessage( insertQuery, false, true );
+            }
+        }
+        catch( Exception ex )
+        {
+            System.out.println( "reg_key     : " + id );
+            System.out.println( "id_source   : " + id_source );
+            System.out.println( "report_class: " + cla.toUpperCase() );
+            System.out.println( "report_type : " + errorCode );
+            System.out.println( "content     : " + con );
+            System.out.println( "date_time   : " + "NOW()" );
+            System.out.println( "location    : " + location );
+            System.out.println( "reg_type    : " + reg_type );
+            System.out.println( "date        : " + date );
+            System.out.println( "sequence    : " + sequence );
+            System.out.println( "guid        : " + guid );
+
+            showMessage( s, false, true );
+            showMessage( insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
+
+        try { dbconLog.runQuery( insertQuery ); }
+        catch( Exception ex ) {
+            showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
+    } // addToReportRegistration_old
+    */
+
+
+/**
+ * @param id
+ * @param id_source
+ * @param errorCode
+ * @param value
+ * @throws Exception
+ */
+    /*
+    private void addToReportPerson_old( int id, String id_source, int errorCode, String value )
+    {
+        if( ! use_links_logs ) { return; }
+
+        boolean debug = false;
+        if( debug ) { showMessage( "addToReportPerson()", false, true ); }
+
+        String errorCodeStr = Integer.toString( errorCode );
+
+        String cla = almmReport.value( "class",   errorCodeStr );
+        String con = almmReport.value( "content", errorCodeStr );
+
+        if( debug ) { System.out.println( "cla: " + cla + ", con: " + con ); }
+
+        // WORKAROUND
+        // replace error chars
+        value = value.replaceAll( "\\\\", "" );
+        value = value.replaceAll( "\\$", "" );
+        value = value.replaceAll( "\\*", "" );
+
+        con = con.replaceAll( "<.*>", value );
+        //con = LinksSpecific.prepareForMysql( con );
+        con = con.replace( "'",  "\\'" );             // escape single quotes
+        con = con.replace( "\"", "\\\"" );            // escape double quotes
+
+        // get id_registration from links_original.person_o
+        String id_registration = "";
+        String role            = "";
+
+        String selectQuery1 = "SELECT id_registration, role FROM person_o WHERE id_person = " + id;
+        try {
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery1 );
+            rs.next();
+            id_registration = rs.getString( "id_registration" );
+            role            = rs.getString( "role" );
+        }
+        catch( Exception ex ) {
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace( new PrintStream( System.out ) );
+        }
+
+        // get registration values from links_original.registration_o
+        String location  = "";
+        String reg_type  = "";
+        String date      = "";
+        String sequence  = "";
+        String guid      = "";
+
+        if( !id_registration.isEmpty() )
+        {
+            String selectQuery2 = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+                + " FROM registration_o WHERE id_registration = " + id_registration;
+
+            if( debug ) { showMessage( selectQuery2, false, true ); }
+
+            try {
+                ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery2 );
+                rs.next();
+                location = rs.getString( "registration_location" );
+                reg_type = rs.getString( "registration_type" );
+                date     = rs.getString( "registration_date" );
+                sequence = rs.getString( "registration_seq" );
+                guid     = rs.getString( "id_persist_registration" );
+            }
+            catch( Exception ex ) {
+                showMessage( "source: " + id_source + "query: " + selectQuery2, false, true );
+                showMessage( ex.getMessage(), false, true );
+                ex.printStackTrace( new PrintStream( System.out ) );
+            }
+        }
+
+        if( location == null) { location = ""; }
+        if( reg_type == null) { reg_type = ""; }
+        if( date     == null) { date     = ""; }
+        if( sequence == null) { sequence = ""; }
+        if( guid     == null) { guid     = ""; }
+
+        location = location.replace( "'",  "\\'" );     // escape single quotes
+        location = location.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        reg_type = reg_type.replace( "'",  "\\'" );     // escape single quotes
+        reg_type = reg_type.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        date = date.replace( "'",  "\\'" );             // escape single quotes
+        date = date.replace( "\"", "\\\"" );            // escape quotes quotes
+
+        sequence = sequence.replace( "'",  "\\'" );     // escape single quotes
+        sequence = sequence.replace( "\"", "\\\"" );    // escape quotes quotes
+
+        guid = guid.replace( "'",  "\\'" );             // escape single quotes
+        guid = guid.replace( "\"", "\\\"" );            // escape quotes quotes
+
+        // to prevent: Data truncation: Data too long for column 'sequence'
+        if( sequence != null && sequence.length() > 20 )
+        { sequence = sequence.substring( 0, 20 ); }
+
+        String s = "INSERT INTO links_logs.`" + logTableName + "`"
+            + " ( pers_key , id_source , report_class , report_type , content ,"
+            + " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
+            + " VALUES ( %d , \"%s\" , \"%s\" , \"%s\" , \"%s\" , NOW() , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" , \"%s\" ) ;";
+
+        if( debug ) {
+            System.out.println( s );
+            showMessage( s, false, true );
+        }
+
+        String insertQuery = "";
+        try {
+            insertQuery = String.format ( s,
+                id, id_source, cla.toUpperCase(), errorCode, con, location, reg_type, date, sequence, role, id_registration, guid );
+            if( debug ) {
+                System.out.println( insertQuery );
+                showMessage( insertQuery, false, true );
+            }
+        }
+        catch( Exception ex )
+        {
+            System.out.println( "pers_key        : " + id );
+            System.out.println( "id_source       : " + id_source );
+            System.out.println( "report_class    : " + cla.toUpperCase() );
+            System.out.println( "report_type     : " + errorCode );
+            System.out.println( "content         : " + con );
+            System.out.println( "date_time       : " + "NOW()" );
+            System.out.println( "location        : " + location );
+            System.out.println( "reg_type        : " + reg_type );
+            System.out.println( "date            : " + date );
+            System.out.println( "sequence        : " + sequence );
+            System.out.println( "role            : " + role );
+            System.out.println( "id_registration : " + id_registration );
+            System.out.println( "guid            : " + guid );
+
+            showMessage( s, false, true );
+            showMessage( insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
+
+        try { dbconLog.runQuery( insertQuery ); }
+        catch( Exception ex ) {
+            showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );
+            showMessage( ex.getMessage(), false, true );
+            ex.printStackTrace();
+        }
+    } // addToReportPerson_old
+    */
+
 /**
  * Basic names temp
  * @param go

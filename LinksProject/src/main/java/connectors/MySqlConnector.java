@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -35,6 +36,7 @@ import java.sql.Statement;
  * FL-30-Jun-2014 Imported from OA backup
  * FL-01-Feb-2016 runQueryUpdate()
  * FL-20-Dec-2016 autoReconnect=true
+ * FL-29-Jul-2019 prepareStatement
  */
 public class MySqlConnector
 {
@@ -125,6 +127,17 @@ public class MySqlConnector
         conn.createStatement().execute(query);
         conn.createStatement().close();
 
+    }
+
+
+    /**
+     * Pepare Statement
+     * @throws Exception
+     */
+    public PreparedStatement prepareStatement( String query )
+    throws Exception
+    {
+        return conn.prepareStatement( query );
     }
 
 
