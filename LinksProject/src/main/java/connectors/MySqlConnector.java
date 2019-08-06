@@ -37,14 +37,14 @@ import java.sql.Statement;
  * FL-01-Feb-2016 runQueryUpdate()
  * FL-20-Dec-2016 autoReconnect=true
  * FL-29-Jul-2019 prepareStatement
+ * FL-05-Aug-2019 &disableMariaDbDriver
  */
 public class MySqlConnector
 {
     private Connection conn;    // Connection Object
 
     /**
-     * Contructor,
-     * This constructor connects to the given databas
+     * Constructor
      * @param url Database Location
      * @param db Database Name
      * @param user Database Username
@@ -52,11 +52,11 @@ public class MySqlConnector
      * @throws Exception When connection fails
      */
     public MySqlConnector(String url, String db, String user, String pass)
-            throws Exception {
+    throws Exception
+    {
         conn = connect(url, db, user, pass);
-        
-        // Set readonly
-        conn.isReadOnly();
+
+        //boolean readOnly = conn.isReadOnly();
     }
 
     /**
@@ -71,22 +71,27 @@ public class MySqlConnector
     private Connection connect( String url, String db, String user, String pass )
     throws Exception
     {
-        String driver = "org.gjt.mm.mysql.Driver";
+        //String driver = "org.gjt.mm.mysql.Driver";
+        String driver = "com.mysql.jdbc.Driver";
 
       //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&connectTimeout=0&socketTimeout=0";
       //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
+      //String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&autoReconnect=true&disableMariaDbDriver";
         String loc = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true&autoReconnect=true";
 
         String username = user;
         String password = pass;
 
-        Class.forName(driver);
+        // Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'.
+        // The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+        //Class.forName(driver);
         // Class.forName("externalModules.jdbcDriver.Driver").newInstance();
+
         return DriverManager.getConnection(loc, username, password);
     }
 
     /**
-     * Close connection to MySQL
+     * Close connection
      * @throws Exception If connection closing fails
      */
     public void close() throws Exception {

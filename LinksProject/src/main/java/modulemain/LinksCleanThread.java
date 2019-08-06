@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 
 // java.time Java SE 8, based on Joda-Time
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,11 +47,18 @@ import dataset.Remarks;
 import dataset.TableToArrayListMultimap;
 import dataset.ThreadManager;
 
+import com.zaxxer.hikari.HikariDataSource;
+
+import connectors.HikariConnection;
+import connectors.HikariCPool;
 import connectors.MySqlConnector;
+
 import enumdefinitions.TableType;
 import enumdefinitions.TimeType;
+
 import general.Functions;
 import general.PrintLogger;
+
 import linksmanager.ManagerGui;
 
 
@@ -91,6 +97,7 @@ import linksmanager.ManagerGui;
  * FL-10-Dec-2018 Escape trailing backslash in ReportRegistration()
  * FL-22-Jul-2019 StandardAgeLiteral bug
  * FL-30-Jul-2019 addToReportRegistration() cleanup
+ * FL-05-Aug-2019 split doDates() into 1 & 2
  *
  * TODO:
  * - check all occurrences of TODO
@@ -112,14 +119,29 @@ public class LinksCleanThread extends Thread
     //private TableToArrayListMultimap almmLitAge       = null;   // age_literal
 
     private JTextField outputLine;
-    private JTextArea  outputArea;
+    private JTextArea outputArea;
 
     private boolean dbconref_single = true;     // true: same ref for reading and writing
-    private MySqlConnector dbconRefWrite;       // used by almmReport
-    private MySqlConnector dbconRefRead;        // used by almmReport
-    private MySqlConnector dbconLog;            // logging  of errors/warnings
-    private MySqlConnector dbconOriginal;       // original data from A2A
-    private MySqlConnector dbconCleaned;        // cleaned, from original
+
+    // either this...
+    private MySqlConnector dbconLog      = null;    // logging  of errors/warnings
+    private MySqlConnector dbconRefRead  = null;    // used by almmReport
+    private MySqlConnector dbconRefWrite = null;    // used by almmReport
+    private MySqlConnector dbconOriginal = null;    // original data from A2A
+    private MySqlConnector dbconCleaned  = null;    // cleaned, from original
+
+    // or that...
+    private static HikariDataSource poolLog      = null;
+    private static HikariDataSource poolRefRead  = null;
+    private static HikariDataSource poolRefWrite = null;
+    private static HikariDataSource poolOriginal = null;
+    private static HikariDataSource poolCleaned  = null;
+
+    private static HikariConnection hconnLog      = null;
+    private static HikariConnection hconnRefRead  = null;
+    private static HikariConnection hconnRefWrite = null;
+    private static HikariConnection hconnOriginal = null;
+    private static HikariConnection hconnCleaned  = null;
 
     private Runtime r = Runtime.getRuntime();
     private String logTableName;
@@ -132,21 +154,21 @@ public class LinksCleanThread extends Thread
 
     private ManagerGui mg;
 
-    private String ref_url = "";            // reference db access
+    private String ref_url = "";               // reference db access
     private String ref_user = "";
     private String ref_pass = "";
     private String ref_db = "";
 
-    private String url = "";                // links db's access
-    private String user = "";
-    private String pass = "";
+    private String db_url = "";                 // links db's access
+    private String db_user = "";
+    private String db_pass = "";
 
     private String sourceIdsGui;
     private String RMtypesGui;
     private String RMtype_str;
 
     private int[] sourceList;                   // either sourceListAvail, or [sourceId] from GUI
-    private int   RMtype;                       // a list is currently not supported
+    private int RMtype;                       // a list is currently not supported
 
     private String endl = ". OK.";              // ".";
 
@@ -177,16 +199,16 @@ public class LinksCleanThread extends Thread
 
         this.plog = opts.getLogger();
         this.sourceIdsGui = opts.getSourceIds();
-        this.RMtypesGui   = opts.getRMtypes();
+        this.RMtypesGui = opts.getRMtypes();
 
         this.ref_url  = opts.getDb_ref_url();
         this.ref_user = opts.getDb_ref_user();
         this.ref_pass = opts.getDb_ref_pass();
         this.ref_db   = opts.getDb_ref_db();
 
-        this.url  = opts.getDb_url();
-        this.user = opts.getDb_user();
-        this.pass = opts.getDb_pass();
+        this.db_url  = opts.getDb_url();
+        this.db_user = opts.getDb_user();
+        this.db_pass = opts.getDb_pass();
 
         this.outputLine = outputLine;
         this.outputArea = outputArea;
@@ -238,63 +260,66 @@ public class LinksCleanThread extends Thread
                 {
                     //elapsedShowMessage( String.format( "Thread id %02d; Pre-loading all reference tables", threadId ), threadStart, System.currentTimeMillis() );
 
-                    String msg = String.format( "Thread id %02d; CleaningThread/run(): running for source %s, rmtype %s", threadId, source, rmtype  );
-                    plog.show( msg ); showMessage( msg, false, true );
+                    String msg = String.format("Thread id %02d; CleaningThread/run(): running for source %s, rmtype %s", threadId, source, rmtype);
+                    plog.show(msg);
+                    showMessage(msg, false, true);
 
-                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
+                    doRenewData(opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype);                     // GUI cb: Remove previous data
 
-                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype );      // GUI cb: Prepiece, Suffix
+                    doPrepieceSuffix(opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype);      // GUI cb: Prepiece, Suffix
 
-                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype );                  // GUI cb: Firstnames
+                    doFirstnames(opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype);                  // GUI cb: Firstnames
 
-                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype );               // GUI cb: Familynames
+                    doFamilynames(opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype);               // GUI cb: Familynames
 
-                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source, rmtype );                     // GUI cb: Locations
+                    doLocations(opts.isDbgLocations(), opts.isDoLocations(), source, rmtype);                     // GUI cb: Locations
 
-                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype );                     // GUI cb: Status and Sex
+                    doStatusSex(opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype);                     // GUI cb: Status and Sex
 
-                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source, rmtype );                  // GUI cb: Registration Type
+                    doRegistrationType(opts.isDbgRegType(), opts.isDoRegType(), source, rmtype);                  // GUI cb: Registration Type
 
-                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
+                    doOccupation(opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype);                  // GUI cb: Occupation
 
-                    doAge( opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                       // GUI cb: Age, Role,Dates
+                    doAge(opts.isDbgAge(), opts.isDoAge(), source, rmtype);                                       // GUI cb: Age, Role,Dates
 
-                    doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                    // GUI cb: Age, Role, Dates
+                    doRole(opts.isDbgRole(), opts.isDoRole(), source, rmtype);                                    // GUI cb: Age, Role, Dates
 
-                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Age, Role, Dates
+                    // doDates1(): all other datesfunctions
+                    doDates1(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                // GUI cb: Age, Role, Dates
+                    // doDates2(): only minMaxDateMain()
+                    doDates2(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                // GUI cb: Age, Role, Dates
 
-                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
+                    doMinMaxMarriage(opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype);      // GUI cb: Min Max Marriage
 
-                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );   // GUI cb: Parts to Full Date
+                    doPartsToFullDate(opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype);   // GUI cb: Parts to Full Date
 
-                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );      // GUI cb: Days since begin
+                    doDaysSinceBegin(opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype);      // GUI cb: Days since begin
 
-                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
+                    doPostTasks(opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype);                     // GUI cb: Post Tasks
 
-                    doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    doFlagRegistrations(opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype);   // GUI cb: Remove Duplicate Reg's
 
-                    doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagPersonRecs(opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype);   // GUI cb: Remove Empty Role Reg's
 
-                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
+                    doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype);                           // GUI cb: Scan Remarks
+                } catch (Exception ex) {
+                    String msg = String.format("Thread id %02d; Exception: %s", threadId, ex.getMessage());
+                    showMessage(msg, false, true);
+                    ex.printStackTrace(new PrintStream(System.out));
                 }
-                catch( Exception ex ) {
-                    String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
-                    showMessage( msg, false, true );
-                    ex.printStackTrace( new PrintStream( System.out ) );
-                }
 
-                String msg = String.format( "Thread id %02d; Cleaning source %s is done", threadId, source );
-                showTimingMessage( msg, threadStart );
-                System.out.println( msg );
+                String msg = String.format("Thread id %02d; Cleaning source %s is done", threadId, source);
+                showTimingMessage(msg, threadStart);
+                System.out.println(msg);
 
                 LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
-                msg = String.format( "Thread id %02d; current time: %s", threadId, timePoint.toString() );
-                showMessage( msg, false, true );
+                msg = String.format("Thread id %02d; current time: %s", threadId, timePoint.toString());
+                showMessage(msg, false, true);
 
                 int count = tm.removeThread();
-                msg = String.format( "Thread id %02d; Remaining cleaning threads: %d\n", threadId, count );
-                showMessage( msg, false, true );
-                System.out.println( msg );
+                msg = String.format("Thread id %02d; Remaining cleaning threads: %d\n", threadId, count);
+                showMessage(msg, false, true);
+                System.out.println(msg);
             }
         } // CleaningThread inner class
 
@@ -305,82 +330,104 @@ public class LinksCleanThread extends Thread
         {
             long cleanStart = System.currentTimeMillis();
 
-            plog.show( String.format( "Thread id %02d; Main thread, LinksCleanThread/run()", mainThreadId ) );
+            plog.show(String.format("Thread id %02d; Main thread, LinksCleanThread/run()", mainThreadId));
 
             String msg = "";
-            if( dbconref_single ) { msg = String.format( "Thread id %02d; Using the same reference db for reading and writing", mainThreadId ); }
-            else { msg = String.format( "Thread id %02d; Reference db: reading locally, writing to remote db", mainThreadId ); }
-            plog.show( msg ); showMessage( msg, false, true );
+            if (dbconref_single) {
+                msg = String.format("Thread id %02d; Using the same reference db for reading and writing", mainThreadId);
+            } else {
+                msg = String.format("Thread id %02d; Reference db: reading locally, writing to remote db", mainThreadId);
+            }
+            plog.show(msg);
+            showMessage(msg, false, true);
 
-            outputLine.setText( "" );
-            outputArea.setText( "" );
+            outputLine.setText("");
+            outputArea.setText("");
 
-            connectToDatabases();                                       // Create databases connectors
+            connectToDatabases();                           // Create database connectors
 
-            System.out.println( "Using links_logs for error logging: " + use_links_logs );
-            msg = String.format( "Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs );
-            plog.show( msg ); showMessage( msg, false, true );
+            //connectHikariToDatabases();                     // Create database Hikari connections
+            // TODO use connection pool from mariaDB
+            // https://mariadb.com/kb/en/library/pool-datasource-implementation/
 
-            if( use_links_logs ) {
+            int max_pool_size = 10;
+            String hikariConfigPathname = "";      // ?
+            HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, hikariConfigPathname, ref_url, ref_user, ref_pass );
+            HikariCPool conPool_links  = new HikariCPool( max_pool_size, hikariConfigPathname, db_url,  db_user,  db_pass );
+
+            //dsrcPrematch = conPool.getDataSource( "links_prematch" );
+            //dsrcMatch    = conPool.getDataSource( "links_match" );
+            //dsrcTemp     = conPool.getDataSource( "links_temp" );
+
+
+            System.out.println("Using links_logs for error logging: " + use_links_logs);
+            msg = String.format("Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs);
+            plog.show(msg);
+            showMessage(msg, false, true);
+
+            if (use_links_logs) {
                 logTableName = LinksSpecific.getLogTableName();
                 createLogTable();                                           // Create log table with timestamp
             }
 
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
-            sourceList = createSourceList( sourceIdsGui, sourceListAvail );
+            sourceList = createSourceList(sourceIdsGui, sourceListAvail);
 
             String s = "";
-            if( sourceList.length == 1 )
-            {
+            if (sourceList.length == 1) {
                 multithreaded = false;  // only 1 source
-                s = String.format( "Thread id %02d; Processing source: ", mainThreadId );
+                s = String.format("Thread id %02d; Processing source: ", mainThreadId);
+            } else {
+                s = String.format("Thread id %02d; Processing sources: ", mainThreadId);
             }
-            else
-            { s = String.format("Thread id %02d; Processing sources: ", mainThreadId ); }
 
-            for( int i : sourceList ) { s = s + i + " "; }
-            showMessage( s, false, true );
+            for (int i : sourceList) {
+                s = s + i + " ";
+            }
+            showMessage(s, false, true);
 
             // we currently only support a single rmtype, not a list
             try {
-                int rmtype_int = Integer.parseInt( RMtypesGui );    // test for (single) int
+                int rmtype_int = Integer.parseInt(RMtypesGui);    // test for (single) int
                 rmtype = RMtypesGui;                                // but we use the string
-            }
-            catch( NumberFormatException nfex ) {
+            } catch (NumberFormatException nfex) {
                 rmtype = "";
                 //msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, nfex.getMessage() );
                 //nfex.printStackTrace( new PrintStream( System.out ) );
-                if( ! RMtypesGui.isEmpty() ) { showMessage( "Not using registration_maintype", false, true ); }
+                if (!RMtypesGui.isEmpty()) {
+                    showMessage("Not using registration_maintype", false, true);
+                }
             }
-            msg = String.format( "Thread id %02d; rmtype: %s", mainThreadId, rmtype );
-            showMessage( msg, false, true );
+            msg = String.format("Thread id %02d; rmtype: %s", mainThreadId, rmtype);
+            showMessage(msg, false, true);
 
             // links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors
-            showMessage( String.format( "Thread id %02d; Loading report table", mainThreadId ), false, true );
-            almmReport = new TableToArrayListMultimap( dbconRefRead, "ref_report", "type", null );
+            showMessage(String.format("Thread id %02d; Loading report table", mainThreadId), false, true);
+            almmReport = new TableToArrayListMultimap(dbconRefRead, "ref_report", "type", null);
 
 
-            if( multithreaded )
+            if (multithreaded)
             {
-                ThreadManager tm = new ThreadManager( max_threads_simul );
-                msg = String.format( "Thread id %02d; Multi-threaded cleaning with max %d simultaneous cleaning threads", mainThreadId, max_threads_simul );
+                ThreadManager tm = new ThreadManager(max_threads_simul);
+                msg = String.format("Thread id %02d; Multi-threaded cleaning with max %d simultaneous cleaning threads", mainThreadId, max_threads_simul);
 
-                plog.show( msg ); showMessage( msg, false, true );
+                plog.show(msg);
+                showMessage(msg, false, true);
 
                 long timeStart = System.currentTimeMillis();
 
-                ArrayList< CleaningThread > threads = new ArrayList();
+                ArrayList<CleaningThread> threads = new ArrayList();
 
-                for ( int sourceId : sourceList )
+                for (int sourceId : sourceList)
                 {
-                    while( ! tm.allowNewThread() )  // Wait until our thread manager gives permission
+                    while( !tm.allowNewThread() )  // Wait until our thread manager gives permission
                     {
-                        plog.show( String.format( "Thread id %02d; No permission for new thread: Waiting 60 seconds", mainThreadId ) );
-                        Thread.sleep( 60000 );
+                        plog.show(String.format("Thread id %02d; No permission for new thread: Waiting 60 seconds", mainThreadId));
+                        Thread.sleep(60000);
                     }
                     tm.addThread();        // Add a thread to the thread count
 
-                    String source = Integer.toString( sourceId );
+                    String source = Integer.toString(sourceId);
                     CleaningThread ct = new CleaningThread( tm, source, rmtype );
                     ct.start();
                     threads.add( ct );
@@ -389,92 +436,97 @@ public class LinksCleanThread extends Thread
                 // join the threads: main thread must wait for children to finish
                 for( CleaningThread ct : threads ) { ct.join(); }
 
-                msg = String.format( String.format( "Thread id %02d; Main thread; Cleaning Finished.", mainThreadId ) );
-                elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
-                System.out.println( msg );
+                msg = String.format(String.format("Thread id %02d; Main thread; Cleaning Finished.", mainThreadId));
+                elapsedShowMessage(msg, cleanStart, System.currentTimeMillis());
+                System.out.println(msg);
 
                 LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
-                msg = String.format( "Thread id %02d; current time: %s", mainThreadId, timePoint.toString() );
-                showMessage( msg, false, true );
+                msg = String.format("Thread id %02d; current time: %s", mainThreadId, timePoint.toString());
+                showMessage(msg, false, true);
             }
-
             else    // single-threaded cleaning for multiple sources
             {
-                msg = String.format( "Thread id %02d; Single-threaded cleaning", mainThreadId );
-                plog.show( msg ); showMessage( msg, false, true );
+                msg = String.format("Thread id %02d; Single-threaded cleaning", mainThreadId);
+                plog.show(msg);
+                showMessage(msg, false, true);
 
-                for ( int sourceId : sourceList )
-                {
+                for (int sourceId : sourceList) {
                     long sourceStart = System.currentTimeMillis();
 
-                    String source = Integer.toString( sourceId );
+                    String source = Integer.toString(sourceId);
 
                     showMessage_nl();
-                    showMessage( String.format( "Thread id %02d; Processing sourceId: %s", mainThreadId, source ), false, true );
+                    showMessage(String.format("Thread id %02d; Processing sourceId: %s", mainThreadId, source), false, true);
 
-                    doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
+                    doRenewData(opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype);                     // GUI cb: Remove previous data
 
-                    doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype );      // GUI cb: Prepiece, Suffix
+                    doPrepieceSuffix(opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype);      // GUI cb: Prepiece, Suffix
 
-                    doFirstnames( opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype );                  // GUI cb: Firstnames
+                    doFirstnames(opts.isDbgFirstnames(), opts.isDoFirstnames(), source, rmtype);                  // GUI cb: Firstnames
 
-                    doFamilynames( opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype );               // GUI cb: Familynames
+                    doFamilynames(opts.isDbgFamilynames(), opts.isDoFamilynames(), source, rmtype);               // GUI cb: Familynames
 
-                    doLocations( opts.isDbgLocations(), opts.isDoLocations(), source, rmtype );                     // GUI cb: Locations
+                    doLocations(opts.isDbgLocations(), opts.isDoLocations(), source, rmtype);                     // GUI cb: Locations
 
-                    doStatusSex( opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype );                     // GUI cb: Status and Sex
+                    doStatusSex(opts.isDbgStatusSex(), opts.isDoStatusSex(), source, rmtype);                     // GUI cb: Status and Sex
 
-                    doRegistrationType( opts.isDbgRegType(), opts.isDoRegType(), source, rmtype );                  // GUI cb: Registration Type
+                    doRegistrationType(opts.isDbgRegType(), opts.isDoRegType(), source, rmtype);                  // GUI cb: Registration Type
 
-                    doOccupation( opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype );                  // GUI cb: Occupation
+                    doOccupation(opts.isDbgOccupation(), opts.isDoOccupation(), source, rmtype);                  // GUI cb: Occupation
 
-                    doAge( opts.isDbgAge(), opts.isDoAge(), source, rmtype );                                       // GUI cb: Age
+                    doAge(opts.isDbgAge(), opts.isDoAge(), source, rmtype);                                       // GUI cb: Age
 
-                    doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );                                    // GUI cb: Role
+                    doRole(opts.isDbgRole(), opts.isDoRole(), source, rmtype);                                    // GUI cb: Role
 
-                    doDates( opts.isDbgDates(), opts.isDoDates(), source, rmtype );                                 // GUI cb: Dates
+                    // doDates1(): all other datesfunctions
+                    doDates1(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                // GUI cb: Dates
+                    // doDates2(): only minMaxDateMain()
+                    doDates2(opts.isDbgDates(), opts.isDoDates(), source, rmtype);                                // GUI cb: Dates
 
-                    doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );      // GUI cb: Min Max Marriage
+                    doMinMaxMarriage(opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype);      // GUI cb: Min Max Marriage
 
-                    doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );   // GUI cb: Parts to Full Date
+                    doPartsToFullDate(opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype);   // GUI cb: Parts to Full Date
 
-                    doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );      // GUI cb: Days since begin
+                    doDaysSinceBegin(opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype);      // GUI cb: Days since begin
 
-                    doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );                     // GUI cb: Post Tasks
+                    doPostTasks(opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype);                     // GUI cb: Post Tasks
 
-                    doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );   // GUI cb: Remove Duplicate Reg's
+                    doFlagRegistrations(opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype);   // GUI cb: Remove Duplicate Reg's
 
-                    doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );   // GUI cb: Remove Empty Role Reg's
+                    doFlagPersonRecs(opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype);   // GUI cb: Remove Empty Role Reg's
 
-                    doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );                           // GUI cb: Scan Remarks
+                    doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype);                           // GUI cb: Scan Remarks
 
-                    msg = String.format( "Thread id %02d; Cleaning sourceId %d is done", mainThreadId, sourceId );
-                    elapsedShowMessage( msg, sourceStart, System.currentTimeMillis() );
-                    System.out.println( msg );
+                    msg = String.format("Thread id %02d; Cleaning sourceId %d is done", mainThreadId, sourceId);
+                    elapsedShowMessage(msg, sourceStart, System.currentTimeMillis());
+                    System.out.println(msg);
 
                     LocalDateTime timePoint = LocalDateTime.now();  // The current date and time
-                    msg = String.format( "Thread id %02d; timestamp: %s", mainThreadId, timePoint.toString() );
-                    showMessage( msg, false, true );
+                    msg = String.format("Thread id %02d; timestamp: %s", mainThreadId, timePoint.toString());
+                    showMessage(msg, false, true);
                 }
 
                 // Close db connections
                 //dbconRefWrite.close();
-                if( !dbconref_single ) { dbconRefRead.close(); }
-                if( use_links_logs )   { dbconLog.close(); }
+                if (!dbconref_single) {
+                    dbconRefRead.close();
+                }
+                if (use_links_logs) {
+                    dbconLog.close();
+                }
                 dbconOriginal.close();
                 dbconCleaned.close();
 
                 //doPrematch( opts.isDoPrematch() );            // Prematch now has its own GUI tab
 
-                msg = String.format( "Thread id %02d; Cleaning is done", mainThreadId );
-                elapsedShowMessage( msg, cleanStart, System.currentTimeMillis() );
-                System.out.println( msg );
+                msg = String.format("Thread id %02d; Cleaning is done", mainThreadId);
+                elapsedShowMessage(msg, cleanStart, System.currentTimeMillis());
+                System.out.println(msg);
             }
-        }
-        catch( Exception ex ) {
-            String msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, ex.getMessage() );
-            showMessage( msg, false, true );
-            ex.printStackTrace( new PrintStream( System.out ) );
+        } catch (Exception ex) {
+            String msg = String.format("Thread id %02d; Exception: %s", mainThreadId, ex.getMessage());
+            showMessage(msg, false, true);
+            ex.printStackTrace(new PrintStream(System.out));
         }
     } // run
 
@@ -483,40 +535,42 @@ public class LinksCleanThread extends Thread
 
     /**
      * Read distinct source ids from links_original.registration_o
+     *
      * @return
      */
-    private int[] getOrigSourceIds()
-    {
-        ArrayList< String > ids = new ArrayList();
+    private int[] getOrigSourceIds() {
+        ArrayList<String> ids = new ArrayList();
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
         try {
-            ResultSet rs = dbconOriginal.runQueryWithResult( query );
+            ResultSet rs = dbconOriginal.runQueryWithResult(query);
             int count = 0;
-            while( rs.next() ) {
+            while (rs.next()) {
                 count += 1;
-                String id = rs.getString( "id_source" );
-                if( id == null || id.isEmpty() ) { break; }
-                else {
+                String id = rs.getString("id_source");
+                if (id == null || id.isEmpty()) {
+                    break;
+                } else {
                     //System.out.printf( "id: %s\n", id );
                     ids.add(id);
                 }
             }
-            if( count == 0 ) { showMessage( "Empty links_original ?", false , true ); }
+            if (count == 0) {
+                showMessage("Empty links_original ?", false, true);
+            }
 
-        }
-        catch( Exception ex ) {
-            if( ex.getMessage() != "After end of result set" ) {
+        } catch (Exception ex) {
+            if (ex.getMessage() != "After end of result set") {
                 System.out.printf("'%s'\n", ex.getMessage());
-                ex.printStackTrace( new PrintStream( System.out ) );
+                ex.printStackTrace(new PrintStream(System.out));
             }
         }
         //System.out.println( ids );
 
-        int[] idsInt = new int[ ids.size() ];
+        int[] idsInt = new int[ids.size()];
         int i = 0;
-        for( String id : ids ) {
+        for (String id : ids) {
             //System.out.println( id );
-            idsInt[ i ] = Integer.parseInt(id);
+            idsInt[i] = Integer.parseInt(id);
             i += 1;
         }
         return idsInt;
@@ -525,25 +579,28 @@ public class LinksCleanThread extends Thread
 
     /**
      * Get source ids from GUI or links_original.registration_o
+     *
      * @return
      */
-    private int[] createSourceList( String sourceIdsGui, int[] sourceListAvail )
-    {
+    private int[] createSourceList(String sourceIdsGui, int[] sourceListAvail) {
         int[] idsInt;
 
-        if( sourceIdsGui.isEmpty() )
-        { idsInt = sourceListAvail; }           // use all Ids from links_original.registration_o
-        else
-        {
-            String idsStr[] = sourceIdsGui.split( " " );
+        if (sourceIdsGui.isEmpty()) {
+            idsInt = sourceListAvail;
+        }           // use all Ids from links_original.registration_o
+        else {
+            String idsStr[] = sourceIdsGui.split(" ");
 
-            if( idsStr.length == 0  )           // nothing from GUI
-            { idsInt = sourceListAvail; }       // use all Ids from links_original.registration_o
+            if (idsStr.length == 0)           // nothing from GUI
+            {
+                idsInt = sourceListAvail;
+            }       // use all Ids from links_original.registration_o
             else                                // use GUI supplied Ids
             {
-                idsInt = new int[ idsStr.length ];
-                for( int i = 0; i < idsStr.length; i++ )
-                { idsInt[ i ] = Integer.parseInt( idsStr[ i ] ); }
+                idsInt = new int[idsStr.length];
+                for (int i = 0; i < idsStr.length; i++) {
+                    idsInt[i] = Integer.parseInt(idsStr[i]);
+                }
             }
         }
 
@@ -555,56 +612,69 @@ public class LinksCleanThread extends Thread
      * @throws Exception
      */
     private void connectToDatabases()
+        throws Exception {
+        boolean debug = true;
+
+        long threadId = Thread.currentThread().getId();
+
+        showMessage(String.format("Thread id %02d; Connecting to databases", threadId), false, true);
+
+        if (use_links_logs) {
+            if (debug) {
+                String msg = String.format("Thread id %02d; links_logs", threadId);
+                showMessage(msg, false, true);
+            }
+            dbconLog = new MySqlConnector(db_url, "links_logs", db_user, db_pass);
+        }
+
+        if (debug) {
+            String msg = String.format("Thread id %02d; %s writing", threadId, ref_db);
+            showMessage(msg, false, true);
+        }
+        dbconRefWrite = new MySqlConnector(ref_url, ref_db, ref_user, ref_pass);
+
+        if (debug) {
+            String msg = String.format("Thread id %02d; %s reading", threadId, ref_db);
+            showMessage(msg, false, true);
+        }
+        if (dbconref_single)       // same connector for reading and writing
+        {
+            dbconRefRead = dbconRefWrite;
+        } else                        // separate connector for reading
+        {
+            dbconRefRead = new MySqlConnector(db_url, "links_general", db_user, db_pass);
+        }
+
+        if (debug) {
+            String msg = String.format("Thread id %02d; links_original", threadId);
+            showMessage(msg, false, true);
+        }
+        dbconOriginal = new MySqlConnector(db_url, "links_original", db_user, db_pass);
+
+        if (debug) {
+            String msg = String.format("Thread id %02d; links_cleaned", threadId);
+            showMessage(msg, false, true);
+        }
+        dbconCleaned = new MySqlConnector(db_url, "links_cleaned", db_user, db_pass);
+
+    } // connectToDatabases
+
+
+    /**
+     * @throws Exception
+     */
+    private void connectHikariToDatabases()
     throws Exception
     {
         boolean debug = true;
 
         long threadId = Thread.currentThread().getId();
 
-        showMessage( String.format( "Thread id %02d; Connecting to databases", threadId ), false, true );
+        showMessage(String.format("Thread id %02d; Connecting to databases", threadId), false, true);
 
-        if( use_links_logs )
-        {
-            if (debug)
-            {
-                String msg = String.format( "Thread id %02d; links_logs", threadId );
-                showMessage(msg, false, true);
-            }
-            dbconLog = new MySqlConnector(url, "links_logs", user, pass);
-        }
 
-        if( debug )
-        {
-            String msg = String.format( "Thread id %02d; %s writing", threadId, ref_db );
-            showMessage( msg, false, true );
-        }
-        dbconRefWrite = new MySqlConnector( ref_url, ref_db, ref_user, ref_pass );
 
-        if( debug )
-        {
-            String msg = String.format( "Thread id %02d; %s reading", threadId, ref_db );
-            showMessage( msg, false, true );
-        }
-        if( dbconref_single )       // same connector for reading and writing
-        { dbconRefRead = dbconRefWrite; }
-        else                        // separate connector for reading
-        { dbconRefRead = new MySqlConnector( url, "links_general", user, pass ); }
-
-        if( debug )
-        {
-            String msg = String.format( "Thread id %02d; links_original", threadId );
-            showMessage( msg, false, true );
-        }
-        dbconOriginal = new MySqlConnector( url, "links_original", user, pass );
-
-        if( debug )
-        {
-            String msg = String.format( "Thread id %02d; links_cleaned", threadId );
-            showMessage( msg, false, true );
-        }
-        dbconCleaned = new MySqlConnector( url, "links_cleaned", user, pass );
-
-    } // connectToDatabases
+    } // connectHikariToDatabases
 
 
     private Connection getConnection( String dbName )
@@ -612,9 +682,9 @@ public class LinksCleanThread extends Thread
     {
         String driver = "org.gjt.mm.mysql.Driver";
 
-        String _url = "jdbc:mysql://" + this.url + "/" + dbName + "?dontTrackOpenResources=true";
-        String username = user;
-        String password = pass;
+        String _url = "jdbc:mysql://" + this.db_url + "/" + dbName + "?dontTrackOpenResources=true";
+        String username = db_user;
+        String password = db_pass;
 
         Class.forName( driver );
 
@@ -1195,7 +1265,7 @@ public class LinksCleanThread extends Thread
 
         // Firstnames
         String msg = "";
-        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
+        MySqlConnector dbconTemp = new MySqlConnector( db_url, "links_temp", db_user, db_pass );
         String tmp_firstname = "firstname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp", tmp_firstname ) ) {
             msg = String.format( "Thread id %02d; Deleting table links_temp.%s", threadId, tmp_firstname );
@@ -1300,7 +1370,7 @@ public class LinksCleanThread extends Thread
 
         // Familynames
         String msg = "";
-        MySqlConnector dbconTemp = new MySqlConnector( url, "links_temp", user, pass );
+        MySqlConnector dbconTemp = new MySqlConnector( db_url, "links_temp", db_user, db_pass );
         String tmp_familyname = "familyname_t_" + source;
         if( doesTableExist( dbconTemp, "links_temp",tmp_familyname  ) ) {
             msg = String.format( "Thread id %02d; Deleting table links_temp.%s", threadId, tmp_familyname );
@@ -4402,15 +4472,15 @@ public class LinksCleanThread extends Thread
 
 
     /**
-     * doDates
+     * doDates1
      * @param go
      * @throws Exception
      */
-    private void doDates( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    private void doDates1( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
 
-        String funcname = String.format( "Thread id %02d; doDates for source: %s, rmtype: %s", threadId, source, rmtype );
+        String funcname = String.format( "Thread id %02d; doDates1 for source: %s, rmtype: %s", threadId, source, rmtype );
 
         if( !go ) {
             if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -4423,7 +4493,6 @@ public class LinksCleanThread extends Thread
         long ts = System.currentTimeMillis();
         String msg = "";
 
-        //msg = "skipping untill minMaxDateMain()";
         //msg = "skipping untill standardRegistrationDate()";
         //msg = "ONLY flag functions";
         //showMessage( msg, false, true );
@@ -4504,20 +4573,46 @@ public class LinksCleanThread extends Thread
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
         //*/
 
-        ///*
-        // Make minMaxDateMain() a separate GUI option:
-        // we often have date issues, and redoing the whole date cleaning takes so long.
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doDates1
+
+
+    /**
+     * doDates2
+     * @param go
+     * @throws Exception
+     *
+     * Make minMaxDateMain() also a separate GUI option:
+     * we often have date issues, and redoing the whole date cleaning takes so long.
+     */
+    private void doDates2( boolean debug, boolean go, String source, String rmtype ) throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String funcname = String.format( "Thread id %02d; doDates2 for source: %s, rmtype: %s", threadId, source, rmtype );
+
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname + " ...", false, true );
+
+        long ts = System.currentTimeMillis();
+        String msg = "";
+
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateMain for source: %s ...", threadId, source );
         showMessage( msg, false, true );
         minMaxDateMain( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
-    } // doDates
+    } // doDates2
 
 
     /**
