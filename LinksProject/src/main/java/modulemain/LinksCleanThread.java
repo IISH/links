@@ -98,6 +98,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jul-2019 StandardAgeLiteral bug
  * FL-30-Jul-2019 addToReportRegistration() cleanup
  * FL-05-Aug-2019 split doDates() into 1 & 2
+ * FL-13-Aug-2019
  *
  * TODO:
  * - check all occurrences of TODO
@@ -131,17 +132,24 @@ public class LinksCleanThread extends Thread
     private MySqlConnector dbconCleaned  = null;    // cleaned, from original
 
     // or that...
-    private static HikariDataSource poolLog      = null;
-    private static HikariDataSource poolRefRead  = null;
-    private static HikariDataSource poolRefWrite = null;
-    private static HikariDataSource poolOriginal = null;
-    private static HikariDataSource poolCleaned  = null;
+    private static HikariDataSource dsLog      = null;
+    private static HikariDataSource dsRefRead  = null;
+    private static HikariDataSource dsRefWrite = null;
+    private static HikariDataSource dsOriginal = null;
+    private static HikariDataSource dsCleaned  = null;
 
-    private static HikariConnection hconnLog      = null;
-    private static HikariConnection hconnRefRead  = null;
-    private static HikariConnection hconnRefWrite = null;
-    private static HikariConnection hconnOriginal = null;
-    private static HikariConnection hconnCleaned  = null;
+    private static Connection hdbconnLog      = null;
+    private static Connection hdbconnRefRead  = null;
+    private static Connection hdbconnRefWrite = null;
+    private static Connection hdbconnOriginal = null;
+    private static Connection hdbconnCleaned  = null;
+
+    //private static HikariConnection hdbconnLog      = null;
+    //private static HikariConnection hdbconnRefRead  = null;
+    //private static HikariConnection hdbconnRefWrite = null;
+    //private static HikariConnection hdbconnOriginal = null;
+    //private static HikariConnection hdbconnCleaned  = null;
+
 
     private Runtime r = Runtime.getRuntime();
     private String logTableName;
@@ -345,19 +353,31 @@ public class LinksCleanThread extends Thread
             outputArea.setText("");
 
             connectToDatabases();                           // Create database connectors
-
             //connectHikariToDatabases();                     // Create database Hikari connections
+
             // TODO use connection pool from mariaDB
             // https://mariadb.com/kb/en/library/pool-datasource-implementation/
-
             int max_pool_size = 10;
             String hikariConfigPathname = "";      // ?
             HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, hikariConfigPathname, ref_url, ref_user, ref_pass );
             HikariCPool conPool_links  = new HikariCPool( max_pool_size, hikariConfigPathname, db_url,  db_user,  db_pass );
 
-            //dsrcPrematch = conPool.getDataSource( "links_prematch" );
-            //dsrcMatch    = conPool.getDataSource( "links_match" );
-            //dsrcTemp     = conPool.getDataSource( "links_temp" );
+            //dsRefRead  = ;
+            //dsRefWrite = ;
+            dsLog      = conPool_links.getDataSource( "links_logs" );
+            dsOriginal = conPool_links.getDataSource( "links_original" );
+            dsCleaned  = conPool_links.getDataSource( "links_cleaned" );
+
+            //hdbconnRefRead  = ;
+            //hdbconnRefWrite = ;
+            hdbconnLog      = dsLog.getConnection();
+            hdbconnOriginal = dsOriginal.getConnection();
+            hdbconnCleaned  = dsCleaned.getConnection();
+
+            // move close() to bottom of main()...
+            if( dsLog != null ) { dsLog.close(); }
+            if( dsLog != null ) { dsLog.close(); }
+            if( dsLog != null ) { dsLog.close(); }
 
 
             System.out.println("Using links_logs for error logging: " + use_links_logs);
