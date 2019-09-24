@@ -98,7 +98,7 @@ import linksmanager.ManagerGui;
  * FL-22-Jul-2019 StandardAgeLiteral bug
  * FL-30-Jul-2019 addToReportRegistration() cleanup
  * FL-05-Aug-2019 split doDates() into 1 & 2
- * FL-13-Aug-2019
+ * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  *
  * TODO:
  * - check all occurrences of TODO
@@ -5843,8 +5843,8 @@ public class LinksCleanThread extends Thread
                 int regist_month = rs_r.getInt( "registration_month" );
                 int regist_year  = rs_r.getInt( "registration_year" );
 
-                if( id_registration == 65557816 ) { debug = true; }
-                else { debug = false; continue; }
+                //if( id_registration == 65557816 ) { debug = true; }
+                //else { debug = false; continue; }
 
                 if( debug )
                 {
