@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -99,6 +100,7 @@ import linksmanager.ManagerGui;
  * FL-30-Jul-2019 addToReportRegistration() cleanup
  * FL-05-Aug-2019 split doDates() into 1 & 2
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
+ * FL-30-Sep-2019 standardRole(): check role againt registration_maintype
  *
  * TODO:
  * - check all occurrences of TODO
@@ -4300,7 +4302,7 @@ public class LinksCleanThread extends Thread
 
         try
         {
-            String selectQuery = "SELECT id_person , role ";
+            String selectQuery = "SELECT id_person , registration_maintype, role ";
             selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
             if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
             if( debug ) { showMessage( selectQuery, false, true ); }
@@ -4321,6 +4323,7 @@ public class LinksCleanThread extends Thread
                 }
 
                 int id_person = rs.getInt( "id_person" );
+                int registration_maintype = rs.getInt( "registration_maintype" );
                 String role = rs.getString( "role" ) != null ? rs.getString( "role" ).toLowerCase() : "";
                 if( debug ) { System.out.println( "role: " + role  ); }
 
@@ -4361,10 +4364,25 @@ public class LinksCleanThread extends Thread
                         {
                             if( debug ) { showMessage( "Standard Role: id_person: " + id_person + ", role: " + role, false, true ); }
                             String role_nr = almmRole.value( "role_nr", role );
-
-                            String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
-                            if( debug ) { showMessage( updateQuery, false, true ); }
-                            dbconCleaned.runQuery( updateQuery );
+                            // Check for acceptable roles are acceptable per maintype
+                            if
+                            ( ( registration_maintype == 1 &&
+                                    Arrays.asList( "1", "2", "3", "14" ).contains( role_nr ) ) ||
+                              ( ( registration_maintype == 2 || registration_maintype == 4 ) &&
+                                    Arrays.asList( "4", "5" , "6", "7", "8", "9", "12", "13" ).contains( role_nr ) ) ||
+                              ( registration_maintype == 3 &&
+                                    Arrays.asList( "2", "3", "10", "11", "12", "14" ).contains( role_nr ) )
+                            )
+                            {
+                                String updateQuery = PersonC.updateQuery( "role", role_nr, id_person );
+                                if( debug ) { showMessage( updateQuery, false, true ); }
+                                dbconCleaned.runQuery( updateQuery );
+                            }
+                            else
+                            {
+                                if( debug ) { showMessage( "Warning 142: id_person: " + id_person + ", role: " + role, false, true ); }
+                                addToReportPerson( id_person, source, 142, role );      // warning 142
+                            }
                         }
                         else
                         {
