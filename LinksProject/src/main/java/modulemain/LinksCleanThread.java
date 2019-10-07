@@ -113,16 +113,16 @@ public class LinksCleanThread extends Thread
     boolean multithreaded = false;
     boolean use_links_logs = true;
 
-    // Reference Table -> ArrayListMultiMap
+	private JTextField guiLine;		// different for PreMatch
+	private JTextArea guiArea;		// different for PreMatch
+
+	// Reference Table -> ArrayListMultiMap
     private TableToArrayListMultimap almmReport = null;   // Report warnings; read-only, so can remain file global
     //private TableToArrayListMultimap almmRole         = null;   // Role
     //private TableToArrayListMultimap almmCivilstatus  = null;   // Civilstatus & Gender
     //private TableToArrayListMultimap almmSex          = null;   // Civilstatus & Gender
     //private TableToArrayListMultimap almmMarriageYear = null;   // min/max marriage year
     //private TableToArrayListMultimap almmLitAge       = null;   // age_literal
-
-    private JTextField outputLine;
-    private JTextArea outputArea;
 
     private boolean dbconref_single = true;     // true: same ref for reading and writing
 
@@ -190,16 +190,16 @@ public class LinksCleanThread extends Thread
     /**
      * Constructor
      *
-     * @param outputLine
-     * @param outputArea
+     * @param guiLine
+     * @param guiArea
      * @param opts
      * @param mg
      */
     public LinksCleanThread
     (
         Options opts,
-        JTextField outputLine,
-        JTextArea outputArea,
+        JTextField guiLine,
+        JTextArea guiArea,
         ManagerGui mg
     )
     {
@@ -220,8 +220,8 @@ public class LinksCleanThread extends Thread
         this.db_user = opts.getDb_user();
         this.db_pass = opts.getDb_pass();
 
-        this.outputLine = outputLine;
-        this.outputArea = outputArea;
+        this.guiLine = guiLine;
+        this.guiArea = guiArea;
 
         this.mg = mg;
     }
@@ -239,7 +239,6 @@ public class LinksCleanThread extends Thread
         if( max_threads_simul > 1 ) { multithreaded = true; }
 
         String rmtype = "";
-
 
         // inner class for cleaning a single id_source
         class CleaningThread extends Thread
@@ -351,8 +350,8 @@ public class LinksCleanThread extends Thread
             plog.show(msg);
             showMessage(msg, false, true);
 
-            outputLine.setText("");
-            outputArea.setText("");
+            guiLine.setText("");
+            guiArea.setText("");
 
             connectToDatabases();                           // Create database connectors
             //connectHikariToDatabases();                     // Create database Hikari connections
@@ -753,9 +752,9 @@ public class LinksCleanThread extends Thread
      * @param isMinOnly
      * @param newLine
      */
-    private void showMessage( String logText, boolean isMinOnly, boolean newLine )
+    public void showMessage( String logText, boolean isMinOnly, boolean newLine )
     {
-        outputLine.setText( logText );
+        guiLine.setText( logText );
 
         if( !isMinOnly ) {
             String newLineToken = "";
@@ -767,7 +766,7 @@ public class LinksCleanThread extends Thread
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
-                outputArea.append( ts + " " );
+                guiArea.append( ts + " " );
                 // System.out.printf( "%s ", ts );
                 //logger.info( logText );
                 try { plog.show( logText ); }
@@ -777,7 +776,7 @@ public class LinksCleanThread extends Thread
                 }
             }
 
-            outputArea.append( logText + newLineToken );
+            guiArea.append( logText + newLineToken );
             //System.out.printf( "%s%s", logText, newLineToken );
             try { plog.show( logText ); }
             catch( Exception ex ) {
@@ -794,7 +793,7 @@ public class LinksCleanThread extends Thread
     {
         String newLineToken = "\r\n";
 
-        outputArea.append( newLineToken );
+        guiArea.append( newLineToken );
 
         try { plog.show( "" ); }
         catch( Exception ex ) {
@@ -1065,7 +1064,7 @@ public class LinksCleanThread extends Thread
      * @param go
      * @throws Exception
      */
-    private void doRenewData( boolean debug, boolean go, String source, String rmtype )
+    void doRenewData( boolean debug, boolean go, String source, String rmtype )
     throws Exception
     {
         long threadId = Thread.currentThread().getId();

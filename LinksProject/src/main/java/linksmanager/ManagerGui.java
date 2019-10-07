@@ -11,12 +11,12 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.InputStream;
 
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.swing.*;
 
 import javax.swing.AbstractListModel;
 import javax.swing.ButtonGroup;
@@ -67,47 +67,47 @@ import general.PrintLogger;
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
  * FL-28-Jun-2017 rmtype from gui
- * FL-30-Sep-2019
+ * FL-07-Oct-2019
  */
 
 public class ManagerGui extends javax.swing.JFrame
 {
-    //static final Logger logger = LogManager.getLogger( ManagerGui.class.getName() );
-    //protected final static Logger logger = StatusLogger.getLogger();
-    //static final Logger logger = LogManager.getLogger( "links" );        // "links" name specified in log4j.xml
+	//static final Logger logger = LogManager.getLogger( ManagerGui.class.getName() );
+	//protected final static Logger logger = StatusLogger.getLogger();
+	//static final Logger logger = LogManager.getLogger( "links" );		// "links" name specified in log4j.xml
 
-    static PrintLogger plog = null;
+	static PrintLogger plog = null;
 
-    Document doc;
+	Document doc;
 
-    private Options opts;
+	private Options opts;
 
-    // strings read from property file
+	// strings read from property file
 	private boolean use_links_logs = true;
 
-    private String max_threads_simul = "";
+	private String max_threads_simul = "";
 
-    private String dbgRenewData           = "";
-    private String dbgPrepieceSuffix      = "";
-    private String dbgFirstnames          = "";
-    private String dbgFamilynames         = "";
-    private String dbgLocations           = "";
-    private String dbgStatusSex           = "";
-    private String dbgRegType             = "";
-    private String dbgOccupation          = "";
-    private String dbgAge                 = "";
-    private String dbgRole                = "";
-    private String dbgDates               = "";
-    private String dbgMinMaxMarriage      = "";
-    private String dbgPartsToFullDate     = "";
-    private String dbgDaysSinceBegin      = "";
-    private String dbgPostTasks           = "";
-    private String dbgFlagRegistrations   = "";
-    private String dbgFlagPersons         = "";
-    //private String dbgFlagEmptyRoleRegs = "";
-    private String dbgScanRemarks         = "";
-    private String dbgPrematch            = "";
-    private String dbgMatch               = "";
+	private String dbgRenewData			= "";
+	private String dbgPrepieceSuffix	= "";
+	private String dbgFirstnames		= "";
+	private String dbgFamilynames		= "";
+	private String dbgLocations			= "";
+	private String dbgStatusSex			= "";
+	private String dbgRegType			= "";
+	private String dbgOccupation		= "";
+	private String dbgAge				= "";
+	private String dbgRole				= "";
+	private String dbgDates				= "";
+	private String dbgMinMaxMarriage	= "";
+	private String dbgPartsToFullDate	= "";
+	private String dbgDaysSinceBegin	= "";
+	private String dbgPostTasks			= "";
+	private String dbgFlagRegistrations	= "";
+	private String dbgFlagPersons		= "";
+	//private String dbgFlagEmptyRoleRegs	= "";
+	private String dbgScanRemarks		= "";
+	private String dbgPrematch			= "";
+	private String dbgMatch				= "";
 
 
     private void btnStartProcessMatchActionPerformed( ActionEvent ev )
@@ -2585,9 +2585,7 @@ public class ManagerGui extends javax.swing.JFrame
         el.removeChild(doc.getDocumentElement().getChildNodes().item(lMAINProjects.getSelectedIndex()));
         el.appendChild(element);
 
-        // herhaling
         ArrayList<String> al = new ArrayList<String>();
-        // Dit is ene herhaling
         for (int i = 0; i < doc.getDocumentElement().getElementsByTagName("project").getLength(); i++) {
             Element els = (Element) doc.getDocumentElement().getChildNodes().item(i);
             al.add(els.getAttribute("name"));
@@ -2697,7 +2695,7 @@ public class ManagerGui extends javax.swing.JFrame
             opts.setMaxThreadsSimul( max_threads_simul_int );
         }
 
-		opts.setUseLinksLogs( use_links_logs );
+        opts.setUseLinksLogs( use_links_logs );
 
         if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData( true ); }
         else { opts.setDoRenewData( false ); }
@@ -2987,67 +2985,68 @@ public class ManagerGui extends javax.swing.JFrame
     }//GEN-LAST:event_rbBebiIndexGenliasActionPerformed
 
 
-    /**
-     * Main method, to start Gui manager
-     * @param args
-     */
-    public static void main( String args[] )
-    {
-        long threadId = Thread.currentThread().getId();
+	/**
+	 * Main method, to start Gui manager
+	 * @param args
+	 */
+	public static void main( String args[] )
+	{
+		long threadId = Thread.currentThread().getId();
 
-        //try { logger.info( "ManagerGui/main()" ); }
-        //catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+		//try { logger.info( "ManagerGui/main()" ); }
+		//catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-        String hostname = "";
-        try { hostname = InetAddress.getLocalHost().getHostName(); }
-        catch( UnknownHostException ex ) { System.out.println( ex.getMessage() ); }
+		String hostname = "";
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch( UnknownHostException ex ) { System.out.println( ex.getMessage() ); }
 
-        try {
-            plog = new general.PrintLogger();
-            plog.show( String.format( "Thread id %02d; Running on host: %s", threadId, hostname ) );
-            plog.show( String.format( "Thread id %02d; ManagerGui/main()", threadId ) );
-            plog.show( "" );
-        }
-        catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+		try {
+			plog = new general.PrintLogger();
+			plog.show( String.format( "Thread id %02d; Running on host: %s", threadId, hostname ) );
+			plog.show( String.format( "Thread id %02d; ManagerGui/main()", threadId ) );
+			plog.show( "" );
+		}
+		catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-        /*
-        Font Font = new JLabel().getFont();
-        System.out.println( "System font: " + Font.getFontName() );
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        String[] fontnames = ge.getAvailableFontFamilyNames();
+		/*
+		Font Font = new JLabel().getFont();
+		System.out.println( "System font: " + Font.getFontName() );
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		String[] fontnames = ge.getAvailableFontFamilyNames();
 
-        for( String fontname : fontnames ) {
-            System.out.println( "available font: " + fontname );
-        }
-        */
+		for( String fontname : fontnames ) {
+			System.out.println( "available font: " + fontname );
+		}
+		*/
 
-        java.awt.EventQueue.invokeLater( new Runnable()
-        {
-            public void run()
-            {
-            long threadId = Thread.currentThread().getId();
-            String timestamp1 = "30-Sep-2019 15:20";
-            String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+		java.awt.EventQueue.invokeLater( new Runnable()
+		{
+			public void run()
+			{
+				long threadId = Thread.currentThread().getId();
+				String timestamp1 = "30-Sep-2019 15:20";
+				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
-            try
-            {
-                plog.show( String.format( "Thread id %02d; Links Data Manager 2.0 timestamp: %s", threadId, timestamp1 ) );
-                plog.show( String.format( "Thread id %02d; Start at: %s", threadId, timestamp2 ) );
-                plog.show( String.format( "Thread id %02d; ManagerGui/main/run()", threadId ) );
+				try
+				{
+					plog.show( String.format( "Thread id %02d; Links Data Manager 2.0 timestamp: %s", threadId, timestamp1 ) );
+					plog.show( String.format( "Thread id %02d; Start at: %s", threadId, timestamp2 ) );
+					plog.show( String.format( "Thread id %02d; ManagerGui/main/run()", threadId ) );
 
-                String version = System.getProperty( "java.version" );
-                String msg = String.format( "Thread id %02d; Java version: %s", threadId, version );
-                plog.show( msg );
-                plog.show( "" );
-                System.out.println( msg );
-            }
-            catch( Exception ex ) { System.out.println( ex.getMessage() ); }
+					String version = System.getProperty( "java.version" );
+					String msg = String.format( "Thread id %02d; Java version: %s", threadId, version );
+					plog.show( msg );
+					plog.show( "" );
+					System.out.println( msg );
+				}
+				catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-            new ManagerGui().setVisible( true );
-            }
-        });
-    }
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+				new ManagerGui().setVisible( true );
+			}
+		});
+	} // main
+
+	// Variables declaration - do not modify//GEN-BEGIN:variables
 	// Generated using JFormDesigner non-commercial license
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
@@ -3236,5 +3235,5 @@ public class ManagerGui extends javax.swing.JFrame
 	private JCheckBox cbCdoDates;
 	private JLabel label5;
 	private JTextField tbLOLCrmtype;
-    // End of variables declaration//GEN-END:variables
+	// End of variables declaration//GEN-END:variables
 }
