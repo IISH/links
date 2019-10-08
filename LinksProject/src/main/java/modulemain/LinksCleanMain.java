@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintStream;
 
-import java.sql.Connection;
+//import java.sql.Connection;       // connectors.Connection extends java.sql.Connection
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,9 +50,9 @@ import dataset.ThreadManager;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-import connectors.HikariConnection;
-import connectors.HikariCPool;
-import connectors.MySqlConnector;
+import connectors.HikariConnection;       //
+import connectors.MySqlConnector;   // old
+import connectors.HikariCPool;      // new
 
 import enumdefinitions.TableType;
 import enumdefinitions.TimeType;
@@ -101,6 +101,8 @@ import linksmanager.ManagerGui;
  * FL-05-Aug-2019 split doDates() into 1 & 2
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  * FL-30-Sep-2019 standardRole(): check role againt registration_maintype
+ * FL-08-Oct-2019 Begin using HikariCP
+ * FL-10-Oct-2019 B
  *
  * TODO:
  * - check all occurrences of TODO
@@ -108,7 +110,7 @@ import linksmanager.ManagerGui;
  *   that can store (and write) not only the the registration_maintype but also the registration_type.
  */
 
-public class LinksCleanThread extends Thread
+public class LinksCleanMain extends Thread
 {
     boolean multithreaded = false;
     boolean use_links_logs = true;
@@ -126,31 +128,26 @@ public class LinksCleanThread extends Thread
 
     private boolean dbconref_single = true;     // true: same ref for reading and writing
 
-    // either this...
+
+    // use either this...
     private MySqlConnector dbconLog      = null;    // logging  of errors/warnings
     private MySqlConnector dbconRefRead  = null;    // used by almmReport
     private MySqlConnector dbconRefWrite = null;    // used by almmReport
-    private MySqlConnector dbconOriginal = null;    // original data from A2A
-    private MySqlConnector dbconCleaned  = null;    // cleaned, from original
+    //private MySqlConnector dbconOriginal = null;    // original data from A2A
+    //private MySqlConnector dbconCleaned  = null;    // cleaned, from original
 
-    // or that...
-    private static HikariDataSource dsLog      = null;
-    private static HikariDataSource dsRefRead  = null;
-    private static HikariDataSource dsRefWrite = null;
+    // or use that...
+    //private static HikariDataSource dsLog      = null;
+    //private static HikariDataSource dsRefRead  = null;
+    //private static HikariDataSource dsRefWrite = null;
     private static HikariDataSource dsOriginal = null;
     private static HikariDataSource dsCleaned  = null;
 
-    private static Connection hdbconnLog      = null;
-    private static Connection hdbconnRefRead  = null;
-    private static Connection hdbconnRefWrite = null;
-    private static Connection hdbconnOriginal = null;
-    private static Connection hdbconnCleaned  = null;
-
-    //private static HikariConnection hdbconnLog      = null;
-    //private static HikariConnection hdbconnRefRead  = null;
-    //private static HikariConnection hdbconnRefWrite = null;
-    //private static HikariConnection hdbconnOriginal = null;
-    //private static HikariConnection hdbconnCleaned  = null;
+    //private static Connection dbconLog      = null;
+    //private static Connection dbconRefRead  = null;
+    //private static Connection dbconRefWrite = null;
+    private static connectors.HikariConnection dbconOriginal = null;
+    private static connectors.HikariConnection dbconCleaned  = null;
 
 
     private Runtime r = Runtime.getRuntime();
@@ -195,7 +192,7 @@ public class LinksCleanThread extends Thread
      * @param opts
      * @param mg
      */
-    public LinksCleanThread
+    public LinksCleanMain
     (
         Options opts,
         JTextField guiLine,
@@ -235,11 +232,12 @@ public class LinksCleanThread extends Thread
     {
         int max_threads_simul = opts.getMaxThreadsSimul();
 
-        multithreaded = false;
+        multithreaded = true;
         if( max_threads_simul > 1 ) { multithreaded = true; }
 
         String rmtype = "";
 
+        /*
         // inner class for cleaning a single id_source
         class CleaningThread extends Thread
         {
@@ -331,7 +329,7 @@ public class LinksCleanThread extends Thread
                 System.out.println(msg);
             }
         } // CleaningThread inner class
-
+        */
 
         long mainThreadId = Thread.currentThread().getId();
 
@@ -360,26 +358,20 @@ public class LinksCleanThread extends Thread
             // https://mariadb.com/kb/en/library/pool-datasource-implementation/
             int max_pool_size = 10;
             String hikariConfigPathname = "";      // ?
-            HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, hikariConfigPathname, ref_url, ref_user, ref_pass );
+            //HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, hikariConfigPathname, ref_url, ref_user, ref_pass );
             HikariCPool conPool_links  = new HikariCPool( max_pool_size, hikariConfigPathname, db_url,  db_user,  db_pass );
 
-            //dsRefRead  = ;
-            //dsRefWrite = ;
-            dsLog      = conPool_links.getDataSource( "links_logs" );
+            //dsRefRead  = conPool_links.getDataSource( "links_general" );
+            //dsRefWrite = conPool_links.getDataSource( "links_general" );
+            //dsLog      = conPool_links.getDataSource( "links_logs" );
             dsOriginal = conPool_links.getDataSource( "links_original" );
             dsCleaned  = conPool_links.getDataSource( "links_cleaned" );
 
-            //hdbconnRefRead  = ;
-            //hdbconnRefWrite = ;
-            hdbconnLog      = dsLog.getConnection();
-            hdbconnOriginal = dsOriginal.getConnection();
-            hdbconnCleaned  = dsCleaned.getConnection();
-
-            // move close() to bottom of main()...
-            if( dsLog != null ) { dsLog.close(); }
-            if( dsLog != null ) { dsLog.close(); }
-            if( dsLog != null ) { dsLog.close(); }
-
+            //dbconRefRead  = dsRefRead.getConnection();
+            //dbconRefWrite = dsRefWrite.getConnection();
+            //dbconLog      = dsLog.getConnection();
+            dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
+            dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 
             System.out.println("Using links_logs for error logging: " + use_links_logs);
             msg = String.format("Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs);
@@ -437,9 +429,10 @@ public class LinksCleanThread extends Thread
 
                 long timeStart = System.currentTimeMillis();
 
-                ArrayList<CleaningThread> threads = new ArrayList();
+                //ArrayList<CleaningThread> threads = new ArrayList();
+                ArrayList< LinksCleanAsync > threads = new ArrayList();
 
-                for (int sourceId : sourceList)
+                for( int sourceId : sourceList )
                 {
                     while( !tm.allowNewThread() )  // Wait until our thread manager gives permission
                     {
@@ -449,13 +442,15 @@ public class LinksCleanThread extends Thread
                     tm.addThread();        // Add a thread to the thread count
 
                     String source = Integer.toString(sourceId);
-                    CleaningThread ct = new CleaningThread( tm, source, rmtype );
-                    ct.start();
-                    threads.add( ct );
+                    //CleaningThread ct = new CleaningThread( tm, source, rmtype );
+                    LinksCleanAsync lca = new LinksCleanAsync( tm, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+                    lca.start();
+                    threads.add( lca );
                 }
 
                 // join the threads: main thread must wait for children to finish
-                for( CleaningThread ct : threads ) { ct.join(); }
+                //for( CleaningThread ct : threads ) { ct.join(); }
+                for( LinksCleanAsync lca : threads ) { lca.join(); }
 
                 msg = String.format(String.format("Thread id %02d; Main thread; Cleaning Finished.", mainThreadId));
                 elapsedShowMessage(msg, cleanStart, System.currentTimeMillis());
@@ -467,10 +462,11 @@ public class LinksCleanThread extends Thread
             }
             else    // single-threaded cleaning for multiple sources
             {
-                msg = String.format("Thread id %02d; Single-threaded cleaning", mainThreadId);
+                //msg = String.format("Thread id %02d; Single-threaded cleaning", mainThreadId);
+                msg = String.format("Thread id %02d; NO MORE Single-threaded cleaning", mainThreadId);
                 plog.show(msg);
                 showMessage(msg, false, true);
-
+                /*
                 for (int sourceId : sourceList) {
                     long sourceStart = System.currentTimeMillis();
 
@@ -526,7 +522,7 @@ public class LinksCleanThread extends Thread
                     msg = String.format("Thread id %02d; timestamp: %s", mainThreadId, timePoint.toString());
                     showMessage(msg, false, true);
                 }
-
+                */
                 // Close db connections
                 //dbconRefWrite.close();
                 if (!dbconref_single) {
@@ -535,8 +531,14 @@ public class LinksCleanThread extends Thread
                 if (use_links_logs) {
                     dbconLog.close();
                 }
-                dbconOriginal.close();
-                dbconCleaned.close();
+                //dbconOriginal.close();
+                //dbconCleaned.close();
+
+                //if( dsRefRead  != null ) { dsRefRead.close();  dsRefRead = null; }
+                //if( dsRefWrite != null ) { dsRefWrite.close(); dsRefWrite = null; }
+                //if( dsLog      != null ) { dsLog.close();      dsLog = nu; }
+                if( dsOriginal != null ) { dsOriginal.close(); dsOriginal = null; }
+                if( dsCleaned  != null ) { dsCleaned.close();  dsCleaned = null; }
 
                 //doPrematch( opts.isDoPrematch() );            // Prematch now has its own GUI tab
 
@@ -559,39 +561,45 @@ public class LinksCleanThread extends Thread
      *
      * @return
      */
-    private int[] getOrigSourceIds() {
-        ArrayList<String> ids = new ArrayList();
+    private int[] getOrigSourceIds()
+    {
+        ArrayList< String > ids = new ArrayList();
         String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
-        try {
-            ResultSet rs = dbconOriginal.runQueryWithResult(query);
+        try
+        {
+            HikariConnection dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
+            ResultSet rs = dbconOriginal.runQueryWithResult( query );
             int count = 0;
-            while (rs.next()) {
+            while( rs.next() )
+            {
                 count += 1;
-                String id = rs.getString("id_source");
-                if (id == null || id.isEmpty()) {
+                String id = rs.getString("id_source" );
+                if( id == null || id.isEmpty() ) {
                     break;
                 } else {
                     //System.out.printf( "id: %s\n", id );
-                    ids.add(id);
+                    ids.add( id );
                 }
             }
-            if (count == 0) {
-                showMessage("Empty links_original ?", false, true);
-            }
+            rs.close();
 
-        } catch (Exception ex) {
-            if (ex.getMessage() != "After end of result set") {
-                System.out.printf("'%s'\n", ex.getMessage());
-                ex.printStackTrace(new PrintStream(System.out));
+            if( count == 0 ) { showMessage("Empty links_original ?", false, true ); }
+
+        }
+        catch( Exception ex )
+        {
+            if( ex.getMessage() != "After end of result set" ) {
+                System.out.printf( "'%s'\n", ex.getMessage() );
+                ex.printStackTrace( new PrintStream( System.out ) ) ;
             }
         }
         //System.out.println( ids );
 
-        int[] idsInt = new int[ids.size()];
+        int[] idsInt = new int[ ids.size() ];
         int i = 0;
-        for (String id : ids) {
+        for( String id : ids ) {
             //System.out.println( id );
-            idsInt[i] = Integer.parseInt(id);
+            idsInt[ i ] = Integer.parseInt( id );
             i += 1;
         }
         return idsInt;
@@ -665,7 +673,7 @@ public class LinksCleanThread extends Thread
         {
             dbconRefRead = new MySqlConnector(db_url, "links_general", db_user, db_pass);
         }
-
+        /*
         if (debug) {
             String msg = String.format("Thread id %02d; links_original", threadId);
             showMessage(msg, false, true);
@@ -677,44 +685,8 @@ public class LinksCleanThread extends Thread
             showMessage(msg, false, true);
         }
         dbconCleaned = new MySqlConnector(db_url, "links_cleaned", db_user, db_pass);
-
+        */
     } // connectToDatabases
-
-
-    /**
-     * @throws Exception
-     */
-    private void connectHikariToDatabases()
-    throws Exception
-    {
-        boolean debug = true;
-
-        long threadId = Thread.currentThread().getId();
-
-        showMessage(String.format("Thread id %02d; Connecting to databases", threadId), false, true);
-
-
-
-    } // connectHikariToDatabases
-
-
-    private Connection getConnection( String dbName )
-    throws Exception
-    {
-        String driver = "org.gjt.mm.mysql.Driver";
-
-        String _url = "jdbc:mysql://" + this.db_url + "/" + dbName + "?dontTrackOpenResources=true";
-        String username = db_user;
-        String password = db_pass;
-
-        Class.forName( driver );
-
-        // Class.forName("externalModules.jdbcDriver.Driver").newInstance();
-
-        Connection conn = DriverManager.getConnection(_url, username, password);
-
-        return conn;
-    }
 
 
     private void createLogTable()
@@ -867,17 +839,16 @@ public class LinksCleanThread extends Thread
             showMessage( selectQuery, false, true );
         }
 
-        try( PreparedStatement pstmt = dbconOriginal.prepareStatement( selectQuery ) )
+        try
         {
-            try( ResultSet rs = pstmt.executeQuery() )
-            {
-                rs.first();
-                location = rs.getString( "registration_location" );
-                reg_type = rs.getString( "registration_type" );
-                date     = rs.getString( "registration_date" );
-                sequence = rs.getString( "registration_seq" );
-                guid     = rs.getString( "id_persist_registration" );
-            }
+            ResultSet rs = dbconOriginal.runQueryWithResult( selectQuery );
+            rs.first();
+            location = rs.getString( "registration_location" );
+            reg_type = rs.getString( "registration_type" );
+            date     = rs.getString( "registration_date" );
+            sequence = rs.getString( "registration_seq" );
+            guid     = rs.getString( "id_persist_registration" );
+            rs.close();
         }
         catch( Exception ex )
         {
@@ -912,6 +883,7 @@ public class LinksCleanThread extends Thread
             pstmt.setString( i++, guid );
 
             int numRowsChanged = pstmt.executeUpdate();
+            pstmt.close();
         }
         catch( Exception ex ) {
             showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );
@@ -957,14 +929,13 @@ public class LinksCleanThread extends Thread
             showMessage( selectQueryP, false, true );
         }
 
-        try( PreparedStatement pstmt = dbconOriginal.prepareStatement( selectQueryP ) )
+        try
         {
-            try( ResultSet rs = pstmt.executeQuery() )
-            {
-                rs.first();
-                id_registration = rs.getString( "id_registration" );
-                role            = rs.getString( "role" );
-            }
+            ResultSet rs = dbconOriginal.runQueryWithResult(selectQueryP);
+            rs.first();
+            id_registration = rs.getString( "id_registration" );
+            role            = rs.getString( "role" );
+            rs.close();
         }
         catch( Exception ex )
         {
@@ -990,17 +961,16 @@ public class LinksCleanThread extends Thread
 
             if( debug ) { showMessage( selectQueryR, false, true ); }
 
-            try( PreparedStatement pstmt = dbconOriginal.prepareStatement( selectQueryR ) )
+            try
             {
-                try( ResultSet rs = pstmt.executeQuery() )
-                {
-                    rs.first();
-                    location = rs.getString( "registration_location" );
-                    reg_type = rs.getString( "registration_type" );
-                    date     = rs.getString( "registration_date" );
-                    sequence = rs.getString( "registration_seq" );
-                    guid     = rs.getString( "id_persist_registration" );
-                }
+                ResultSet rs = dbconOriginal.runQueryWithResult(selectQueryR);
+                rs.first();
+                location = rs.getString( "registration_location" );
+                reg_type = rs.getString( "registration_type" );
+                date     = rs.getString( "registration_date" );
+                sequence = rs.getString( "registration_seq" );
+                guid     = rs.getString( "id_persist_registration" );
+                rs.close();
             }
             catch( Exception ex )
             {
@@ -1043,6 +1013,7 @@ public class LinksCleanThread extends Thread
             pstmt.setString( i++, guid );
 
             int numRowsChanged = pstmt.executeUpdate();
+            pstmt.close();
         }
         catch( Exception ex ) {
             showMessage( "source: " + id_source + ", query: " + insertQuery, false, true );

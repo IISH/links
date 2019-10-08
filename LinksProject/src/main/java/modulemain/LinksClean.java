@@ -129,7 +129,7 @@ public class LinksClean extends Thread
 
         try { plog.show( "" ); } catch( Exception ex ) { System.out.println( ex.getMessage() ); }
 
-        LinksCleanThread linksCleanedThread = new LinksCleanThread(
+        LinksCleanMain linksCleanedThread = new LinksCleanMain(
              opts,
              outputLine,
              outputArea,

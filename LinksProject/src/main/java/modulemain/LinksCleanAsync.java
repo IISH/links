@@ -17,16 +17,17 @@ import javax.swing.JTextField;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import connectors.HikariConnection;
+
 import dataset.Options;
 
 import general.Functions;
-import general.PrintLogger;
 
 /**
  * @author Fons Laan
  *
  * FL-30-Sep-2019 Created
- * FL-07-Oct-2019
+ * FL-08-Oct-2019
  */
 public class LinksCleanAsync extends Thread
 {
@@ -42,9 +43,11 @@ public class LinksCleanAsync extends Thread
 	private String endl = ". OK.";              // ".";
 	private boolean showskip;
 
-	private HikariDataSource dsrcClean;
+	private HikariDataSource dsOriginal;
+	private HikariDataSource dsCleaned;
 
-	private Connection dbconClean = null;
+	private HikariConnection dbconOriginal = null;
+	private HikariConnection dbconCleaned = null;
 
 
 public LinksCleanAsync
@@ -56,7 +59,8 @@ public LinksCleanAsync
 		String source,
 		String rmtype,
 		boolean showskip,
-		HikariDataSource dsrcClean
+		HikariDataSource dsOriginal,
+		HikariDataSource dsCleaned
 	)
 	{
 		this.tm = tm;
@@ -67,7 +71,8 @@ public LinksCleanAsync
 		this.rmtype = rmtype;
 		this.plog = opts.getLogger();
 		this.showskip = showskip;
-		this.dsrcClean = dsrcClean;
+		this.dsOriginal = dsOriginal;
+		this.dsCleaned = dsCleaned;
 	}
 
 	public void run()
@@ -85,7 +90,8 @@ public LinksCleanAsync
 			showMessage(msg, false, true);
 
 			// database connections
-			dbconClean = dsrcClean.getConnection();
+			dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
+			dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 
 			doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
 			/*
@@ -127,7 +133,7 @@ public LinksCleanAsync
 			doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype);                           // GUI cb: Scan Remarks
 			*/
 
-			if( dbconClean != null ) { dbconClean.close(); dbconClean = null; }
+			//if( dbconCleaned != null ) { dbconCleaned.close(); dbconCleaned = null; }
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage());
@@ -276,41 +282,23 @@ public LinksCleanAsync
 			showMessage( deletePerson, false, true );
 		}
 
-		//dbconClean.runQuery( deleteRegist );
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( deleteRegist ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {;}
-		}
-
-		//dbconClean.runQuery( deletePerson );
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( deletePerson ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {;}
-		}
+		dbconCleaned.runQuery( deleteRegist );
+		dbconCleaned.runQuery( deletePerson );
 
 		// if links_cleaned is now empty, we reset the AUTO_INCREMENT
 		// that eases comparison with links_a2a tables
 		String qRegistCCount = "SELECT COUNT(*) FROM registration_c";
 		String qPersonCCount = "SELECT COUNT(*) FROM person_c";
 
-		//ResultSet rsR = dbconClean.runQueryWithResult( qRegistCCount );
-		//rsR.first();
-		//int registCCount = rsR.getInt( "COUNT(*)" );
-		int registCCount;
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( qRegistCCount ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {
-				registCCount = rs.getInt("COUNT(*)" );
-			}
-		}
+		ResultSet rsR = dbconCleaned.runQueryWithResult( qRegistCCount );
+		rsR.first();
+		int registCCount = rsR.getInt("COUNT(*)" );
+		rsR.close();
 
-		//ResultSet rsP = dbconClean.runQueryWithResult( qPersonCCount );
-		//rsP.first();
-		//int personCCount = rsP.getInt( "COUNT(*)" );
-		int personCCount;
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( qPersonCCount ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {
-				personCCount = rs.getInt("COUNT(*)" );
-			}
-		}
-
+		ResultSet rsP = dbconCleaned.runQueryWithResult( qPersonCCount );
+		rsP.first();
+		int personCCount = rsP.getInt( "COUNT(*)" );
+		rsP.close();
 
 		if( registCCount == 0 && personCCount == 0 )
 		{
@@ -319,15 +307,8 @@ public LinksCleanAsync
 			String auincRegist = "ALTER TABLE registration_c AUTO_INCREMENT = 1";
 			String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
 
-			//dbconClean.runQuery( auincRegist );
-			try( PreparedStatement pstmt = dbconClean.prepareStatement( auincRegist ) ) {
-				try( ResultSet rs = pstmt.executeQuery() ) {;}
-			}
-
-			//dbconClean.runQuery( auincPerson );
-			try( PreparedStatement pstmt = dbconClean.prepareStatement( auincPerson ) ) {
-				try( ResultSet rs = pstmt.executeQuery() ) {;}
-			}
+			dbconCleaned.runQuery( auincRegist );
+			dbconCleaned.runQuery( auincPerson );
 		}
 
 
@@ -346,10 +327,7 @@ public LinksCleanAsync
 		showMessage( msg, false, true );
 		if( debug ) { showMessage( keysRegistration, false, true ); }
 
-		//dbconClean.runQuery( keysRegistration );
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( keysRegistration ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {;}
-		}
+		dbconCleaned.runQuery( keysRegistration );
 
 		// Strip {} from id_persist_registration
 		String Update_id_persist_registration = ""
@@ -366,10 +344,7 @@ public LinksCleanAsync
 		showMessage( msg, false, true );
 		if( debug ) { showMessage( Update_id_persist_registration, false, true ); }
 
-		//dbconClean.runQuery( Update_id_persist_registration );
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( Update_id_persist_registration ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {;}
-		}
+		dbconCleaned.runQuery( Update_id_persist_registration );
 
 		String keysPerson = ""
 			+ "INSERT INTO links_cleaned.person_c"
@@ -385,10 +360,7 @@ public LinksCleanAsync
 		showMessage( msg, false, true );
 		if( debug ) { showMessage( keysPerson, false, true ); }
 
-		//dbconClean.runQuery( keysPerson );
-		try( PreparedStatement pstmt = dbconClean.prepareStatement( keysPerson ) ) {
-			try( ResultSet rs = pstmt.executeQuery() ) {;}
-		}
+		dbconCleaned.runQuery( keysPerson );
 
 		elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
 		showMessage_nl();
