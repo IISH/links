@@ -101,6 +101,7 @@ import linksmanager.ManagerGui;
  * FL-05-Aug-2019 split doDates() into 1 & 2
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  * FL-30-Sep-2019 standardRole(): check role againt registration_maintype
+ * FL-14-Oct-2019 addToReportRegistration() & addToReportPerson(): A $ in value disrupts the replaceAll regex
  *
  * TODO:
  * - check all occurrences of TODO
@@ -846,10 +847,13 @@ public class LinksCleanThread extends Thread
 
         String report_class   = almmReport.value( "class",   errorCodeStr );
         String report_content = almmReport.value( "content", errorCodeStr );
+        if( debug ) { System.out.println( "value: " + value + ", report_class: " + report_class + ", report_content: " + report_content ); }
+
+        // A $ in value disrupts the replaceAll regex
+        value = java.util.regex.Matcher.quoteReplacement( value );
 
         // replace recognition substring with the value
         report_content = report_content.replaceAll( "<.*>", value );
-
         if( debug ) { System.out.println( "report_class: " + report_class + ", report_content: " + report_content ); }
 
         // get registration values from links_original.registration_o
@@ -940,10 +944,13 @@ public class LinksCleanThread extends Thread
 
         String report_class   = almmReport.value( "class",   errorCodeStr );
         String report_content = almmReport.value( "content", errorCodeStr );
+        if( debug ) { System.out.println( "value: " + value + ", report_class: " + report_class + ", report_content: " + report_content ); }
+
+        // A $ in value disrupts the replaceAll regex
+        value = java.util.regex.Matcher.quoteReplacement( value );
 
         // replace recognition substring with the value
         report_content = report_content.replaceAll( "<.*>", value );
-
         if( debug ) { System.out.println( "report_class: " + report_class + ", report_content: " + report_content ); }
 
         // get person values from links_original.person_o
