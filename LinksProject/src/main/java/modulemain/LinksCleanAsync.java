@@ -12,6 +12,8 @@ import java.sql.ResultSet;
 
 import java.time.LocalDateTime;
 
+import java.util.concurrent.Semaphore;
+
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -32,7 +34,10 @@ import general.Functions;
 public class LinksCleanAsync extends Thread
 {
 	private Options opts;
-	private ThreadManager tm;
+
+	//private ThreadManager tm;
+	Semaphore semaphore;
+
 	private String source;
 	private String rmtype;
 	private PrintLogger plog;
@@ -52,7 +57,9 @@ public class LinksCleanAsync extends Thread
 
 public LinksCleanAsync
 	(
-		ThreadManager tm,
+		//ThreadManager tm,
+		Semaphore sem,
+
 		Options opts,
 		JTextField guiLine,
 		JTextArea guiArea,
@@ -63,7 +70,9 @@ public LinksCleanAsync
 		HikariDataSource dsCleaned
 	)
 	{
-		this.tm = tm;
+		//this.tm = tm;
+		this.semaphore = semaphore;
+
 		this.opts = opts;
 		this.guiLine = guiLine;
 		this.guiArea = guiArea;
@@ -149,10 +158,16 @@ public LinksCleanAsync
 		msg = String.format("Thread id %02d; current time: %s", threadId, timePoint.toString());
 		showMessage(msg, false, true);
 
-		int count = tm.removeThread();
-		msg = String.format("Thread id %02d; Remaining cleaning threads: %d\n", threadId, count);
+		//int count = tm.removeThread();
+		//msg = String.format("Thread id %02d; Remaining cleaning threads: %d\n", threadId, count);
+		//showMessage(msg, false, true);
+		//System.out.println(msg);
+		semaphore.release();
+		int npermits = semaphore.availablePermits();
+		msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", threadId, npermits );
 		showMessage(msg, false, true);
-		System.out.println(msg);
+		System.out.println( msg );
+
 	} // run
 
 

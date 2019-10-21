@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.regex.Matcher;
@@ -233,7 +235,7 @@ public class LinksCleanMain extends Thread
         int max_threads_simul = opts.getMaxThreadsSimul();
 
         multithreaded = true;
-        if( max_threads_simul > 1 ) { multithreaded = true; }
+        //if( max_threads_simul > 1 ) { multithreaded = true; }
 
         String rmtype = "";
 
@@ -388,7 +390,7 @@ public class LinksCleanMain extends Thread
 
             String s = "";
             if (sourceList.length == 1) {
-                multithreaded = false;  // only 1 source
+                //multithreaded = false;  // only 1 source
                 s = String.format("Thread id %02d; Processing source: ", mainThreadId);
             } else {
                 s = String.format("Thread id %02d; Processing sources: ", mainThreadId);
@@ -419,31 +421,54 @@ public class LinksCleanMain extends Thread
             almmReport = new TableToArrayListMultimap(dbconRefRead, "ref_report", "type", null);
 
 
-            if (multithreaded)
+            if( multithreaded )
             {
-                ThreadManager tm = new ThreadManager(max_threads_simul);
-                msg = String.format("Thread id %02d; Multi-threaded cleaning with max %d simultaneous cleaning threads", mainThreadId, max_threads_simul);
+                msg = String.format( "Max simultaneous active cleaning threads: %d", max_threads_simul );
+                System.out.println( msg ); plog.show( msg );
 
-                plog.show(msg);
-                showMessage(msg, false, true);
+                //ThreadManager tm = new ThreadManager( max_threads_simul );
+                //msg = String.format( "Thread id %02d; Multi-threaded cleaning with max %d simultaneous cleaning threads", mainThreadId, max_threads_simul );
+                final Semaphore semaphore = new Semaphore( max_threads_simul, true );
+
+                int ncores = Runtime.getRuntime().availableProcessors();
+                msg = String.format( "Available cores: %d", ncores );
+                System.out.println( msg ); plog.show( msg );
+
+                int nthreads_active = java.lang.Thread.activeCount();
+                msg = String.format( "Currently active threads: %d", nthreads_active );
+                System.out.println( msg ); plog.show( msg );
 
                 long timeStart = System.currentTimeMillis();
 
-                //ArrayList<CleaningThread> threads = new ArrayList();
                 ArrayList< LinksCleanAsync > threads = new ArrayList();
 
                 for( int sourceId : sourceList )
                 {
+                    /*
                     while( !tm.allowNewThread() )  // Wait until our thread manager gives permission
                     {
                         plog.show(String.format("Thread id %02d; No permission for new thread: Waiting 60 seconds", mainThreadId));
                         Thread.sleep(60000);
                     }
                     tm.addThread();        // Add a thread to the thread count
+                    */
+
+                    // Wait until semaphore gives permission
+                    int npermits = semaphore.availablePermits();
+                    msg = String.format( "Thread id %02d; Semaphore: # of permits: %d", mainThreadId, npermits );
+                    plog.show( msg );
+
+                    while( ! semaphore.tryAcquire( 0, TimeUnit.SECONDS ) ) {
+                        msg = String.format( "Thread id %02d; No permission for new thread: Waiting 60 seconds", mainThreadId );
+                        plog.show( msg );
+                        Thread.sleep( 60000 );
+                    }
 
                     String source = Integer.toString(sourceId);
                     //CleaningThread ct = new CleaningThread( tm, source, rmtype );
-                    LinksCleanAsync lca = new LinksCleanAsync( tm, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+                    //LinksCleanAsync lca = new LinksCleanAsync( tm, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+                    LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+
                     lca.start();
                     threads.add( lca );
                 }
@@ -818,10 +843,13 @@ public class LinksCleanMain extends Thread
 
         String report_class   = almmReport.value( "class",   errorCodeStr );
         String report_content = almmReport.value( "content", errorCodeStr );
+        if( debug ) { System.out.println( "value: " + value + ", report_class: " + report_class + ", report_content: " + report_content ); }
+
+        // A $ in value disrupts the replaceAll regex
+        value = java.util.regex.Matcher.quoteReplacement( value );
 
         // replace recognition substring with the value
         report_content = report_content.replaceAll( "<.*>", value );
-
         if( debug ) { System.out.println( "report_class: " + report_class + ", report_content: " + report_content ); }
 
         // get registration values from links_original.registration_o
@@ -912,10 +940,13 @@ public class LinksCleanMain extends Thread
 
         String report_class   = almmReport.value( "class",   errorCodeStr );
         String report_content = almmReport.value( "content", errorCodeStr );
+        if( debug ) { System.out.println( "value: " + value + ", report_class: " + report_class + ", report_content: " + report_content ); }
+
+        // A $ in value disrupts the replaceAll regex
+        value = java.util.regex.Matcher.quoteReplacement( value );
 
         // replace recognition substring with the value
         report_content = report_content.replaceAll( "<.*>", value );
-
         if( debug ) { System.out.println( "report_class: " + report_class + ", report_content: " + report_content ); }
 
         // get person values from links_original.person_o
