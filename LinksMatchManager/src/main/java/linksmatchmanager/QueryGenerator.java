@@ -36,6 +36,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-29-Jan-2018 Check for id_source = 0 == invalid
  * FL-01-Oct-2018 Add id_persist_registration to the s1&2 queries to be retrieved from links_base
  * FL-11-Jun-2019 AND id_source IN (...) syntax
+ * FL-21-Oct-2019 Check s%_source is whitespace
  */
 public class QueryGenerator
 {
@@ -162,6 +163,9 @@ public class QueryGenerator
 
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
+
+            if( s1_source.trim().isEmpty() ) {  s1_source = ""; }       // input only whitespace
+            if( s2_source.trim().isEmpty() ) {  s2_source = ""; }       // input only whitespace
 
             if( s1_source.equals( "0") || s2_source.equals( "0") )
             {
