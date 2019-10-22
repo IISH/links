@@ -104,7 +104,7 @@ import linksmanager.ManagerGui;
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  * FL-30-Sep-2019 standardRole(): check role againt registration_maintype
  * FL-08-Oct-2019 Begin using HikariCP
- * FL-10-Oct-2019 B
+ * FL-21-Oct-2019 Start using LinksCleanedAsync
  *
  * TODO:
  * - check all occurrences of TODO
@@ -139,9 +139,9 @@ public class LinksCleanMain extends Thread
     //private MySqlConnector dbconCleaned  = null;    // cleaned, from original
 
     // or use that...
-    //private static HikariDataSource dsLog      = null;
-    //private static HikariDataSource dsRefRead  = null;
-    //private static HikariDataSource dsRefWrite = null;
+    private static HikariDataSource dsLog      = null;
+    private static HikariDataSource dsRefRead  = null;
+    private static HikariDataSource dsRefWrite = null;
     private static HikariDataSource dsOriginal = null;
     private static HikariDataSource dsCleaned  = null;
 
@@ -363,15 +363,15 @@ public class LinksCleanMain extends Thread
             //HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, hikariConfigPathname, ref_url, ref_user, ref_pass );
             HikariCPool conPool_links  = new HikariCPool( max_pool_size, hikariConfigPathname, db_url,  db_user,  db_pass );
 
-            //dsRefRead  = conPool_links.getDataSource( "links_general" );
-            //dsRefWrite = conPool_links.getDataSource( "links_general" );
-            //dsLog      = conPool_links.getDataSource( "links_logs" );
+            dsLog      = conPool_links.getDataSource( "links_logs" );
+            dsRefRead  = conPool_links.getDataSource( "links_general" );
+            dsRefWrite = conPool_links.getDataSource( "links_general" );
             dsOriginal = conPool_links.getDataSource( "links_original" );
             dsCleaned  = conPool_links.getDataSource( "links_cleaned" );
 
+            //dbconLog      = dsLog.getConnection();
             //dbconRefRead  = dsRefRead.getConnection();
             //dbconRefWrite = dsRefWrite.getConnection();
-            //dbconLog      = dsLog.getConnection();
             dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
             dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 
@@ -423,7 +423,7 @@ public class LinksCleanMain extends Thread
 
             if( multithreaded )
             {
-                msg = String.format( "Max simultaneous active cleaning threads: %d", max_threads_simul );
+                msg = String.format( "Thread id %02d; Max simultaneous active cleaning threads: %d", mainThreadId, max_threads_simul );
                 System.out.println( msg ); plog.show( msg );
 
                 //ThreadManager tm = new ThreadManager( max_threads_simul );
@@ -431,11 +431,11 @@ public class LinksCleanMain extends Thread
                 final Semaphore semaphore = new Semaphore( max_threads_simul, true );
 
                 int ncores = Runtime.getRuntime().availableProcessors();
-                msg = String.format( "Available cores: %d", ncores );
+                msg = String.format( "Thread id %02d; Available cores: %d", mainThreadId, ncores );
                 System.out.println( msg ); plog.show( msg );
 
                 int nthreads_active = java.lang.Thread.activeCount();
-                msg = String.format( "Currently active threads: %d", nthreads_active );
+                msg = String.format( "Thread id %02d; Currently active threads: %d", mainThreadId, nthreads_active );
                 System.out.println( msg ); plog.show( msg );
 
                 long timeStart = System.currentTimeMillis();
@@ -467,7 +467,8 @@ public class LinksCleanMain extends Thread
                     String source = Integer.toString(sourceId);
                     //CleaningThread ct = new CleaningThread( tm, source, rmtype );
                     //LinksCleanAsync lca = new LinksCleanAsync( tm, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
-                    LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+                    LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
+                        ref_url, ref_db, ref_user, ref_pass, logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned );
 
                     lca.start();
                     threads.add( lca );
@@ -548,24 +549,19 @@ public class LinksCleanMain extends Thread
                     showMessage(msg, false, true);
                 }
                 */
-                // Close db connections
-                //dbconRefWrite.close();
-                if (!dbconref_single) {
-                    dbconRefRead.close();
-                }
-                if (use_links_logs) {
-                    dbconLog.close();
-                }
-                //dbconOriginal.close();
-                //dbconCleaned.close();
 
-                //if( dsRefRead  != null ) { dsRefRead.close();  dsRefRead = null; }
-                //if( dsRefWrite != null ) { dsRefWrite.close(); dsRefWrite = null; }
-                //if( dsLog      != null ) { dsLog.close();      dsLog = nu; }
+                // Close db connections
+                if( dbconLog      != null ) { dbconLog.close();      dbconLog      = null; }
+                if( dbconRefRead  != null ) { dbconRefRead.close();  dbconRefRead  = null; }
+                if( dbconRefWrite != null ) { dbconRefWrite.close(); dbconRefWrite = null; }
+                //if( dbconOriginal != null ) { dbconOriginal.close(); dbconOriginal = null; }
+                //if( dbconCleaned  != null ) { dbconCleaned.close();  dbconCleaned = null; }
+
+                if( dsRefRead  != null ) { dsRefRead.close();  dsRefRead = null; }
+                if( dsRefWrite != null ) { dsRefWrite.close(); dsRefWrite = null; }
+                if( dsLog      != null ) { dsLog.close();      dsLog = null; }
                 if( dsOriginal != null ) { dsOriginal.close(); dsOriginal = null; }
                 if( dsCleaned  != null ) { dsCleaned.close();  dsCleaned = null; }
-
-                //doPrematch( opts.isDoPrematch() );            // Prematch now has its own GUI tab
 
                 msg = String.format("Thread id %02d; Cleaning is done", mainThreadId);
                 elapsedShowMessage(msg, cleanStart, System.currentTimeMillis());

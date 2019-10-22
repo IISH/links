@@ -136,7 +136,7 @@ public class MySqlConnector
 
 
     /**
-     * Pepare Statement
+     * Prepare Statement
      * @throws Exception
      */
     public PreparedStatement prepareStatement( String query )

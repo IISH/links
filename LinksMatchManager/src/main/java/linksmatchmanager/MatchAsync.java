@@ -1090,15 +1090,18 @@ public class MatchAsync extends Thread
         }
     } // run
 
+
     /**
      *
+     * @param format
      * @return
      */
     public static String getTimeStamp2( String format ) {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat( format );
-        return sdf.format(cal.getTime());
+        return sdf.format( cal.getTime() );
     }
+
 
     private boolean existsMatchTempTable( String table_name )
     {
