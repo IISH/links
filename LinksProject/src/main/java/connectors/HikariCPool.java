@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * FL-12-Mar-2019 Created
  * FL-15-Apr-2019 Now using mariadb-java-client instead of mysql-connector-java
- * FL-06-Aug-2019
+ * FL-28-Oct-2019
  */
 public class HikariCPool
 {
@@ -88,7 +88,10 @@ public class HikariCPool
         config.setJdbcUrl( jdbc_url );
         config.setUsername( db_user );
         config.setPassword( db_pass );
-        config.setAutoCommit( false );                  // https://mariadb.com/kb/en/library/about-mariadb-connector-j/
+
+        // Notice: with "config.setAutoCommit( false )",  the "pstmt.executeUpdate();" in HikariConnection.java did nothing.
+        // Then apparently we need an additional "connection.commit()" after executeUpdate()
+        //config.setAutoCommit( false );                  // Default: true. Since 2.2.0; see https://mariadb.com/kb/en/library/about-mariadb-connector-j/
 
         String poolName = "HikariPool-" + db_name;
         config.setPoolName( poolName );
@@ -118,7 +121,7 @@ public class HikariCPool
         config.addDataSourceProperty( "prepStmtCacheSqlLimit",    2048 );   // 256
         config.addDataSourceProperty( "rewriteBatchedStatements", true );   // false
         config.addDataSourceProperty( "useServerPrepStmts",       true );   // false
-        config.addDataSourceProperty( "useLocalSessionState",     true );   //  false
+        config.addDataSourceProperty( "useLocalSessionState",     true );   // false
 
         config.addDataSourceProperty( "tcpKeepAlive", true);
 

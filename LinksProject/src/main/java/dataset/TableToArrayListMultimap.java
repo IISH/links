@@ -24,6 +24,7 @@ import modulemain.LinksSpecific;
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
  * FL-05-Jul-2017 optional extra column for ref_registration
+ * FL-28-Oct-2019 runQueryUpdate() for delete_duplicates [not runQuery()]
  */
 public class TableToArrayListMultimap
 {
@@ -270,7 +271,7 @@ public class TableToArrayListMultimap
                     String query = "DELETE FROM `" + tableName + "` WHERE " + column + " = " + Integer.toString( id );
                     System.out.println( query );
 
-                    try { conn_read.runQuery( query ); }
+                    try { conn_read.runQueryUpdate( query ); }
                     catch( SQLException sex )
                     { System.out.println( "SQLException while deleting duplicate: " + sex.getMessage() ); }
                     catch( Exception jex )

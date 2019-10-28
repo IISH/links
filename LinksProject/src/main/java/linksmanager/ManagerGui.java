@@ -67,7 +67,7 @@ import general.PrintLogger;
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
  * FL-28-Jun-2017 rmtype from gui
- * FL-22-Oct-2019 timestamp
+ * FL-28-Oct-2019 timestamp
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -87,7 +87,7 @@ public class ManagerGui extends javax.swing.JFrame
 
 	private String max_threads_simul = "";
 
-	private String dbgRenewData			= "";
+	private String dbgRefreshData		= "";
 	private String dbgPrepieceSuffix	= "";
 	private String dbgFirstnames		= "";
 	private String dbgFamilynames		= "";
@@ -2324,7 +2324,7 @@ public class ManagerGui extends javax.swing.JFrame
         }
         
         // debug flags
-        dbgRenewData           = properties.getProperty( "dbgRenewData" );
+        dbgRefreshData         = properties.getProperty( "dbgRefreshData" );
         dbgPrepieceSuffix      = properties.getProperty( "dbgPrepieceSuffix" );
         dbgFirstnames          = properties.getProperty( "dbgFirstnames" );
         dbgFamilynames         = properties.getProperty( "dbgFamilynames" );
@@ -2697,8 +2697,8 @@ public class ManagerGui extends javax.swing.JFrame
 
         opts.setUseLinksLogs( use_links_logs );
 
-        if( cbCdoRefreshData.isSelected() ) { opts.setDoRenewData( true ); }
-        else { opts.setDoRenewData( false ); }
+        if( cbCdoRefreshData.isSelected() ) { opts.setDoRefreshData( true ); }
+        else { opts.setDoRefreshData( false ); }
 
         if( cbCdoPrepieceSuffix.isSelected() ) { opts.setDoPrepieceSuffix( true ); }
         else { opts.setDoPrepieceSuffix( false ); }
@@ -2754,9 +2754,9 @@ public class ManagerGui extends javax.swing.JFrame
         if( cbCdoScanRemarks.isSelected() ) { opts.setDoScanRemarks( true ); }
         else { opts.setDoScanRemarks( false ); }
 
-        if( dbgRenewData != null ) {
-            if( dbgRenewData.equals( "true" ) ) { opts.setDbgRenewData( true ); }
-            else { opts.setDbgRenewData( false ); }
+        if( dbgRefreshData != null ) {
+            if( dbgRefreshData.equals( "true" ) ) { opts.setDbgRefreshData( true ); }
+            else { opts.setDbgRefreshData( false ); }
         }
 
         if( dbgPrepieceSuffix != null ) {
@@ -3024,7 +3024,7 @@ public class ManagerGui extends javax.swing.JFrame
 			public void run()
 			{
 				long threadId = Thread.currentThread().getId();
-				String timestamp1 = "22-Oct-2019 14:26";
+				String timestamp1 = "28-Oct-2019 10:01";
 				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
 				try

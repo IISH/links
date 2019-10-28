@@ -36,14 +36,14 @@ import general.Functions;
  * @author Fons Laan
  *
  * FL-30-Sep-2019 Created
- * FL-22-Oct-2019
+ * FL-28-Oct-2019
  */
 public class LinksCleanAsync extends Thread
 {
-	private Options opts;
-
 	//private ThreadManager tm;
-	Semaphore semaphore;
+	private Semaphore semaphore;
+
+	private Options opts;
 
 	private String source;
 	private String rmtype;
@@ -181,12 +181,14 @@ public LinksCleanAsync
 			dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
 			dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 
+			dbconCleaned.showMetaData( "dbconCleaned" );
+
 			// links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors
 			showMessage(String.format( "Thread id %02d; Loading report table", threadId), false, true );
 			almmReport = new TableToArrayListMultimapHikari( dbconRefRead, "ref_report", "type", null );
 
 
-			doRenewData( opts.isDbgRenewData(), opts.isDoRenewData(), source, rmtype );                     // GUI cb: Remove previous data
+			doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), source, rmtype );                     // GUI cb: Remove previous data
 
 			doPrepieceSuffix(opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype);      // GUI cb: Prepiece, Suffix
 			/*
@@ -235,7 +237,7 @@ public LinksCleanAsync
 			if( dbconRefRead  != null ) { dbconRefRead.close();  dbconRefRead  = null; }
 			if( dbconRefWrite != null ) { dbconRefWrite.close(); dbconRefWrite = null; }
 			if( dbconOriginal != null ) { dbconOriginal.close(); dbconOriginal = null; }
-			if( dbconCleaned  != null ) { dbconCleaned.close();  dbconCleaned = null; }
+			if( dbconCleaned  != null ) { dbconCleaned.close();  dbconCleaned  = null; }
 
 			msg = String.format( "Thread id %02d; clock time", threadId );
 			elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
@@ -614,12 +616,12 @@ public LinksCleanAsync
 	 * @param rmtype
 	 * @throws Exception
 	 */
-	private void doRenewData( boolean debug, boolean go, String source, String rmtype )
+	private void doRefreshData( boolean debug, boolean go, String source, String rmtype )
 	throws Exception
 	{
 		long threadId = Thread.currentThread().getId();
 
-		String funcname = String.format( "Thread id %02d; doRenewData for source: %s, rmtype: %s (debug: %s)", threadId, source, rmtype, debug );
+		String funcname = String.format( "Thread id %02d; doRefreshData for source: %s, rmtype: %s (debug: %s)", threadId, source, rmtype, debug );
 
 		if( !go ) {
 			if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -650,8 +652,12 @@ public LinksCleanAsync
 			showMessage( deletePerson, false, true );
 		}
 
-		dbconCleaned.runQuery( deleteRegist );
-		dbconCleaned.runQuery( deletePerson );
+		int delRegistCCount = dbconCleaned.runQueryUpdate( deleteRegist );
+		int delPersonCCount = dbconCleaned.runQueryUpdate( deletePerson );
+		msg = String.format( "Thread id %02d; %d records deleted from registration_c", threadId, delRegistCCount );
+		showMessage( msg, false, true );
+		msg = String.format( "Thread id %02d; %d records deleted from person_c", threadId, delPersonCCount );
+		showMessage( msg, false, true );
 
 		// if links_cleaned is now empty, we reset the AUTO_INCREMENT
 		// that eases comparison with links_a2a tables
@@ -662,6 +668,7 @@ public LinksCleanAsync
 		rsR.first();
 		int registCCount = rsR.getInt("COUNT(*)" );
 		rsR.close();
+
 
 		ResultSet rsP = dbconCleaned.runQueryWithResult( qPersonCCount );
 		rsP.first();
@@ -675,11 +682,18 @@ public LinksCleanAsync
 			String auincRegist = "ALTER TABLE registration_c AUTO_INCREMENT = 1";
 			String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
 
-			dbconCleaned.runQuery( auincRegist );
-			dbconCleaned.runQuery( auincPerson );
+			dbconCleaned.runQueryUpdate( auincRegist );
+			dbconCleaned.runQueryUpdate( auincPerson );
+		}
+		else
+		{
+			msg = String.format( "Thread id %02d; %d records in registration_c", threadId, registCCount );
+			showMessage( msg, false, true );
+			msg = String.format( "Thread id %02d; %d records in person_c", threadId, personCCount );
+			showMessage( msg, false, true );
 		}
 
-
+		/*
 		// Copy key column data from links_original to links_cleaned
 		String keysRegistration = ""
 			+ "INSERT INTO links_cleaned.registration_c"
@@ -729,10 +743,10 @@ public LinksCleanAsync
 		if( debug ) { showMessage( keysPerson, false, true ); }
 
 		dbconCleaned.runQuery( keysPerson );
-
+		*/
 		elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
 		showMessage_nl();
-	} // doRenewData
+	} // doRefreshData
 
 
 	/*---< First- and Familynames >-------------------------------------------*/
@@ -923,15 +937,15 @@ public LinksCleanAsync
 
 				// write lists to person_c
 				if( !listTN.isEmpty() ) {
-					dbconCleaned.runQuery( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
+					dbconCleaned.runQueryUpdate( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
 				}
 
 				if( !listTO.isEmpty() ) {
-					dbconCleaned.runQuery( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
+					dbconCleaned.runQueryUpdate( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
 				}
 
 				if( !listPF.isEmpty() ) {
-					dbconCleaned.runQuery( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
+					dbconCleaned.runQueryUpdate( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
 				}
 			}
 		}
@@ -988,7 +1002,7 @@ public LinksCleanAsync
 						addToReportPerson(id_person, source, 71, suffix);     // EC 71
 
 						String query = PersonC.updateQuery( "suffix", suffix, id_person );
-						dbconCleaned.runQuery( query );
+						dbconCleaned.runQueryUpdate( query );
 					}
 					else if( standard_code.equals( SC_N ) )
 					{
@@ -999,12 +1013,12 @@ public LinksCleanAsync
 						addToReportPerson( id_person, source, 75, suffix );   // EC 74
 
 						String query = PersonC.updateQuery( "suffix", suffix, id_person );
-						dbconCleaned.runQuery( query );
+						dbconCleaned.runQueryUpdate( query );
 					}
 					else if( standard_code.equals( SC_Y ) )
 					{
 						String query = PersonC.updateQuery( "suffix", suffix, id_person );
-						dbconCleaned.runQuery( query );
+						dbconCleaned.runQueryUpdate( query );
 					}
 					else {
 						addToReportPerson(id_person, source, 79, suffix);     // EC 75
@@ -1017,7 +1031,7 @@ public LinksCleanAsync
 					almmSuffix.add( suffix );
 
 					String query = PersonC.updateQuery( "suffix", suffix, id_person );
-					dbconCleaned.runQuery( query );
+					dbconCleaned.runQueryUpdate( query );
 
 				}
 			}

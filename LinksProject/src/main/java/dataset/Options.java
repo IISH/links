@@ -34,6 +34,7 @@ import general.PrintLogger;
  * FL-05-Feb-2015 RemoveDuplicates
  * FL-07-Nov-2016 Remove -> Flag
  * FL-21-Jun-2017 RMtypes
+ * FL-28-Oct-2019 RenewData => RefreshData
  */
 public class Options
 {
@@ -58,8 +59,8 @@ public class Options
     // cleaning options
     private boolean doDebug;
 
-    private boolean doRenewData;
-    private boolean dbgRenewData;
+    private boolean doRefreshData;
+    private boolean dbgRefreshData;
 
     private boolean doPrepieceSuffix;
     private boolean dbgPrepieceSuffix;
@@ -180,11 +181,11 @@ public class Options
     public boolean isDoDebug() { return doDebug; }
 
 
-    public boolean  isDoRenewData() { return  doRenewData; }
-    public boolean isDbgRenewData() { return dbgRenewData; }
+    public boolean  isDoRefreshData() { return  doRefreshData; }
+    public boolean isDbgRefreshData() { return dbgRefreshData; }
 
-    public void  setDoRenewData( boolean  doRenewData ) { this.doRenewData  =  doRenewData; }
-    public void setDbgRenewData( boolean dbgRenewData ) { this.dbgRenewData = dbgRenewData; }
+    public void  setDoRefreshData( boolean  doRefreshData ) { this.doRefreshData  =  doRefreshData; }
+    public void setDbgRefreshData( boolean dbgRefreshData ) { this.dbgRefreshData = dbgRefreshData; }
 
 
     public boolean  isDoPrepieceSuffix() { return  doPrepieceSuffix; }

@@ -1,9 +1,6 @@
 package connectors;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 
 /**
  * @author Fons Laan
@@ -12,7 +9,7 @@ import java.sql.ResultSet;
  * We call this class HikariConnection because we use it it in combination with Hikari Connection Pooling.
  *
  * FL-08-Oct-2019 Created
- * FL-22-Oct-2019 Changed
+ * FL-28-Oct-2019 Changed
  */
 
 public class HikariConnection
@@ -26,15 +23,35 @@ public class HikariConnection
 	public HikariConnection( Connection connection )
 	{
 		this.connection = connection;
+		//this.connection.commit();
 	}
 
 
 	/**
 	* @throws SQLException
 	*/
-	public void close() throws SQLException
+	public void close()
+	throws SQLException
 	{
 		connection.close();
+	}
+
+	/**
+	 * @throws SQLException
+	 */
+	public void showMetaData( String connectionName )
+	throws SQLException
+	{
+		System.out.printf( "showMetaData() %s\n", connectionName );
+		DatabaseMetaData meta = connection.getMetaData();
+
+		System.out.printf( "DatabaseProductName: %s\n", meta.getDatabaseProductName() );
+		System.out.printf( "DatabaseProductVersion: %s\n", meta.getDatabaseProductVersion() );
+		System.out.printf( "URL: %s\n", meta.getURL() );
+		System.out.printf( "ReadOnly: %s\n", meta.isReadOnly() );
+
+		int networkTimeout = connection.getNetworkTimeout();
+		System.out.printf( "NetworkTimeout: %d (milliseconds)\n", networkTimeout );
 	}
 
 
@@ -50,13 +67,13 @@ public class HikariConnection
 
 
 	/**
-	 * Use this method to insert data into a certain table
+	 * INSERT INTO table
 	 * @param tableName Table name
 	 * @param fields fields
 	 * @param data field data
 	 * @throws SQLException When insertion fails
 	 */
-	public void insertIntoTable( String tableName, String[] fields, String[] data )
+	public int insertIntoTable( String tableName, String[] fields, String[] data )
 	throws SQLException
 	{
 		//Generate SQL query
@@ -76,19 +93,20 @@ public class HikariConnection
 			else { query += "'" + data[i] + "',"; }
 		}
 
-		runQuery( query );
+		int count = runQueryUpdate( query );
+		return count;
 	}
 
 
 	/**
-	 * Use this method to insert data into a certain table, ignoring duplicates
+	 * INSERT INTO table, ignoring duplicates
 	 *
 	 * @param tableName Table name
 	 * @param fields fields
 	 * @param data field data
 	 * @throws SQLException When insertion fails
 	 */
-	public void insertIntoTableIgnore( String tableName, String[] fields, String[] data )
+	public int insertIntoTableIgnore( String tableName, String[] fields, String[] data )
 	throws SQLException
 	{
 		// Ignore duplicates when writing to a table with UNIQUE key[s]
@@ -107,26 +125,32 @@ public class HikariConnection
 			else { query += "'" + data[i] + "',"; }
 		}
 
-		runQuery( query );
+		int count = runQueryUpdate( query );
+		return count;
 	}
 
 
 	/**
+	 * TODO rename to executeQuery
 	 * @param query
 	 * @throws SQLException
 	 */
+	/*
 	public void runQuery( String query )
 	throws SQLException
 	{
 		// PreparedStatement and ResultSet with auto-close syntax
+		System.out.printf( "runQuery: %s\n", query );
 		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
 		{
 			try( ResultSet rs = pstmt.executeQuery() ) { ; }
 		}
 	}
-
+	*/
 
 	/**
+	 * TODO rename to executeUpdate
+	 * executeUpdate for INSERT , UPDATE or DELETE ... queries
 	 * @param query
 	 * @return
 	 * @throws SQLException
@@ -135,27 +159,29 @@ public class HikariConnection
 	throws SQLException
 	{
 		// PreparedStatement and ResultSet with auto-close syntax
+		System.out.printf( "runQueryUpdate: %s\n", query );
 	  	int count;
 		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
 		{
-			try( ResultSet rs = pstmt.executeQuery() ) { count = pstmt.getUpdateCount(); }
+			count = pstmt.executeUpdate();
 		}
 		return count;
 	}
 
 
 	/**
+	 * TODO rename to executeQueryWithResult
+	 * executeQuery for SELECT queries
 	 * @param query
 	 * @return
 	 * @throws SQLException
-	 * PreparedStatement auto closed
-	 * ResultSet returned open
 	 */
 	public ResultSet runQueryWithResult( String query )
 	throws SQLException
 	{
 		// PreparedStatement with auto-close syntax
 		// ResultSet returned open (of course)
+		System.out.printf( "runQueryWithResult: %s\n", query );
 		ResultSet rs;
 		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
 		{
