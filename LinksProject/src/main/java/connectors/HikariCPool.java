@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * FL-12-Mar-2019 Created
  * FL-15-Apr-2019 Now using mariadb-java-client instead of mysql-connector-java
- * FL-28-Oct-2019
+ * FL-29-Oct-2019
  */
 public class HikariCPool
 {
@@ -40,7 +40,8 @@ public class HikariCPool
     private static int ds_links_prematch_count = 0;
     private static int ds_links_temp_count = 0;
 
-    private static int maximumPoolSize = 10;                // default
+    private static int maximumPoolSize = 10;				// default
+	private static boolean autoCommit = true;				// default: true. Since 2.2.0
     private static String configPathname = null;
 
     private static String db_host = DEFAULT_HOST;
@@ -50,13 +51,23 @@ public class HikariCPool
 
     private static Logger logger = Logger.getLogger( HikariCPool.class.getName() );
 
-    public HikariCPool( int maximumPoolSize, String configPathname, String db_host, String db_user, String db_pass )
+	/**
+	 * Constructor
+	 * @param maximumPoolSize
+	 * @param autoCommit
+	 * @param configPathname
+	 * @param db_host
+	 * @param db_user
+	 * @param db_pass
+	 */
+    public HikariCPool( int maximumPoolSize, boolean autoCommit, String configPathname, String db_host, String db_user, String db_pass )
     {
         String fname = "HikariCP/HikariCPool()";
         logger.info( fname );
         if( configPathname != null && ! configPathname.isEmpty() ) { logger.info( configPathname ); }
 
         this.maximumPoolSize = maximumPoolSize;
+        this.autoCommit = autoCommit;
         this.configPathname  = configPathname;
 
         this.db_host = db_host;
@@ -91,7 +102,7 @@ public class HikariCPool
 
         // Notice: with "config.setAutoCommit( false )",  the "pstmt.executeUpdate();" in HikariConnection.java did nothing.
         // Then apparently we need an additional "connection.commit()" after executeUpdate()
-        //config.setAutoCommit( false );                  // Default: true. Since 2.2.0; see https://mariadb.com/kb/en/library/about-mariadb-connector-j/
+        config.setAutoCommit( autoCommit );			// Default: true. Since 2.2.0; see https://mariadb.com/kb/en/library/about-mariadb-connector-j/
 
         String poolName = "HikariPool-" + db_name;
         config.setPoolName( poolName );

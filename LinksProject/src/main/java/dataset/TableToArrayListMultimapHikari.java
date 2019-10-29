@@ -23,7 +23,7 @@ import modulemain.LinksSpecific;
  *
  * FL-06-Apr-2016 AtomicBoolean update_busy
  * FL-05-Jul-2017 optional extra column for ref_registration
- * FL-28-Oct-2019 Hikari connection variant
+ * FL-29-Oct-2019 Hikari connection variant
  */
 public class TableToArrayListMultimapHikari
 {
@@ -134,7 +134,7 @@ public class TableToArrayListMultimapHikari
         else { query = "SELECT * FROM links_general.`" + tableName + "`"; }
 
         if( debug ) { System.out.println( "TableToArrayListMultimap, query: " + query ); }
-        ResultSet rs = conn_read.runQueryWithResult( query );
+        ResultSet rs = conn_read.executeQuery( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
         numColumns = rs_md.getColumnCount();
@@ -270,7 +270,7 @@ public class TableToArrayListMultimapHikari
                     String query = "DELETE FROM `" + tableName + "` WHERE " + column + " = " + Integer.toString( id );
                     System.out.println( query );
 
-                    try { conn_read.runQueryUpdate( query ); }
+                    try { conn_read.executeUpdate( query ); }
                     catch( SQLException sex )
                     { System.out.println( "SQLException while deleting duplicate: " + sex.getMessage() ); }
                     catch( Exception jex )

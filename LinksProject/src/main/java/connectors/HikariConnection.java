@@ -23,24 +23,14 @@ public class HikariConnection
 	public HikariConnection( Connection connection )
 	{
 		this.connection = connection;
-		//this.connection.commit();
 	}
 
-
-	/**
-	* @throws SQLException
-	*/
-	public void close()
-	throws SQLException
-	{
-		connection.close();
-	}
 
 	/**
 	 * @throws SQLException
 	 */
 	public void showMetaData( String connectionName )
-	throws SQLException
+		throws SQLException
 	{
 		System.out.printf( "showMetaData() %s\n", connectionName );
 		DatabaseMetaData meta = connection.getMetaData();
@@ -56,6 +46,26 @@ public class HikariConnection
 
 
 	/**
+	* @throws SQLException
+	*/
+	public void commit()
+	throws SQLException
+	{
+		connection.commit();
+	}
+
+
+	/**
+	* @throws SQLException
+	*/
+	public void close()
+	throws SQLException
+	{
+		connection.close();
+	}
+
+
+	/**
 	 * Prepare Statement
 	 * @throws SQLException
 	 */
@@ -63,6 +73,27 @@ public class HikariConnection
 	throws SQLException
 	{
 		return connection.prepareStatement( query );
+	}
+
+
+	/**
+	 * executeQuery for SELECT queries
+	 * @param query
+	 * @return
+	 * @throws SQLException
+	 */
+	public ResultSet executeQuery( String query )
+		throws SQLException
+	{
+		// PreparedStatement with auto-close syntax
+		// ResultSet returned open (of course)
+		//System.out.printf( "executeQuery: %s\n", query );
+		ResultSet rs;
+		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
+		{
+			rs = pstmt.executeQuery();
+		}
+		return rs;
 	}
 
 
@@ -93,7 +124,7 @@ public class HikariConnection
 			else { query += "'" + data[i] + "',"; }
 		}
 
-		int count = runQueryUpdate( query );
+		int count = executeUpdate( query );
 		return count;
 	}
 
@@ -125,69 +156,28 @@ public class HikariConnection
 			else { query += "'" + data[i] + "',"; }
 		}
 
-		int count = runQueryUpdate( query );
+		int count = executeUpdate( query );
 		return count;
 	}
 
 
 	/**
-	 * TODO rename to executeQuery
-	 * @param query
-	 * @throws SQLException
-	 */
-	/*
-	public void runQuery( String query )
-	throws SQLException
-	{
-		// PreparedStatement and ResultSet with auto-close syntax
-		System.out.printf( "runQuery: %s\n", query );
-		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
-		{
-			try( ResultSet rs = pstmt.executeQuery() ) { ; }
-		}
-	}
-	*/
-
-	/**
-	 * TODO rename to executeUpdate
 	 * executeUpdate for INSERT , UPDATE or DELETE ... queries
 	 * @param query
 	 * @return
 	 * @throws SQLException
 	 */
-	public int runQueryUpdate( String query )
+	public int executeUpdate( String query )
 	throws SQLException
 	{
 		// PreparedStatement and ResultSet with auto-close syntax
-		System.out.printf( "runQueryUpdate: %s\n", query );
+		//System.out.printf( "executeUpdate: %s\n", query );
 	  	int count;
 		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
 		{
 			count = pstmt.executeUpdate();
 		}
 		return count;
-	}
-
-
-	/**
-	 * TODO rename to executeQueryWithResult
-	 * executeQuery for SELECT queries
-	 * @param query
-	 * @return
-	 * @throws SQLException
-	 */
-	public ResultSet runQueryWithResult( String query )
-	throws SQLException
-	{
-		// PreparedStatement with auto-close syntax
-		// ResultSet returned open (of course)
-		System.out.printf( "runQueryWithResult: %s\n", query );
-		ResultSet rs;
-		try( PreparedStatement pstmt = connection.prepareStatement( query ) )
-		{
-			rs = pstmt.executeQuery();
-		}
-		return rs;
 	}
 
 }
