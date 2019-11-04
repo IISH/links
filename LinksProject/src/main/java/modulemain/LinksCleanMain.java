@@ -105,7 +105,7 @@ import linksmanager.ManagerGui;
  * FL-30-Sep-2019 standardRole(): check role againt registration_maintype
  * FL-08-Oct-2019 Begin using HikariCP
  * FL-21-Oct-2019 Start using LinksCleanedAsync
- * FL-29-Oct-2019
+ * FL-04-Nov-2019
  *
  * TODO:
  * - check all occurrences of TODO
@@ -475,8 +475,12 @@ public class LinksCleanMain extends Thread
                     String source = Integer.toString(sourceId);
                     //CleaningThread ct = new CleaningThread( tm, source, rmtype );
                     //LinksCleanAsync lca = new LinksCleanAsync( tm, opts, guiLine, guiArea, source, rmtype, showskip, dsOriginal, dsCleaned );
+
+                    //LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
+                    //    ref_url, ref_db, ref_user, ref_pass, logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned, dsTemp );
+
                     LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
-                        ref_url, ref_db, ref_user, ref_pass, logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned, dsTemp );
+                        logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned, dsTemp );
 
                     lca.start();
                     threads.add( lca );
@@ -581,6 +585,32 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace(new PrintStream(System.out));
         }
     } // run
+
+
+    /*---< Run PreMatch >-----------------------------------------------------*/
+
+    /**
+     * Run PreMatch
+     * @param go
+     * @throws Exception
+     */
+    private void doPrematch( boolean go) throws Exception
+    {
+        String funcname = "doPrematch";
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname + " ...", false, true );
+
+        showMessage( "Running PREMATCH ...", false, false );
+        mg.firePrematch();
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doPrematch
 
 
     /*===< Helper functions >=================================================*/
@@ -4564,6 +4594,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doDates1( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -4584,7 +4615,7 @@ public class LinksCleanMain extends Thread
         //msg = "skipping untill standardRegistrationDate()";
         //msg = "ONLY flag functions";
         //showMessage( msg, false, true );
-        ///*
+
         ts = System.currentTimeMillis();
         String type = "birth";
         msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
@@ -4616,20 +4647,20 @@ public class LinksCleanMain extends Thread
         standardDate( debug, source, type, rmtype );
         msg = String.format( "Thread id %02d; Processing standard dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
 
-        ///*
+
+
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         standardRegistrationDate( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing standardRegistrationDate", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+
 
         //msg = "skipping remaining date functions";
         //showMessage( msg, false, true );
-        ///*
+
         // Fill empty event dates with registration dates
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
@@ -4650,21 +4681,21 @@ public class LinksCleanMain extends Thread
 
         msg = String.format( "Thread id %02d; Flagging empty dates", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
 
-        ///*
+
+
         ts = System.currentTimeMillis();
         msg = String.format( "Thread id %02d; Processing minMaxDateValid for source: %s, rmtype: %s ...", threadId, source, rmtype );
         showMessage( msg, false, true );
         minMaxDateValid( debug, source, rmtype );
         msg = String.format( "Thread id %02d; Processing minMaxDateValid", threadId );
         elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-        //*/
+
 
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDates1
-
+    */
 
     /**
      * doDates2
@@ -4674,6 +4705,7 @@ public class LinksCleanMain extends Thread
      * Make minMaxDateMain() also a separate GUI option:
      * we often have date issues, and redoing the whole date cleaning takes so long.
      */
+    /*
     private void doDates2( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -4701,7 +4733,7 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDates2
-
+    */
 
     /**
      * minMaxDateMain
@@ -4709,6 +4741,7 @@ public class LinksCleanMain extends Thread
      * @param source
      * @throws Exception
      */
+    /*
     public void minMaxDateMain( boolean debug, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -4802,12 +4835,6 @@ public class LinksCleanMain extends Thread
                 //if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
                 //if( id_person == 35243117 || id_person == 35243285 || id_person == 35243396 ) { debug = true; }
                 //if( id_person == 35366306 || id_person == 35418132 || id_person == 35573087 ) { debug = true; }
-                /*
-                if( id_person == 37337615 || id_person == 37337618 || id_person == 37338875 || id_person == 37338878
-                 || id_person == 37338905 || id_person == 37338908 || id_person == 37339391 || id_person == 37339394
-                 || id_person == 37339799 || id_person == 37339802 || id_person == 37340293 || id_person == 37340296 )
-                { debug = true; }
-                */
                 //if( id_person == 37336505 || id_person == 37336508 ) { debug = true; }
                 //else { debug = false; continue; }
 
@@ -4975,7 +5002,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // minMaxDateMain
-
+    */
 
     /**
      * minMaxDate : called by minMaxDateMain for invalid dates
@@ -4984,6 +5011,7 @@ public class LinksCleanMain extends Thread
      * @return
      * @throws Exception
      */
+    /*
     private DivideMinMaxDatumSet minMaxDate( boolean debug, MinMaxDateSet inputInfo )
     throws Exception
     {
@@ -5449,7 +5477,7 @@ public class LinksCleanMain extends Thread
         //showMessage( "9 - age not given", false, true );
         return returnSet;   // age not given
     } // minMaxDate
-
+    */
 
     /**
      * @param id_person
@@ -5462,6 +5490,7 @@ public class LinksCleanMain extends Thread
      * @return
      * @throws Exception
      */
+    /*
     private MinMaxYearSet minMaxCalculation
     (
         boolean debug,
@@ -5643,7 +5672,7 @@ public class LinksCleanMain extends Thread
         return mmj;
 
     } // minMaxCalculation
-
+    */
 
     /**
      * @param debug
@@ -5657,6 +5686,7 @@ public class LinksCleanMain extends Thread
      * @return
      * @throws Exception
      */
+    /*
     private MinMaxMainAgeSet minMaxMainAge
     (
         boolean debug,
@@ -5824,7 +5854,7 @@ public class LinksCleanMain extends Thread
         return mmmas;
 
     } // minMaxMainAge
-
+    */
 
     /**
      * @param year
@@ -5833,6 +5863,7 @@ public class LinksCleanMain extends Thread
      * @param day
      * @return
      */
+    /*
     public int roundDownAge( int year, int month, int week, int day )
     {
         int tempYear  = year;
@@ -5865,7 +5896,7 @@ public class LinksCleanMain extends Thread
 
         return tempYear;
     } // roundDownAge
-
+    */
 
 
     /**
@@ -5873,6 +5904,7 @@ public class LinksCleanMain extends Thread
      * @param source
      * @param rmtype
      */
+    /*
     public void standardRegistrationDate( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -6181,11 +6213,12 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardRegistrationDate
-
+    */
 
     /**
      * @param type      // "birth", "mar", or "death"
      */
+    /*
     public void standardDate( boolean debug, String source, String type, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -6258,12 +6291,7 @@ public class LinksCleanMain extends Thread
                     dbconCleaned.executeUpdate( query );
                 }
                 else
-                {   /*
-                    String query = ""
-                        + "UPDATE person_c SET "
-                        + "person_c." + type + "_date_valid = 0 "
-                        + "WHERE person_c.id_person = " + id_person;
-                    */
+                {
                     // clear existing contents of date fields
                     String query = ""
                         + "UPDATE person_c SET "
@@ -6300,7 +6328,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // standardDate
-
+    */
 
     /**
      * @param debug
@@ -6310,6 +6338,7 @@ public class LinksCleanMain extends Thread
      * if the date is valid, set the min en max values of date, year, month, day equal to the given values
      * do this for birth, marriage and death
      */
+    /*
     private void minMaxDateValid( boolean debug, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -6394,7 +6423,7 @@ public class LinksCleanMain extends Thread
         else { showMessage( String.format( "Thread id %02d; 4-of-4, minMaxValidDate", threadId ), false, true ); }
         dbconCleaned.executeUpdate( q3 );
     } // minMaxDateValid
-
+    */
 
     /**
      * Use this function to add or subtract an amount of time from a date.
@@ -6409,6 +6438,7 @@ public class LinksCleanMain extends Thread
      * @param timeAmount
      * @return
      */
+    /*
     private String addTimeToDate( int year, int month, int day, TimeType tt, int timeAmount )
     {
         Calendar c1 = Calendar.getInstance();       // new calendar instance
@@ -6430,7 +6460,7 @@ public class LinksCleanMain extends Thread
 
         return am;
     } // addTimeToDate
-
+    */
 
     /**
      * @param pYear
@@ -6441,6 +6471,7 @@ public class LinksCleanMain extends Thread
      * @param rDay
      * @return
      */
+    /*
     private DateYearMonthDaySet checkMaxDate( int pYear, int pMonth, int pDay, int rYear, int rMonth, int rDay )
     {
         // year is greater than age year
@@ -6508,12 +6539,13 @@ public class LinksCleanMain extends Thread
         dy.setDay(pDay);
         return dy;
     } // checkMaxDate
-
+    */
 
     /**
      * @param debug
      * @param source
      */
+    /*
     public void flagBirthDate( boolean debug, String source, String rmtype )
     {
         // birth_date_flag is not used elsewhere in the cleaning.
@@ -6597,13 +6629,14 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagBirthDate
-
+    */
 
     /**
      * @param debug
      * @param source
      * @param rmtype
      */
+    /*
     public void flagMarriageDate( boolean debug, String source, String rmtype )
     {
         // mar_date_flag is not used elsewhere in the cleaning.
@@ -6691,13 +6724,14 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagMarriageDate
-
+    */
 
     /**
      * @param debug
      * @param source
      * @param rmtype
      */
+    /*
     public void flagDivorceDate( boolean debug, String source, String rmtype )
     {
         // divorce_date_flag is not used elsewhere in the cleaning.
@@ -6785,12 +6819,13 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagDivorceDate
-
+    */
 
     /**
      * @param debug
      * @param source
      */
+    /*
     public void flagDeathDate( boolean debug, String source, String rmtype )
     {
         // death_date_flag is not used elsewhere in the cleaning.
@@ -6874,7 +6909,7 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagDeathDate
-
+    */
 
     /*---< Min Max Marriage >-------------------------------------------------*/
 
@@ -6883,6 +6918,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doMinMaxMarriage( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -6919,13 +6955,14 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doMinMaxMarriage
-
+    */
 
      /**
      * @param debug
      * @param source
      * @throws Exception
      */
+     /*
     private void minMaxMarriageYear( boolean debug, TableToArrayListMultimap almmMarriageYear, String source, String rmtype )
     throws Exception
     {
@@ -7117,7 +7154,7 @@ public class LinksCleanMain extends Thread
         }
 
     } // minMaxMarriageYear
-
+    */
 
     /**
      * @param lYear
@@ -7128,6 +7165,7 @@ public class LinksCleanMain extends Thread
      * @param rDay
      * @return
      */
+    /*
     private boolean dateLeftIsGreater( int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay )
     {
         if( lYear > rYear )      { return true; }   // lower, date is correct, return original date
@@ -7142,7 +7180,7 @@ public class LinksCleanMain extends Thread
 
         return false;
     } // dateLeftIsGreater
-
+    */
 
     /**
      * @param lYear
@@ -7153,13 +7191,14 @@ public class LinksCleanMain extends Thread
      * @param rDay
      * @return
      */
+    /*
     private boolean datesEqual( int lYear, int lMonth, int lDay, int rYear, int rMonth, int rDay )
     {
         if( lYear == rYear && lMonth == rMonth && lDay == rDay ) { return true; }
 
         return false;
     } // datesEqual
-
+    */
 
     /*---< Parts to Full Date >-----------------------------------------------*/
 
@@ -7168,6 +7207,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doPartsToFullDate( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7189,10 +7229,12 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doPartsToFullDate
-
-
+    */
+    /*
     private void partsToFullDate( boolean debug, String source, String rmtype )
     {
+    /*
+     */
         /*
         Notice: the date components from person_c are INTs.
         Below they are CONCATenated directly, implying that no leading zeros are inserted in the output string,
@@ -7215,7 +7257,7 @@ public class LinksCleanMain extends Thread
         We should always check for 0 years, because then we have no valid date anyway
         The MySQL date/time functions are not rock solid, we maybe be we should avoid them, and use Java Joda-time.
         */
-
+    /*
         long threadId = Thread.currentThread().getId();
 
         // Notice: should we alse have divorce_date_min & divorce_date_max ?
@@ -7242,7 +7284,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // partsToFullDate
-
+    */
 
     /*---< Days Since Begin >-------------------------------------------------*/
 
@@ -7251,6 +7293,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doDaysSinceBegin( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7272,8 +7315,8 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doDaysSinceBegin
-
-
+    */
+    /*
     private void daysSinceBegin( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -7338,6 +7381,7 @@ public class LinksCleanMain extends Thread
         // We skip such negative results.
         // 22-Jan-2016: we now assume that the registration_date of registration_c is formatted as '%02d-%02d-%04d'
         // 15-Mar-2016: check for STR_TO_DATE result NOT NULL
+     */
         /*
         String queryR = "UPDATE registration_c SET "
             + "registration_days = DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) "
@@ -7351,7 +7395,7 @@ public class LinksCleanMain extends Thread
             + "AND DATEDIFF( DATE_FORMAT( STR_TO_DATE( registration_date, '%d-%m-%Y' ), '%Y-%m-%d' ) , '1-1-1' ) > 0 "
             + "AND id_source = " + source;
         */
-
+    /*
         try
         {
             if( debug ) { showMessage( queryP1, false, true ); }
@@ -7393,6 +7437,7 @@ public class LinksCleanMain extends Thread
             int rowsAffected = dbconCleaned.executeUpdate( queryR );
             showMessage( "registration_days rows affected: " + rowsAffected, false, true );
             */
+    /*
         }
         catch( Exception ex ) {
             String msg = String.format( "Thread id %02d; Exception 2 in daysSinceBegin: %s", threadId, ex.getMessage() );
@@ -7460,7 +7505,7 @@ public class LinksCleanMain extends Thread
         }
 
     } // daysSinceBegin
-
+    */
 
 
     /*---< Post Tasks >-------------------------------------------------------*/
@@ -7470,6 +7515,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doPostTasks( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -7525,13 +7571,14 @@ public class LinksCleanMain extends Thread
         showMessage_nl();
 
     } // doPostTasks
-
+    */
 
     /**
      * @param debug
      * @param source
      * @throws Exception
      */
+    /*
     private void postTasks( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -7644,11 +7691,13 @@ public class LinksCleanMain extends Thread
         showMessage( msg, false, true );
 
     } // postTasks
+    */
 
     /**
      * @param debug
      * @param source
      */
+    /*
     public void flagBirthLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -7701,12 +7750,13 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagBirthLocation
-
+    */
 
     /**
      * @param debug
      * @param source
      */
+    /*
     public void flagMarriageLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -7759,13 +7809,14 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagMarriageLocation
-
+    */
 
     /**
      * @param debug
      * @param source
      * flagDivoreLocation: same roles as marriage
      */
+    /*
     public void flagDivorceLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -7818,12 +7869,13 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagDivorceLocation
-
+    */
 
     /**
      * @param debug
      * @param source
      */
+    /*
     public void flagDeathLocation( boolean debug, String source, String rmtype )
     {
         long threadId = Thread.currentThread().getId();
@@ -7876,6 +7928,7 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagDeathLocation
+    */
 
     /*---< Flag Bad Registrations >-----------------------------------------*/
 
@@ -7884,6 +7937,7 @@ public class LinksCleanMain extends Thread
      * @param go
      * @throws Exception
      */
+    /*
     private void doFlagRegistrations( boolean debug, boolean go, String source, String rmtype )
     throws Exception
     {
@@ -7921,12 +7975,13 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doFlagRegistrations
-
+    */
 
     /**
      * @param debug
      * @throws Exception
      */
+    /*
     private void clearFlagsRegsLinksbase( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -7944,7 +7999,7 @@ public class LinksCleanMain extends Thread
         String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
         showMessage( msg, false, true );
     } // clearFlagsRegsLinksbase
-
+    */
 
     /**
      * @param debug
@@ -7952,6 +8007,7 @@ public class LinksCleanMain extends Thread
      * @param rmtype
      * @throws Exception
      */
+    /*
     private void flagDuplicateRegsComps( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -8092,7 +8148,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagDuplicateRegsComps
-
+    */
 
     /**
      * @param debug
@@ -8103,6 +8159,7 @@ public class LinksCleanMain extends Thread
      *
      * @throws Exception
      */
+    /*
     private boolean compare2Registrations( boolean debug, int rid1, int rid2, Vector< Integer > registrationIds, int registration_maintype )
     throws Exception
     {
@@ -8506,13 +8563,14 @@ public class LinksCleanMain extends Thread
 
         return false;
     } // compare2Registrations
-
+    */
 
     /**
      * @param debug
      *
      * @throws Exception
      */
+    /*
     private int flagDuplicateReg( boolean debug, Vector< Integer > registrationIds, String id_source1, String id_source2,
         int id_registration1, int id_registration2, int registration_maintype )
     throws Exception
@@ -8586,19 +8644,11 @@ public class LinksCleanMain extends Thread
             //System.out.println(flagQuery_r);
 
             countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-
-            /*
-            if( countRegist != 1 )
-            {
-                String msg = String.format( "flagDuplicate() id_registration: %d already flagged", id_reg_flag );
-                showMessage( msg, false, true );
-            }
-            */
         }
 
         return countRegist;
     } // flagDuplicateReg
-
+    */
 
     /**
      * @param debug
@@ -8606,6 +8656,7 @@ public class LinksCleanMain extends Thread
      * @param rmtype
      * @throws Exception
      */
+    /*
     private void flagDuplicateRegsPersist( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -8716,8 +8767,8 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagDuplicateRegsPersist
-
-
+    */
+    /*
     private void flagIdPersistDuplicates( boolean debug, String source, String rmtype, String registrationIdsStrs[] )
     throws Exception
     {
@@ -8790,13 +8841,14 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagIdPersistDuplicates
-
+    */
 
     /**
      * @param debug
      * @param go
      * @throws Exception
      */
+    /*
     private void doFlagPersonRecs( boolean debug, boolean go, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -8825,7 +8877,7 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doFlagPersonRecs
-
+    */
 
     /**
      * Flag registrations with empty registration dates from links_cleaned
@@ -8833,6 +8885,7 @@ public class LinksCleanMain extends Thread
      * @param debug
      * @throws Exception
      */
+    /*
     private void flagEmptyDateRegs( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -8892,7 +8945,7 @@ public class LinksCleanMain extends Thread
                     dbconCleaned.runQuery( deletePerson );
                 }
                 */
-
+    /*
                 int id_regist = rs_r.getInt( "id_registration" );
 
                 // get current flags string
@@ -8941,7 +8994,7 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagEmptyDateRegs
-
+    */
 
     /**
      * Flag registrations with empty registration days since begin from links_cleaned
@@ -8949,6 +9002,7 @@ public class LinksCleanMain extends Thread
      * @param debug
      * @throws Exception
      */
+    /*
     private void flagEmptyDaysSinceBegin( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -9022,12 +9076,13 @@ public class LinksCleanMain extends Thread
             }
         }
     } // flagEmptyDaysSinceBegin
-
+    */
 
     /**
      * @param debug
      * @throws Exception
      */
+    /*
     private void clearFlagsPersonBasetable( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -9044,7 +9099,7 @@ public class LinksCleanMain extends Thread
         String msg = String.format( "Thread id %02d; Number of flags cleared: %d", threadId, nrec );
         showMessage( msg, false, true );
     } // clearFlagsPersonBasetable
-
+    */
 
     /**
      * Flag person_c records with empty familynames
@@ -9052,6 +9107,7 @@ public class LinksCleanMain extends Thread
      * @param debug
      * @throws Exception
      */
+    /*
     private void flagEmptyFamilynameRecs( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -9123,7 +9179,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagEmptyFamilynameRecs
-
+    */
 
     /**
      * Flag person_c records with empty person roles from links_cleaned
@@ -9131,6 +9187,7 @@ public class LinksCleanMain extends Thread
      * @param debug
      * @throws Exception
      */
+    /*
     private void flagEmptyRoleRecs( boolean debug, String source, String rmtype )
     throws Exception
     {
@@ -9156,6 +9213,7 @@ public class LinksCleanMain extends Thread
 
             while( rs_r.next() )        // process all registrations
             {
+    */
                 /*
                 row++;
                 if( row == stepstate ) {
@@ -9213,7 +9271,7 @@ public class LinksCleanMain extends Thread
                     dbconCleaned.runQuery( deletePerson );
                 }
                 */
-
+    /*
                 int id_person = rs_r.getInt( "id_person" );
 
                 // get current flags string
@@ -9260,13 +9318,14 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // flagEmptyRoleRecs
-
+    */
 
     /**
      * @param debug
      * @param go
      * @throws Exception
      */
+    /*
     private void doScanRemarks( boolean debug, boolean go, String source, String rmtype )
     throws Exception
     {
@@ -9288,12 +9347,13 @@ public class LinksCleanMain extends Thread
         elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
         showMessage_nl();
     } // doScanRemarks
-
+    */
 
     /**
      * @param debug
      * @throws Exception
      */
+    /*
     private void scanRemarks( boolean debug, String source, String rmtype ) throws Exception
     {
         long threadId = Thread.currentThread().getId();
@@ -9421,14 +9481,6 @@ public class LinksCleanMain extends Thread
                 //if( id_registration == 8244763 ) { debug = true; }
                 //else { debug = false; continue; }
 
-                /*
-                if( remarks_str.contains( "echtscheiding" ) ) {
-                    debug = true;
-                    String msg = String.format( "\nid_reg: %d, rm_type: %d, remarks: %s", id_registration, registration_maintype, remarks_str );
-                    showMessage( msg, false, true );
-                } else { debug = false; }
-                */
-
                 int record = 0;
                 // loop through all remark entries from the ref table
                 for( Remarks ref_remarks : ref_remarksVec )
@@ -9515,12 +9567,13 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // scanRemarks
-
+    */
 
     /**
      * @param debug
      * @throws Exception
      */
+    /*
     private void scanRemarksDivorce( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String divorceStr )
     {
         long threadId = Thread.currentThread().getId();
@@ -9601,7 +9654,7 @@ public class LinksCleanMain extends Thread
                 + "[d.M.yyyy]"
             );
             // so, e.g., "dd MM yy" will give an exception
-
+    /*
             /*
             if( debug ) { System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr) ); }
             String divorceStrClean = divorceStr.replaceAll( "[^0-9 -/]", "" );    // keep digits plus separators
@@ -9624,7 +9677,7 @@ public class LinksCleanMain extends Thread
             }
             dateStr = divorceStrClean;
             */
-
+    /*
             if( ! dateStr.isEmpty() && dateStr.length() >= 8 && dateStr.length() <= 10 )
             {
                 int day = 0, month = 0, year = 0;
@@ -9641,14 +9694,6 @@ public class LinksCleanMain extends Thread
                 }
                 catch( DateTimeParseException ex )
                 {
-                    /*
-                    String msg = String.format( "Thread id %02d; Exception: %s", threadId, ex.getMessage() );
-                    System.out.println( msg );
-                    System.out.println( String.format( "id_registration: %d, divorceStr: |%s|", id_registration, divorceStr ) );
-                    System.out.println( String.format( "id_registration: %d, dateStr: |%s|", id_registration, dateStr ) );
-
-                    nattyDateParser( debug, divorceStr );       // give it a try
-                    */
                     return;     // forget it
                 }
 
@@ -9669,7 +9714,7 @@ public class LinksCleanMain extends Thread
             }
         }
     } // scanRemarksDivorce
-
+    */
 
     /**
      * @param debug
@@ -9689,6 +9734,7 @@ public class LinksCleanMain extends Thread
      * @param debug
      * @throws Exception
      */
+    /*
     private void scanRemarksUpdate( boolean debug, int nupdates, String remarks_str, int id_scan, int id_registration, int role, String name_table, String name_field, String value )
     {
         long threadId = Thread.currentThread().getId();
@@ -9717,34 +9763,7 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace( new PrintStream( System.out ) );
         }
     } // scanRemarksUpdate
-
-
-    /*---< Run PreMatch >-----------------------------------------------------*/
-
-    /**
-     * Run PreMatch
-     * @param go
-     * @throws Exception
-     */
-    private void doPrematch( boolean go) throws Exception
-    {
-        String funcname = "doPrematch";
-        if( !go ) {
-            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
-            return;
-        }
-
-        long timeStart = System.currentTimeMillis();
-        showMessage( funcname + " ...", false, true );
-
-        showMessage( "Running PREMATCH ...", false, false );
-        mg.firePrematch();
-
-        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
-        showMessage_nl();
-    } // doPrematch
-
-     /*---< end Cleaning options >-------------------------------------------*/
+    */
 
 }
 
