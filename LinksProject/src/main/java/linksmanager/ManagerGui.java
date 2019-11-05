@@ -11,7 +11,6 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.InputStream;
 
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -67,7 +66,7 @@ import general.PrintLogger;
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
  * FL-28-Jun-2017 rmtype from gui
- * FL-04-Nov-2019 timestamp
+ * FL-05-Nov-2019 timestamp
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2897,7 +2896,7 @@ public class ManagerGui extends javax.swing.JFrame
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
 
-        LinksClean linksCleaned = new LinksClean( opts, tbLOLClatestOutput, taLOLCoutput, this );
+        LinksCleanOld linksCleaned = new LinksCleanOld( opts, tbLOLClatestOutput, taLOLCoutput, this );
 
         linksCleaned.start();
     }//GEN-LAST:event_btnStartProcessClean
@@ -3024,7 +3023,7 @@ public class ManagerGui extends javax.swing.JFrame
 			public void run()
 			{
 				long threadId = Thread.currentThread().getId();
-				String timestamp1 = "04-Nov-2019 13:29";
+				String timestamp1 = "05-Nov-2019 15:12";
 				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
 				try

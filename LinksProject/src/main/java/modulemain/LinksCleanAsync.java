@@ -41,7 +41,16 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import connectors.HikariConnection;
 
-import dataset.*;
+import dataset.DateYearMonthDaySet;
+import dataset.DivideMinMaxDatumSet;
+import dataset.MinMaxDateSet;
+import dataset.MinMaxMainAgeSet;
+import dataset.MinMaxYearSet;
+import dataset.Options;
+import dataset.PersonC;
+import dataset.RegistrationC;
+import dataset.Remarks;
+import dataset.TableToArrayListMultimapHikari;
 
 import enumdefinitions.TableType;
 import enumdefinitions.TimeType;
@@ -52,13 +61,43 @@ import general.PrintLogger;
 /**
  * @author Fons Laan
  *
- * FL-30-Sep-2019 Created
- * FL-04-Nov-2019 Changed
- *
- * TODO check all queries for new try(){} syntax
- * TODO check all ResultSet close()
- * TODO switch to Java-11
+ * FL-30-Jun-2014 Imported from @author Omar Azouguagh backup
+ * FL-28-Jul-2014 Timing functions
+ * FL-20-Aug-2014 Occupation added
+ * FL-13-Oct-2014 Removed ttal code
+ * FL-04-Feb-2015 dbconRefWrite instead of dbconRefRead for writing in standardRegistrationType
+ * FL-01-Apr-2015 DivorceLocation
+ * FL-08-Apr-2015 Remove duplicate registrations from links_cleaned
+ * FL-27-Jul-2015 Bad registration dates in id_source = 10 (HSN)
+ * FL-17-Sep-2015 Bad registration dates: db NULLs
+ * FL-30-Oct-2015 minMaxCalculation() function C omission
+ * FL-20-Nov-2015 registration_days bug with date strings containing leading zeros
+ * FL-22-Jan-2016 registration_days bug with date strings containing leading zeros
+ * FL-13-May-2016 Split firstnames now in standardFirstnames()
+ * FL-21-May-2016 Each thread its own ref table multimaps
+ * FL-04-Nov-2016 Small change minMaxCalculation
+ * FL-07-Nov-2016 Flag instead of remove registrations
+ * FL-21-Nov-2016 Old date difference bug in minMaxDate
+ * FL-25-Jan-2017 Divorce info from remarks
+ * FL-01-Feb-2017 Temp tables ENGINE, CHARACTER SET, COLLATION
+ * FL-28-Jun-2017 Local db_ref connections, immediate open/close
+ * FL-05-Jul-2017 almmRegistration use
+ * FL-11-Jul-2017 More not_linksbase flagging
+ * FL-01-Sep-2017 registration_type also in person_c
+ * FL-27-Mar-2018 Missing 2 query params in standardRegistrationDate()
+ * FL-12-Jun-2018 Echtscheiding: registration_maintype = 4
+ * FL-15-Oct-2018 Strip {} from id_persist_registration
+ * FL-05-Dec-2018 Debug standardRegistrationDate()
+ * FL-10-Dec-2018 Escape trailing backslash in ReportRegistration()
+ * FL-22-Jul-2019 StandardAgeLiteral bug
+ * FL-30-Jul-2019 addToReportRegistration() cleanup
+ * FL-05-Aug-2019 split doDates() into 1 & 2
+ * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
+ * FL-30-Sep-2019 standardRole(): check role against registration_maintype
+ * FL-05-Nov-2019 Extensive cleanup
  */
+
+
 public class LinksCleanAsync extends Thread
 {
 	//private ThreadManager tm;
@@ -693,16 +732,18 @@ public class LinksCleanAsync extends Thread
 		String qRegistCCount = "SELECT COUNT(*) FROM registration_c";
 		String qPersonCCount = "SELECT COUNT(*) FROM person_c";
 
-		ResultSet rsR = dbconCleaned.executeQuery( qRegistCCount );
-		rsR.first();
-		int registCCount = rsR.getInt("COUNT(*)" );
-		rsR.close();
+		int registCCount = -1;
+		try( ResultSet rsR = dbconCleaned.executeQuery( qRegistCCount ) )
+		{
+			rsR.first();
+			registCCount = rsR.getInt("COUNT(*)" );
+		}
 
-
-		ResultSet rsP = dbconCleaned.executeQuery( qPersonCCount );
-		rsP.first();
-		int personCCount = rsP.getInt( "COUNT(*)" );
-		rsP.close();
+		int personCCount = -1;
+		try( ResultSet rsP = dbconCleaned.executeQuery( qPersonCCount ) ) {
+			rsP.first();
+			personCCount = rsP.getInt( "COUNT(*)" );
+		}
 
 		if( registCCount == 0 && personCCount == 0 )
 		{
@@ -879,105 +920,107 @@ public class LinksCleanAsync extends Thread
 			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
 			if( debug ) { showMessage( "standardPrepiece: " + selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
-			rs.last();
-			int total = rs.getRow();
-			rs.beforeFirst();
-
-			while( rs.next() )
+			try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
 			{
-				count++;
-				if( count == stepstate ) {
-					long pct = Math.round( 100.0 * (float)count / (float)total );
-					String msg = String.format( "Thread id %02d, standardPrepiece, %d-of-%d (%d%%)", threadId, count, total, pct );
-					showMessage( msg, true, true );
-					stepstate += count_step;
-				}
+				rs.last();
+				int total = rs.getRow();
+				rs.beforeFirst();
 
-				// Create lists
-				String listPF = "";
-				String listTO = "";
-				String listTN = "";
-
-				int id_person   = rs.getInt( "id_person" );
-				String prepiece = rs.getString( "prefix" ).toLowerCase();
-
-				prepiece = cleanName( debug, source, id_person, prepiece );
-
-				String[] prefixes = prepiece.split( " " );
-
-				for( String part : prefixes )
+				while( rs.next() )
 				{
-					// Does Prefix exist in ref table
-					if( almmPrepiece.contains( part ) )
+					count++;
+					if( count == stepstate ) {
+						long pct = Math.round( 100.0 * (float)count / (float)total );
+						String msg = String.format( "Thread id %02d, standardPrepiece, %d-of-%d (%d%%)", threadId, count, total, pct );
+						showMessage( msg, true, true );
+						stepstate += count_step;
+					}
+
+					// Create lists
+					String listPF = "";
+					String listTO = "";
+					String listTN = "";
+
+					int id_person   = rs.getInt( "id_person" );
+					String prepiece = rs.getString( "prefix" ).toLowerCase();
+
+					prepiece = cleanName( debug, source, id_person, prepiece );
+
+					String[] prefixes = prepiece.split( " " );
+
+					for( String part : prefixes )
 					{
-						String standard_code = almmPrepiece.code( part );
-						String prefix        = almmPrepiece.value( "prefix",      part );
-						String title_noble   = almmPrepiece.value( "title_noble", part );
-						String title_other   = almmPrepiece.value( "title_other", part );
+						// Does Prefix exist in ref table
+						if( almmPrepiece.contains( part ) )
+						{
+							String standard_code = almmPrepiece.code( part );
+							String prefix        = almmPrepiece.value( "prefix",      part );
+							String title_noble   = almmPrepiece.value( "title_noble", part );
+							String title_other   = almmPrepiece.value( "title_other", part );
 
-						// standard code x
-						if( standard_code.equals( SC_X ) )
-						{
-							addToReportPerson(id_person, source, 81, part);       // EC 81
+							// standard code x
+							if( standard_code.equals( SC_X ) )
+							{
+								addToReportPerson(id_person, source, 81, part);       // EC 81
 
-							listPF += part + " ";
-						}
-						else if( standard_code.equals( SC_N ) )
-						{
-							addToReportPerson( id_person, source, 83, part );     // EC 83
-						}
-						else if( standard_code.equals( SC_U ) )
-						{
-							addToReportPerson( id_person, source, 85, part );     // EC 85
+								listPF += part + " ";
+							}
+							else if( standard_code.equals( SC_N ) )
+							{
+								addToReportPerson( id_person, source, 83, part );     // EC 83
+							}
+							else if( standard_code.equals( SC_U ) )
+							{
+								addToReportPerson( id_person, source, 85, part );     // EC 85
 
-							if( prefix != null && !prefix.isEmpty() ) {
-								listPF += prefix + " ";
+								if( prefix != null && !prefix.isEmpty() ) {
+									listPF += prefix + " ";
+								}
+								else if( title_noble != null && !title_noble.isEmpty() ) {
+									listTN += title_noble + " ";
+								}
+								else if( title_other != null && !title_other.isEmpty() ) {
+									listTO += title_other + " ";
+								}
 							}
-							else if( title_noble != null && !title_noble.isEmpty() ) {
-								listTN += title_noble + " ";
+							else if( standard_code.equals( SC_Y ) )
+							{
+								if( prefix != null && !prefix.isEmpty() ) {
+									listPF += prefix + " ";
+								}
+								else if( title_noble != null && !title_noble.isEmpty() ) {
+									listTN += title_noble + " ";
+								}
+								else if( title_other != null && !title_other.isEmpty() ) {
+									listTO += title_other + " ";
+								}
 							}
-							else if( title_other != null && !title_other.isEmpty() ) {
-								listTO += title_other + " ";
+							else {  // Standard_code invalid
+								addToReportPerson(id_person, source, 89, part);       // EC 89
 							}
 						}
-						else if( standard_code.equals( SC_Y ) )
+						else    // Prefix not in ref
 						{
-							if( prefix != null && !prefix.isEmpty() ) {
-								listPF += prefix + " ";
-							}
-							else if( title_noble != null && !title_noble.isEmpty() ) {
-								listTN += title_noble + " ";
-							}
-							else if( title_other != null && !title_other.isEmpty() ) {
-								listTO += title_other + " ";
-							}
-						}
-						else {  // Standard_code invalid
-							addToReportPerson(id_person, source, 89, part);       // EC 89
+							addToReportPerson(id_person, source, 81, part);           // EC 81
+
+							almmPrepiece.add( part );               // Add Prefix
+
+							listPF += part + " ";                   // Add to list
 						}
 					}
-					else    // Prefix not in ref
-					{
-						addToReportPerson(id_person, source, 81, part);           // EC 81
 
-						almmPrepiece.add( part );               // Add Prefix
-
-						listPF += part + " ";                   // Add to list
+					// write lists to person_c
+					if( !listTN.isEmpty() ) {
+						dbconCleaned.executeUpdate( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
 					}
-				}
 
-				// write lists to person_c
-				if( !listTN.isEmpty() ) {
-					dbconCleaned.executeUpdate( PersonC.updateQuery( "title_noble", listTN.substring( 0, ( listTN.length() - 1 ) ), id_person ) );
-				}
+					if( !listTO.isEmpty() ) {
+						dbconCleaned.executeUpdate( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
+					}
 
-				if( !listTO.isEmpty() ) {
-					dbconCleaned.executeUpdate( PersonC.updateQuery( "title_other", listTO.substring( 0, ( listTO.length() - 1 ) ), id_person ) );
-				}
-
-				if( !listPF.isEmpty() ) {
-					dbconCleaned.executeUpdate( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
+					if( !listPF.isEmpty() ) {
+						dbconCleaned.executeUpdate( PersonC.updateQuery( "prefix", listPF.substring( 0, ( listPF.length() - 1 ) ), id_person) );
+					}
 				}
 			}
 		}
@@ -1098,67 +1141,69 @@ public class LinksCleanAsync extends Thread
 			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
 			if( debug ) { showMessage( "standardSuffix: " + selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
-			rs.last();
-			int total = rs.getRow();
-			rs.beforeFirst();
-
-			while( rs.next() )
+			try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
 			{
-				count++;
-				if( count == stepstate ) {
-					long pct = Math.round( 100.0 * (float)count / (float)total );
-					String msg = String.format( "Thread id %02d, standardSuffix, %d-of-%d (%d%%)", threadId, count, total, pct );
-					showMessage( msg, true, true );
-					stepstate += count_step;
-				}
+				rs.last();
+				int total = rs.getRow();
+				rs.beforeFirst();
 
-				int id_person = rs.getInt( "id_person" );
-				String suffix = rs.getString( "suffix" ).toLowerCase();
-
-				suffix = cleanName( debug, source, id_person, suffix );
-
-				// Check occurrence in ref table
-				if( almmSuffix.contains( suffix ) )
+				while( rs.next() )
 				{
-					String standard_code = almmSuffix.code( suffix );
+					count++;
+					if( count == stepstate ) {
+						long pct = Math.round( 100.0 * (float)count / (float)total );
+						String msg = String.format( "Thread id %02d, standardSuffix, %d-of-%d (%d%%)", threadId, count, total, pct );
+						showMessage( msg, true, true );
+						stepstate += count_step;
+					}
 
-					if( standard_code.equals( SC_X ) )
+					int id_person = rs.getInt( "id_person" );
+					String suffix = rs.getString( "suffix" ).toLowerCase();
+
+					suffix = cleanName( debug, source, id_person, suffix );
+
+					// Check occurrence in ref table
+					if( almmSuffix.contains( suffix ) )
 					{
-						addToReportPerson(id_person, source, 71, suffix);     // EC 71
+						String standard_code = almmSuffix.code( suffix );
+
+						if( standard_code.equals( SC_X ) )
+						{
+							addToReportPerson(id_person, source, 71, suffix);     // EC 71
+
+							String query = PersonC.updateQuery( "suffix", suffix, id_person );
+							dbconCleaned.executeUpdate( query );
+						}
+						else if( standard_code.equals( SC_N ) )
+						{
+							addToReportPerson( id_person, source, 73, suffix );   // EC 73
+						}
+						else if( standard_code.equals( SC_U ) )
+						{
+							addToReportPerson( id_person, source, 75, suffix );   // EC 74
+
+							String query = PersonC.updateQuery( "suffix", suffix, id_person );
+							dbconCleaned.executeUpdate( query );
+						}
+						else if( standard_code.equals( SC_Y ) )
+						{
+							String query = PersonC.updateQuery( "suffix", suffix, id_person );
+							dbconCleaned.executeUpdate( query );
+						}
+						else {
+							addToReportPerson(id_person, source, 79, suffix);     // EC 75
+						}
+					}
+					else // Standard code x
+					{
+						addToReportPerson( id_person, source, 71, suffix);        // EC 71
+
+						almmSuffix.add( suffix );
 
 						String query = PersonC.updateQuery( "suffix", suffix, id_person );
 						dbconCleaned.executeUpdate( query );
-					}
-					else if( standard_code.equals( SC_N ) )
-					{
-						addToReportPerson( id_person, source, 73, suffix );   // EC 73
-					}
-					else if( standard_code.equals( SC_U ) )
-					{
-						addToReportPerson( id_person, source, 75, suffix );   // EC 74
 
-						String query = PersonC.updateQuery( "suffix", suffix, id_person );
-						dbconCleaned.executeUpdate( query );
 					}
-					else if( standard_code.equals( SC_Y ) )
-					{
-						String query = PersonC.updateQuery( "suffix", suffix, id_person );
-						dbconCleaned.executeUpdate( query );
-					}
-					else {
-						addToReportPerson(id_person, source, 79, suffix);     // EC 75
-					}
-				}
-				else // Standard code x
-				{
-					addToReportPerson( id_person, source, 71, suffix);        // EC 71
-
-					almmSuffix.add( suffix );
-
-					String query = PersonC.updateQuery( "suffix", suffix, id_person );
-					dbconCleaned.executeUpdate( query );
-
 				}
 			}
 		}
@@ -1365,313 +1410,315 @@ public class LinksCleanAsync extends Thread
 			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
 			if( debug ) { showMessage( "standardFirstname: " + selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
-			rs.last();
-			int total = rs.getRow();
-			rs.beforeFirst();
-
-			while( rs.next() )
+			try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
 			{
-				count++;
-				if( count == stepstate ) {
-					long pct = Math.round( 100.0 * (float)count / (float)total );
-					String msg = String.format( "Thread id %02d, standardFirstname, %d-of-%d (%d%%)", threadId, count, total, pct );
-					showMessage( msg, true, true );
-					stepstate += count_step;
-				}
+				rs.last();
+				int total = rs.getRow();
+				rs.beforeFirst();
 
-				int id_person    = rs.getInt( "id_person" );
-				String firstname = rs.getString( "firstname" );
-
-				//if( id_person == 35241111 ) { debug = true; }
-				//else { debug = false; continue; }
-
-				if( debug ) {
-					String msg = String.format( "count: %d, id_person: %d, firstname: %s", count, id_person, firstname );
-					showMessage( msg, false, true );
-				}
-
-				// currently never filled in person_o, but flagged by having a firstname 'Levenloos'
-				//String stillbirth = rsFirstName.getString( "stillbirth" );
-
-				// Is firstname empty?
-				if( firstname != null && ! firstname.isEmpty() )
+				while( rs.next() )
 				{
-					if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
-					firstname = cleanFirstname( debug, source, id_person, firstname );
-
-					// cleanFirstname() assumes the presence of uppercase letters, so only now to lowercase
-					firstname = firstname.toLowerCase();
-					if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
-
-					// Check name on aliases
-					String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, firstname, 1107 );
-
-					// split name on spaces
-					String[] names = nameNoAlias.split( " " );
-
-					ArrayList< String > preList  = new ArrayList< String >();
-					ArrayList< String > postList = new ArrayList< String >();
-
-					boolean empty_name = false;
-					for( String name : names ) {
-						if( name.isEmpty() ) { empty_name = true; }
-						else { preList.add( name ); }       // add to list
+					count++;
+					if( count == stepstate ) {
+						long pct = Math.round( 100.0 * (float)count / (float)total );
+						String msg = String.format( "Thread id %02d, standardFirstname, %d-of-%d (%d%%)", threadId, count, total, pct );
+						showMessage( msg, true, true );
+						stepstate += count_step;
 					}
 
-					if( empty_name ) { addToReportPerson( id_person, source, 1101, "" ); }  // EC 1101
+					int id_person    = rs.getInt( "id_person" );
+					String firstname = rs.getString( "firstname" );
 
-					String stillbirth = "";
-					// loop through the pieces of the name
-					for( int i = 0; i < preList.size(); i++ )
+					//if( id_person == 35241111 ) { debug = true; }
+					//else { debug = false; continue; }
+
+					if( debug ) {
+						String msg = String.format( "count: %d, id_person: %d, firstname: %s", count, id_person, firstname );
+						showMessage( msg, false, true );
+					}
+
+					// currently never filled in person_o, but flagged by having a firstname 'Levenloos'
+					//String stillbirth = rsFirstName.getString( "stillbirth" );
+
+					// Is firstname empty?
+					if( firstname != null && ! firstname.isEmpty() )
 					{
-						String prename = preList.get( i );       // does this name part exist in ref_firstname?
-						if( debug ) { System.out.println( "prename: " + prename ); }
+						if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
+						firstname = cleanFirstname( debug, source, id_person, firstname );
 
-						if( almmFirstname.contains( prename ) )
+						// cleanFirstname() assumes the presence of uppercase letters, so only now to lowercase
+						firstname = firstname.toLowerCase();
+						if( debug ) { showMessage( "firstname: " + firstname, false, true ); }
+
+						// Check name on aliases
+						String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, firstname, 1107 );
+
+						// split name on spaces
+						String[] names = nameNoAlias.split( " " );
+
+						ArrayList< String > preList  = new ArrayList< String >();
+						ArrayList< String > postList = new ArrayList< String >();
+
+						boolean empty_name = false;
+						for( String name : names ) {
+							if( name.isEmpty() ) { empty_name = true; }
+							else { preList.add( name ); }       // add to list
+						}
+
+						if( empty_name ) { addToReportPerson( id_person, source, 1101, "" ); }  // EC 1101
+
+						String stillbirth = "";
+						// loop through the pieces of the name
+						for( int i = 0; i < preList.size(); i++ )
 						{
-							// Check the standard code
-							String standard_code = almmFirstname.code( prename );
-							if( standard_code == null ) { standard_code = ""; }
-							if( debug ) { System.out.println( "standard_code: " + standard_code ); }
+							String prename = preList.get( i );       // does this name part exist in ref_firstname?
+							if( debug ) { System.out.println( "prename: " + prename ); }
 
-							if( standard_code.equals( SC_Y ) )
+							if( almmFirstname.contains( prename ) )
 							{
-								almmFirstname.standard( "Levenloos" );
-								String standard = almmFirstname.standard( prename );
-								if( debug ) { System.out.println( "standard: " + standard ); }
-								postList.add( standard );
+								// Check the standard code
+								String standard_code = almmFirstname.code( prename );
+								if( standard_code == null ) { standard_code = ""; }
+								if( debug ) { System.out.println( "standard_code: " + standard_code ); }
 
-								// if stillbirth has been set to 'y' for this firstname we keep it,
-								// and do not let it be overwritten to '' by another prename of the same firstname
-								if( stillbirth.isEmpty() )
+								if( standard_code.equals( SC_Y ) )
 								{
-									// if the firstname equals or contains 'levenloos' the stillbirth column contains 'y'
-									stillbirth = almmFirstname.value( "stillbirth", prename );
-									if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
-									if( stillbirth == null ) { stillbirth = ""; }
-									else if( stillbirth.equals( "y" ) ) {
-										if( debug ) {
-											String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
-												count_still, id_person, firstname, prename );
-											System.out.println( msg );
+									almmFirstname.standard( "Levenloos" );
+									String standard = almmFirstname.standard( prename );
+									if( debug ) { System.out.println( "standard: " + standard ); }
+									postList.add( standard );
+
+									// if stillbirth has been set to 'y' for this firstname we keep it,
+									// and do not let it be overwritten to '' by another prename of the same firstname
+									if( stillbirth.isEmpty() )
+									{
+										// if the firstname equals or contains 'levenloos' the stillbirth column contains 'y'
+										stillbirth = almmFirstname.value( "stillbirth", prename );
+										if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
+										if( stillbirth == null ) { stillbirth = ""; }
+										else if( stillbirth.equals( "y" ) ) {
+											if( debug ) {
+												String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
+													count_still, id_person, firstname, prename );
+												System.out.println( msg );
+											}
+											count_still++;
 										}
-										count_still++;
+									}
+								}
+								else if( standard_code.equals( SC_U ) )
+								{
+									addToReportPerson( id_person, source, 1100, prename );           // EC 1100
+									postList.add( almmFirstname.standard( prename ) );
+								}
+								else if( standard_code.equals( SC_N ) )
+								{
+									addToReportPerson( id_person, source, 1105, prename );           // EC 1105
+								}
+								else if( standard_code.equals( SC_X ) )
+								{
+									addToReportPerson( id_person, source, 1109, prename );           // EC 1109
+									postList.add(preList.get(i));
+								}
+								else {
+									addToReportPerson( id_person, source, 1110, prename );           // EC 1110
+								}
+							}
+							else    // name part does not exist in ref_firstname
+							{
+								// check on invalid token
+								String nameNoInvalidChars = cleanName( debug, source, id_person, prename );
+
+								// name contains invalid chars ?
+								if( ! prename.equalsIgnoreCase( nameNoInvalidChars ) )
+								{
+									addToReportPerson( id_person, source, 1104, prename );  // EC 1104
+
+									// Check if name exists in ref
+									// Does this part exists in ref_name?
+									if( almmFirstname.contains( nameNoInvalidChars ) )
+									{
+										// Check the standard code
+										String standard_code = almmFirstname.code( nameNoInvalidChars );
+
+										if( standard_code.equals( SC_Y ) )
+										{
+											postList.add( almmFirstname.standard( nameNoInvalidChars ) );
+										}
+										else if( standard_code.equals( SC_U ) )
+										{
+											addToReportPerson( id_person, source, 1100, nameNoInvalidChars );    // EC 1100
+											postList.add( almmFirstname.standard( nameNoInvalidChars ) );
+										}
+										else if( standard_code.equals( SC_N ) )
+										{
+											addToReportPerson( id_person, source, 1105, nameNoInvalidChars );    // EC 1105
+										}
+										else if( standard_code.equals( SC_X ) )
+										{
+											addToReportPerson(id_person, source, 1109, nameNoInvalidChars);      // EC 1109
+											postList.add( nameNoInvalidChars );
+										}
+										else { // EC 1110, standard_code not valid
+											addToReportPerson(id_person, source, 1110, nameNoInvalidChars);      // EC 1110
+										}
+
+										continue;
+									}
+
+									// Check on suffix
+									Set< String > keys = almmSuffix.keySet();
+									for( String key : keys )
+									{
+										if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
+										{
+											addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
+
+											nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
+
+											String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
+
+											dbconCleaned.executeUpdate( query );
+										}
+									}
+
+									// check ref_prepiece
+									String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
+
+									if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
+										addToReportPerson( id_person, source, 1107, nameNoInvalidChars );  // EC 1107
+									}
+
+									// last check on ref
+									if( almmFirstname.contains( nameNoPieces ) )
+									{
+										// Check the standard code
+										String standard_code = almmFirstname.code( nameNoPieces );
+
+										if( standard_code.equals( SC_Y ) )
+										{
+											postList.add( almmFirstname.standard( nameNoPieces ) );
+										}
+										else if( standard_code.equals( SC_U ) )
+										{
+											addToReportPerson( id_person, source, 1100, nameNoPieces );    // EC 1100
+											postList.add( almmFirstname.standard( nameNoPieces ) );
+										}
+										else if( standard_code.equals( SC_N ) )
+										{
+											addToReportPerson( id_person, source, 1105, nameNoPieces );    // EC 1105
+										}
+										else if( standard_code.equals( SC_X ) )
+										{
+											addToReportPerson( id_person, source, 1109, nameNoPieces );   // EC 1109
+											postList.add( nameNoPieces );
+										}
+										else { // EC 1110, standard_code not valid
+											addToReportPerson( id_person, source, 1110, nameNoPieces );    // EC 1110
+										}
+									}
+									else {
+										// name must be added to ref_firstname with standard_code x
+										almmFirstname.add( nameNoPieces );
+										postList.add( nameNoPieces );   // Also add name to postlist
+									}
+								}
+								else  // no invalid token
+								{
+									// Check on suffix
+									Set< String > keys = almmSuffix.keySet();
+									for( String key : keys )
+									{
+										if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
+										{
+											addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
+
+											nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
+
+											String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
+
+											dbconCleaned.executeUpdate( query );
+										}
+									}
+
+									// check ref_prepiece
+									String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
+
+									if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
+										addToReportPerson(id_person, source, 1108, nameNoInvalidChars);   // EC 1108
+									}
+
+									// last check on ref
+									if( almmFirstname.contains( nameNoPieces ) )
+									{
+										// Check the standard code
+										String standard_code = almmFirstname.code( nameNoPieces );
+
+										if( standard_code.equals( SC_Y ) )
+										{
+											postList.add( almmFirstname.standard( nameNoPieces ) );
+										}
+										else if( standard_code.equals( SC_U ) )
+										{
+											addToReportPerson( id_person, source, 1100, nameNoPieces );     // EC 1100
+											postList.add( almmFirstname.standard( nameNoPieces ) );
+										}
+										else if( standard_code.equals( SC_N ) )
+										{
+											addToReportPerson( id_person, source, 1105, nameNoPieces );     // EC 1105
+										}
+										else if( standard_code.equals( SC_X ) )
+										{
+											addToReportPerson( id_person, source, 1109, nameNoPieces );     // EC 1109
+											postList.add( nameNoPieces );
+										}
+										else { // EC 1110, standard_code not valid
+											addToReportPerson( id_person, source, 1110, nameNoPieces );     // EC 1110
+										}
+									}
+									else {
+										// name must be added to ref_firstname with standard_code x
+										almmFirstname.add( nameNoPieces );
+										postList.add( nameNoPieces );   // Also add name to postlist
 									}
 								}
 							}
-							else if( standard_code.equals( SC_U ) )
-							{
-								addToReportPerson( id_person, source, 1100, prename );           // EC 1100
-								postList.add( almmFirstname.standard( prename ) );
-							}
-							else if( standard_code.equals( SC_N ) )
-							{
-								addToReportPerson( id_person, source, 1105, prename );           // EC 1105
-							}
-							else if( standard_code.equals( SC_X ) )
-							{
-								addToReportPerson( id_person, source, 1109, prename );           // EC 1109
-								postList.add(preList.get(i));
-							}
-							else {
-								addToReportPerson( id_person, source, 1110, prename );           // EC 1110
-							}
 						}
-						else    // name part does not exist in ref_firstname
+
+						// recollect firstnames, and set individual firstnames
+						String firstnames = "";
+						String firstname1 = "";
+						String firstname2 = "";
+						String firstname3 = "";
+						String firstname4 = "";
+
+						for( int n = 0; n < postList.size(); n++ )
 						{
-							// check on invalid token
-							String nameNoInvalidChars = cleanName( debug, source, id_person, prename );
+							if( n > 0 ) { firstnames += " "; }      // add space
+							String name = postList.get( n );
+							firstnames += name;
 
-							// name contains invalid chars ?
-							if( ! prename.equalsIgnoreCase( nameNoInvalidChars ) )
-							{
-								addToReportPerson( id_person, source, 1104, prename );  // EC 1104
-
-								// Check if name exists in ref
-								// Does this part exists in ref_name?
-								if( almmFirstname.contains( nameNoInvalidChars ) )
-								{
-									// Check the standard code
-									String standard_code = almmFirstname.code( nameNoInvalidChars );
-
-									if( standard_code.equals( SC_Y ) )
-									{
-										postList.add( almmFirstname.standard( nameNoInvalidChars ) );
-									}
-									else if( standard_code.equals( SC_U ) )
-									{
-										addToReportPerson( id_person, source, 1100, nameNoInvalidChars );    // EC 1100
-										postList.add( almmFirstname.standard( nameNoInvalidChars ) );
-									}
-									else if( standard_code.equals( SC_N ) )
-									{
-										addToReportPerson( id_person, source, 1105, nameNoInvalidChars );    // EC 1105
-									}
-									else if( standard_code.equals( SC_X ) )
-									{
-										addToReportPerson(id_person, source, 1109, nameNoInvalidChars);      // EC 1109
-										postList.add( nameNoInvalidChars );
-									}
-									else { // EC 1110, standard_code not valid
-										addToReportPerson(id_person, source, 1110, nameNoInvalidChars);      // EC 1110
-									}
-
-									continue;
-								}
-
-								// Check on suffix
-								Set< String > keys = almmSuffix.keySet();
-								for( String key : keys )
-								{
-									if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
-									{
-										addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
-
-										nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
-
-										String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
-
-										dbconCleaned.executeUpdate( query );
-									}
-								}
-
-								// check ref_prepiece
-								String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
-
-								if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
-									addToReportPerson( id_person, source, 1107, nameNoInvalidChars );  // EC 1107
-								}
-
-								// last check on ref
-								if( almmFirstname.contains( nameNoPieces ) )
-								{
-									// Check the standard code
-									String standard_code = almmFirstname.code( nameNoPieces );
-
-									if( standard_code.equals( SC_Y ) )
-									{
-										postList.add( almmFirstname.standard( nameNoPieces ) );
-									}
-									else if( standard_code.equals( SC_U ) )
-									{
-										addToReportPerson( id_person, source, 1100, nameNoPieces );    // EC 1100
-										postList.add( almmFirstname.standard( nameNoPieces ) );
-									}
-									else if( standard_code.equals( SC_N ) )
-									{
-										addToReportPerson( id_person, source, 1105, nameNoPieces );    // EC 1105
-									}
-									else if( standard_code.equals( SC_X ) )
-									{
-										addToReportPerson( id_person, source, 1109, nameNoPieces );   // EC 1109
-										postList.add( nameNoPieces );
-									}
-									else { // EC 1110, standard_code not valid
-										addToReportPerson( id_person, source, 1110, nameNoPieces );    // EC 1110
-									}
-								}
-								else {
-									// name must be added to ref_firstname with standard_code x
-									almmFirstname.add( nameNoPieces );
-									postList.add( nameNoPieces );   // Also add name to postlist
-								}
-							}
-							else  // no invalid token
-							{
-								// Check on suffix
-								Set< String > keys = almmSuffix.keySet();
-								for( String key : keys )
-								{
-									if( nameNoInvalidChars.endsWith( " " + key ) && almmSuffix.code( key ).equals( SC_Y ) )
-									{
-										addToReportPerson( id_person, source, 1106, nameNoInvalidChars );   // EC 1106
-
-										nameNoInvalidChars = nameNoInvalidChars.replaceAll( " " + key, "" );
-
-										String query = PersonC.updateQuery( "suffix", key, id_person );     // Set suffix
-
-										dbconCleaned.executeUpdate( query );
-									}
-								}
-
-								// check ref_prepiece
-								String nameNoPieces = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
-
-								if( ! nameNoPieces.equals( nameNoInvalidChars ) ) {
-									addToReportPerson(id_person, source, 1108, nameNoInvalidChars);   // EC 1108
-								}
-
-								// last check on ref
-								if( almmFirstname.contains( nameNoPieces ) )
-								{
-									// Check the standard code
-									String standard_code = almmFirstname.code( nameNoPieces );
-
-									if( standard_code.equals( SC_Y ) )
-									{
-										postList.add( almmFirstname.standard( nameNoPieces ) );
-									}
-									else if( standard_code.equals( SC_U ) )
-									{
-										addToReportPerson( id_person, source, 1100, nameNoPieces );     // EC 1100
-										postList.add( almmFirstname.standard( nameNoPieces ) );
-									}
-									else if( standard_code.equals( SC_N ) )
-									{
-										addToReportPerson( id_person, source, 1105, nameNoPieces );     // EC 1105
-									}
-									else if( standard_code.equals( SC_X ) )
-									{
-										addToReportPerson( id_person, source, 1109, nameNoPieces );     // EC 1109
-										postList.add( nameNoPieces );
-									}
-									else { // EC 1110, standard_code not valid
-										addToReportPerson( id_person, source, 1110, nameNoPieces );     // EC 1110
-									}
-								}
-								else {
-									// name must be added to ref_firstname with standard_code x
-									almmFirstname.add( nameNoPieces );
-									postList.add( nameNoPieces );   // Also add name to postlist
-								}
-							}
+							if( n == 0 ) { firstname1 = name; }
+							if( n == 1 ) { firstname2 = name; }
+							if( n == 2 ) { firstname3 = name; }
+							if( n == 3 ) { firstname4 = name; }
 						}
+
+						//writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
+						String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
+							id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
+						writerFirstname.write( line );
+
+						preList.clear();
+						postList.clear();
+						preList = null;
+						postList = null;
 					}
-
-					// recollect firstnames, and set individual firstnames
-					String firstnames = "";
-					String firstname1 = "";
-					String firstname2 = "";
-					String firstname3 = "";
-					String firstname4 = "";
-
-					for( int n = 0; n < postList.size(); n++ )
+					else    // First name is empty
 					{
-						if( n > 0 ) { firstnames += " "; }      // add space
-						String name = postList.get( n );
-						firstnames += name;
-
-						if( n == 0 ) { firstname1 = name; }
-						if( n == 1 ) { firstname2 = name; }
-						if( n == 2 ) { firstname3 = name; }
-						if( n == 3 ) { firstname4 = name; }
+						count_empty++;
+						addToReportPerson( id_person, source, 1101, "" );        // EC 1101
 					}
-
-					//writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
-					String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
-						id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
-					writerFirstname.write( line );
-
-					preList.clear();
-					postList.clear();
-					preList = null;
-					postList = null;
-				}
-				else    // First name is empty
-				{
-					count_empty++;
-					addToReportPerson( id_person, source, 1101, "" );        // EC 1101
 				}
 			}
 
@@ -2047,164 +2094,166 @@ public class LinksCleanAsync extends Thread
 			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
 			if( debug ) { showMessage( "standardFamilyname: " + selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
-			rs.last();
-			int total = rs.getRow();
-			rs.beforeFirst();
-
-			while( rs.next() )
+			try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
 			{
-				count++;
-				if( count == stepstate ) {
-					long pct = Math.round( 100.0 * (float)count / (float)total );
-					String msg = String.format( "Thread id %02d, standardFamilyname, %d-of-%d (%d%%)", threadId, count, total, pct );
-					showMessage( msg, true, true );
-					stepstate += count_step;
-				}
+				rs.last();
+				int total = rs.getRow();
+				rs.beforeFirst();
 
-				// Get family name
-				String familyname = rs.getString( "familyname" );
-				int id_person     = rs.getInt( "id_person" );
-
-				//if( id_person == 35241111 ) { debug = true; }
-				//else { debug = false; continue; }
-
-				if( debug ) {
-					String msg = String.format( "count: %d, id_person: %d, familyname: %s", count, id_person, familyname );
-					showMessage( msg, false, true );
-				}
-
-				// Check is Familyname is not empty or null
-				if( familyname != null && ! familyname.isEmpty() )
+				while( rs.next() )
 				{
-					if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
-					familyname = cleanFamilyname( debug, source, id_person, familyname );
-					familyname = familyname.toLowerCase();
-					if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
-
-					// familyname in ref_familyname ?
-					if( almmFamilyname.contains( familyname ) )
-					{
-						// get standard_code
-						String standard_code = almmFamilyname.code( familyname );
-						String standard = almmFamilyname.standard( familyname );
-						if( debug ) { showMessage( "standard_code: " + standard_code, false, true ); }
-						if( debug ) { showMessage( "standard: " + standard, false, true ); }
-
-						// Check the standard code
-						if( standard_code.equals( SC_Y ) )
-						{
-							writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
-						}
-						else if( standard_code.equals( SC_U ) )
-						{
-							addToReportPerson( id_person, source, 1000, familyname ); // EC 1000
-
-							writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
-						}
-						else if( standard_code.equals( SC_N ) )
-						{
-							addToReportPerson( id_person, source, 1005, familyname );  // EC 1005
-						}
-						else if( standard_code.equals( SC_X ) )
-						{
-							addToReportPerson( id_person, source, 1009, familyname );  // EC 1009
-
-							writerFamilyname.write( id_person + "," + familyname.toLowerCase() + "\n" );
-						}
-						else {
-							addToReportPerson( id_person, source, 1010, familyname );  // EC 1010
-						}
+					count++;
+					if( count == stepstate ) {
+						long pct = Math.round( 100.0 * (float)count / (float)total );
+						String msg = String.format( "Thread id %02d, standardFamilyname, %d-of-%d (%d%%)", threadId, count, total, pct );
+						showMessage( msg, true, true );
+						stepstate += count_step;
 					}
-					else        // Familyname does not exists in ref_familyname
+
+					// Get family name
+					String familyname = rs.getString( "familyname" );
+					int id_person     = rs.getInt( "id_person" );
+
+					//if( id_person == 35241111 ) { debug = true; }
+					//else { debug = false; continue; }
+
+					if( debug ) {
+						String msg = String.format( "count: %d, id_person: %d, familyname: %s", count, id_person, familyname );
+						showMessage( msg, false, true );
+					}
+
+					// Check is Familyname is not empty or null
+					if( familyname != null && ! familyname.isEmpty() )
 					{
-						if( debug ) { showMessage( "not in ref_familyname: " + familyname, false, true ); }
-						addToReportPerson( id_person, source, 1002, familyname );  // EC 1002
+						if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
+						familyname = cleanFamilyname( debug, source, id_person, familyname );
+						familyname = familyname.toLowerCase();
+						if( debug ) { showMessage( "familyname: " + familyname , false, true ); }
 
-						String nameNoSerriedSpaces = familyname.replaceAll( " [ ]+", " " );
-
-						// Family name contains two or more serried spaces?
-						if( !nameNoSerriedSpaces.equalsIgnoreCase( familyname ) ) {
-							addToReportPerson(id_person, source, 1003, familyname);  // EC 1003
-						}
-
-						String nameNoInvalidChars = cleanName( debug, source, id_person, nameNoSerriedSpaces );
-
-						// Family name contains invalid chars ?
-						if( !nameNoSerriedSpaces.equalsIgnoreCase( nameNoInvalidChars ) ) {
-							addToReportPerson( id_person, source, 1004, familyname );   // EC 1004
-						}
-
-						// check if name has prepieces
-						String nameNoPrePiece = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
-
-						// Family name contains invalid chars ?
-						if( !nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
-							addToReportPerson( id_person, source, 1008, familyname );  // EC 1008
-						}
-
-						// Check on aliases
-						String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, nameNoPrePiece, 1007 );
-
-						// Check on suffix
-						if( debug ) { showMessage( "suffix keySet()", false, true ); }
-						Set< String > keys = almmSuffix.keySet();
-						for( String key : keys )
-						{
-							if( debug ) { showMessage( "suffix key: " + key, false, true ); }
-							if( nameNoAlias.endsWith( " " + key ) ) {
-								addToReportPerson( id_person, source, 1006, nameNoAlias );      // EC 1006
-
-								nameNoAlias = nameNoAlias.replaceAll( " " + key, "" );
-
-								PersonC.updateQuery( "suffix", key, id_person );                // Set alias
-							}
-						}
-
-						// Clean name one more time
-						String nameNoSuffix = LinksSpecific.funcCleanSides( nameNoAlias );
-
-						// Check name in original
-						if( almmFamilyname.contains( nameNoSuffix ) )
+						// familyname in ref_familyname ?
+						if( almmFamilyname.contains( familyname ) )
 						{
 							// get standard_code
-							String standard_code = almmFamilyname.code( nameNoSuffix );
+							String standard_code = almmFamilyname.code( familyname );
+							String standard = almmFamilyname.standard( familyname );
+							if( debug ) { showMessage( "standard_code: " + standard_code, false, true ); }
+							if( debug ) { showMessage( "standard: " + standard, false, true ); }
 
 							// Check the standard code
 							if( standard_code.equals( SC_Y ) )
 							{
-								writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+								writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
 							}
-							else if( standard_code.equals( SC_U ) ) {
-								addToReportPerson( id_person, source, 1000, nameNoSuffix );    // EC 1000
+							else if( standard_code.equals( SC_U ) )
+							{
+								addToReportPerson( id_person, source, 1000, familyname ); // EC 1000
 
-								writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+								writerFamilyname.write( id_person + "," + almmFamilyname.standard( familyname ) + "\n" );
 							}
-							else if( standard_code.equals( SC_N ) ) {
-								addToReportPerson( id_person, source, 1005, nameNoSuffix );     // EC 1005
+							else if( standard_code.equals( SC_N ) )
+							{
+								addToReportPerson( id_person, source, 1005, familyname );  // EC 1005
 							}
-							else if( standard_code.equals( SC_X ) ) {
-								addToReportPerson( id_person, source, 1009, nameNoSuffix );    // EC 1009
+							else if( standard_code.equals( SC_X ) )
+							{
+								addToReportPerson( id_person, source, 1009, familyname );  // EC 1009
 
-								writerFamilyname.write( id_person + "," + nameNoSuffix.toLowerCase() + "\n" );
+								writerFamilyname.write( id_person + "," + familyname.toLowerCase() + "\n" );
 							}
 							else {
-								addToReportPerson( id_person, source, 1010, nameNoSuffix );    // EC 1010
+								addToReportPerson( id_person, source, 1010, familyname );  // EC 1010
 							}
-						} else {
-							// add new familyname
-							almmFamilyname.add( nameNoSuffix );
+						}
+						else        // Familyname does not exists in ref_familyname
+						{
+							if( debug ) { showMessage( "not in ref_familyname: " + familyname, false, true ); }
+							addToReportPerson( id_person, source, 1002, familyname );  // EC 1002
 
-							addToReportPerson( id_person, source, 1009, nameNoSuffix );    // EC 1009
+							String nameNoSerriedSpaces = familyname.replaceAll( " [ ]+", " " );
 
-							writerFamilyname.write( id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n" );
+							// Family name contains two or more serried spaces?
+							if( !nameNoSerriedSpaces.equalsIgnoreCase( familyname ) ) {
+								addToReportPerson(id_person, source, 1003, familyname);  // EC 1003
+							}
 
+							String nameNoInvalidChars = cleanName( debug, source, id_person, nameNoSerriedSpaces );
+
+							// Family name contains invalid chars ?
+							if( !nameNoSerriedSpaces.equalsIgnoreCase( nameNoInvalidChars ) ) {
+								addToReportPerson( id_person, source, 1004, familyname );   // EC 1004
+							}
+
+							// check if name has prepieces
+							String nameNoPrePiece = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
+
+							// Family name contains invalid chars ?
+							if( !nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
+								addToReportPerson( id_person, source, 1008, familyname );  // EC 1008
+							}
+
+							// Check on aliases
+							String nameNoAlias = standardAlias( debug, almmAlias, id_person, source, nameNoPrePiece, 1007 );
+
+							// Check on suffix
+							if( debug ) { showMessage( "suffix keySet()", false, true ); }
+							Set< String > keys = almmSuffix.keySet();
+							for( String key : keys )
+							{
+								if( debug ) { showMessage( "suffix key: " + key, false, true ); }
+								if( nameNoAlias.endsWith( " " + key ) ) {
+									addToReportPerson( id_person, source, 1006, nameNoAlias );      // EC 1006
+
+									nameNoAlias = nameNoAlias.replaceAll( " " + key, "" );
+
+									PersonC.updateQuery( "suffix", key, id_person );                // Set alias
+								}
+							}
+
+							// Clean name one more time
+							String nameNoSuffix = LinksSpecific.funcCleanSides( nameNoAlias );
+
+							// Check name in original
+							if( almmFamilyname.contains( nameNoSuffix ) )
+							{
+								// get standard_code
+								String standard_code = almmFamilyname.code( nameNoSuffix );
+
+								// Check the standard code
+								if( standard_code.equals( SC_Y ) )
+								{
+									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+								}
+								else if( standard_code.equals( SC_U ) ) {
+									addToReportPerson( id_person, source, 1000, nameNoSuffix );    // EC 1000
+
+									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+								}
+								else if( standard_code.equals( SC_N ) ) {
+									addToReportPerson( id_person, source, 1005, nameNoSuffix );     // EC 1005
+								}
+								else if( standard_code.equals( SC_X ) ) {
+									addToReportPerson( id_person, source, 1009, nameNoSuffix );    // EC 1009
+
+									writerFamilyname.write( id_person + "," + nameNoSuffix.toLowerCase() + "\n" );
+								}
+								else {
+									addToReportPerson( id_person, source, 1010, nameNoSuffix );    // EC 1010
+								}
+							} else {
+								// add new familyname
+								almmFamilyname.add( nameNoSuffix );
+
+								addToReportPerson( id_person, source, 1009, nameNoSuffix );    // EC 1009
+
+								writerFamilyname.write( id_person + "," + nameNoSuffix.trim().toLowerCase() + "\n" );
+
+							}
 						}
 					}
-				}
-				else {      // Familyname empty
-					count_empty++;
-					addToReportPerson( id_person, source, 1001, "" );  // EC 1001
+					else {      // Familyname empty
+						count_empty++;
+						addToReportPerson( id_person, source, 1001, "" );  // EC 1001
+					}
 				}
 			}
 
@@ -2392,10 +2441,13 @@ public class LinksCleanAsync extends Thread
 			+ " WHERE table_schema = '" + db_name + "'"
 			+ " AND table_name = '" + table_name + "'";
 
-		ResultSet rs = dbcon.executeQuery( query );
-		rs.first();
-		int count = rs.getInt( "COUNT(*)" );
-		//showMessage( "doesTableExist: " + db_name + " " + table_name + " : " + count, false, true );
+		int count = 0;
+		try( ResultSet rs = dbcon.executeQuery( query ) )
+		{
+			rs.first();
+			count = rs.getInt( "COUNT(*)" );
+			//showMessage( "doesTableExist: " + db_name + " " + table_name + " : " + count, false, true );
+		}
 
 		if( count == 1 ) return true;
 		else return false;
@@ -2634,9 +2686,8 @@ public class LinksCleanAsync extends Thread
 		int count_empty = 0;
 		int stepstate = count_step;
 
-		try
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
 		{
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -2846,13 +2897,12 @@ public class LinksCleanAsync extends Thread
 		int count_empty = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String selectQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_person , sex FROM person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -2963,13 +3013,12 @@ public class LinksCleanAsync extends Thread
 
 		int count_sex_new = almmCivilstatus.newcount();     // standardSex also writes to almmCivilstatus
 
-		try
-		{
-			String selectQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_person , sex , civil_status FROM person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -3157,14 +3206,13 @@ public class LinksCleanAsync extends Thread
 		int count = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String selectQuery = "SELECT id_registration, registration_maintype, registration_type";
-			selectQuery += " FROM registration_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_registration, registration_maintype, registration_type";
+		selectQuery += " FROM registration_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -3339,9 +3387,8 @@ public class LinksCleanAsync extends Thread
 		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
 		if( debug ) { showMessage( query, false, true ); }
 
-		try
+		try( ResultSet rs = dbconOriginal.executeQuery( query ) )
 		{
-			ResultSet rs = dbconOriginal.executeQuery( query );           // Get occupation
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -3554,14 +3601,13 @@ public class LinksCleanAsync extends Thread
 		int count = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String selectQuery = "SELECT id_person , id_registration , role, age_literal , age_year , age_month , age_week , age_day ";
-			selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_person , id_registration , role, age_literal , age_year , age_month , age_week , age_day ";
+		selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -3844,14 +3890,13 @@ public class LinksCleanAsync extends Thread
 		int count = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String selectQuery = "SELECT id_registration, id_person , age_year , age_month , age_week , age_day ";
-			selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_registration, id_person , age_year , age_month , age_week , age_day ";
+		selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -4029,14 +4074,13 @@ public class LinksCleanAsync extends Thread
 		int count_noref = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String selectQuery = "SELECT id_person , registration_maintype, role ";
-			selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_person , registration_maintype, role ";
+		selectQuery += "FROM links_original.person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( selectQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -4162,14 +4206,13 @@ public class LinksCleanAsync extends Thread
 		int stepstate = count_step;
 		int id_person = 0;
 
-		try
-		{
-			String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year ";
-			selectQuery += "FROM links_cleaned.person_c WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( selectQuery, false, true ); }
+		String selectQuery = "SELECT id_registration , id_person , role , death , occupation, age_year ";
+		selectQuery += "FROM links_cleaned.person_c WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( selectQuery, false, true ); }
 
-			ResultSet rs = dbconCleaned.executeQuery( selectQuery );
+		try( ResultSet rs = dbconCleaned.executeQuery( selectQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -4369,15 +4412,14 @@ public class LinksCleanAsync extends Thread
 		int count_invalid = 0;
 		int stepstate = count_step;
 
-		try
-		{
-			String startQuery = "SELECT id_person , id_source , registration_type";
-			startQuery += String.format(", %s_date , %s_day , %s_month , %s_year ", type, type, type, type );
-			startQuery += "FROM links_original.person_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( startQuery, false, true ); }
+		String startQuery = "SELECT id_person , id_source , registration_type";
+		startQuery += String.format(", %s_date , %s_day , %s_month , %s_year ", type, type, type, type );
+		startQuery += "FROM links_original.person_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { startQuery += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( startQuery, false, true ); }
 
-			ResultSet rs = dbconOriginal.executeQuery( startQuery );
+		try( ResultSet rs = dbconOriginal.executeQuery( startQuery ) )
+		{
 			rs.last();
 			int total = rs.getRow();
 			rs.beforeFirst();
@@ -4460,7 +4502,6 @@ public class LinksCleanAsync extends Thread
 			//String msg = String.format( "Thread id %02d; Number of %s records: %d, empty dates: %d, invalid dates: %d", threadId, type, count, count_empty, count_invalid );
 			String msg = String.format( "Thread id %02d; Number of records: %d, empty dates: %d, invalid dates: %d", threadId, count, count_empty, count_invalid );
 			showMessage( msg, false, true );
-			rs = null;
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; count: %d, Exception in standardDate: %s", threadId, count, ex.getMessage() );
@@ -4486,14 +4527,13 @@ public class LinksCleanAsync extends Thread
 		int nInvalidRegDates = 0;
 		int nTooManyHyphens = 0;
 
-		try
-		{
-			String query_r = "SELECT id_registration, registration_maintype, registration_type, registration_date, registration_day, registration_month, registration_year ";
-			query_r += "FROM registration_o WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( query_r, false, true ); }
+		String query_r = "SELECT id_registration, registration_maintype, registration_type, registration_date, registration_day, registration_month, registration_year ";
+		query_r += "FROM registration_o WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query_r, false, true ); }
 
-			ResultSet rs_r = dbconOriginal.executeQuery( query_r );
+		try( ResultSet rs_r = dbconOriginal.executeQuery( query_r ) )
+		{
 			rs_r.last();
 			int total = rs_r.getRow();
 			rs_r.beforeFirst();
@@ -5346,10 +5386,8 @@ public class LinksCleanAsync extends Thread
 		int id_registration = -1;   // want to show it when exception occurs
 		int id_person = -1;         // want to show it when exception occurs
 
-		try
+		try( ResultSet rsPersons = dbconCleaned.executeQuery( startQuery ) )
 		{
-			ResultSet rsPersons = dbconCleaned.executeQuery( startQuery );            // Run person query
-
 			rsPersons.last();
 			int total = rsPersons.getRow();
 			rsPersons.beforeFirst();
@@ -5394,15 +5432,6 @@ public class LinksCleanAsync extends Thread
 
 				if( stillbirth == null ) { stillbirth = ""; }
 
-				//if( id_person == 35241647 || id_person == 35241650 ) { debug = true; }
-				//if( id_person == 35243117 || id_person == 35243285 || id_person == 35243396 ) { debug = true; }
-				//if( id_person == 35366306 || id_person == 35418132 || id_person == 35573087 ) { debug = true; }
-                /*
-                if( id_person == 37337615 || id_person == 37337618 || id_person == 37338875 || id_person == 37338878
-                 || id_person == 37338905 || id_person == 37338908 || id_person == 37339391 || id_person == 37339394
-                 || id_person == 37339799 || id_person == 37339802 || id_person == 37340293 || id_person == 37340296 )
-                { debug = true; }
-                */
 				//if( id_person == 37336505 || id_person == 37336508 ) { debug = true; }
 				//else { debug = false; continue; }
 
@@ -6076,7 +6105,7 @@ public class LinksCleanAsync extends Thread
 		String  death,
 		int     age
 	)
-		throws Exception
+	throws Exception
 	{
 		if( debug ) {
 			showMessage( "minMaxCalculation() death = " + death + ", age = " + age, false, true );
@@ -6147,101 +6176,124 @@ public class LinksCleanAsync extends Thread
 
 		if( debug ) { showMessage( query, false, true ); }
 
-		ResultSet rs = dbconRefRead.executeQuery( query );
-		if( ! rs.next() )
-		{
-			if( debug ) {
-				showMessage( "Not found", false, true );
-				showMessage( query, false, true );
-			}
-
-			addToReportPerson( id_person, source, 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
-
-			MinMaxYearSet mmj = new MinMaxYearSet();
-
-			return mmj;
-		}
-
-		rs.last();        // to last row
-
-		function = rs.getString( "function" );
-		min_year = rs.getInt( "min_year" );
-		max_year = rs.getInt( "max_year" );
-
-		if( debug ) { showMessage( "minMaxCalculation() age: " + age + ", function: " + function +
-			", min_year: " + min_year + ", max_year: " + max_year + ", main_role: " + main_role, false, true ); }
-
-		int agecopy = age;
-		if( min_age_0 == "y" ) { agecopy = 0; }
-		int minimum_year = reg_year - agecopy + min_year;
-		if( debug ) { showMessage( "minMaxCalculation() min_age_0: " + min_age_0 + ", agecopy: " + agecopy + ", min_year: " + min_year, false, true ); }
-
-		agecopy = age;
-		if( max_age_0 == "y" ) { agecopy = 0; }
-		int maximum_year = reg_year - agecopy + max_year;
-		if( debug ) { showMessage( "minMaxCalculation() max_age_0: " + max_age_0 + ", agecopy: " + agecopy + ", max_year: " + max_year, false, true ); }
-
 		MinMaxYearSet mmj = new MinMaxYearSet();
 
-		mmj.setMinYear( minimum_year );
-		mmj.setMaxYear( maximum_year );
+		try( ResultSet rs = dbconRefRead.executeQuery( query ) )
+		{
+			if (!rs.next()) {
+				if (debug) {
+					showMessage("Not found", false, true);
+					showMessage(query, false, true);
+				}
 
-		// function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
+				addToReportPerson(id_person, source, 105, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]");
 
-		if( function.equals( "A" ) )                    // function A, the contents of mmj is already OK
-		{
-			;
-		}
-		else if( function.equals( "C" ) )               // function C, check by reg year
-		{
-			if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
-		}
-		else if( function.equals( "D" ) )               // function D
-		{
-			if( minimum_year > (reg_year - 14) ) { mmj.setMinYear( reg_year - 14 ); }
-			if( maximum_year > (reg_year - 14) ) { mmj.setMaxYear( reg_year - 14 ); }
-		}
-		else if( function.equals( "E" ) )               // If E, deceased
-		{
-			if( minimum_year > reg_year ) { mmj.setMinYear( reg_year ); }
-			if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
-		}
-		else if( function.equals( "F" ) )               // function F
-		{
-			if( minimum_year < reg_year ) { mmj.setMinYear( reg_year ); }
-		}
-		else if( function.equals( "G" ) )               // function F
-		{
-			if( minimum_year <  reg_year )       { mmj.setMinYear( reg_year ); }
-			if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
-		}
-		else if( function.equals( "H" ) )               // function H
-		{
-			if( maximum_year > (reg_year + 86) ) { mmj.setMaxYear( reg_year + 86 ); }
-		}
-		else if( function.equals( "I" ) )               // function I
-		{
-			if( maximum_year > reg_year ) { mmj.setMaxYear( reg_year ); }
-			if( minimum_year > mmj.getMaxYear() ) { mmj.setMinYear( mmj.getMaxYear() ); }
-		}
-		else
-		{
-			if( debug ) { showMessage( "minMaxCalculation() function = " + function, false, true ); }
-			addToReportPerson( id_person, "0", 104, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]" );
-		}
+				return mmj;
+			}
 
-		if( mmj.getMinYear() > mmj.getMaxYear() )   // min/max consistency check
-		{
-			//showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
-			String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " +  mmj.getMaxYear();
-			addToReportPerson( id_person, source, 266, msg_minmax  );       // error 266 + min & max
+			rs.last();        // to last row
 
-			// KM: day & month both from registration date, so with min_year = max_year date are equal
-			mmj.setMinYear( mmj.getMaxYear() );                 // min = max
+			function = rs.getString("function");
+			min_year = rs.getInt("min_year");
+			max_year = rs.getInt("max_year");
+
+			if (debug) {
+				showMessage("minMaxCalculation() age: " + age + ", function: " + function +
+					", min_year: " + min_year + ", max_year: " + max_year + ", main_role: " + main_role, false, true);
+			}
+
+			int agecopy = age;
+			if (min_age_0 == "y") {
+				agecopy = 0;
+			}
+			int minimum_year = reg_year - agecopy + min_year;
+			if (debug) {
+				showMessage("minMaxCalculation() min_age_0: " + min_age_0 + ", agecopy: " + agecopy + ", min_year: " + min_year, false, true);
+			}
+
+			agecopy = age;
+			if (max_age_0 == "y") {
+				agecopy = 0;
+			}
+			int maximum_year = reg_year - agecopy + max_year;
+			if (debug) {
+				showMessage("minMaxCalculation() max_age_0: " + max_age_0 + ", agecopy: " + agecopy + ", max_year: " + max_year, false, true);
+			}
+
+			mmj.setMinYear(minimum_year);
+			mmj.setMaxYear(maximum_year);
+
+			// function "B" is not needed here; its role is being dealt with somewhere else [minMaxDate() ?]
+
+			if (function.equals("A"))                    // function A, the contents of mmj is already OK
+			{
+				;
+			} else if (function.equals("C"))               // function C, check by reg year
+			{
+				if (maximum_year > reg_year) {
+					mmj.setMaxYear(reg_year);
+				}
+			} else if (function.equals("D"))               // function D
+			{
+				if (minimum_year > (reg_year - 14)) {
+					mmj.setMinYear(reg_year - 14);
+				}
+				if (maximum_year > (reg_year - 14)) {
+					mmj.setMaxYear(reg_year - 14);
+				}
+			} else if (function.equals("E"))               // If E, deceased
+			{
+				if (minimum_year > reg_year) {
+					mmj.setMinYear(reg_year);
+				}
+				if (maximum_year > reg_year) {
+					mmj.setMaxYear(reg_year);
+				}
+			} else if (function.equals("F"))               // function F
+			{
+				if (minimum_year < reg_year) {
+					mmj.setMinYear(reg_year);
+				}
+			} else if (function.equals("G"))               // function F
+			{
+				if (minimum_year < reg_year) {
+					mmj.setMinYear(reg_year);
+				}
+				if (maximum_year > (reg_year + 86)) {
+					mmj.setMaxYear(reg_year + 86);
+				}
+			} else if (function.equals("H"))               // function H
+			{
+				if (maximum_year > (reg_year + 86)) {
+					mmj.setMaxYear(reg_year + 86);
+				}
+			} else if (function.equals("I"))               // function I
+			{
+				if (maximum_year > reg_year) {
+					mmj.setMaxYear(reg_year);
+				}
+				if (minimum_year > mmj.getMaxYear()) {
+					mmj.setMinYear(mmj.getMaxYear());
+				}
+			} else {
+				if (debug) {
+					showMessage("minMaxCalculation() function = " + function, false, true);
+				}
+				addToReportPerson(id_person, "0", 104, "Null -> [rh:" + main_type + "][ad:" + date_type + "][rol:" + role + "][lg:" + age_reported + "][lh:" + age_main_role + "]");
+			}
+
+			if (mmj.getMinYear() > mmj.getMaxYear())   // min/max consistency check
+			{
+				//showMessage( "minMaxCalculation() Error: min_year exceeds max_year for id_person = " + id_person, false, true );
+				String msg_minmax = "minYear: " + mmj.getMinYear() + ", maxYear: " + mmj.getMaxYear();
+				addToReportPerson(id_person, source, 266, msg_minmax);       // error 266 + min & max
+
+				// KM: day & month both from registration date, so with min_year = max_year date are equal
+				mmj.setMinYear(mmj.getMaxYear());                 // min = max
+			}
 		}
 
 		return mmj;
-
 	} // minMaxCalculation
 
 
@@ -6298,116 +6350,120 @@ public class LinksCleanAsync extends Thread
 
 			if( debug ) { showMessage( queryRef, false, true ); }
 
-			ResultSet rs_ref = dbconRefRead.executeQuery( queryRef );
-
-			int min_person_role = 0;
-			int max_person_role = 0;
-
-			if( !rs_ref.next() ) {
-				if( debug ) { showMessage( "Not found; age_main_role = " + age_main_role, false, true ); }
-
-				if( age_main_role.equals( "nvt" ) ) { age_main_role = "y"; }
-				else { age_main_role = "n"; }
-			}
-			else
+			try( ResultSet rs_ref = dbconRefRead.executeQuery( queryRef ) )
 			{
-				if( debug ) { showMessage( "Found", false, true ); }
+				int min_person_role = 0;
+				int max_person_role = 0;
 
-				min_person_role = rs_ref.getInt( "min_person" );
-				max_person_role = rs_ref.getInt( "max_person" );
-				if( debug ) { showMessage( "min_person_role = " + min_person_role + ", max_person_role = " + max_person_role, false, true ); }
+				if( !rs_ref.next() )
+				{
+					if( debug ) { showMessage( "Not found; age_main_role = " + age_main_role, false, true ); }
 
-				mmmas.setFunction( rs_ref.getString( "function" ) );
-				mmmas.setMinYear(rs_ref.getInt( "min_year" ));
-				mmmas.setMaxYear(rs_ref.getInt( "max_year" ));
-
-				boolean readPc = false;
-				int mm_main_role = 0;
-
-				if( min_person_role > 0 ) {
-					readPc = true;
-					mm_main_role = min_person_role;
+					if( age_main_role.equals( "nvt" ) ) { age_main_role = "y"; }
+					else { age_main_role = "n"; }
 				}
-				else {
-					done = true;
-					mmmas.setMinAge0( "y" );
-				}
+				else
+				{
+					if( debug ) { showMessage( "Found", false, true ); }
 
-				if( max_person_role > 0 ) {
-					readPc = true;
-					mm_main_role = max_person_role;
-				}
-				else {
-					done = true;
-					mmmas.setMaxAge0( "y" );
-				}
+					min_person_role = rs_ref.getInt( "min_person" );
+					max_person_role = rs_ref.getInt( "max_person" );
+					if( debug ) { showMessage( "min_person_role = " + min_person_role + ", max_person_role = " + max_person_role, false, true ); }
 
-				if( debug ) { showMessage( "querying person_c: " + readPc, false, true ); }
-				if( readPc ) {
-					String queryPc = "SELECT age_day, age_week, age_month, age_year, role FROM links_cleaned.person_c"
-						+ " WHERE id_registration = " + id_registration
-						+ " AND role = " + mm_main_role;
+					mmmas.setFunction( rs_ref.getString( "function" ) );
+					mmmas.setMinYear(rs_ref.getInt( "min_year" ));
+					mmmas.setMaxYear(rs_ref.getInt( "max_year" ));
 
-					if( debug ) { showMessage( queryPc, false, true ); }
-					ResultSet rs_pc = dbconCleaned.executeQuery( queryPc );
+					boolean readPc = false;
+					int mm_main_role = 0;
 
-					int age_day = 0;
-					int age_week = 0;
-					int age_month = 0;
-					int age_year = 0;
-
-					int main_role = 0;
-					int countPc = 0;
-
-					while( rs_pc.next() ) {
-						countPc++;
-						age_day   = rs_pc.getInt( "age_day" );
-						age_week  = rs_pc.getInt( "age_week" );
-						age_month = rs_pc.getInt( "age_month" );
-						age_year  = rs_pc.getInt( "age_year" );
-						main_role = rs_pc.getInt( "role" );
-
-						mmmas.setAgeYear( age_year );
-						mmmas.setMainRole( main_role );
+					if( min_person_role > 0 ) {
+						readPc = true;
+						mm_main_role = min_person_role;
 					}
-
-					if( countPc == 0 )
-					{
-						if( debug ) { showMessage( "minMaxMainAge: person_c count = 0, with query:", false, true ); }
-						if( debug ) { showMessage( queryPc, false, true ); }
-						if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // WA 271
-						else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // WA 272
-						else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // WA 273
-						else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 274, "" ); }   // WA 274
-					}
-					else if( countPc > 1 )
-					{
-						if( debug ) { showMessage( "minMaxMainAge: person_c count > 1, with query:", false, true ); }
-						if( debug ) { showMessage( queryPc, false, true ); }
-						if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 281, "" ); }   // WA 281
-						else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 282, "" ); }   // WA 282
-						else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 283, "" ); }   // WA 283
-						else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 284, "" ); }   // WA 284
-					}
-
-					if( debug ) { showMessage( "minMaxMainAge() age_day: " + age_day + ", age_week: " + age_week + ", age_month: " + age_month + ", age_year: " + age_year + ", main_role: " + main_role, false, true ); }
-
-					if( age_day > 0 || age_week > 0 || age_month > 0 ) {
-						int iyear = age_month / 12;
-						// Adding 1 is only for getting proper values of date range estimates (e.g., of parents of a baby that only lived a few days).
-						// the person_c.age_year should not be changed; it may be 0
-						age_year += ( 1 + iyear );
-						mmmas.setAgeYear( age_year );
-					}
-
-					if( age_year > 0 ) { done = true; }
 					else {
-						if( age_main_role.equals( "y" ) ) { age_main_role = "n"; }
-						else { done = true; }
+						done = true;
+						mmmas.setMinAge0( "y" );
 					}
-				}
-				else { done = true; }
 
+					if( max_person_role > 0 ) {
+						readPc = true;
+						mm_main_role = max_person_role;
+					}
+					else {
+						done = true;
+						mmmas.setMaxAge0( "y" );
+					}
+
+					if( debug ) { showMessage( "querying person_c: " + readPc, false, true ); }
+					if( readPc ) {
+						String queryPc = "SELECT age_day, age_week, age_month, age_year, role FROM links_cleaned.person_c"
+							+ " WHERE id_registration = " + id_registration
+							+ " AND role = " + mm_main_role;
+
+						if( debug ) { showMessage( queryPc, false, true ); }
+
+						int age_day = 0;
+						int age_week = 0;
+						int age_month = 0;
+						int age_year = 0;
+
+						int main_role = 0;
+						int countPc = 0;
+
+						try( ResultSet rs_pc = dbconCleaned.executeQuery( queryPc ) )
+						{
+							while( rs_pc.next() ) {
+								countPc++;
+								age_day   = rs_pc.getInt( "age_day" );
+								age_week  = rs_pc.getInt( "age_week" );
+								age_month = rs_pc.getInt( "age_month" );
+								age_year  = rs_pc.getInt( "age_year" );
+								main_role = rs_pc.getInt( "role" );
+
+								mmmas.setAgeYear( age_year );
+								mmmas.setMainRole( main_role );
+							}
+						}
+
+						if( countPc == 0 )
+						{
+							if( debug ) { showMessage( "minMaxMainAge: person_c count = 0, with query:", false, true ); }
+							if( debug ) { showMessage( queryPc, false, true ); }
+							if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 271, "" ); }   // WA 271
+							else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 272, "" ); }   // WA 272
+							else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 273, "" ); }   // WA 273
+							else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 274, "" ); }   // WA 274
+						}
+						else if( countPc > 1 )
+						{
+							if( debug ) { showMessage( "minMaxMainAge: person_c count > 1, with query:", false, true ); }
+							if( debug ) { showMessage( queryPc, false, true ); }
+							if( mm_main_role ==  1 ) { addToReportRegistration( id_registration, "" + id_source, 281, "" ); }   // WA 281
+							else if( mm_main_role ==  4 ) { addToReportRegistration( id_registration, "" + id_source, 282, "" ); }   // WA 282
+							else if( mm_main_role ==  7 ) { addToReportRegistration( id_registration, "" + id_source, 283, "" ); }   // WA 283
+							else if( mm_main_role == 10 ) { addToReportRegistration( id_registration, "" + id_source, 284, "" ); }   // WA 284
+						}
+
+						if( debug ) { showMessage( "minMaxMainAge() age_day: " + age_day + ", age_week: " + age_week + ", age_month: " + age_month + ", age_year: " + age_year + ", main_role: " + main_role, false, true ); }
+
+						if( age_day > 0 || age_week > 0 || age_month > 0 ) {
+							int iyear = age_month / 12;
+							// Adding 1 is only for getting proper values of date range estimates (e.g., of parents of a baby that only lived a few days).
+							// the person_c.age_year should not be changed; it may be 0
+							age_year += ( 1 + iyear );
+							mmmas.setAgeYear( age_year );
+						}
+
+						if( age_year > 0 ) { done = true; }
+						else {
+							if( age_main_role.equals( "y" ) ) { age_main_role = "n"; }
+							else { done = true; }
+						}
+					}
+					else { done = true; }
+
+				}
 			}
 
 			if( done == false && loop > 2 ) {
@@ -6666,10 +6722,8 @@ public class LinksCleanAsync extends Thread
 		if ( ! rmtype.isEmpty() ) { selectQueryA += " AND registration_maintype = " + rmtype; }
 		if( debug ) { showMessage( "standardMinMaxMarriageYear() " + selectQueryA, false, true ); }
 
-		try
+		try( ResultSet rsA = dbconCleaned.executeQuery( selectQueryA ) )
 		{
-			ResultSet rsA = dbconCleaned.executeQuery( selectQueryA );
-
 			while( rsA.next() )
 			{
 				count++;
@@ -6722,7 +6776,6 @@ public class LinksCleanAsync extends Thread
 					+ " AND role = " + roleB;
 
 				if( debug) { showMessage( selectQueryB, false, true ); }
-				ResultSet rsB = dbconCleaned.executeQuery( selectQueryB );
 
 				int id_personB     = 0;
 				int mar_day_minB   = 0;
@@ -6733,15 +6786,18 @@ public class LinksCleanAsync extends Thread
 				int mar_year_maxB  = 0;
 
 				int countB = 0;
-				while (rsB.next()) {
-					countB++;
-					id_personB     = rsB.getInt( "id_person" );
-					mar_day_minB   = rsB.getInt( "mar_day_min" );
-					mar_day_maxB   = rsB.getInt( "mar_day_max" );
-					mar_month_minB = rsB.getInt( "mar_month_min" );
-					mar_month_maxB = rsB.getInt( "mar_month_max" );
-					mar_year_minB  = rsB.getInt( "mar_year_min" );
-					mar_year_maxB  = rsB.getInt( "mar_year_max" );
+				try( ResultSet rsB = dbconCleaned.executeQuery( selectQueryB ) )
+				{
+					while (rsB.next()) {
+						countB++;
+						id_personB     = rsB.getInt( "id_person" );
+						mar_day_minB   = rsB.getInt( "mar_day_min" );
+						mar_day_maxB   = rsB.getInt( "mar_day_max" );
+						mar_month_minB = rsB.getInt( "mar_month_min" );
+						mar_month_maxB = rsB.getInt( "mar_month_max" );
+						mar_year_minB  = rsB.getInt( "mar_year_min" );
+						mar_year_maxB  = rsB.getInt( "mar_year_max" );
+					}
 				}
 
 				if( countB == 0 ) {
@@ -7135,17 +7191,14 @@ public class LinksCleanAsync extends Thread
 			ex.printStackTrace( new PrintStream( System.out ) );
 		}
 
+		showMessage( String.format( "Thread id %02d; 9-of-9: registration_days", threadId ), false, true );
 
-		try
+		String queryS = "SELECT id_registration, registration_date FROM registration_c WHERE id_source = " + source;
+		if ( ! rmtype.isEmpty() ) { queryS += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( queryS, false, true ); }
+
+		try( ResultSet rs_s = dbconCleaned.executeQuery( queryS ) )
 		{
-			showMessage( String.format( "Thread id %02d; 9-of-9: registration_days", threadId ), false, true );
-
-			String queryS = "SELECT id_registration, registration_date FROM registration_c WHERE id_source = " + source;
-			if ( ! rmtype.isEmpty() ) { queryS += " AND registration_maintype = " + rmtype; }
-			if( debug ) { showMessage( queryS, false, true ); }
-
-			ResultSet rs_s = dbconCleaned.executeQuery( queryS );
-
 			int count = 0;
 			int stepstate = count_step;
 			while( rs_s.next() )
@@ -7738,10 +7791,8 @@ public class LinksCleanAsync extends Thread
 
 		int nDuplicates = 0;
 
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			int nflagRegist = 0;
 			//int ndeletePerson = 0;
 
@@ -7783,35 +7834,38 @@ public class LinksCleanAsync extends Thread
 					{
 						// get current flags string
 						String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-						ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r );
-						String old_flags = "";
-						while( rs.next() )
-						{ old_flags = rs.getString( "not_linksbase" ); }
 
-						int countRegist = 0;
-						String new_flags = "";
-
-						if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
-						else
+						try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
 						{
-							// is the flag already set?
-							int flag_idx = 2;       // 3rd position for the flag
-							if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+							String old_flags = "";
+							while( rs.next() )
+							{ old_flags = rs.getString( "not_linksbase" ); }
+
+							int countRegist = 0;
+							String new_flags = "";
+
+							if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
+							else
 							{
-								// preserve other flags, and set new flag
-								StringBuilder sb = new StringBuilder( old_flags );
-								sb.setCharAt( flag_idx,'1' );
-								new_flags = sb.toString();
+								// is the flag already set?
+								int flag_idx = 2;       // 3rd position for the flag
+								if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+								{
+									// preserve other flags, and set new flag
+									StringBuilder sb = new StringBuilder( old_flags );
+									sb.setCharAt( flag_idx,'1' );
+									new_flags = sb.toString();
+								}
 							}
-						}
 
-						if( ! new_flags.isEmpty() )
-						{
-							String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-							flagQuery_r += " WHERE id_registration = " + id_regist + ";";
-							//System.out.println(flagQuery_r);
+							if( ! new_flags.isEmpty() )
+							{
+								String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+								flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+								//System.out.println(flagQuery_r);
 
-							countRegist = dbconCleaned.executeUpdate( flagQuery_r );
+								countRegist = dbconCleaned.executeUpdate( flagQuery_r );
+							}
 						}
 					}
 				}
@@ -7882,56 +7936,60 @@ public class LinksCleanAsync extends Thread
 		{
 			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
 			if( debug ) { System.out.println( query_p1 ); }
-			ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 );
 
 			String newborn_id_source1  = "";
 			String newborn_firstname1  = "";
 			String newborn_prefix1     = "";
 			String newborn_familyname1 = "";
 
-			while( rs_p1.next() )
+			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
 			{
-				int role = rs_p1.getInt( "role" );
+				while( rs_p1.next() )
+				{
+					int role = rs_p1.getInt( "role" );
 
-				newborn_id_source1  = rs_p1.getString( "id_source" );
-				newborn_firstname1  = rs_p1.getString( "firstname" );
-				newborn_prefix1     = rs_p1.getString( "prefix" );
-				newborn_familyname1 = rs_p1.getString( "familyname" );
+					newborn_id_source1  = rs_p1.getString( "id_source" );
+					newborn_firstname1  = rs_p1.getString( "firstname" );
+					newborn_prefix1     = rs_p1.getString( "prefix" );
+					newborn_familyname1 = rs_p1.getString( "familyname" );
 
-				if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
-				if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
-				if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
-				if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
+					if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
+					if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
+					if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
+					if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
 
-				id_source1 = newborn_id_source1;
+					id_source1 = newborn_id_source1;
 
-				//if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+					//if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+				}
 			}
 
 			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
 			if( debug ) { System.out.println( query_p2 ); }
-			ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 );
 
 			String newborn_id_source2  = "";
 			String newborn_firstname2  = "";
 			String newborn_prefix2     = "";
 			String newborn_familyname2 = "";
 
-			while( rs_p2.next() )
+			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
 			{
-				int role = rs_p2.getInt( "role" );
+				while( rs_p2.next() )
+				{
+					int role = rs_p2.getInt( "role" );
 
-				newborn_id_source2  = rs_p2.getString( "id_source" );
-				newborn_firstname2  = rs_p2.getString( "firstname" );
-				newborn_prefix2     = rs_p2.getString( "prefix" );
-				newborn_familyname2 = rs_p2.getString( "familyname" );
+					newborn_id_source2  = rs_p2.getString( "id_source" );
+					newborn_firstname2  = rs_p2.getString( "firstname" );
+					newborn_prefix2     = rs_p2.getString( "prefix" );
+					newborn_familyname2 = rs_p2.getString( "familyname" );
 
-				if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
-				if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
-				if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
-				if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
+					if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
+					if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
+					if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
+					if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
 
-				id_source2 = newborn_id_source2;
+					id_source2 = newborn_id_source2;
+				}
 			}
 
 			if( newborn_firstname1.equals( newborn_firstname2 ) && newborn_familyname1.equals( newborn_familyname2 ) )
@@ -7951,12 +8009,11 @@ public class LinksCleanAsync extends Thread
 			}
 		}
 
+
 		else if( registration_maintype == 2 )   // marriage
 		{
-
 			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
 			if( debug ) { System.out.println( query_p1 ); }
-			ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 );
 
 			String bride_id_source1  = "";
 			String bride_firstname1  = "";
@@ -7968,43 +8025,45 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix1     = "";
 			String groom_familyname1 = "";
 
-			while( rs_p1.next() )
+			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
 			{
-				int role = rs_p1.getInt( "role" );
-
-				if( role == 4 )
+				while( rs_p1.next() )
 				{
-					bride_id_source1  = rs_p1.getString( "id_source" );
-					bride_firstname1  = rs_p1.getString( "firstname" );
-					bride_prefix1     = rs_p1.getString( "prefix" );
-					bride_familyname1 = rs_p1.getString( "familyname" );
+					int role = rs_p1.getInt( "role" );
 
-					if( bride_id_source1  == null ) { bride_id_source1  = ""; }
-					if( bride_firstname1  == null ) { bride_firstname1  = ""; }
-					if( bride_prefix1     == null ) { bride_prefix1     = ""; }
-					if( bride_familyname1 == null ) { bride_familyname1 = ""; }
+					if( role == 4 )
+					{
+						bride_id_source1  = rs_p1.getString( "id_source" );
+						bride_firstname1  = rs_p1.getString( "firstname" );
+						bride_prefix1     = rs_p1.getString( "prefix" );
+						bride_familyname1 = rs_p1.getString( "familyname" );
 
-					id_source1 = bride_id_source1;
-				}
-				else    // role == 7
-				{
-					groom_id_source1  = rs_p1.getString( "id_source" );
-					groom_firstname1  = rs_p1.getString( "firstname" );
-					groom_prefix1     = rs_p1.getString( "prefix" );
-					groom_familyname1 = rs_p1.getString( "familyname" );
+						if( bride_id_source1  == null ) { bride_id_source1  = ""; }
+						if( bride_firstname1  == null ) { bride_firstname1  = ""; }
+						if( bride_prefix1     == null ) { bride_prefix1     = ""; }
+						if( bride_familyname1 == null ) { bride_familyname1 = ""; }
 
-					if( groom_id_source1  == null ) { groom_id_source1  = ""; }
-					if( groom_firstname1  == null ) { groom_firstname1  = ""; }
-					if( groom_prefix1     == null ) { groom_prefix1     = ""; }
-					if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+						id_source1 = bride_id_source1;
+					}
+					else    // role == 7
+					{
+						groom_id_source1  = rs_p1.getString( "id_source" );
+						groom_firstname1  = rs_p1.getString( "firstname" );
+						groom_prefix1     = rs_p1.getString( "prefix" );
+						groom_familyname1 = rs_p1.getString( "familyname" );
 
-					id_source1 = groom_id_source1;
+						if( groom_id_source1  == null ) { groom_id_source1  = ""; }
+						if( groom_firstname1  == null ) { groom_firstname1  = ""; }
+						if( groom_prefix1     == null ) { groom_prefix1     = ""; }
+						if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+						id_source1 = groom_id_source1;
+					}
 				}
 			}
 
 			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
 			if( debug ) { System.out.println( query_p2 ); }
-			ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 );
 
 			String bride_id_source2  = "";
 			String bride_firstname2  = "";
@@ -8016,37 +8075,40 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix2     = "";
 			String groom_familyname2 = "";
 
-			while( rs_p2.next() )
+			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
 			{
-				int role = rs_p2.getInt( "role" );
-
-				if( role == 4 )
+				while( rs_p2.next() )
 				{
-					bride_id_source2  = rs_p2.getString( "id_source" );
-					bride_firstname2  = rs_p2.getString( "firstname" );
-					bride_prefix2     = rs_p2.getString( "prefix" );
-					bride_familyname2 = rs_p2.getString( "familyname" );
+					int role = rs_p2.getInt( "role" );
 
-					if( bride_id_source2  == null ) { bride_id_source2  = ""; }
-					if( bride_firstname2  == null ) { bride_firstname2  = ""; }
-					if( bride_prefix2     == null ) { bride_prefix2     = ""; }
-					if( bride_familyname2 == null ) { bride_familyname2 = ""; }
+					if( role == 4 )
+					{
+						bride_id_source2  = rs_p2.getString( "id_source" );
+						bride_firstname2  = rs_p2.getString( "firstname" );
+						bride_prefix2     = rs_p2.getString( "prefix" );
+						bride_familyname2 = rs_p2.getString( "familyname" );
 
-					id_source2 = bride_id_source2;
-				}
-				else    // role == 7
-				{
-					groom_id_source2  = rs_p2.getString( "id_source" );
-					groom_firstname2  = rs_p2.getString( "firstname" );
-					groom_prefix2     = rs_p2.getString( "prefix" );
-					groom_familyname2 = rs_p2.getString( "familyname" );
+						if( bride_id_source2  == null ) { bride_id_source2  = ""; }
+						if( bride_firstname2  == null ) { bride_firstname2  = ""; }
+						if( bride_prefix2     == null ) { bride_prefix2     = ""; }
+						if( bride_familyname2 == null ) { bride_familyname2 = ""; }
 
-					if( groom_id_source2  == null ) { groom_id_source2  = ""; }
-					if( groom_firstname2  == null ) { groom_firstname2  = ""; }
-					if( groom_prefix2     == null ) { groom_prefix2     = ""; }
-					if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+						id_source2 = bride_id_source2;
+					}
+					else    // role == 7
+					{
+						groom_id_source2  = rs_p2.getString( "id_source" );
+						groom_firstname2  = rs_p2.getString( "firstname" );
+						groom_prefix2     = rs_p2.getString( "prefix" );
+						groom_familyname2 = rs_p2.getString( "familyname" );
 
-					id_source2 = groom_id_source2;
+						if( groom_id_source2  == null ) { groom_id_source2  = ""; }
+						if( groom_firstname2  == null ) { groom_firstname2  = ""; }
+						if( groom_prefix2     == null ) { groom_prefix2     = ""; }
+						if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+						id_source2 = groom_id_source2;
+					}
 				}
 			}
 
@@ -8070,12 +8132,12 @@ public class LinksCleanAsync extends Thread
 				if( delcnt > 0 ) { return true; }
 			}
 		}
+
 
 		else if( registration_maintype == 4 )   // divorce
 		{
 			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
 			if( debug ) { System.out.println( query_p1 ); }
-			ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 );
 
 			String bride_id_source1  = "";
 			String bride_firstname1  = "";
@@ -8087,43 +8149,45 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix1     = "";
 			String groom_familyname1 = "";
 
-			while( rs_p1.next() )
+			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
 			{
-				int role = rs_p1.getInt( "role" );
-
-				if( role == 4 )
+				while( rs_p1.next() )
 				{
-					bride_id_source1  = rs_p1.getString( "id_source" );
-					bride_firstname1  = rs_p1.getString( "firstname" );
-					bride_prefix1     = rs_p1.getString( "prefix" );
-					bride_familyname1 = rs_p1.getString( "familyname" );
+					int role = rs_p1.getInt( "role" );
 
-					if( bride_id_source1  == null ) { bride_id_source1  = ""; }
-					if( bride_firstname1  == null ) { bride_firstname1  = ""; }
-					if( bride_prefix1     == null ) { bride_prefix1     = ""; }
-					if( bride_familyname1 == null ) { bride_familyname1 = ""; }
+					if( role == 4 )
+					{
+						bride_id_source1  = rs_p1.getString( "id_source" );
+						bride_firstname1  = rs_p1.getString( "firstname" );
+						bride_prefix1     = rs_p1.getString( "prefix" );
+						bride_familyname1 = rs_p1.getString( "familyname" );
 
-					id_source1 = bride_id_source1;
-				}
-				else    // role == 7
-				{
-					groom_id_source1  = rs_p1.getString( "id_source" );
-					groom_firstname1  = rs_p1.getString( "firstname" );
-					groom_prefix1     = rs_p1.getString( "prefix" );
-					groom_familyname1 = rs_p1.getString( "familyname" );
+						if( bride_id_source1  == null ) { bride_id_source1  = ""; }
+						if( bride_firstname1  == null ) { bride_firstname1  = ""; }
+						if( bride_prefix1     == null ) { bride_prefix1     = ""; }
+						if( bride_familyname1 == null ) { bride_familyname1 = ""; }
 
-					if( groom_id_source1  == null ) { groom_id_source1  = ""; }
-					if( groom_firstname1  == null ) { groom_firstname1  = ""; }
-					if( groom_prefix1     == null ) { groom_prefix1     = ""; }
-					if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+						id_source1 = bride_id_source1;
+					}
+					else    // role == 7
+					{
+						groom_id_source1  = rs_p1.getString( "id_source" );
+						groom_firstname1  = rs_p1.getString( "firstname" );
+						groom_prefix1     = rs_p1.getString( "prefix" );
+						groom_familyname1 = rs_p1.getString( "familyname" );
 
-					id_source1 = groom_id_source1;
+						if( groom_id_source1  == null ) { groom_id_source1  = ""; }
+						if( groom_firstname1  == null ) { groom_firstname1  = ""; }
+						if( groom_prefix1     == null ) { groom_prefix1     = ""; }
+						if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+						id_source1 = groom_id_source1;
+					}
 				}
 			}
 
 			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
 			if( debug ) { System.out.println( query_p2 ); }
-			ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 );
 
 			String bride_id_source2  = "";
 			String bride_firstname2  = "";
@@ -8135,37 +8199,40 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix2     = "";
 			String groom_familyname2 = "";
 
-			while( rs_p2.next() )
+			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
 			{
-				int role = rs_p2.getInt( "role" );
-
-				if( role == 4 )
+				while( rs_p2.next() )
 				{
-					bride_id_source2  = rs_p2.getString( "id_source" );
-					bride_firstname2  = rs_p2.getString( "firstname" );
-					bride_prefix2     = rs_p2.getString( "prefix" );
-					bride_familyname2 = rs_p2.getString( "familyname" );
+					int role = rs_p2.getInt( "role" );
 
-					if( bride_id_source2  == null ) { bride_id_source2  = ""; }
-					if( bride_firstname2  == null ) { bride_firstname2  = ""; }
-					if( bride_prefix2     == null ) { bride_prefix2     = ""; }
-					if( bride_familyname2 == null ) { bride_familyname2 = ""; }
+					if( role == 4 )
+					{
+						bride_id_source2  = rs_p2.getString( "id_source" );
+						bride_firstname2  = rs_p2.getString( "firstname" );
+						bride_prefix2     = rs_p2.getString( "prefix" );
+						bride_familyname2 = rs_p2.getString( "familyname" );
 
-					id_source2 = bride_id_source2;
-				}
-				else    // role == 7
-				{
-					groom_id_source2  = rs_p2.getString( "id_source" );
-					groom_firstname2  = rs_p2.getString( "firstname" );
-					groom_prefix2     = rs_p2.getString( "prefix" );
-					groom_familyname2 = rs_p2.getString( "familyname" );
+						if( bride_id_source2  == null ) { bride_id_source2  = ""; }
+						if( bride_firstname2  == null ) { bride_firstname2  = ""; }
+						if( bride_prefix2     == null ) { bride_prefix2     = ""; }
+						if( bride_familyname2 == null ) { bride_familyname2 = ""; }
 
-					if( groom_id_source2  == null ) { groom_id_source2  = ""; }
-					if( groom_firstname2  == null ) { groom_firstname2  = ""; }
-					if( groom_prefix2     == null ) { groom_prefix2     = ""; }
-					if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+						id_source2 = bride_id_source2;
+					}
+					else    // role == 7
+					{
+						groom_id_source2  = rs_p2.getString( "id_source" );
+						groom_firstname2  = rs_p2.getString( "firstname" );
+						groom_prefix2     = rs_p2.getString( "prefix" );
+						groom_familyname2 = rs_p2.getString( "familyname" );
 
-					id_source2 = groom_id_source2;
+						if( groom_id_source2  == null ) { groom_id_source2  = ""; }
+						if( groom_firstname2  == null ) { groom_firstname2  = ""; }
+						if( groom_prefix2     == null ) { groom_prefix2     = ""; }
+						if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+						id_source2 = groom_id_source2;
+					}
 				}
 			}
 
@@ -8190,59 +8257,63 @@ public class LinksCleanAsync extends Thread
 			}
 		}
 
+
 		else if( registration_maintype == 3 )   // death
 		{
 			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 10";
 			if( debug ) { System.out.println( query_p1 ); }
-			ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 );
 
 			String deceased_id_source1  = "";
-
 			String deceased_firstname1  = "";
 			String deceased_prefix1     = "";
 			String deceased_familyname1 = "";
 
-			while( rs_p1.next() )
+			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
 			{
-				int role = rs_p1.getInt( "role" );
+				while( rs_p1.next() )
+				{
+					int role = rs_p1.getInt( "role" );
 
-				deceased_id_source1  = rs_p1.getString( "id_source" );
-				deceased_firstname1  = rs_p1.getString( "firstname" );
-				deceased_prefix1     = rs_p1.getString( "prefix" );
-				deceased_familyname1 = rs_p1.getString( "familyname" );
+					deceased_id_source1  = rs_p1.getString( "id_source" );
+					deceased_firstname1  = rs_p1.getString( "firstname" );
+					deceased_prefix1     = rs_p1.getString( "prefix" );
+					deceased_familyname1 = rs_p1.getString( "familyname" );
 
-				if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
-				if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
-				if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
-				if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
+					if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
+					if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
+					if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
+					if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
 
-				id_source1 = deceased_id_source1;
+					id_source1 = deceased_id_source1;
+				}
 			}
 
 			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
 			if( debug ) { System.out.println( query_p2 ); }
-			ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 );
 
 			String deceased_id_source2  = "";
 			String deceased_firstname2  = "";
 			String deceased_prefix2     = "";
 			String deceased_familyname2 = "";
 
-			while( rs_p2.next() )
+			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
 			{
-				int role = rs_p2.getInt( "role" );
+				while( rs_p2.next() )
+				{
+					int role = rs_p2.getInt( "role" );
 
-				deceased_id_source2  = rs_p2.getString( "id_source" );
-				deceased_firstname2  = rs_p2.getString( "firstname" );
-				deceased_prefix2     = rs_p2.getString( "prefix" );
-				deceased_familyname2 = rs_p2.getString( "familyname" );
+					deceased_id_source2  = rs_p2.getString( "id_source" );
+					deceased_firstname2  = rs_p2.getString( "firstname" );
+					deceased_prefix2     = rs_p2.getString( "prefix" );
+					deceased_familyname2 = rs_p2.getString( "familyname" );
 
-				if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
-				if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
-				if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
-				if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
+					if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
+					if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
+					if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
+					if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
 
-				id_source2 = deceased_id_source2;
+					id_source2 = deceased_id_source2;
+				}
 			}
 
 			if( deceased_firstname1.equals( deceased_firstname2 ) && deceased_familyname1.equals( deceased_familyname2 ) )
@@ -8318,10 +8389,13 @@ public class LinksCleanAsync extends Thread
 
 		// get current flags string
 		String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
-		ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r );
+
 		String old_flags = "";
-		while( rs.next() )
-		{ old_flags = rs.getString( "not_linksbase" ); }
+		try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+		{
+			while( rs.next() )
+			{ old_flags = rs.getString( "not_linksbase" ); }
+		}
 
 		int countRegist = 0;
 		String new_flags = "";
@@ -8375,12 +8449,14 @@ public class LinksCleanAsync extends Thread
 		if( debug ) { showMessage( query_c, false, true ); }
 		if( debug ) { System.out.println( query_c ); }
 
-		ResultSet rs_c = dbconCleaned.executeQuery( query_c );
-		rs_c.first();
-		int cnt = rs_c.getInt( "cnt" );
-		if( cnt != 0 ) {
-			String msg = String.format( "Thread id %02d; # of regs with invalid id_persist_registration: %d (not flagged)", threadId, cnt );
-			showMessage( msg, false, true );
+		try( ResultSet rs_c = dbconCleaned.executeQuery( query_c ) )
+		{
+			rs_c.first();
+			int cnt = rs_c.getInt( "cnt" );
+			if( cnt != 0 ) {
+				String msg = String.format( "Thread id %02d; # of regs with invalid id_persist_registration: %d (not flagged)", threadId, cnt );
+				showMessage( msg, false, true );
+			}
 		}
 
 		// The GROUP_CONCAT on id_registration is needed to get the different registration ids corresponding to the count.
@@ -8402,10 +8478,8 @@ public class LinksCleanAsync extends Thread
 		if( debug ) { System.out.println( query_r ); }
 
 		int stepstate = count_step;
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			rs_r.last();
 			int total = rs_r.getRow();
 			rs_r.beforeFirst();
@@ -8513,9 +8587,12 @@ public class LinksCleanAsync extends Thread
 					if( debug ) { showMessage( query, false, true ); }
 					//System.out.println( query );
 
-					ResultSet rs = dbconCleaned.executeQuery( query );
-					rs.first();
-					String old_flags = rs.getString( "not_linksbase" );
+					String old_flags = "";
+					try( ResultSet rs = dbconCleaned.executeQuery( query ) )
+					{
+						rs.first();
+						old_flags = rs.getString( "not_linksbase" );
+					}
 
 					String new_flags = "";
 
@@ -8581,10 +8658,8 @@ public class LinksCleanAsync extends Thread
 		int nNoRegDate = 0;
 		int stepstate = count_step;
 
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			int row = 0;
 
 			while( rs_r.next() )        // process all results
@@ -8628,10 +8703,13 @@ public class LinksCleanAsync extends Thread
 
 				// get current flags string
 				String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-				ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r );
+
 				String old_flags = "";
-				while( rs.next() )
-				{ old_flags = rs.getString( "not_linksbase" ); }
+				try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+				{
+					while( rs.next() )
+					{ old_flags = rs.getString( "not_linksbase" ); }
+				}
 
 				int countRegist = 0;
 				String new_flags = "";
@@ -8698,10 +8776,8 @@ public class LinksCleanAsync extends Thread
 		int nNoRegDate = 0;
 		//int stepstate = count_step;
 
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			int row = 0;
 
 			while( rs_r.next() )        // process all results
@@ -8710,10 +8786,13 @@ public class LinksCleanAsync extends Thread
 
 				// get current flags string
 				String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-				ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r );
+
 				String old_flags = "";
-				while( rs.next() )
-				{ old_flags = rs.getString( "not_linksbase" ); }
+				try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+				{
+					while( rs.next() )
+					{ old_flags = rs.getString( "not_linksbase" ); }
+				}
 
 				int countRegist = 0;
 				String new_flags = "";
@@ -8845,10 +8924,8 @@ public class LinksCleanAsync extends Thread
 		int nNoRole = 0;
 		//int stepstate = count_step;
 
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			int row = 0;
 
 			while( rs_r.next() )        // process all registrations
@@ -8857,10 +8934,13 @@ public class LinksCleanAsync extends Thread
 
 				// get current flags string
 				String getFlagQuery_r = "SELECT not_linksbase_p FROM person_c WHERE id_person = " + id_person;
-				ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r );
+
 				String old_flags = "";
-				while( rs.next() )
-				{ old_flags = rs.getString( "not_linksbase_p" ); }
+				try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+				{
+					while( rs.next() )
+					{ old_flags = rs.getString( "not_linksbase_p" ); }
+				}
 
 				int countRegist = 0;
 				String new_flags = "";
@@ -8927,10 +9007,8 @@ public class LinksCleanAsync extends Thread
 		int nNoRole = 0;
 		//int stepstate = count_step;
 
-		try
+		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
 		{
-			ResultSet rs_r = dbconCleaned.executeQuery( query_r );
-
 			int row = 0;
 
 			while( rs_r.next() )        // process all registrations
@@ -9117,11 +9195,9 @@ public class LinksCleanAsync extends Thread
 
 		Vector< Remarks > ref_remarksVec = new Vector();    // Remarks class from dataset
 
-		try
+		showMessage( String.format( "Thread id %02d; loading remarks reference table", threadId ), false, true );
+		try( ResultSet rs_r = dbconRefRead.executeQuery( selectQuery_r ) )
 		{
-			showMessage( String.format( "Thread id %02d; loading remarks reference table", threadId ), false, true );
-			ResultSet rs_r = dbconRefRead.executeQuery( selectQuery_r );
-
 			int nrecord = 0;
 			while( rs_r.next() )
 			{
@@ -9187,10 +9263,8 @@ public class LinksCleanAsync extends Thread
 			showMessage( selectQuery_o, false, true );
 		}
 
-		try
+		try( ResultSet rs_o = dbconOriginal.executeQuery( selectQuery_o ) )
 		{
-			ResultSet rs_o = dbconOriginal.executeQuery( selectQuery_o );
-
 			int nupdates  = 0;
 			int ndivorces = 0;
 
