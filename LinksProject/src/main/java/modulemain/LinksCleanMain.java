@@ -265,13 +265,14 @@ public class LinksCleanMain extends Thread
                         plog.show( msg );
                         Thread.sleep( 60000 );
                     }
-                    showMessage_nl();
 
                     String source = Integer.toString( sourceId );
-                    //CleaningThread ct = new CleaningThread( tm, source, rmtype );
 
                     LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
                         logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned, dsTemp );
+
+                    msg = String.format( "Thread id %02d; Start cleaning source: %s, rmtype: %s", mainThreadId, source, rmtype );
+                    plog.show( msg ); showMessage(msg, false, true);
 
                     lca.start();
                     threads.add( lca );
@@ -288,6 +289,7 @@ public class LinksCleanMain extends Thread
                 if( dsCleaned  != null ) { dsCleaned.close();  dsCleaned = null; }
                 if( dsTemp     != null ) { dsTemp.close();     dsTemp = null; }
 
+                showMessage_nl();
                 msg = String.format("Thread id %02d; Cleaning is done", mainThreadId);
                 elapsedShowMessage(msg, cleanStart, System.currentTimeMillis());
                 System.out.println(msg);
