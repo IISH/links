@@ -37,6 +37,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-01-Oct-2018 Add id_persist_registration to the s1&2 queries to be retrieved from links_base
  * FL-11-Jun-2019 AND id_source IN (...) syntax
  * FL-21-Oct-2019 Check s%_source is whitespace
+ * FL-21-Oct-2019 id_source "0" => = ""
  */
 public class QueryGenerator
 {
@@ -164,19 +165,11 @@ public class QueryGenerator
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
 
-            if( s1_source.trim().isEmpty() ) {  s1_source = ""; }       // input only whitespace
-            if( s2_source.trim().isEmpty() ) {  s2_source = ""; }       // input only whitespace
+            s1_source = s1_source.trim();
+            s2_source = s2_source.trim();
 
-            if( s1_source.equals( "0") || s2_source.equals( "0") )
-            {
-                String msg = String.format( "QueryGenerator(): match_process id: %d, s1_source = %s, s2_source = %s", id, s1_source, s2_source );
-                plog.show( msg ); System.out.println( msg );
-                msg = "QueryGenerator(): ERROR invalid source specification";
-                plog.show( msg ); System.out.println( msg );
-                msg = "EXIT";
-                plog.show( msg ); System.out.println( msg );
-                System.exit( 0 );
-            }
+            if( s1_source.equals( "0" ) ) { s1_source = ""; }
+            if( s2_source.equals( "0" ) ) { s2_source = ""; }
 
             int method = rs.getInt( "method" );
             String ignore_sex = rs.getString( "ignore_sex" ) != null ? rs.getString( "ignore_sex" ) : "";
