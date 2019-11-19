@@ -254,7 +254,7 @@ public class LinksCleanAsync extends Thread
 			dbconCleaned.showMetaData( "dbconCleaned" );
 
 			// links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors
-			showMessage(String.format( "Thread id %02d; Loading report table", threadId), false, true );
+			showMessage( String.format( "Thread id %02d; Loading report table", threadId ), false, true );
 			almmReport = new TableToArrayListMultimapHikari( dbconRefRead, "ref_report", "type", null );
 
 			doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), source, rmtype );			// GUI cb: Remove previous data
@@ -278,23 +278,23 @@ public class LinksCleanAsync extends Thread
 			doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );								// GUI cb: Age, Role, Dates
 
 			// doDates1(): all other datesfunctions
-			doDates1(opts.isDbgDates(), opts.isDoDates(), source, rmtype);								// GUI cb: Age, Role, Dates
+			doDates1(  opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
 			// doDates2(): only minMaxDateMain()
-			doDates2(opts.isDbgDates(), opts.isDoDates(), source, rmtype);								// GUI cb: Age, Role, Dates
+			doDates2( opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
 
-			doMinMaxMarriage(opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype);	// GUI cb: Min Max Marriage
+			doMinMaxMarriage( opts.isDbgMinMaxMarriage(), opts.isDoMinMaxMarriage(), source, rmtype );	// GUI cb: Min Max Marriage
 
-			doPartsToFullDate(opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype);	// GUI cb: Parts to Full Date
+			doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );	// GUI cb: Parts to Full Date
 
-			doDaysSinceBegin(opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype);	// GUI cb: Days since begin
+			doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );	// GUI cb: Days since begin
 
-			doPostTasks(opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype);					// GUI cb: Post Tasks
+			doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );					// GUI cb: Post Tasks
 
-			doFlagRegistrations(opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype);	// GUI cb: Remove Duplicate Reg's
+			doFlagRegistrations( opts.isDbgFlagRegistrations(), opts.isDoFlagRegistrations(), source, rmtype );	// GUI cb: Remove Duplicate Reg's
 
-			doFlagPersonRecs(opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype);			// GUI cb: Remove Empty Role Reg's
+			doFlagPersonRecs( opts.isDbgFlagPersons(), opts.isDoFlagPersons(), source, rmtype );			// GUI cb: Remove Empty Role Reg's
 
-			doScanRemarks(opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype);				// GUI cb: Scan Remarks
+			doScanRemarks( opts.isDbgScanRemarks(), opts.isDoScanRemarks(), source, rmtype );				// GUI cb: Scan Remarks
 
 
 			almmReport.free();
