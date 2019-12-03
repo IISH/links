@@ -23,6 +23,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-02-Oct-2018 Added s1_id_persist_registration & s2_id_persist_registration to the vector zoo
  * FL-12-Mar-2019 HikariDataSource
  * FL-29-Apr-2019 Using PreparedStatement
+ * FL-03-Dec-2019 Latest change
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -254,11 +255,7 @@ public class QueryLoader
             ex.printStackTrace( System.out );
             return;
         }
-        finally
-        {
-            dbconPrematch.close();
-            dbconPrematch = null;
-        }
+        finally { dbconPrematch.close(); }
 
         // get set 2 from links_base
         start = System.currentTimeMillis();
@@ -288,11 +285,7 @@ public class QueryLoader
             ex.printStackTrace( System.out );
             return;
         }
-        finally
-        {
-            dbconPrematch.close();
-            dbconPrematch = null;
-        }
+        finally { dbconPrematch.close(); }
 
         System.out.printf( "Thread id %02d; QueryLoader() done\n", threadId );
     }

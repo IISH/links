@@ -163,7 +163,7 @@ public class QueryGenerator
 
             String s1_source = rs.getString( "s1_source" ) != null ? rs.getString( "s1_source" ) : "";
             String s2_source = rs.getString( "s2_source" ) != null ? rs.getString( "s2_source" ) : "";
-            
+
             s1_source = s1_source.trim();
             s2_source = s2_source.trim();
 
