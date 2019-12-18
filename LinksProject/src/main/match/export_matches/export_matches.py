@@ -35,7 +35,7 @@ Goal:		export matches for CBG
 16-Oct-2018 type_match from table match_process
 30-Oct-2018 id_match_process 'y' records now from links_match.MATCHES_CBG_WWW
 13-Dec-2019 variable links_base and matches table names
-17-Dec-2019 Latest Change
+18-Dec-2019 Latest Change
 """
 
 # future-0.17.0 imports for Python 2/3 compatibility
@@ -239,7 +239,7 @@ def get_type_match( db_ref, rmtype_1, rmtype_2, role_1, role_2 ):
 
 
 
-def export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, Type_link, export_registration = False ):
+def export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, Type_link, export_clariah = False ):
 	# export1: GUIDs from tbl_base table via id_base
 	# but if tbl_base has been updated after the matching, 
 	# this is no longer correct for the updated source/rmtype. 
@@ -274,9 +274,9 @@ def export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, Type_lin
 	if export_source: 
 		header = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Source_1", "Source_2", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
 	else:	# CBG does not want these 2 columns: source_name_1, source_name_2
-		if export_registration:
-			header = [ "Id", "Id_Registration_1", "Id_Registration_2", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
-		else:
+		if export_clariah:	# CLARIAH
+			header = [ "Id", "Id_Registration_1", "Id_Registration_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
+		else:				# CBG
 			header = [ "Id", "GUID_1", "GUID_2", "Type_Match", "Type_link", "Quality_link_A", "Quality_link_B", "Worth_link" ]
 	
 	writer.writerow( header )
@@ -377,9 +377,9 @@ def export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, Type_lin
 			if export_source:
 				line = [ Id, GUID_1, GUID_2, Type_Match, source_name_1, source_name_2, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			else:	# CBG does not want these 2 columns: source_name_1, source_name_2*
-				if export_registration:
-					line = [ Id, id_registration_1, id_registration_2, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
-				else:
+				if export_clariah:	# CLARIAH
+					line = [ Id, id_registration_1, id_registration_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
+				else:				# CBG
 					line = [ Id, GUID_1, GUID_2, Type_Match, Type_link, Quality_link_A, Quality_link_B, Worth_link ]
 			
 			writer.writerow( line )
@@ -762,9 +762,8 @@ if __name__ == "__main__":
 		# Use export1(), because we need additional info from links_base anyway
 		# OLD: export1: GUIDs from tbl_base table via id_base
 		
-		export_registration = False
-		#export_registration = True  # for separate CHARIAH export
-		export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_link, export_registration )	# also using tbl_base
+		export_clariah = False	# for separate CHARIAH export
+		export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_link, export_clariah )	# also using tbl_base
 		
 		# NEW: export2: GUIDs directly from tbl_matches table
 		#export2( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_match, type_link )	# not needing tbl_base
