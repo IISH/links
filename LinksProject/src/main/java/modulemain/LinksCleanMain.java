@@ -40,6 +40,7 @@ import linksmanager.ManagerGui;
  * FL-08-Oct-2019 Begin using HikariCP
  * FL-21-Oct-2019 Start using LinksCleanedAsync
  * FL-05-Nov-2019 Extensive cleanup
+ * FL-29-Dec-2019 Separate DB pool for HSN
  *
  */
 
@@ -168,16 +169,21 @@ public class LinksCleanMain extends Thread
 
             // Maybe use connection pool from mariaDB
             // https://mariadb.com/kb/en/library/pool-datasource-implementation/
-            int max_pool_size = 10;
+            //int max_pool_size = 10;
+            int max_pool_size = 2 + max_threads_simul;
             // with autoCommit = false, after the queries[s] a separate dbcon.commit() call is required to effectuate the transaction!
             boolean autoCommit = true;
-            String hikariConfigPathname = "";      // ?
-            //HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname, ref_url, ref_user, ref_pass );
-            HikariCPool conPool_links  = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname, db_url,  db_user,  db_pass );
+
+            // separate pool for each database server
+            String hikariConfigPathname_hsnref = "";      // not used
+            HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_hsnref, ref_url, ref_user, ref_pass );
+            String hikariConfigPathname_links = "";      // not used
+            HikariCPool conPool_links  = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_links, db_url,  db_user,  db_pass );
+
+            dsRefRead  = conPool_hsnref.getDataSource( "links_general" );
+            dsRefWrite = conPool_hsnref.getDataSource( "links_general" );
 
             dsLog      = conPool_links.getDataSource( "links_logs" );
-            dsRefRead  = conPool_links.getDataSource( "links_general" );
-            dsRefWrite = conPool_links.getDataSource( "links_general" );
             dsOriginal = conPool_links.getDataSource( "links_original" );
             dsCleaned  = conPool_links.getDataSource( "links_cleaned" );
             dsTemp     = conPool_links.getDataSource( "links_temp" );
