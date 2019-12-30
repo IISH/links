@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  *
  * FL-12-Mar-2019 Created
  * FL-15-Apr-2019 Now using mariadb-java-client instead of mysql-connector-java
- * FL-29-Oct-2019
+ * FL-30-Dec-2019 Removing most instances of static!
  */
 public class HikariCPool
 {
@@ -28,28 +28,16 @@ public class HikariCPool
     private static final String DEFAULT_HOST   = "localhost";
     private static final String DEFAULT_PORT   = "3306";
 
-    private static HikariDataSource ds;                     // general purpose
-    private static HikariDataSource poolLog;
-    private static HikariDataSource poolRefRead;
-    private static HikariDataSource poolRefWrite;
-    private static HikariDataSource poolOriginal;
-    private static HikariDataSource poolCleaned;
+    private int maximumPoolSize = 10;				// default
+	private boolean autoCommit = true;				// default: true. Since 2.2.0
+    private String configPathname = null;
 
-    private static int ds_count = 0;
-    private static int ds_links_match_count = 0;
-    private static int ds_links_prematch_count = 0;
-    private static int ds_links_temp_count = 0;
+    private String db_host = DEFAULT_HOST;
+    private String db_port = DEFAULT_PORT;
+    private String db_user = null;
+    private String db_pass = null;
 
-    private static int maximumPoolSize = 10;				// default
-	private static boolean autoCommit = true;				// default: true. Since 2.2.0
-    private static String configPathname = null;
-
-    private static String db_host = DEFAULT_HOST;
-    private static String db_port = DEFAULT_PORT;
-    private static String db_user = null;
-    private static String db_pass = null;
-
-    private static Logger logger = Logger.getLogger( HikariCPool.class.getName() );
+    private Logger logger = Logger.getLogger( HikariCPool.class.getName() );
 
 	/**
 	 * Constructor
@@ -73,10 +61,12 @@ public class HikariCPool
         this.db_host = db_host;
         this.db_user = db_user;
         this.db_pass = db_pass;
+
+        logger.info( db_host );
     }
 
 
-    public static HikariConfig getConfig( String db_name )
+    public HikariConfig getConfig( String db_name )
     {
         //String fname = "HikariCP/getConfig()";
         //logger.info( fname );
@@ -140,7 +130,7 @@ public class HikariCPool
     }
 
 
-    public static void showConfig( HikariConfig config )
+    public void showConfig( HikariConfig config )
     {
         //String fname = "HikariCP/showConfig()";
         //logger.info( fname );
@@ -168,7 +158,7 @@ public class HikariCPool
     }
 
 
-    public static HikariDataSource getDataSource( String db_name )
+    public HikariDataSource getDataSource( String db_name )
     {
         //String fname = "HikariCP/getDataSource()";
         //logger.info( fname );

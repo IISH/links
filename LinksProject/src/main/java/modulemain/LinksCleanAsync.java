@@ -95,6 +95,7 @@ import general.PrintLogger;
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  * FL-30-Sep-2019 standardRole(): check role against registration_maintype
  * FL-05-Nov-2019 Extensive cleanup
+ * FL-29-Dec-2019 Latest change
  */
 
 
@@ -119,10 +120,10 @@ public class LinksCleanAsync extends Thread
 
 	private boolean dbconref_single = true;     // true: same ref for reading and writing
 
-	private String ref_url = "";			// reference db access
-	private String ref_user = "";
-	private String ref_pass = "";
-	private String ref_db = "";
+	//private String ref_url = "";			// reference db access
+	//private String ref_user = "";
+	//private String ref_pass = "";
+	//private String ref_db = "";
 
 	String logTableName = "";
 
@@ -234,10 +235,10 @@ public class LinksCleanAsync extends Thread
 			plog.show(msg);
 			showMessage(msg, false, true);
 
-			ref_url  = opts.getDb_ref_url();
-			ref_db   = opts.getDb_ref_db();
-			ref_user = opts.getDb_ref_user();
-			ref_pass = opts.getDb_ref_pass();
+			//ref_url  = opts.getDb_ref_url();
+			//ref_db   = opts.getDb_ref_db();
+			//ref_user = opts.getDb_ref_user();
+			//ref_pass = opts.getDb_ref_pass();
 
 			// database connections
 			dbconRefWrite = new HikariConnection( dsRefWrite.getConnection() );
@@ -245,12 +246,12 @@ public class LinksCleanAsync extends Thread
 			{ dbconRefRead = dbconRefWrite; }
 			else							// separate connector for reading
 			{ dbconRefRead  = new HikariConnection( dsRefRead.getConnection() ); }
+			dbconRefWrite.showMetaData( "dbconRefWrite" );
 
 			dbconLog      = new HikariConnection( dsLog.getConnection() );
 			dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
 			dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 			dbconTemp     = new HikariConnection( dsTemp.getConnection() );
-
 			dbconCleaned.showMetaData( "dbconCleaned" );
 
 			// links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors

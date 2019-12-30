@@ -175,8 +175,11 @@ public class LinksCleanMain extends Thread
             boolean autoCommit = true;
 
             // separate pool for each database server
+            System.out.println( "ref_url: " + ref_url );
             String hikariConfigPathname_hsnref = "";      // not used
             HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_hsnref, ref_url, ref_user, ref_pass );
+
+            System.out.println( "db_url: " + db_url );
             String hikariConfigPathname_links = "";      // not used
             HikariCPool conPool_links  = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_links, db_url,  db_user,  db_pass );
 
@@ -188,12 +191,12 @@ public class LinksCleanMain extends Thread
             dsCleaned  = conPool_links.getDataSource( "links_cleaned" );
             dsTemp     = conPool_links.getDataSource( "links_temp" );
 
-            System.out.println("Using links_logs for error logging: " + use_links_logs);
-            msg = String.format("Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs);
-            plog.show(msg);
-            showMessage(msg, false, true);
+            System.out.println( "Using links_logs for error logging: " + use_links_logs );
+            msg = String.format( "Thread id %02d; Using links_logs for error logging: %s", mainThreadId, use_links_logs );
+            plog.show( msg );
+            showMessage( msg, false, true );
 
-            if (use_links_logs) {
+            if( use_links_logs ) {
                 logTableName = LinksSpecific.getLogTableName();
                 createLogTable();                                           // Create log table with timestamp
             }
