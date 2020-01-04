@@ -14,7 +14,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-//import connectors.MySqlConnector;
+import com.zaxxer.hikari.HikariDataSource;
+
 import connectors.HikariConnection;
 
 import modulemain.LinksSpecific;
@@ -24,6 +25,9 @@ import modulemain.LinksSpecific;
  * FL-06-Apr-2016 AtomicBoolean update_busy
  * FL-05-Jul-2017 optional extra column for ref_registration
  * FL-29-Oct-2019 Hikari connection variant
+ * FL-04-Jan-2020 Cleanup
+ *
+ * TODO eliminate modulemain.LinksSpecific use
  */
 public class TableToArrayListMultimapHikari
 {
@@ -40,6 +44,7 @@ public class TableToArrayListMultimapHikari
     // A hashed set to store new originals.
     private HashMultiset< String > newSet;
 
+    private HikariDataSource dsReference;
     private String tableName;
     private String keyColumn;           // column name used as index
     private String standardColumn;      // column name used as standard (mostly "standard", but "location_no" for ref_location
@@ -55,9 +60,8 @@ public class TableToArrayListMultimapHikari
     int standardValOff;         // offset for "standard" value in value list
     int standardCodeValOff;     // offset for "standard_code" value in value list
 
-    // conn_read only used in constructor
+    // reading only used in constructor
     // writing only used in update()
-    private HikariConnection conn_read  = null;
 
     ResultSet rs;
 
@@ -66,21 +70,21 @@ public class TableToArrayListMultimapHikari
      *
      * "con_write" is only used in the 2 functions updateTable() and updateTableWithCode().
      *
-     * @param conn_read         // "conn_read"  is normally conGeneral, i.e. the local links_general db
+     * @param dsReference
      * @param tableName
      * @param keyColumn
      * @param standardColumn
      */
     public TableToArrayListMultimapHikari
     (
-        HikariConnection conn_read,
+        HikariDataSource dsReference,
         String tableName,
         String keyColumn,
         String standardColumn
     )
     throws Exception
     {
-        this.conn_read      = conn_read;
+        this.dsReference    = dsReference;
         this.tableName      = tableName;
         this.keyColumn      = keyColumn;
         this.standardColumn = standardColumn;
@@ -89,8 +93,6 @@ public class TableToArrayListMultimapHikari
             tableName + " , index column: " + keyColumn + ", standard column: " + standardColumn ); }
 
         update_busy.set( false );
-
-        //MySqlConnector dbconRefRead = new MySqlConnector( url, "links_general", user, pass );
 
         oldMap = ArrayListMultimap.create();
         newSet = HashMultiset.create();
@@ -134,7 +136,9 @@ public class TableToArrayListMultimapHikari
         else { query = "SELECT * FROM links_general.`" + tableName + "`"; }
 
         if( debug ) { System.out.println( "TableToArrayListMultimap, query: " + query ); }
-        ResultSet rs = conn_read.executeQuery( query );
+
+        HikariConnection dbconRef = new HikariConnection( dsReference.getConnection() );
+        ResultSet rs = dbconRef.executeQuery( query );
 
         ResultSetMetaData rs_md = rs.getMetaData();
         numColumns = rs_md.getColumnCount();
@@ -168,13 +172,13 @@ public class TableToArrayListMultimapHikari
 
         if( check_duplicates ) {
             if( debug ) { tableInfo(); }
-            store_check( rs, rs_md );
+            store_check( dbconRef, rs, rs_md );
         }
         else { store( rs, rs_md ); }
 
         if( debug ) { tableInfo(); }
-        //contentsOld();
 
+        dbconRef.close();
     } // TableToArrayListMultiMap
 
 
@@ -198,7 +202,7 @@ public class TableToArrayListMultimapHikari
     /**
      * store table in multimap, and check for duplicates
      */
-    public int store_check( ResultSet rs, ResultSetMetaData rs_md )
+    public int store_check( HikariConnection dbconRef, ResultSet rs, ResultSetMetaData rs_md )
     throws Exception
     {
         //System.out.println( "TableToArrayListMultimap/store_check()" );
@@ -270,7 +274,7 @@ public class TableToArrayListMultimapHikari
                     String query = "DELETE FROM `" + tableName + "` WHERE " + column + " = " + Integer.toString( id );
                     System.out.println( query );
 
-                    try { conn_read.executeUpdate( query ); }
+                    try { dbconRef.executeUpdate( query ); }
                     catch( SQLException sex )
                     { System.out.println( "SQLException while deleting duplicate: " + sex.getMessage() ); }
                     catch( Exception jex )
@@ -643,16 +647,16 @@ public class TableToArrayListMultimapHikari
      * We ignore the update request if another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
      */
-    public boolean updateTable( HikariConnection conn )
+    public boolean updateTable()
     throws Exception
     {
+        //System.out.println( "updateTable" );
         // try to prevent: java.util.ConcurrentModificationException
         if( update_busy.get() ) { return false; }   // i.e. fail
 
         update_busy.set( true );    // if we were not busy, now we are...
 
-        //System.out.println( "updateTable" );
-
+        HikariConnection dbconRef = new HikariConnection( dsReference.getConnection() );
         int num = 0;
         for( String entry : newSet.elementSet() )
         {
@@ -663,8 +667,10 @@ public class TableToArrayListMultimapHikari
             String[] values = { LinksSpecific.prepareForMysql( entry ), "x" };
 
             // insertIntoTableIgnore: ignore duplicates for UNIQUE keys
-            conn.insertIntoTableIgnore( tableName, fields, values );
+            dbconRef.insertIntoTableIgnore( tableName, fields, values );
         }
+
+        dbconRef.close();
 
         update_busy.set( false );
 
@@ -679,7 +685,7 @@ public class TableToArrayListMultimapHikari
      * We ignore the update request if another thread already has the update in progress.
      * Beware of: java.util.ConcurrentModificationException
      */
-    public boolean updateTable( HikariConnection conn, String extra_col, String delimiter )
+    public boolean updateTable( String extra_col, String delimiter )
     throws Exception
     {
         // try to prevent: java.util.ConcurrentModificationException
@@ -692,6 +698,7 @@ public class TableToArrayListMultimapHikari
         if( debug ) { System.out.printf( "extra_col: %s, delimiter: %s\n", extra_col, delimiter ); }
         if( debug ) { System.out.println( String.format( "number of new entries: %d", newSet.size() ) ); }
 
+        HikariConnection dbconRef = new HikariConnection( dsReference.getConnection() );
         int num = 0;
         String[] fields = { "original", extra_col, "standard_code" };
         for( String entry : newSet.elementSet() )
@@ -709,9 +716,10 @@ public class TableToArrayListMultimapHikari
             String[] values = { LinksSpecific.prepareForMysql( original ), LinksSpecific.prepareForMysql( extra_val ), "x" };
 
             // insertIntoTableIgnore: ignore duplicates for UNIQUE keys
-            conn.insertIntoTableIgnore( tableName, fields, values );
+            dbconRef.insertIntoTableIgnore( tableName, fields, values );
         }
 
+        dbconRef.close();
         update_busy.set( false );
 
         return true;    // i.e. success
@@ -725,10 +733,18 @@ public class TableToArrayListMultimapHikari
     /**
      * Work for the garbage collector
      */
-    public void free() {
+    public void free()
+    {
+        oldMap.clear();
         oldMap = null;
+
+        newSet.clear();
         newSet = null;
+
+        columnNames.clear();
         columnNames = null;
+
+        valueNames.clear();
         valueNames  = null;
     } // free
 }

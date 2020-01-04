@@ -44,14 +44,17 @@ public class HikariCPool
 	 * @param maximumPoolSize
 	 * @param autoCommit
 	 * @param configPathname
+     * @param poolName
 	 * @param db_host
 	 * @param db_user
 	 * @param db_pass
 	 */
-    public HikariCPool( int maximumPoolSize, boolean autoCommit, String configPathname, String db_host, String db_user, String db_pass )
+    public HikariCPool( int maximumPoolSize, boolean autoCommit, String configPathname, String poolName, String db_host, String db_user, String db_pass )
     {
         String fname = "HikariCP/HikariCPool()";
-        logger.info( fname );
+        String msg = String.format( "%s: poolName: %s, db_host: %s", fname, poolName, db_host );
+        logger.info( msg );
+
         if( configPathname != null && ! configPathname.isEmpty() ) { logger.info( configPathname ); }
 
         this.maximumPoolSize = maximumPoolSize;
@@ -61,8 +64,6 @@ public class HikariCPool
         this.db_host = db_host;
         this.db_user = db_user;
         this.db_pass = db_pass;
-
-        logger.info( db_host );
     }
 
 

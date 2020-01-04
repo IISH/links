@@ -54,12 +54,11 @@ public class LinksCleanMain extends Thread
 
     private boolean dbconref_single = true;     // true: same ref for reading and writing
 
-    private static HikariDataSource dsLog      = null;
-    private static HikariDataSource dsRefRead  = null;
-    private static HikariDataSource dsRefWrite = null;
-    private static HikariDataSource dsOriginal = null;
-    private static HikariDataSource dsCleaned  = null;
-    private static HikariDataSource dsTemp     = null;
+    private static HikariDataSource dsLog       = null;
+    private static HikariDataSource dsReference = null;
+    private static HikariDataSource dsOriginal  = null;
+    private static HikariDataSource dsCleaned   = null;
+    private static HikariDataSource dsTemp      = null;
 
     //private Runtime r = Runtime.getRuntime();
     private String logTableName;
@@ -177,14 +176,13 @@ public class LinksCleanMain extends Thread
             // separate pool for each database server
             System.out.println( "ref_url: " + ref_url );
             String hikariConfigPathname_hsnref = "";      // not used
-            HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_hsnref, ref_url, ref_user, ref_pass );
+            HikariCPool conPool_hsnref = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_hsnref, "conPool_hsnref", ref_url, ref_user, ref_pass );
 
             System.out.println( "db_url: " + db_url );
             String hikariConfigPathname_links = "";      // not used
-            HikariCPool conPool_links  = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_links, db_url,  db_user,  db_pass );
+            HikariCPool conPool_links = new HikariCPool( max_pool_size, autoCommit, hikariConfigPathname_links, "conPool_links", db_url,  db_user,  db_pass );
 
-            dsRefRead  = conPool_hsnref.getDataSource( "links_general" );
-            dsRefWrite = conPool_hsnref.getDataSource( "links_general" );
+            dsReference = conPool_hsnref.getDataSource( "links_general" );
 
             dsLog      = conPool_links.getDataSource( "links_logs" );
             dsOriginal = conPool_links.getDataSource( "links_original" );
@@ -278,7 +276,7 @@ public class LinksCleanMain extends Thread
                     String source = Integer.toString( sourceId );
 
                     LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
-                        logTableName, dsLog, dsRefRead, dsRefWrite, dsOriginal, dsCleaned, dsTemp );
+                        logTableName, dsLog, dsReference, dsOriginal, dsCleaned, dsTemp );
 
                     msg = String.format( "Thread id %02d; Start cleaning source: %s, rmtype: %s", mainThreadId, source, rmtype );
                     plog.show( msg ); showMessage(msg, false, true);
@@ -291,12 +289,11 @@ public class LinksCleanMain extends Thread
                 for( LinksCleanAsync lca : threads ) { lca.join(); }
 
                 // Close data sources
-                if( dsRefRead  != null ) { dsRefRead.close();  dsRefRead = null; }
-                if( dsRefWrite != null ) { dsRefWrite.close(); dsRefWrite = null; }
-                if( dsLog      != null ) { dsLog.close();      dsLog = null; }
-                if( dsOriginal != null ) { dsOriginal.close(); dsOriginal = null; }
-                if( dsCleaned  != null ) { dsCleaned.close();  dsCleaned = null; }
-                if( dsTemp     != null ) { dsTemp.close();     dsTemp = null; }
+                if( dsReference != null ) { dsReference.close(); }
+                if( dsLog       != null ) { dsLog.close(); }
+                if( dsOriginal  != null ) { dsOriginal.close(); }
+                if( dsCleaned   != null ) { dsCleaned.close(); }
+                if( dsTemp      != null ) { dsTemp.close(); }
 
                 showMessage_nl();
                 msg = String.format("Thread id %02d; Cleaning is done", mainThreadId);

@@ -95,7 +95,8 @@ import general.PrintLogger;
  * FL-24-Sep-2019 debug flag regression in standardRegistrationDate()
  * FL-30-Sep-2019 standardRole(): check role against registration_maintype
  * FL-05-Nov-2019 Extensive cleanup
- * FL-29-Dec-2019 Latest change
+ * FL-01-Jan-2020 Do not keep connection to Reference db endlessly open
+ * FL-04-Jan-2020
  */
 
 
@@ -118,8 +119,6 @@ public class LinksCleanAsync extends Thread
 
 	private TableToArrayListMultimapHikari almmReport = null;   // Report warnings; read-only, so can remain file global
 
-	private boolean dbconref_single = true;     // true: same ref for reading and writing
-
 	//private String ref_url = "";			// reference db access
 	//private String ref_user = "";
 	//private String ref_pass = "";
@@ -127,16 +126,13 @@ public class LinksCleanAsync extends Thread
 
 	String logTableName = "";
 
+	private HikariDataSource dsReference;
 	private HikariDataSource dsLog;
-	private HikariDataSource dsRefRead;
-	private HikariDataSource dsRefWrite;
 	private HikariDataSource dsOriginal;
 	private HikariDataSource dsCleaned;
 	private HikariDataSource dsTemp;
 
 	private HikariConnection dbconLog      = null;
-	private HikariConnection dbconRefRead  = null;
-	private HikariConnection dbconRefWrite = null;
 	private HikariConnection dbconOriginal = null;
 	private HikariConnection dbconCleaned  = null;
 	private HikariConnection dbconTemp     = null;
@@ -160,8 +156,7 @@ public class LinksCleanAsync extends Thread
 	 * @param showskip
 	 * @param logTableName
 	 * @param dsLog
-	 * @param dsRefRead
-	 * @param dsRefWrite
+	 * @param dsReference
 	 * @param dsOriginal
 	 * @param dsCleaned
 	 * @param dsTemp
@@ -181,8 +176,7 @@ public class LinksCleanAsync extends Thread
 		String logTableName,
 
 		HikariDataSource dsLog,
-		HikariDataSource dsRefRead,
-		HikariDataSource dsRefWrite,
+		HikariDataSource dsReference,
 		HikariDataSource dsOriginal,
 		HikariDataSource dsCleaned,
 		HikariDataSource dsTemp
@@ -201,12 +195,11 @@ public class LinksCleanAsync extends Thread
 
 		this.logTableName = logTableName;
 
-		this.dsLog      = dsLog;
-		this.dsRefRead  = dsRefRead;
-		this.dsRefWrite = dsRefWrite;
-		this.dsOriginal = dsOriginal;
-		this.dsCleaned  = dsCleaned;
-		this.dsTemp     = dsTemp;
+		this.dsLog       = dsLog;
+		this.dsReference = dsReference;
+		this.dsOriginal  = dsOriginal;
+		this.dsCleaned   = dsCleaned;
+		this.dsTemp      = dsTemp;
 	}
 
 
@@ -241,22 +234,14 @@ public class LinksCleanAsync extends Thread
 			//ref_pass = opts.getDb_ref_pass();
 
 			// database connections
-			dbconRefWrite = new HikariConnection( dsRefWrite.getConnection() );
-			if( dbconref_single )			// same connector for reading and writing
-			{ dbconRefRead = dbconRefWrite; }
-			else							// separate connector for reading
-			{ dbconRefRead  = new HikariConnection( dsRefRead.getConnection() ); }
-			dbconRefWrite.showMetaData( "dbconRefWrite" );
-
 			dbconLog      = new HikariConnection( dsLog.getConnection() );
 			dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
 			dbconCleaned  = new HikariConnection( dsCleaned.getConnection() );
 			dbconTemp     = new HikariConnection( dsTemp.getConnection() );
-			dbconCleaned.showMetaData( "dbconCleaned" );
 
 			// links_general.ref_report contains about 75 error definitions, to be used when the normalization encounters errors
 			showMessage( String.format( "Thread id %02d; Loading report table", threadId ), false, true );
-			almmReport = new TableToArrayListMultimapHikari( dbconRefRead, "ref_report", "type", null );
+			almmReport = new TableToArrayListMultimapHikari( dsReference, "ref_report", "type", null );
 
 			doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), source, rmtype );			// GUI cb: Remove previous data
 
@@ -302,8 +287,7 @@ public class LinksCleanAsync extends Thread
 
 			// Close db connections
 			if( dbconLog      != null ) { dbconLog.close();      dbconLog      = null; }
-			if( dbconRefRead  != null ) { dbconRefRead.close();  dbconRefRead  = null; }
-			if( dbconRefWrite != null ) { dbconRefWrite.close(); dbconRefWrite = null; }
+			//if( dbconRefRead  != null ) { dbconRefRead.close();  dbconRefRead  = null; }
 			if( dbconOriginal != null ) { dbconOriginal.close(); dbconOriginal = null; }
 			if( dbconCleaned  != null ) { dbconCleaned.close();  dbconCleaned  = null; }
 			if( dbconTemp     != null ) { dbconTemp.close();     dbconTemp  = null; }
@@ -849,8 +833,8 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dbconRefRead, "ref_prepiece", "original", "prefix" );
-		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dbconRefRead, "ref_suffix",   "original", "standard" );
+		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dsReference, "ref_prepiece", "original", "prefix" );
+		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dsReference, "ref_suffix",   "original", "standard" );
 		//TableToArrayListMultimapHikari almmAlias    = new TableToArrayListMultimapHikari( dbconnRefR, "ref_alias",    "original",  null );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
@@ -880,7 +864,7 @@ public class LinksCleanAsync extends Thread
 		}
 		int newcount = almmPrepiece.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table prepiece: %d", threadId, newcount ), false, true );
-		almmPrepiece.updateTable( dbconRefWrite );
+		almmPrepiece.updateTable();
 
 		while( almmSuffix.isBusy().get() ) {
 			plog.show( "No permission to update ref table: Waiting 60 seconds" );
@@ -888,7 +872,7 @@ public class LinksCleanAsync extends Thread
 		}
 		newcount = almmSuffix.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table suffix: %d", threadId, newcount ), false, true );
-		almmSuffix.updateTable( dbconRefWrite );
+		almmSuffix.updateTable();
 
 		// almmAlias.updateTable( dbconRefWrite );         // almmAlias.add() never called; nothing added to almmAlias
 
@@ -1308,9 +1292,9 @@ public class LinksCleanAsync extends Thread
 		// almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dbconRefRead, "ref_prepiece", "original", "prefix" );
-		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dbconRefRead, "ref_suffix",   "original", "standard" );
-		TableToArrayListMultimapHikari almmAlias    = new TableToArrayListMultimapHikari( dbconRefRead, "ref_alias",    "original",  null );
+		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dsReference, "ref_prepiece", "original", "prefix" );
+		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dsReference, "ref_suffix",   "original", "standard" );
+		TableToArrayListMultimapHikari almmAlias    = new TableToArrayListMultimapHikari( dsReference, "ref_alias",    "original",  null );
 		showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
 		// Firstnames
@@ -1327,7 +1311,7 @@ public class LinksCleanAsync extends Thread
 		FileWriter writerFirstname = createTempFirstnameFile( source );
 
 		start = System.currentTimeMillis();
-		TableToArrayListMultimapHikari almmFirstname = new TableToArrayListMultimapHikari( dbconRefRead, "ref_firstname", "original", "standard" );
+		TableToArrayListMultimapHikari almmFirstname = new TableToArrayListMultimapHikari( dsReference, "ref_firstname", "original", "standard" );
 		showTimingMessage( String.format( "Thread id %02d; Loaded Firstname reference table", threadId ), start );
 
 		int numrows = almmFirstname.numrows();
@@ -1356,7 +1340,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmFirstname.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmFirstname.updateTable( dbconRefWrite );
+		almmFirstname.updateTable();
 
 		almmFirstname.free();
 		showMessage( String.format( "Thread id %02d; Freed almmFirstname", threadId ), false, true );
@@ -1993,9 +1977,9 @@ public class LinksCleanAsync extends Thread
 		// almmPrepiece, almmSuffix and almmAlias used by Firstnames & Familynames
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dbconRefRead, "ref_prepiece", "original", "prefix" );
-		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dbconRefRead, "ref_suffix",   "original", "standard" );
-		TableToArrayListMultimapHikari almmAlias    = new TableToArrayListMultimapHikari( dbconRefRead, "ref_alias",    "original",  null );
+		TableToArrayListMultimapHikari almmPrepiece = new TableToArrayListMultimapHikari( dsReference, "ref_prepiece", "original", "prefix" );
+		TableToArrayListMultimapHikari almmSuffix   = new TableToArrayListMultimapHikari( dsReference, "ref_suffix",   "original", "standard" );
+		TableToArrayListMultimapHikari almmAlias    = new TableToArrayListMultimapHikari( dsReference, "ref_alias",    "original",  null );
 		showTimingMessage( String.format( "Thread id %02d; Loaded Prepiece/Suffix/Alias reference tables", threadId ), start );
 
 		// Familynames
@@ -2012,7 +1996,7 @@ public class LinksCleanAsync extends Thread
 		FileWriter writerFamilyname = createTempFamilynameFile(  source );
 
 		start = System.currentTimeMillis();
-		TableToArrayListMultimapHikari almmFamilyname = new TableToArrayListMultimapHikari( dbconRefRead, "ref_familyname", "original", "standard" );
+		TableToArrayListMultimapHikari almmFamilyname = new TableToArrayListMultimapHikari( dsReference, "ref_familyname", "original", "standard" );
 		showTimingMessage( String.format( "Thread id %02d; Loaded Familyname reference table", threadId ), start );
 
 		int numrows = almmFamilyname.numrows();
@@ -2042,7 +2026,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmFamilyname.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmFamilyname.updateTable( dbconRefWrite );
+		almmFamilyname.updateTable();
 
 		almmFamilyname.free();
 		showMessage( String.format( "Thread id %02d; Freed almmFamilyname", threadId ), false, true );
@@ -2495,7 +2479,7 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmLocation = new TableToArrayListMultimapHikari( dbconRefRead, "ref_location", "original", "location_no" );
+		TableToArrayListMultimapHikari almmLocation = new TableToArrayListMultimapHikari( dsReference, "ref_location", "original", "location_no" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Location reference table", threadId ), start );
 
@@ -2556,7 +2540,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmLocation.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmLocation.updateTable( dbconRefWrite );
+		almmLocation.updateTable();
 
 		almmLocation.free();
 		showMessage( String.format( "Thread id %02d; Freed almmLocation", threadId ), false, true );
@@ -2851,8 +2835,8 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmCivilstatus = new TableToArrayListMultimapHikari( dbconRefRead, "ref_status_sex", "original", "standard_civilstatus" );
-		TableToArrayListMultimapHikari almmSex = new TableToArrayListMultimapHikari( dbconRefRead, "ref_status_sex", "original", "standard_sex" );
+		TableToArrayListMultimapHikari almmCivilstatus = new TableToArrayListMultimapHikari( dsReference, "ref_status_sex", "original", "standard_civilstatus" );
+		TableToArrayListMultimapHikari almmSex = new TableToArrayListMultimapHikari( dsReference, "ref_status_sex", "original", "standard_sex" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Civilstatus/Sex reference table", threadId ), start );
 
@@ -2872,7 +2856,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmCivilstatus.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmCivilstatus.updateTable( dbconRefWrite );
+		almmCivilstatus.updateTable();
 
 		almmCivilstatus.free();
 		almmSex.free();
@@ -3155,7 +3139,7 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmRegistration = new TableToArrayListMultimapHikari( dbconRefRead, "ref_registration", "original", "standard" );
+		TableToArrayListMultimapHikari almmRegistration = new TableToArrayListMultimapHikari( dsReference, "ref_registration", "original", "standard" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Registration reference table", threadId ), start );
 
@@ -3184,7 +3168,7 @@ public class LinksCleanAsync extends Thread
 		String extra_col = "main_type";
 		int newcount = almmRegistration.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmRegistration.updateTable( dbconRefWrite, extra_col, delimiter );
+		almmRegistration.updateTable( extra_col, delimiter );
 
 		almmRegistration.free();
 
@@ -3335,7 +3319,7 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmOccupation = new TableToArrayListMultimapHikari( dbconRefRead, "ref_occupation", "original", "standard" );
+		TableToArrayListMultimapHikari almmOccupation = new TableToArrayListMultimapHikari( dsReference, "ref_occupation", "original", "standard" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Occupation reference table", threadId ), start );
 
@@ -3359,7 +3343,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmOccupation.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmOccupation.updateTable( dbconRefWrite );
+		almmOccupation.updateTable();
 
 		almmOccupation.free();
 		showMessage( String.format( "Thread id %02d; Freed almmOccupation", threadId ), false, true );
@@ -3545,7 +3529,7 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmLitAge = new TableToArrayListMultimapHikari( dbconRefRead, "ref_age", "original", "standard_year" );
+		TableToArrayListMultimapHikari almmLitAge = new TableToArrayListMultimapHikari( dsReference, "ref_age", "original", "standard_year" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded LitAge reference table", threadId ), start );
 
@@ -3579,7 +3563,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmLitAge.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmLitAge.updateTable( dbconRefWrite );
+		almmLitAge.updateTable();
 
 		almmLitAge.free();
 		showMessage( String.format( "Thread id %02d; Freed almmLitAge", threadId ), false, true );
@@ -4023,7 +4007,7 @@ public class LinksCleanAsync extends Thread
 
 		long timeStart = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmRole = new TableToArrayListMultimapHikari( dbconRefRead, "ref_role", "original", "standard" );
+		TableToArrayListMultimapHikari almmRole = new TableToArrayListMultimapHikari( dsReference, "ref_role", "original", "standard" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded Role reference table", threadId ), timeStart );
 
@@ -4045,7 +4029,7 @@ public class LinksCleanAsync extends Thread
 
 		int newcount = almmRole.newcount();
 		showMessage( String.format( "Thread id %02d; New entries for ref table: %d", threadId, newcount ), false, true );
-		almmRole.updateTable( dbconRefWrite );
+		almmRole.updateTable();
 
 		almmRole.free();
 		showMessage( String.format( "Thread id %02d; Freed almmRole", threadId ), false, true );
@@ -5329,7 +5313,11 @@ public class LinksCleanAsync extends Thread
 		ts = System.currentTimeMillis();
 		msg = String.format( "Thread id %02d; Processing minMaxDateMain for source: %s ...", threadId, source );
 		showMessage( msg, false, true );
-		minMaxDateMain( debug, source, rmtype );
+
+		HikariConnection dbconReference = new HikariConnection( dsReference.getConnection() );
+		minMaxDateMain( debug, dbconReference, source, rmtype );
+		dbconReference.close();
+
 		msg = String.format( "Thread id %02d; Processing minMaxDateMain", threadId );
 		elapsedShowMessage( msg, ts, System.currentTimeMillis() );
 
@@ -5341,11 +5329,12 @@ public class LinksCleanAsync extends Thread
 	/**
 	 * minMaxDateMain()
 	 * @param debug
+	 * @param dbconRef
 	 * @param source
 	 * @param rmtype
 	 * @throws Exception
 	 */
-	public void minMaxDateMain( boolean debug, String source, String rmtype ) throws Exception
+	public void minMaxDateMain( boolean debug, HikariConnection dbconRef, String source, String rmtype ) throws Exception
 	{
 		long threadId = Thread.currentThread().getId();
 
@@ -5516,7 +5505,7 @@ public class LinksCleanAsync extends Thread
 					type_date = "birth";
 					mmds.setDate( birth_date );
 
-					DivideMinMaxDatumSet ddmdBirth = minMaxDate( debug, mmds );
+					DivideMinMaxDatumSet ddmdBirth = minMaxDate( debug, dbconRef, mmds );
 					ddmdBirth.nonnegative();        // is this necessary?
 
 					if( debug ) { showMessage( "Birth.getMinMaxDate(): " + ddmdBirth.getMinMaxDate(), false, true ); }
@@ -5544,7 +5533,7 @@ public class LinksCleanAsync extends Thread
 					type_date = "mar";
 					mmds.setDate( mar_date );
 
-					DivideMinMaxDatumSet ddmdMarriage = minMaxDate( debug, mmds );
+					DivideMinMaxDatumSet ddmdMarriage = minMaxDate( debug, dbconRef, mmds );
 					ddmdMarriage.nonnegative();        // is this necessary?
 
 					if( debug ) { showMessage( "Marriage.getMinMaxDate(): " + ddmdMarriage.getMinMaxDate(), false, true ); }
@@ -5572,7 +5561,7 @@ public class LinksCleanAsync extends Thread
 					type_date = "death";
 					mmds.setDate( death_date );
 
-					DivideMinMaxDatumSet ddmdDeath = minMaxDate( debug, mmds );
+					DivideMinMaxDatumSet ddmdDeath = minMaxDate( debug, dbconRef, mmds );
 					ddmdDeath.nonnegative();        // is this necessary?
 
 					if( debug ) { showMessage( "Death.getMinMaxDate(): " + ddmdDeath.getMinMaxDate(), false, true ); }
@@ -5605,13 +5594,14 @@ public class LinksCleanAsync extends Thread
 	/**
 	 * minMaxDate()
 	 * @param debug
+	 * @param dbconRef
 	 * @param inputInfo
 	 * @return
 	 * @throws Exception
 	 *
 	 * Called by minMaxDateMain for invalid dates
 	 */
-	private DivideMinMaxDatumSet minMaxDate( boolean debug, MinMaxDateSet inputInfo )
+	private DivideMinMaxDatumSet minMaxDate( boolean debug, HikariConnection dbconRef, MinMaxDateSet inputInfo )
 		throws Exception
 	{
 		if( debug && inputInfo.getPersonRole() == 0 ) { showMessage( "minMaxDate() role = 0", false, true ); }
@@ -5664,6 +5654,7 @@ public class LinksCleanAsync extends Thread
 
 			MinMaxYearSet mmj = minMaxCalculation(
 				debug,
+				dbconRef,
 				inputInfo.getSourceId(),
 				inputInfo.getPersonId(),
 				inputInfo.getRegistrationId(),
@@ -5737,6 +5728,7 @@ public class LinksCleanAsync extends Thread
 
 			MinMaxYearSet mmj = minMaxCalculation(
 				debug,
+				dbconRef,
 				inputInfo.getSourceId(),
 				inputInfo.getPersonId(),
 				inputInfo.getRegistrationId(),
@@ -5777,6 +5769,7 @@ public class LinksCleanAsync extends Thread
 
 			MinMaxYearSet mmj = minMaxCalculation(
 				debug,
+				dbconRef,
 				inputInfo.getSourceId(),
 				inputInfo.getPersonId(),
 				inputInfo.getRegistrationId(),
@@ -6060,6 +6053,7 @@ public class LinksCleanAsync extends Thread
 
 		MinMaxYearSet mmj = minMaxCalculation(
 			debug,
+			dbconRef,
 			inputInfo.getSourceId(),
 			inputInfo.getPersonId(),
 			inputInfo.getRegistrationId(),
@@ -6081,6 +6075,7 @@ public class LinksCleanAsync extends Thread
 	/**
 	 * minMaxCalculation()
 	 * @param debug
+	 * @param dbconRef
 	 * @param id_source
 	 * @param id_person
 	 * @param id_registration
@@ -6096,6 +6091,7 @@ public class LinksCleanAsync extends Thread
 	private MinMaxYearSet minMaxCalculation
 	(
 		boolean debug,
+		HikariConnection dbconRef,
 		int     id_source,
 		int     id_person,
 		int     id_registration,
@@ -6137,6 +6133,7 @@ public class LinksCleanAsync extends Thread
 			MinMaxMainAgeSet mmmas = minMaxMainAge
 				(
 					debug,
+					dbconRef,
 					id_source,
 					id_person,
 					id_registration,
@@ -6179,7 +6176,7 @@ public class LinksCleanAsync extends Thread
 
 		MinMaxYearSet mmj = new MinMaxYearSet();
 
-		try( ResultSet rs = dbconRefRead.executeQuery( query ) )
+		try( ResultSet rs = dbconRef.executeQuery( query ) )
 		{
 			if (!rs.next()) {
 				if (debug) {
@@ -6301,6 +6298,7 @@ public class LinksCleanAsync extends Thread
 	/**
 	 * minMaxMainAge()
 	 * @param debug
+	 * @param dbconRef
 	 * @param id_source
 	 * @param id_person
 	 * @param id_registration
@@ -6315,6 +6313,7 @@ public class LinksCleanAsync extends Thread
 	private MinMaxMainAgeSet minMaxMainAge
 	(
 		boolean debug,
+		HikariConnection dbconRef,
 		int     id_source,
 		int     id_person,
 		int     id_registration,
@@ -6351,7 +6350,7 @@ public class LinksCleanAsync extends Thread
 
 			if( debug ) { showMessage( queryRef, false, true ); }
 
-			try( ResultSet rs_ref = dbconRefRead.executeQuery( queryRef ) )
+			try( ResultSet rs_ref = dbconRef.executeQuery( queryRef ) )
 			{
 				int min_person_role = 0;
 				int max_person_role = 0;
@@ -6668,7 +6667,7 @@ public class LinksCleanAsync extends Thread
 
 		long start = System.currentTimeMillis();
 
-		TableToArrayListMultimapHikari almmMarriageYear = new TableToArrayListMultimapHikari( dbconRefRead, "ref_minmax_marriageyear", "role_A", "role_B" );
+		TableToArrayListMultimapHikari almmMarriageYear = new TableToArrayListMultimapHikari( dsReference, "ref_minmax_marriageyear", "role_A", "role_B" );
 
 		showTimingMessage( String.format( "Thread id %02d; Loaded MarriageYear reference table", threadId ), start );
 
@@ -9197,7 +9196,10 @@ public class LinksCleanAsync extends Thread
 		Vector< Remarks > ref_remarksVec = new Vector();    // Remarks class from dataset
 
 		showMessage( String.format( "Thread id %02d; loading remarks reference table", threadId ), false, true );
-		try( ResultSet rs_r = dbconRefRead.executeQuery( selectQuery_r ) )
+
+		HikariConnection dbconRef = new HikariConnection( dsReference.getConnection() );
+
+		try( ResultSet rs_r = dbconRef.executeQuery( selectQuery_r ) )
 		{
 			int nrecord = 0;
 			while( rs_r.next() )
@@ -9250,6 +9252,7 @@ public class LinksCleanAsync extends Thread
 			ex.printStackTrace( new PrintStream( System.out ) );
 		}
 
+		dbconRef.close();
 
 		// loop through the remarks from registration_o
 		String selectQuery_o = "SELECT id_registration , registration_maintype , remarks FROM registration_o";
