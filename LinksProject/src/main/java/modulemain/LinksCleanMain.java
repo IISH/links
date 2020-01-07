@@ -41,7 +41,7 @@ import linksmanager.ManagerGui;
  * FL-21-Oct-2019 Start using LinksCleanedAsync
  * FL-05-Nov-2019 Extensive cleanup
  * FL-29-Dec-2019 Separate DB pool for HSN
- *
+ * FL-07-Jan-2020 Single-threaded data refresh
  */
 
 public class LinksCleanMain extends Thread
@@ -251,6 +251,21 @@ public class LinksCleanMain extends Thread
 
                 ArrayList< LinksCleanAsync > threads = new ArrayList();
 
+                // Refresh data not parallel, leads to:
+                // java.sql.SQLTransactionRollbackException: (conn=5) Deadlock found when trying to get lock; try restarting transaction
+                // Refreshing single-threaded
+                HikariConnection dbconCleaned = new HikariConnection( dsCleaned.getConnection() );
+                msg = String.format( "Thread id %02d; Single-threaded refreshing of data", mainThreadId );
+                plog.show( msg );
+                for( int sourceId : sourceList )
+                {
+                    msg = String.format( "Thread id %02d; refreshing source: %d", mainThreadId, sourceId );
+                    plog.show( msg );
+                    String source = Integer.toString( sourceId );
+                    doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), dbconCleaned, source, rmtype );			// GUI cb: Remove previous data
+                }
+                dbconCleaned.close();
+
                 for( int sourceId : sourceList )
                 {
                     /*
@@ -315,6 +330,156 @@ public class LinksCleanMain extends Thread
             ex.printStackTrace(new PrintStream(System.out));
         }
     } // run
+
+
+    /*---< Refresh Data >-----------------------------------------------------*/
+    /**
+     * doRefreshData()
+     * @param debug
+     * @param go
+     * @param dbconCleaned
+     * @param source
+     * @param rmtype
+     * @throws Exception
+     *
+     * Remove previous data from links_cleaned, and then copy keys from links_original
+     */
+    private void doRefreshData( boolean debug, boolean go, HikariConnection dbconCleaned, String source, String rmtype )
+        throws Exception
+    {
+        long threadId = Thread.currentThread().getId();
+
+        String funcname = String.format( "Thread id %02d; doRefreshData for source: %s, rmtype: %s", threadId, source, rmtype );
+
+        if( !go ) {
+            if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+            return;
+        }
+
+        long timeStart = System.currentTimeMillis();
+        showMessage( funcname + " ...", false, true );
+
+        // Delete cleaned data for given source
+        String deleteRegist = String.format( "DELETE FROM registration_c WHERE id_source = %s", source );
+        String deletePerson = String.format( "DELETE FROM person_c WHERE id_source = %s", source );
+
+        String msg;
+        if( rmtype.isEmpty() )
+        { msg = String.format( "Thread id %02d; Deleting previous cleaned data for source: %s", threadId, source ); }
+        else
+        {
+            deleteRegist += String.format( " AND registration_maintype = %s", rmtype );
+            deletePerson += String.format( " AND registration_maintype = %s", rmtype );
+
+            msg = String.format( "Thread id %02d; Deleting previous data for source: %s and rmtype: %s", threadId, source, rmtype );
+        }
+
+        showMessage( msg, false, true );
+        if( debug ) {
+            showMessage( deleteRegist, false, true );
+            showMessage( deletePerson, false, true );
+        }
+
+        int delRegistCCount = dbconCleaned.executeUpdate( deleteRegist );
+        int delPersonCCount = dbconCleaned.executeUpdate( deletePerson );
+        msg = String.format( "Thread id %02d; %d records deleted from registration_c", threadId, delRegistCCount );
+        showMessage( msg, false, true );
+        msg = String.format( "Thread id %02d; %d records deleted from person_c", threadId, delPersonCCount );
+        showMessage( msg, false, true );
+
+        // if links_cleaned is now empty, we reset the AUTO_INCREMENT
+        // that eases comparison with links_a2a tables
+        String qRegistCCount = "SELECT COUNT(*) FROM registration_c";
+        String qPersonCCount = "SELECT COUNT(*) FROM person_c";
+
+        int registCCount = -1;
+        try( ResultSet rsR = dbconCleaned.executeQuery( qRegistCCount ) )
+        {
+            rsR.first();
+            registCCount = rsR.getInt("COUNT(*)" );
+        }
+
+        int personCCount = -1;
+        try( ResultSet rsP = dbconCleaned.executeQuery( qPersonCCount ) ) {
+            rsP.first();
+            personCCount = rsP.getInt( "COUNT(*)" );
+        }
+
+        if( registCCount == 0 && personCCount == 0 )
+        {
+            msg = String.format( "Thread id %02d; Resetting AUTO_INCREMENTs for links_cleaned", threadId );
+            showMessage( msg, false, true );
+            String auincRegist = "ALTER TABLE registration_c AUTO_INCREMENT = 1";
+            String auincPerson = "ALTER TABLE person_c AUTO_INCREMENT = 1";
+
+            dbconCleaned.executeUpdate( auincRegist );
+            dbconCleaned.executeUpdate( auincPerson );
+        }
+        else
+        {
+            msg = String.format( "Thread id %02d; %d records in registration_c", threadId, registCCount );
+            showMessage( msg, false, true );
+            msg = String.format( "Thread id %02d; %d records in person_c", threadId, personCCount );
+            showMessage( msg, false, true );
+        }
+
+        // Copy key column data from links_original to links_cleaned
+        String keysRegistration = ""
+            + "INSERT INTO links_cleaned.registration_c"
+            + " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
+            + " SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq"
+            + " FROM links_original.registration_o"
+            + " WHERE registration_o.id_source = " + source;
+
+        if( ! rmtype.isEmpty() )
+        { keysRegistration += String.format( " AND registration_maintype = %s", rmtype ); }
+
+        msg = String.format( "Thread id %02d; Copying links_original registration keys to links_cleaned", threadId );
+        showMessage( msg, false, true );
+        if( debug ) { showMessage( keysRegistration, false, true ); }
+
+        registCCount = dbconCleaned.executeUpdate( keysRegistration );
+        msg = String.format( "Thread id %02d; %d records inserted in registration_c", threadId, registCCount );
+        showMessage( msg, false, true );
+
+        // Strip {} from id_persist_registration
+        String Update_id_persist_registration = ""
+            + "UPDATE links_cleaned.registration_c"
+            + " SET id_persist_registration = SUBSTR(id_persist_registration, 2, 36)"
+            + " WHERE registration_c.id_source = " + source;
+
+        Update_id_persist_registration += " AND LENGTH(id_persist_registration) = 38";      // only CBG data have this string
+
+        if( ! rmtype.isEmpty() )
+        { Update_id_persist_registration += String.format( " AND registration_maintype = %s", rmtype ); }
+
+        msg = String.format( "Thread id %02d; Removing {} from id_persist_registration", threadId );
+        showMessage( msg, false, true );
+        if( debug ) { showMessage( Update_id_persist_registration, false, true ); }
+
+        dbconCleaned.executeUpdate( Update_id_persist_registration );
+
+        String keysPerson = ""
+            + "INSERT INTO links_cleaned.person_c"
+            + " ( id_person, id_registration, id_source, registration_maintype, id_person_o )"
+            + " SELECT id_person, id_registration, id_source, registration_maintype, id_person_o"
+            + " FROM links_original.person_o"
+            + " WHERE person_o.id_source = " + source;
+
+        if( ! rmtype.isEmpty() )
+        { keysPerson += String.format( " AND registration_maintype = %s", rmtype ); }
+
+        msg = String.format( "Thread id %02d; Copying links_original person keys to links_cleaned", threadId );
+        showMessage( msg, false, true );
+        if( debug ) { showMessage( keysPerson, false, true ); }
+
+        personCCount = dbconCleaned.executeUpdate( keysPerson );
+        msg = String.format( "Thread id %02d; %d records inserted in person_c", threadId, personCCount );
+        showMessage( msg, false, true );
+
+        elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+        showMessage_nl();
+    } // doRefreshData
 
 
     /*---< Run PreMatch >-----------------------------------------------------*/

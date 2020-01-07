@@ -96,7 +96,7 @@ import general.PrintLogger;
  * FL-30-Sep-2019 standardRole(): check role against registration_maintype
  * FL-05-Nov-2019 Extensive cleanup
  * FL-01-Jan-2020 Do not keep connection to Reference db endlessly open
- * FL-04-Jan-2020
+ * FL-07-Jan-2020 Single-threaded refreshing in LinksCleanedMain
  */
 
 
@@ -243,7 +243,8 @@ public class LinksCleanAsync extends Thread
 			showMessage( String.format( "Thread id %02d; Loading report table", threadId ), false, true );
 			almmReport = new TableToArrayListMultimapHikari( dsReference, "ref_report", "type", null );
 
-			doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), source, rmtype );			// GUI cb: Remove previous data
+			// Single-threaded refreshing in LinksCleanedMain
+			//doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), source, rmtype );			// GUI cb: Remove previous data
 
 			doPrepieceSuffix( opts.isDbgPrepieceSuffix(), opts.isDoPrepieceSuffix(), source, rmtype );	// GUI cb: Prepiece, Suffix
 
@@ -669,6 +670,7 @@ public class LinksCleanAsync extends Thread
 	 *
 	 * Remove previous data from links_cleaned, and then copy keys from links_original
 	 */
+	/*
 	private void doRefreshData( boolean debug, boolean go, String source, String rmtype )
 	throws Exception
 	{
@@ -805,7 +807,7 @@ public class LinksCleanAsync extends Thread
 		elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
 		showMessage_nl();
 	} // doRefreshData
-
+	*/
 
 	/*---< First- and Familynames >-------------------------------------------*/
 
@@ -6131,18 +6133,18 @@ public class LinksCleanAsync extends Thread
 			age_reported = death;
 
 			MinMaxMainAgeSet mmmas = minMaxMainAge
-				(
-					debug,
-					dbconRef,
-					id_source,
-					id_person,
-					id_registration,
-					main_type,
-					date_type,
-					role,
-					age_reported,
-					age_main_role
-				);
+			(
+				debug,
+				dbconRef,
+				id_source,
+				id_person,
+				id_registration,
+				main_type,
+				date_type,
+				role,
+				age_reported,
+				age_main_role
+			);
 
 			main_role = mmmas.getMainRole();
 			age       = mmmas.getAgeYear();
