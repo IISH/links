@@ -89,12 +89,13 @@ public class ViewSummarizer
         // Set 5 args
         String db_url     = args[ 0 ];
         String db_name    = args[ 1 ];
-        String db_user    = args[ 2 ];
-        String db_pass    = args[ 3 ];
-        String hostname   = args[ 4 ];
+        String db_table   = args[ 2 ];      // i.e. matches table
+        String db_user    = args[ 3 ];
+        String db_pass    = args[ 4 ];
+        String hostname   = args[ 5 ];
 
         String ids_str = "";
-        for( int i = 5; i < args.length; i++ ) {
+        for( int i = 6; i < args.length; i++ ) {
             if( ids_str.length() > 0 ) { ids_str += " "; }
             ids_str += args[ i ];
         }
@@ -123,8 +124,8 @@ public class ViewSummarizer
             if( debug ) { System.out.println( "id_process: " + id_process ); }
 
             try {
-                plog.show( String.format( "parameters: %s %s %s %s %s",
-                    db_url, db_name, db_user, db_pass, id_process ) );
+                plog.show( String.format( "parameters: %s %s %s %s %s %s",
+                    db_url, db_name, db_table, db_user, db_pass, id_process ) );
             }
             catch( Exception ex ) {
                 System.out.println( "Exception: " + ex.getMessage() );
@@ -144,7 +145,7 @@ public class ViewSummarizer
             replaceInTemplate( "hostname", hostname );
 
             // get variables from match_process table for the given id_process
-            if( ! readMatchProcess( id_process ) ) { return; }  // id not found in the process table
+            if( ! readMatchProcess( id_process, db_table ) ) { return; }  // id not found in the process table
 
             // Write template to output
             try {
@@ -497,7 +498,7 @@ public class ViewSummarizer
     /**
      *
      */
-    private static boolean readMatchProcess( String id_process )
+    private static boolean readMatchProcess( String id_process, String table_matches )
     {
         //System.out.println( "readMatchProcess()" );
 
@@ -656,45 +657,45 @@ public class ViewSummarizer
         s2_potential = executeQuery( "s2_potential", query );
 
 
-        query = "SELECT COUNT(*) FROM links_match.matches WHERE id_match_process = " + id_process;
+        query = String.format( "SELECT COUNT(*) FROM links_match.%s WHERE id_match_process = %s", table_matches, id_process );
         s1_realized = executeQuery( "s1_realized", query );
 
-        query = "SELECT COUNT(*) FROM links_match.matches WHERE id_match_process = " + id_process;
+        query = String.format( "SELECT COUNT(*) FROM links_match.%s WHERE id_match_process = %s", table_matches, id_process );
         s2_realized = executeQuery( "s2_realized", query );
 
 
-        query = "SELECT COUNT( DISTINCT( id_linksbase_1 ) ) FROM links_match.matches WHERE id_match_process = " + id_process;
+        query = String.format( "SELECT COUNT( DISTINCT( id_linksbase_1 ) ) FROM links_match.%s WHERE id_match_process = %s", table_matches, id_process );
         s1_unique = executeQuery( "s1_unique", query );
 
-        query = "SELECT COUNT( DISTINCT( id_linksbase_2 ) ) FROM links_match.matches WHERE id_match_process = " + id_process;
+        query = String.format( "SELECT COUNT( DISTINCT( id_linksbase_2 ) ) FROM links_match.%s WHERE id_match_process = %s", table_matches, id_process );
         s2_unique = executeQuery( "s2_unique", query );
 
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 1 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_1 HAVING s1_cnt = 1 ) AS t", table_matches, id_process );
         s1_once = executeQuery( "s1_once", query );
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 1 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_2 HAVING s2_cnt = 1 ) AS t", table_matches, id_process );
         s2_once = executeQuery( "s2_once", query );
 
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 2 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_1 HAVING s1_cnt = 2 ) AS t", table_matches, id_process );
         s1_twice = executeQuery( "s1_twice", query );
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 2 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_2 HAVING s2_cnt = 2 ) AS t", table_matches, id_process );
         s2_twice = executeQuery( "s2_twice", query );
 
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 3 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_1 HAVING s1_cnt = 3 ) AS t", table_matches, id_process );
         s1_thrice = executeQuery( "s1_thrice", query );
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 3 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_2 HAVING s2_cnt = 3 ) AS t", table_matches, id_process );
         s2_thrice = executeQuery( "s2_thrice", query );
 
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 HAVING s1_cnt = 4 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_1 ) AS s1_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_1 HAVING s1_cnt = 4 ) AS t", table_matches, id_process );
         s1_frice = executeQuery( "s1_frice", query );
 
-        query = "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 HAVING s2_cnt = 4 ) AS t";
+        query = String.format( "SELECT COUNT(*) FROM ( SELECT COUNT( id_linksbase_2 ) AS s2_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_2 HAVING s2_cnt = 4 ) AS t", table_matches, id_process );
         s2_frice = executeQuery( "s2_frice", query );
 
 
@@ -753,10 +754,10 @@ public class ViewSummarizer
 
 
         // all individual counts for 1x, 2x, 3x, etc occurrences
-        query = "SELECT s1_cnt, COUNT(*) FROM ( SELECT id_linksbase_1, COUNT(*) AS s1_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_1 ) AS t GROUP BY s1_cnt";
+        query = String.format( "SELECT s1_cnt, COUNT(*) FROM ( SELECT id_linksbase_1, COUNT(*) AS s1_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_1 ) AS t GROUP BY s1_cnt", table_matches, id_process );
         s1_allcnts = collectQuery("s1_allcnts", query);
 
-        query = "SELECT s2_cnt, COUNT(*) FROM ( SELECT id_linksbase_2, COUNT(*) AS s2_cnt FROM links_match.matches WHERE id_match_process = " + id_process + " GROUP BY id_linksbase_2 ) AS t GROUP BY s2_cnt";
+        query = String.format( "SELECT s2_cnt, COUNT(*) FROM ( SELECT id_linksbase_2, COUNT(*) AS s2_cnt FROM links_match.%s WHERE id_match_process = %s GROUP BY id_linksbase_2 ) AS t GROUP BY s2_cnt", table_matches, id_process );
         s2_allcnts = collectQuery("s2_allcnts", query);
 
         allcntsToTable( s1_allcnts, s2_allcnts );

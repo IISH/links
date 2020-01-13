@@ -24,8 +24,10 @@ import java.util.*;
 import java.io.*;
 
 /**
- *
  * @author oaz
+ * @author Fons Laan
+ *
+ * FL-13-Jan-2020 Suppress: String driver
  */
 public class General {
 
@@ -83,10 +85,10 @@ public class General {
      */
     public static Connection getConnection(String url, String db, String user, String pass)
             throws Exception {
-        String driver = "org.gjt.mm.mysql.Driver";
+        //String driver = "org.gjt.mm.mysql.Driver";
         String longUrl = "jdbc:mysql://" + url + "/" + db + "?dontTrackOpenResources=true";
 
-        Class.forName(driver);
+        //Class.forName(driver);
         return DriverManager.getConnection(longUrl, user, pass);
     }
 
