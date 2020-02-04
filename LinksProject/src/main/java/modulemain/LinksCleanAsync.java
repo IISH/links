@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.regex.Matcher;
@@ -97,6 +98,7 @@ import general.PrintLogger;
  * FL-05-Nov-2019 Extensive cleanup
  * FL-01-Jan-2020 Do not keep connection to Reference db endlessly open
  * FL-07-Jan-2020 Single-threaded refreshing in LinksCleanedMain
+ * FL-04-Feb 2020 Also clean prefixes if _after_ familyname
  */
 
 
@@ -1030,9 +1032,9 @@ public class LinksCleanAsync extends Thread
 	 */
 	private String namePrepiece( boolean debug, TableToArrayListMultimapHikari almmPrepiece, String name, int id ) throws Exception
 	{
-		if( !name.contains( " " ) ) {
-			return name;            // if no spaces return name
-		}
+		if( debug ) { plog.show( String.format( "namePrepiece() name: %s", name ) ); }
+
+		if( ! name.contains( " " ) ) { return name; }	// if no spaces return name
 
 		String fullName = "";
 
@@ -1048,12 +1050,14 @@ public class LinksCleanAsync extends Thread
 		for( int i = 0; i < namesArray.length; i++ ) {
 			names.add( namesArray[ i ] );
 		}
+		if( debug ) { plog.show( String.format( "name parts: %d", names.size() ) ); }
 
 		// Check pieces
-		while( !names.isEmpty() )
+		while( ! names.isEmpty() )
 		{
-			// Get part
+			// Get part from begin
 			String part = names.poll();
+			if( debug ) { plog.show( String.format( "part: %s", part ) ); }
 
 			if( almmPrepiece.contains( part ) && almmPrepiece.code( part ).equalsIgnoreCase( SC_Y ) )
 			{
@@ -1107,6 +1111,98 @@ public class LinksCleanAsync extends Thread
 
 		return fullName;
 	} // namePrepiece
+
+
+	/**
+	 * namePrepieceRev()
+	 * @param debug
+	 * @param almmPrepiece
+	 * @param name
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	private String namePrepieceRev( boolean debug, TableToArrayListMultimapHikari almmPrepiece, String name, int id ) throws Exception
+	{
+		if( debug ) { plog.show( String.format( "namePrepieceRev() name: %s", name ) ); }
+
+		if( ! name.contains( " " ) ) { return name; }	// if no spaces return name
+
+		String fullName = "";
+
+		String list_TN = "";
+		String list_TO = "";
+		String list_PF = "";
+
+		// Split name
+		Deque< String > names = new LinkedList();
+
+		String[] namesArray = name.split( " " );
+
+		for( int i = 0; i < namesArray.length; i++ ) {
+			names.addLast( namesArray[ i ] );
+		}
+		if( debug ) { plog.show( String.format( "name parts: %d", names.size() ) ); }
+
+		// Check pieces
+		while( ! names.isEmpty() )
+		{
+			// Get part from end
+			String part = names.pollLast();
+			if( debug ) { plog.show( String.format( "part: %s", part ) ); }
+
+			if( almmPrepiece.contains( part ) && almmPrepiece.code( part ).equalsIgnoreCase( SC_Y ) )
+			{
+				// Add to person
+				if( almmPrepiece.value( "title_noble", part ) != null && !almmPrepiece.value( "title_noble", part ).isEmpty() )
+				{
+					list_TN = almmPrepiece.value( "title_noble", part ) + " " + list_TN;
+				}
+				else if( almmPrepiece.value( "title_other", part ) != null && !almmPrepiece.value( "title_other", part ).isEmpty() )
+				{
+					list_TO = almmPrepiece.value( "title_other", part ) + " " + list_TO;
+				}
+				else if( almmPrepiece.value("prefix", part) != null && !almmPrepiece.value( "prefix", part ).isEmpty() )
+				{
+					list_PF = almmPrepiece.value( "prefix", part) + " " + list_PF;
+				}
+
+			}
+			else    // return name
+			{
+				while( !names.isEmpty() ) {
+					fullName += " " + names.poll();
+				}
+
+				fullName = part + fullName;      // add part to name
+
+				break;
+			}
+		}
+
+		// remove last spaces
+		if( !list_TN.isEmpty() ) {
+			list_TN = list_TN.substring( 0, ( list_TN.length() - 1 ) );
+
+			dbconCleaned.executeUpdate( PersonC.updateQuery( "title_noble", list_TN, id ) );
+		}
+
+		if( !list_TO.isEmpty() ) {
+			list_TO = list_TO.substring( 0, ( list_TO.length() - 1 ) );
+
+			dbconCleaned.executeUpdate( PersonC.updateQuery( "title_other", list_TO, id ) );
+		}
+
+		if( !list_PF.isEmpty() ) {
+			list_PF = list_PF.substring( 0, ( list_PF.length() - 1 ) );
+
+			dbconCleaned.executeUpdate( PersonC.updateQuery( "prefix", list_PF, id ) );
+		}
+
+		names.clear();
+
+		return fullName;
+	} // namePrepieceRev
 
 
 	/**
@@ -2101,7 +2197,7 @@ public class LinksCleanAsync extends Thread
 					String familyname = rs.getString( "familyname" );
 					int id_person     = rs.getInt( "id_person" );
 
-					//if( id_person == 35241111 ) { debug = true; }
+					//if( id_person == 117504147 ) { debug = true; }
 					//else { debug = false; continue; }
 
 					if( debug ) {
@@ -2170,11 +2266,15 @@ public class LinksCleanAsync extends Thread
 								addToReportPerson( id_person, source, 1004, familyname );   // EC 1004
 							}
 
-							// check if name has prepieces
+							// check if name has prepieces from front
 							String nameNoPrePiece = namePrepiece( debug, almmPrepiece, nameNoInvalidChars, id_person );
 
+							// check if nameNoPrePiece has prepieces at the back
+							if( nameNoPrePiece.contains( " " ) )
+							{ nameNoPrePiece = namePrepieceRev( debug, almmPrepiece, nameNoPrePiece, id_person ); }
+
 							// Family name contains invalid chars ?
-							if( !nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
+							if( ! nameNoPrePiece.equalsIgnoreCase( nameNoInvalidChars ) ) {
 								addToReportPerson( id_person, source, 1008, familyname );  // EC 1008
 							}
 
