@@ -42,6 +42,7 @@ import linksmanager.ManagerGui;
  * FL-05-Nov-2019 Extensive cleanup
  * FL-29-Dec-2019 Separate DB pool for HSN
  * FL-07-Jan-2020 Single-threaded data refresh
+ * FL-06-Feb-2020 Latest Change
  */
 
 public class LinksCleanMain extends Thread
@@ -150,7 +151,7 @@ public class LinksCleanMain extends Thread
         {
             long cleanStart = System.currentTimeMillis();
 
-            plog.show(String.format("Thread id %02d; Main thread, LinksCleanThread/run()", mainThreadId));
+            plog.show(String.format("Thread id %02d; Main thread, LinksCleanMain/run()", mainThreadId));
 
             String msg = "";
             if (dbconref_single) {
@@ -200,7 +201,7 @@ public class LinksCleanMain extends Thread
             }
 
             int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
-            sourceList = createSourceList(sourceIdsGui, sourceListAvail);
+            sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
             if (sourceList.length == 1) {
@@ -253,18 +254,21 @@ public class LinksCleanMain extends Thread
 
                 // Refresh data not parallel, leads to:
                 // java.sql.SQLTransactionRollbackException: (conn=5) Deadlock found when trying to get lock; try restarting transaction
-                // Refreshing single-threaded
-                HikariConnection dbconCleaned = new HikariConnection( dsCleaned.getConnection() );
-                msg = String.format( "Thread id %02d; Single-threaded refreshing of data", mainThreadId );
-                plog.show( msg );
-                for( int sourceId : sourceList )
+                if( opts.isDoRefreshData() )
                 {
-                    msg = String.format( "Thread id %02d; refreshing source: %d", mainThreadId, sourceId );
+                    // Refreshing single-threaded
+                    HikariConnection dbconCleaned = new HikariConnection( dsCleaned.getConnection() );
+                    msg = String.format( "Thread id %02d; Single-threaded refreshing of data", mainThreadId );
                     plog.show( msg );
-                    String source = Integer.toString( sourceId );
-                    doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), dbconCleaned, source, rmtype );			// GUI cb: Remove previous data
+                    for( int sourceId : sourceList )
+                    {
+                        msg = String.format( "Thread id %02d; refreshing source: %d", mainThreadId, sourceId );
+                        plog.show( msg );
+                        String source = Integer.toString( sourceId );
+                        doRefreshData( opts.isDbgRefreshData(), opts.isDoRefreshData(), dbconCleaned, source, rmtype );			// GUI cb: Remove previous data
+                    }
+                    dbconCleaned.close();
                 }
-                dbconCleaned.close();
 
                 for( int sourceId : sourceList )
                 {
