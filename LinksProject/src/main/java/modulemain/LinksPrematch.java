@@ -33,6 +33,7 @@ import prematch.Lvs;
  * FL-21-Aug-2017 NamesToNumbers per id_source & rmtype
  * FL-04-Sep-2017 Frequency tables per source & rmtype
  * FL-28-Aug-2018 Cosmetic update in links_base update
+ * FL-25-Feb-2020 Include person_c.id_person_o (better name would be: person_seq_nr: 1,2,3...)
  */
 
 public class LinksPrematch extends Thread
@@ -1241,6 +1242,7 @@ public class LinksPrematch extends Thread
             + "id_registration , "
             + "id_source , "
             + "id_persist_registration , "
+            + "id_person_o , "
             + "registration_maintype , "
             + "registration_type , "
             + "extract , "
@@ -1273,6 +1275,7 @@ public class LinksPrematch extends Thread
             + "links_cleaned.registration_c.id_registration , "
             + "links_cleaned.registration_c.id_source , "
             + "links_cleaned.registration_c.id_persist_registration , "
+            + "links_cleaned.person_c.id_person_o , "
             + "links_cleaned.registration_c.registration_maintype , "
             + "links_cleaned.registration_c.registration_type , "
             + "links_cleaned.registration_c.extract , "
@@ -1300,8 +1303,7 @@ public class LinksPrematch extends Thread
             + "links_cleaned.person_c.death_max_days , "
             + "links_cleaned.person_c.death_location , "
             + "links_cleaned.person_c.role "
-            + "FROM links_cleaned.registration_c , links_cleaned.person_c"
-            + "";
+            + "FROM links_cleaned.registration_c , links_cleaned.person_c";
 
         if( have_source ) {
             query1a += " WHERE links_cleaned.registration_c.id_source = " + source;
@@ -1366,8 +1368,7 @@ public class LinksPrematch extends Thread
             + "mother_marriage_loc      = links_cleaned.person_c.mar_location , "
             + "mother_death_min         = links_cleaned.person_c.death_min_days , "
             + "mother_death_max         = links_cleaned.person_c.death_max_days , "
-            + "mother_death_loc         = links_cleaned.person_c.death_location "
-            + "";
+            + "mother_death_loc         = links_cleaned.person_c.death_location ";
 
         if( have_source ) {
             query2a += " WHERE links_prematch.links_base.id_source = " + source;
@@ -1420,8 +1421,7 @@ public class LinksPrematch extends Thread
             + "father_marriage_loc      = links_cleaned.person_c.mar_location , "
             + "father_death_min         = links_cleaned.person_c.death_min_days , "
             + "father_death_max         = links_cleaned.person_c.death_max_days , "
-            + "father_death_loc         = links_cleaned.person_c.death_location "
-            + "";
+            + "father_death_loc         = links_cleaned.person_c.death_location ";
 
         if( have_source ) {
             query3a += " WHERE links_prematch.links_base.id_source = " + source;
@@ -1474,8 +1474,7 @@ public class LinksPrematch extends Thread
             + "partner_marriage_loc      = links_cleaned.person_c.mar_location , "
             + "partner_death_min         = links_cleaned.person_c.death_min_days , "
             + "partner_death_max         = links_cleaned.person_c.death_max_days , "
-            + "partner_death_loc         = links_cleaned.person_c.death_location "
-            + "";
+            + "partner_death_loc         = links_cleaned.person_c.death_location ";
 
         if( have_source ) {
             query4a += " WHERE links_prematch.links_base.id_source = " + source;
