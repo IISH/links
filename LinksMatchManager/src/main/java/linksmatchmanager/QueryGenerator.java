@@ -37,6 +37,7 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-01-Oct-2018 Add id_persist_registration to the s1&2 queries to be retrieved from links_base
  * FL-11-Jun-2019 AND id_source IN (...) syntax
  * FL-19-Nov-2019 interprete id_source = "0" as ""
+ * FL-27-Feb-2020 Add id_person_o to the s1&2 queries to be retrieved from links_base
  */
 public class QueryGenerator
 {
@@ -758,7 +759,7 @@ public class QueryGenerator
     {
         String query;
 
-        query = "SELECT id_base , id_registration , id_persist_registration , registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
+        query = "SELECT id_base , id_registration , id_persist_registration , id_person_o, registration_days , ego_familyname_str , ego_firstname1_str , ego_familyname ";
 
         query += ", mother_familyname_str , mother_firstname1_str ";        // debugging
 

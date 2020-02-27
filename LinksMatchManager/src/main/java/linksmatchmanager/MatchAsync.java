@@ -54,6 +54,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-12-Mar-2019 Use HikariDataSource
  * FL-20-Apr-2019 Use intern() on levenshtein query strings
  * FL-29-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
+ * FL-27-Feb-2020 Add s1&2 id_person_o to matches table
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -844,6 +845,9 @@ public class MatchAsync extends Thread
                                     String id_persist_registration_1 = ql.s1_id_persist_registration.get( s1_idx );
                                     String id_persist_registration_2 = ql.s2_id_persist_registration.get( s2_idx );
 
+                                    int id_person_o_1 = ql.s1_id_person_o.get( s1_idx );
+                                    int id_person_o_2 = ql.s2_id_person_o.get( s2_idx );
+
                                     if( debug || debugfreq ) {
                                         msg = String.format( "MATCH: s1_idx: %d, s2_idx: %d, id_linksbase_1: %d, id_linksbase_2: %d",
                                             s1_idx, s2_idx, id_linksbase_1, id_linksbase_2 );
@@ -870,9 +874,10 @@ public class MatchAsync extends Thread
                                         // notice: in order to let the \N properly work, avoid leading or trailing whitespace
                                         //String str = String.format( "%d, %d, %d, %s,%s, %s,%s,%s,%s,%s,%s,%s,%s\n",
                                         // We got a spurious initial space before id_persist_registration_1
-                                        String str = String.format( "%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                                        String str = String.format( "%d,%d,%d,%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s\n",
                                             id_match_process , id_linksbase_1 , id_linksbase_2 ,
                                             id_persist_registration_1 , id_persist_registration_2 ,
+                                            id_person_o_1 , id_person_o_2 ,
                                             lvs_dist_first_ego , lvs_dist_family_ego ,
                                             lvs_dist_first_mot , lvs_dist_family_mot ,
                                             lvs_dist_first_fat , lvs_dist_family_fat ,
@@ -888,12 +893,14 @@ public class MatchAsync extends Thread
                                     {
                                         query = "INSERT INTO matches ( id_match_process , id_linksbase_1 , id_linksbase_2, " +
                                             "id_persist_registration_1, id_persist_registration_2, " +
+                                            "id_person_o_1, id_person_o_2, " +
                                             "value_firstname_ego, value_familyname_ego, " +
                                             "value_firstname_mo , value_familyname_mo , " +
                                             "value_firstname_fa , value_familyname_fa , " +
                                             "value_firstname_pa , value_familyname_pa ) " +
                                             "VALUES ( " + id_match_process + "," + id_linksbase_1 + "," + id_linksbase_2 + "," +
                                             id_persist_registration_1 + "," + id_persist_registration_2 + "," +
+                                            id_person_o_1 + "," + id_person_o_2 + "," +
                                             lvs_dist_first_ego + "," + lvs_dist_family_ego + "," +
                                             lvs_dist_first_mot + "," + lvs_dist_family_mot + "," +
                                             lvs_dist_first_fat + "," + lvs_dist_family_fat + "," +
@@ -1222,6 +1229,7 @@ public class MatchAsync extends Thread
             + " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
             + "( id_match_process , id_linksbase_1 , id_linksbase_2 ,"
             + " id_persist_registration_1 , id_persist_registration_2 ,"
+            + " id_person_o_1 , id_person_o_2 ,"
             + " value_firstname_ego , value_familyname_ego ,"
             + " value_firstname_mo , value_familyname_mo ,"
             + " value_firstname_fa , value_familyname_fa ,"
@@ -1252,6 +1260,7 @@ public class MatchAsync extends Thread
             + "("
             + " id_match_process , id_linksbase_1 , id_linksbase_2"
             + " ,id_persist_registration_1 , id_persist_registration_2"
+            + " ,id_person_o_1 , id_person_o_2"
             + " ,value_firstname_ego , value_familyname_ego"
             + " ,value_firstname_mo , value_familyname_mo"
             + " ,value_firstname_fa , value_familyname_fa"

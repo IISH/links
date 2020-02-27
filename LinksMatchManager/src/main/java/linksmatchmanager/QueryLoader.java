@@ -24,6 +24,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-12-Mar-2019 HikariDataSource
  * FL-29-Apr-2019 Using PreparedStatement
  * FL-03-Dec-2019 Latest change
+ * FL-27-Feb-2020 Added s1_id_person_o & s2_id_person_o to the vector zoo
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
@@ -47,6 +48,7 @@ public class QueryLoader
     public Vector< Integer > s1_registration_days      = new Vector< Integer >();
 
     public Vector< String > s1_id_persist_registration = new Vector< String >();
+    public Vector< Integer > s1_id_person_o            = new Vector< Integer >();
     public Vector< String > s1_ego_familyname_str      = new Vector< String >();
     public Vector< String > s1_ego_firstname1_str      = new Vector< String >();
 
@@ -109,6 +111,7 @@ public class QueryLoader
     public Vector< Integer > s2_registration_days      = new Vector< Integer >();
 
     public Vector< String > s2_id_persist_registration = new Vector< String >();
+    public Vector< Integer > s2_id_person_o            = new Vector< Integer >();
     public Vector< String > s2_ego_familyname_str      = new Vector< String >();
     public Vector< String > s2_ego_firstname1_str      = new Vector< String >();
 
@@ -306,6 +309,7 @@ public class QueryLoader
             int var_s1_registration_days = 0;
 
             String var_s1_id_persist_registration = "";
+            int var_s1_id_person_o = 0;
 
             String var_s1_ego_familyname_str = "";
             String var_s1_ego_firstname1_str = "";
@@ -367,6 +371,7 @@ public class QueryLoader
             var_s1_id_base                 = rs1.getInt("id_base");
             var_s1_id_registration         = rs1.getInt("id_registration");
             var_s1_id_persist_registration = rs1.getString("id_persist_registration");
+            var_s1_id_person_o             = rs1.getInt("id_person_o");
             var_s1_registration_days       = rs1.getInt("registration_days");
 
             // Ego
@@ -561,6 +566,7 @@ public class QueryLoader
             s1_id_base                .add( var_s1_id_base );
             s1_id_registration        .add( var_s1_id_registration );
             s1_id_persist_registration.add( var_s1_id_persist_registration );
+            s1_id_person_o            .add( var_s1_id_person_o );
             s1_registration_days      .add( var_s1_registration_days );
 
             s1_ego_familyname_str.add( var_s1_ego_familyname_str );
@@ -638,6 +644,7 @@ public class QueryLoader
             int var_s2_registration_days = 0;
 
             String var_s2_id_persist_registration = "";
+            int var_s2_id_person_o = 0;
 
             String var_s2_ego_familyname_str = "";
             String var_s2_ego_firstname1_str = "";
@@ -699,6 +706,7 @@ public class QueryLoader
             var_s2_id_base                 = rs2.getInt( "id_base" );
             var_s2_id_registration         = rs2.getInt( "id_registration" );
             var_s2_id_persist_registration = rs2.getString("id_persist_registration");
+            var_s2_id_person_o             = rs2.getInt("id_person_o");
             var_s2_registration_days       = rs2.getInt( "registration_days" );
 
             // Ego
@@ -897,6 +905,7 @@ public class QueryLoader
             s2_id_base                .add( var_s2_id_base );
             s2_id_registration        .add( var_s2_id_registration );
             s2_id_persist_registration.add( var_s2_id_persist_registration );
+            s2_id_person_o            .add( var_s2_id_person_o );
             s2_registration_days      .add( var_s2_registration_days );
 
             s2_ego_familyname_str.add( var_s2_ego_familyname_str );
@@ -967,6 +976,7 @@ public class QueryLoader
         s1_registration_days    .clear(); s1_registration_days    = null;
 
         s1_id_persist_registration.clear(); s1_id_persist_registration = null;
+        s1_id_person_o            .clear(); s1_id_person_o             = null;
         s1_ego_familyname_str     .clear(); s1_ego_familyname_str      = null;
         s1_ego_firstname1_str     .clear(); s1_ego_firstname1_str      = null;
 
@@ -1032,6 +1042,7 @@ public class QueryLoader
         s2_registration_days    .clear(); s2_registration_days    = null;
 
         s2_id_persist_registration.clear(); s2_id_persist_registration = null;
+        s2_id_person_o            .clear(); s2_id_person_o             = null;
         s2_ego_familyname_str     .clear(); s2_ego_familyname_str      = null;
         s2_ego_firstname1_str     .clear(); s2_ego_firstname1_str      = null;
 

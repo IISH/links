@@ -61,7 +61,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-03-Dec-2019 Latest change
+ * FL-27-Feb-2020 Latest change
  */
 
 public class Main
