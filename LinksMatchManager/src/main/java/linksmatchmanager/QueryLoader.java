@@ -25,11 +25,13 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-29-Apr-2019 Using PreparedStatement
  * FL-03-Dec-2019 Latest change
  * FL-27-Feb-2020 Added s1_id_person_o & s2_id_person_o to the vector zoo
+ * FL-09-Mar-2020 mp_id
  *
  * See SampleLoader for a variant that keeps s1 and s2 separate.
  */
 public class QueryLoader
 {
+    private int mp_id;
     private boolean use_mother;
     private boolean use_father;
     private boolean use_partner;
@@ -218,6 +220,7 @@ public class QueryLoader
     {
         this.plog = plog;
 
+        this.mp_id            = qs.id;
         this.use_mother       = qs.use_mother;
         this.use_father       = qs.use_father;
         this.use_partner      = qs.use_partner;
@@ -253,7 +256,7 @@ public class QueryLoader
         }
         catch( Exception ex )
         {
-            String msg = String.format( "Thread id %02d; QueryLoader() sample 1 Exception: %s", threadId, ex.getMessage() );
+            String msg = String.format( "Thread id %02d; QueryLoader() mp_id = %d, sample 1 Exception: %s", threadId, mp_id, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
             ex.printStackTrace( System.out );
             return;
@@ -283,7 +286,7 @@ public class QueryLoader
         }
         catch( Exception ex )
         {
-            String msg = String.format( "Thread id %02d; QueryLoader() sample 2 Exception: %s", threadId, ex.getMessage() );
+            String msg = String.format( "Thread id %02d; QueryLoader() mp_id = %d, sample 2 Exception: %s", threadId, mp_id, ex.getMessage() );
             System.out.println( msg ); plog.show( msg );
             ex.printStackTrace( System.out );
             return;

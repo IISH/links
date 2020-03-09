@@ -55,6 +55,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-20-Apr-2019 Use intern() on levenshtein query strings
  * FL-29-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
  * FL-27-Feb-2020 Add s1&2 id_person_o to matches table
+ * FL-09-Mar-2020 No more Abort in in compareLvsNames on Exception; return -1 with message
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -1903,11 +1904,13 @@ public class MatchAsync extends Thread
                 //}
             }
         }
-        catch( Exception ex ) {
-            System.out.println( "Exception in compareLvsNames: " + ex.getMessage() );
-            System.out.println( "Abort" );
-            ex.printStackTrace();
-            System.exit( 1 );
+        catch( Exception ex )
+        {
+            // ex.getMessage() = (conn=...) No route to host (Read failed)      // Why??
+            long threadId = Thread.currentThread().getId();
+            String msg = String.format( "Thread id %02d; Exception in compareLvsNames: %s", threadId, ex.getMessage() );
+            System.out.println( msg );
+            lvs_dist = -1;      // current comparison will be ignored
         }
 
         // Ignore compareLvsNames
