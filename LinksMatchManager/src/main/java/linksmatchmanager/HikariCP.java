@@ -1,8 +1,11 @@
 package linksmatchmanager;
 
 //import java.util.Enumeration;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 //import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -18,14 +21,17 @@ import com.zaxxer.hikari.HikariDataSource;
  *
  * FL-12-Mar-2019 Created
  * FL-15-Apr-2019 Now using mariadb-java-client instead of mysql-connector-java
+ * FL-10-Mar-2020
  */
 public class HikariCP
 {
-    private static final String DEFAULT_DRIVER = "com.mysql.jdbc.Driver";     // current
+    //private static final String DEFAULT_DRIVER = "com.mysql.jdbc.Driver";
+    private static final String DEFAULT_DRIVER = "org.mariadb.jdbc.Driver";     // Maven: mariadb-java-client
+
     private static final String DEFAULT_HOST   = "localhost";
     private static final String DEFAULT_PORT   = "3306";
 
-    private static HikariDataSource ds;                 // general purpose
+    private static HikariDataSource ds;                     // general purpose
     private static HikariDataSource ds_links_match;
     private static HikariDataSource ds_links_prematch;
     private static HikariDataSource ds_links_temp;
@@ -43,7 +49,8 @@ public class HikariCP
     private static String db_user = null;
     private static String db_pass = null;
 
-    private static Logger logger = Logger.getLogger( HikariCP.class.getName() );
+    //private static Logger logger = Logger.getLogger( HikariCP.class.getName() );      // import java.util.logging.Logger;
+    private static final Logger logger = LoggerFactory.getLogger( HikariCP.class );     // import org.slf4j.Logger;
 
     public HikariCP( int maximumPoolSize, String configPathname, String db_host, String db_user, String db_pass )
     {
@@ -79,7 +86,7 @@ public class HikariCP
 
         HikariConfig config = new HikariConfig();
 
-        config.setDriverClassName("org.mariadb.jdbc.Driver");   // Maven: mariadb-java-client
+        config.setDriverClassName( DEFAULT_DRIVER );
         config.setJdbcUrl( jdbc_url );
         config.setUsername( db_user );
         config.setPassword( db_pass );

@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package linksmatchmanager;
 
+import java.io.File;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -29,15 +31,15 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 //import linksmatchmanager.DatabaseManager;
 import com.zaxxer.hikari.HikariDataSource;
@@ -61,14 +63,12 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-09-Mar-2020 Latest change
+ * FL-02-May-2020 Latest change
  */
 
 public class Main
 {
-    // class global vars
-    //private static final Logger logger = LoggerFactory.getLogger( Main.class );
-    private static Logger logger = Logger.getLogger( Main.class.getName() );
+    private static final Logger logger = LoggerFactory.getLogger( Main.class );
 
     private static boolean debug;
 
@@ -126,7 +126,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "09-Mar-2020 14:30";
+            String timestamp1 = "02-May-2020 18:09";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -232,8 +232,13 @@ public class Main
                 dbconMatch    = dsrcMatch.getConnection();
 
                 DatabaseMetaData meta = dbconPrematch.getMetaData();
-                System.out.println( meta.getDatabaseProductName() );
-                System.out.println( meta.getDatabaseProductVersion() );
+                System.out.println( "DatabaseMetaData:" );
+                System.out.println( String.format( "DatabaseProductName:    %s", meta.getDatabaseProductName() ) );
+                System.out.println( String.format( "DatabaseProductVersion: %s", meta.getDatabaseProductVersion() ) );
+                System.out.println( String.format( "JDBCMajorVersion:       %s", meta.getJDBCMajorVersion() ) );
+                System.out.println( String.format( "JDBCMinorVersion:       %s", meta.getJDBCMinorVersion() ) );
+                System.out.println( String.format( "DriverName:             %s", meta.getDriverName() ) );
+                System.out.println( String.format( "DriverVersion:          %s", meta.getDriverVersion() ) );
 
                 int networkTimeout = dbconPrematch.getNetworkTimeout();
                 System.out.printf( "networkTimeout: %d (milliseconds)\n", networkTimeout );
@@ -319,9 +324,9 @@ public class Main
 
                 // Create memory tables as copies of the normal tables
                 // create ls_memory tables
-                memtables_ls_create( dbconPrematch, lvs_table_firstname, lvs_table_familyname, name_postfix );
+                memtables_ls_create( dsrcPrematch, lvs_table_firstname, lvs_table_familyname, name_postfix );
                 // create freq__memory tables
-                memtables_freq_create( dbconPrematch, freq_table_firstname, freq_table_familyname, name_postfix );
+                memtables_freq_create( dsrcPrematch, freq_table_firstname, freq_table_familyname, name_postfix );
 
                 // and now change the names to the actual table names used !
                 lvs_table_familyname_use = lvs_table_familyname + name_postfix;
@@ -429,7 +434,7 @@ public class Main
                 // delete the previous matches for this QueryGroupSet;
                 // get its match_process table id from its first QuerySet.
                 // (the QuerySets only differ in registration_days low and high limits)
-                int match_process_id = qgs.get( 0 ).id;
+                int id_match_process = qgs.get( 0 ).id;
 
                 if( dry_run ) {
                     msg = String.format( "Thread id %02d; DRY RUN: not deleting, nor writing matches!", mainThreadId );
@@ -442,7 +447,7 @@ public class Main
                         //dbconMatch = DatabaseManager.getConnection( db_host, dbnameMatch, db_user, db_pass );
                         dbconMatch = dsrcMatch.getConnection();
                     }
-                    deleteMatches( match_process_id );
+                    deleteMatches( id_match_process );
                     dbconMatch.close();
                     dbconMatch = null;
                 }
@@ -451,8 +456,8 @@ public class Main
                 for( int n_qs = 0; n_qs < qgs.getSize(); n_qs++ )
                 {
                     QuerySet qs = qgs.get( n_qs );
-                    int mp_id = qs.id;
-                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
+                    int id_mp = qs.id;
+                    msg = String.format( "Thread id %02d; id_mp %d, subsample %d-of-%d", mainThreadId, id_mp, n_qs + 1, qgs.getSize() );
                     System.out.println( msg ); plog.show( msg );
 
                     showQuerySet( qs );     // show match_process record parameters
@@ -466,7 +471,7 @@ public class Main
                     //ql = new QueryLoader( plog, qs, db_host, dbnamePrematch, db_user, db_pass );
                     ql = new QueryLoader( plog, qs, dsrcPrematch );
 
-                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; query loader time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
+                    msg = String.format( "Thread id %02d; id_mp %d, subsample %d-of-%d; query loader time", mainThreadId, id_mp, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, qlStart, System.currentTimeMillis() );
 
                     /*
@@ -480,7 +485,7 @@ public class Main
                     System.out.println( msg ); plog.show( msg );
                     s1.freeVectors();
                     s2.freeVectors();
-                    msg = String.format( "Thread id %02d; mp_id %d, subsample %d-of-%d; samples loading time", mainThreadId, mp_id, n_qs + 1, qgs.getSize() );
+                    msg = String.format( "Thread id %02d; id_mp %d, subsample %d-of-%d; samples loading time", mainThreadId, id_mp, n_qs + 1, qgs.getSize() );
                     elapsedShowMessage( msg, sStart, System.currentTimeMillis() );
                     */
 
@@ -870,44 +875,72 @@ public class Main
     } // elapsedShowMessage
 
 
-    private static void memtables_ls_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_ls_create( HikariDataSource dsrc, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
+        // without backticks
+        String table_firstname_dst  = table_firstname_src  + name_postfix;
+        String table_familyname_dst = table_familyname_src + name_postfix;
+
         try
         {
             String msg = "memtables_ls_create()";
             System.out.println( msg ); plog.show( msg );
 
-            // without backticks
-            String table_firstname_dst  = table_firstname_src  + name_postfix;
-            String table_familyname_dst = table_familyname_src + name_postfix;
-
-            memtable_ls_name( dbcon, table_firstname_src,  table_firstname_dst );
-            memtable_ls_name( dbcon, table_familyname_src, table_familyname_dst );
+            Connection dbcon = dsrc.getConnection();
+            memtable_ls_name( dbcon, table_firstname_src, table_firstname_dst );
+            dbcon.close();
         }
-        catch( Exception ex ) {
-            String err = "Exception in memtables_ls_create(): " + ex.getMessage();
+        catch( Exception ex )
+        {
+            String err = String.format( "Exception in memtables_ls_create(): %s, %s", table_firstname_dst, ex.getMessage() );
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+
+        try
+        {
+            Connection dbcon = dsrc.getConnection();
+            memtable_ls_name( dbcon, table_familyname_src, table_familyname_dst );
+            dbcon.close();
+        }
+        catch( Exception ex )
+        {
+            String err = String.format( "Exception in memtables_ls_create(): %s, %s", table_familyname_dst, ex.getMessage() );
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
     } // memtables_ls_create
 
 
-    private static void memtables_freq_create( Connection dbcon, String table_firstname_src, String table_familyname_src, String name_postfix )
+    private static void memtables_freq_create( HikariDataSource dsrc, String table_firstname_src, String table_familyname_src, String name_postfix )
     {
+        // without backticks
+        String table_firstname_dst  = table_firstname_src  + name_postfix;
+        String table_familyname_dst = table_familyname_src + name_postfix;
+
         try
         {
             String msg = "memtables_freq_create()";
             System.out.println( msg ); plog.show( msg );
 
-            // without backticks
-            String table_firstname_dst  = table_firstname_src  + name_postfix;
-            String table_familyname_dst = table_familyname_src + name_postfix;
-
+            Connection dbcon = dsrc.getConnection();
             memtable_freq_name( dbcon, table_firstname_src,  table_firstname_dst );
-            memtable_freq_name( dbcon, table_familyname_src, table_familyname_dst );
+            dbcon.close();
         }
         catch( Exception ex ) {
-            String err = "Exception in memtables_freq_create(): " + ex.getMessage();
+            String err = String.format( "Exception in memtables_freq_create() %s: %s", table_firstname_dst, ex.getMessage() );
+            System.out.println( err );
+            try { plog.show( err ); } catch( Exception ex2 ) { ; }
+        }
+
+        try
+        {
+            Connection dbcon = dsrc.getConnection();
+            memtable_freq_name( dbcon, table_familyname_src, table_familyname_dst );
+            dbcon.close();
+        }
+        catch( Exception ex ) {
+            String err = String.format( "Exception in memtables_freq_create() %s: %s", table_familyname_dst, ex.getMessage() );
             System.out.println( err );
             try { plog.show( err ); } catch( Exception ex2 ) { ; }
         }
@@ -1120,6 +1153,7 @@ public class Main
      */
     private static void deleteMatches( int id_match_process )
     {
+        // delete database matches
         String query = "DELETE FROM matches WHERE id_match_process = " + id_match_process;
 
         try
@@ -1144,6 +1178,27 @@ public class Main
             System.out.println( "EXIT" );
             System.exit( 1 );       // should not continue; would give wrong matching results.
         }
+
+        // delete matches csv file leftovers in current dir
+        File curDir = new File( "." );
+        File[] files = curDir.listFiles();
+
+        for( File file : files )
+        {
+            if( file.isFile() )
+            {
+                String fileName = file.getName();
+                String prefix = String.format("matches_id_mp=%d_threadId=", id_match_process);      // all thread ids for this id_mp
+
+                if (fileName.startsWith(prefix) && fileName.endsWith(".csv"))
+                {
+                    String msg = String.format( "Deleting old matches file: %s", fileName );
+                    System.out.println( msg );
+                    file.delete();
+                }
+            }
+         }
+
     } // deleteMatches
 
 

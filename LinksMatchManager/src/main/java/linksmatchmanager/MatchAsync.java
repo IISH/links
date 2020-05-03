@@ -55,7 +55,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-20-Apr-2019 Use intern() on levenshtein query strings
  * FL-29-Apr-2019 Use Java-1.7 syntax: prepareStatement() + executeQuey()
  * FL-27-Feb-2020 Add s1&2 id_person_o to matches table
- * FL-09-Mar-2020 No more Abort in in compareLvsNames on Exception; return -1 with message
+ * FL-10-Mar-2020 No more Abort in in compareLvsNames on Exception; return -2 with message
+ *
  *
  * "Vectors are synchronized. Any method that touches the Vector's contents is thread safe.
  * ArrayList, on the other hand, is unsynchronized, making them, therefore, not thread safe."
@@ -378,11 +379,15 @@ public class MatchAsync extends Thread
                 }
             }
 
+            int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
+
             String csvFilename = "";
             FileWriter writerMatches = null;
+
             if( match2csv ) // collect matches in csv file
             {
-                csvFilename = "matches_threadId_" + threadId + ".csv";      // Create csv file to collect the matches
+                // Create csv file to collect the thread matches
+                csvFilename = String.format( "matches_id_mp=%d_threadId=%d.csv", id_match_process, threadId );
                 writerMatches = createCsvFileMatches( threadId, csvFilename );
                 msg = String.format( "Thread id %02d; Collecting thread matches in CSV file: %s", threadId, csvFilename );
                 System.out.println( msg ); plog.show( msg );
@@ -398,8 +403,6 @@ public class MatchAsync extends Thread
                 //dbconMatch = DatabaseManager.getConnection( db_host, "links_match", db_user, db_pass );
                 dbconMatch = dsrcMatch.getConnection();
             }
-
-            int id_match_process = inputSet.get( n_mp ).get( 0 ).id;
 
             // Get a QuerySet object. This object will contains the data from a match_process table record
             QuerySet qs = qgs.get( n_qs );
@@ -1910,20 +1913,8 @@ public class MatchAsync extends Thread
             long threadId = Thread.currentThread().getId();
             String msg = String.format( "Thread id %02d; Exception in compareLvsNames: %s", threadId, ex.getMessage() );
             System.out.println( msg );
-            lvs_dist = -1;      // current comparison will be ignored
+            lvs_dist = -2;      // current comparison will be ignored
         }
-
-        // Ignore compareLvsNames
-        /*
-        if( debug_hmemleak )    // check-7 = FAIL [without intern()]
-        {
-            if( loop_hmemleak == 0 ) {
-                loop_hmemleak += 1;
-                System.out.println( "debug_hmemleak-7: ignore compareLvsNames" );
-            }
-            lvs_dist = -1;
-        }
-        */
 
         if( debug ) { System.out.println( "compareLvsNames(): lvs_dist = " + lvs_dist );  }
         return lvs_dist;
