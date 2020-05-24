@@ -63,7 +63,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-20-May-2020 Latest change
+ * FL-24-May-2020 Latest change
  */
 
 public class Main
@@ -126,7 +126,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "20-May-2020 14:32";
+            String timestamp1 = "24-May-2020 13:31";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -251,10 +251,10 @@ public class Main
                 ex.printStackTrace();
             }
 
-            // TODO separate function for max_heap_table_size
-            // call showMySqlInfo() wih mem table exception
-            OLD_max_heap_table_size = showMySqlInfo( mainThreadId, dbconPrematch, max_heap_table_size );
-
+            mySqlShowInfo( mainThreadId, dbconPrematch );
+            OLD_max_heap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
+            //mySqlSetVar( mainThreadId, dbconPrematch, "max_heap_table_size", max_heap_table_size );
+            //OLD_max_heap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
 
             // Copy levenshtein and frequency tables to a MEMORY database table for ast access.
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
@@ -296,63 +296,10 @@ public class Main
             }
             else { System.out.println( "Not using memory tables" ); }
 
-            /*
-            QueryGroupSet qgs0 = inputSet.get( 0 );
-            QuerySet qs0 = qgs0.get( 0 );
+            //msg = "mem_table check test only\nEXIT.";
+            //System.out.println( msg ); plog.show( msg );
+            //System.exit( 0 );
 
-            String lvs_table_familyname = qs0.prematch_familyname;
-            String lvs_table_firstname  = qs0.prematch_firstname;
-
-            if( use_memory_tables )     // use memory tables
-            {
-                // levenshtein methods should not change during matching run; check before we go
-                for( int n_mp = 0; n_mp < isSize; n_mp++ )
-                {
-                    QueryGroupSet qgs = inputSet.get( n_mp );
-
-                    for( int j = 0; j < qgs.getSize(); j++ )
-                    {
-                        QuerySet qs = qgs.get( 0 );     // checking the first is enough
-                        String lvs_table_familyname_ij = qs.prematch_familyname;
-                        String lvs_table_firstname_ij  = qs.prematch_firstname;
-
-                        if( ! lvs_table_familyname_ij.contentEquals( lvs_table_familyname ) ||
-                            ! lvs_table_firstname_ij .contentEquals( lvs_table_firstname  ) ) {
-                            String err = "Thou shall not mix different Levenshtein methods within a job\nEXIT.";
-                            System.out.println( err ); plog.show( err );
-                            System.exit( 1 );
-                        }
-                    }
-                }
-
-                System.out.println( "Using Levenshtein memory tables" );
-
-                // Create memory tables as copies of the normal tables
-                // create ls_memory tables
-                memtables_ls_create( dsrcPrematch, lvs_table_firstname, lvs_table_familyname, name_postfix );
-                // create freq__memory tables
-                memtables_freq_create( dsrcPrematch, freq_table_firstname, freq_table_familyname, name_postfix );
-
-                // and now change the names to the actual table names used !
-                lvs_table_familyname_use = lvs_table_familyname + name_postfix;
-                lvs_table_firstname_use  = lvs_table_firstname  + name_postfix;
-
-                freq_table_familyname_use = freq_table_familyname + name_postfix;
-                freq_table_firstname_use  = freq_table_firstname  + name_postfix;
-            }
-            else            // do not use memory tables
-            {
-                System.out.println( "Not using memory tables" );
-                lvs_table_familyname_use  = lvs_table_familyname;
-                lvs_table_firstname_use   = lvs_table_firstname;
-                freq_table_familyname_use = freq_table_familyname;
-                freq_table_firstname_use  = freq_table_firstname;
-            }
-            */
-
-            msg = "mem_table check test only\nEXIT.";
-            System.out.println( msg ); plog.show( msg );
-            System.exit( 0 );
 
             // Create a single QueryGenerator object, that contains the input from the match_process table.
             // The input is derived from the 'y' records in the match_process table.
@@ -662,11 +609,10 @@ public class Main
      * Show some MySQL info
      * @param mainThreadId
      * @param dbcon
-     * @param NEW_max_heap_table_size
      */
-    public static String showMySqlInfo( long mainThreadId, Connection dbcon, String NEW_max_heap_table_size )
+    public static void mySqlShowInfo( long mainThreadId, Connection dbcon )
     {
-        String OLD_max_heap_table_size = "";
+        //String OLD_max_heap_table_size = "";
 
         String query = "SHOW GLOBAL VARIABLES LIKE 'max_connections'";
         System.out.println( query );
@@ -683,11 +629,12 @@ public class Main
         }
         catch( Exception ex )
         {
-            String msg = String.format( "Main thread (id %02d); LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/mySqlShowInfo() Exception: %s", mainThreadId, ex.getMessage() );
             System.out.println( msg );
             ex.printStackTrace();
         }
 
+        /*
         query = "SHOW GLOBAL VARIABLES LIKE 'max_heap_table_size'";
         System.out.println( query );
 
@@ -707,7 +654,9 @@ public class Main
             System.out.println( msg );
             ex.printStackTrace();
         }
+        */
 
+        /*
         query = "SET max_heap_table_size = " + NEW_max_heap_table_size;
         System.out.println( query );
 
@@ -724,9 +673,76 @@ public class Main
             System.out.println( msg );
             ex.printStackTrace();
         }
+        */
 
-        return OLD_max_heap_table_size;
-    } // showMySqlInfo
+        //return OLD_max_heap_table_size;
+    } // mySqlShowInfo
+
+
+    /**
+     * Get a MySQL global variable
+     * @param mainThreadId
+     * @param dbcon
+     * @param var_name
+     */
+    public static String mySqlGetVar( long mainThreadId, Connection dbcon, String var_name )
+    {
+        String value = "";
+
+        String query = String.format( "SHOW GLOBAL VARIABLES LIKE '%s'", var_name );
+        System.out.println( query );
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            try( ResultSet rs = pstmt.executeQuery() )
+            {
+                //+---------------------+-------------+
+                //| Variable_name       | Value       |
+                //+---------------------+-------------+
+                //| max_heap_table_size | 53687091200 |
+                //+---------------------+-------------+
+                rs.first();
+                value = rs.getString( "Value" );
+                String msg = String.format( "Getting MySQL variable: %s = %s", var_name, value );
+                System.out.println( msg ); plog.show( msg );
+            }
+        }
+        catch( Exception ex )
+        {
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/mySqlGetVar() Exception: %s", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+            ex.printStackTrace();
+        }
+
+        return value;
+    }
+
+
+    /**
+     * Set a MySQL global variable
+     * @param mainThreadId
+     * @param dbcon
+     * @param var_name
+     */
+    public static void mySqlSetVar( long mainThreadId, Connection dbcon, String var_name, String value )
+    {
+        String query = String.format( "SET GLOBAL %s = %s", var_name, value );
+        System.out.println( query );
+
+        try( PreparedStatement pstmt = dbcon.prepareStatement( query ) )
+        {
+            String msg = String.format( "Setting MySQL variable: %s = %s", var_name, value );
+            System.out.println( msg ); plog.show( msg );
+
+            try( ResultSet rs = pstmt.executeQuery() ) { }
+        }
+        catch( Exception ex )
+        {
+            String msg = String.format( "Main thread (id %02d); LinksMatchManager/mySqlSetVar() Exception: %s", mainThreadId, ex.getMessage() );
+            System.out.println( msg );
+            ex.printStackTrace();
+        }
+    }
 
 
     /**
