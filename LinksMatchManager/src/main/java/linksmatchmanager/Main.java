@@ -63,7 +63,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-24-May-2020 Latest change
+ * FL-28-May-2020 Latest change
  */
 
 public class Main
@@ -126,7 +126,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "24-May-2020 13:31";
+            String timestamp1 = "28-May-2020 06:58";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -561,26 +561,29 @@ public class Main
             msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
             System.out.println( msg ); plog.show( msg );
 
-            try
+            if( use_memory_tables )
             {
-                dbconPrematch = dsrcPrematch.getConnection();
-
-                String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
-
-                try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+                try
                 {
-                    try( ResultSet rs = pstmt.executeQuery() ) { }
+                    dbconPrematch = dsrcPrematch.getConnection();
+
+                    String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
+
+                    try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+                    {
+                        try( ResultSet rs = pstmt.executeQuery() ) { }
+                    }
                 }
-            }
-            catch( Exception ex ) {
-                msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
-                System.out.println( msg );
-                ex.printStackTrace();
-            }
-            finally
-            {
-                dbconPrematch.close();
-                dbconPrematch = null;
+                catch( Exception ex ) {
+                    msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                    System.out.println( msg );
+                    ex.printStackTrace();
+                }
+                finally
+                {
+                    dbconPrematch.close();
+                    dbconPrematch = null;
+                }
             }
 
             if( dsrcPrematch != null ) { dsrcPrematch.close(); };
