@@ -7823,6 +7823,24 @@ public class LinksCleanAsync extends Thread
 
 
 	/**
+	 * flagUpdateLeadingZeros()
+	 * @param new_length
+	 * @param old_flags
+	 * @throws Exception
+	 */
+	private String flagUpdateLeadingZeros( int new_length, String old_flags )
+	{
+		String new_flags = old_flags;
+		int missing = new_length - old_flags.length();
+		if( missing == 1 )		// other values not present in our database
+		{
+			new_flags = "0" + old_flags;
+		}
+		return new_flags;
+	};
+
+
+	/**
 	 * clearFlagsRegsLinksbase()
 	 * @param debug
 	 * @param source
@@ -7940,6 +7958,7 @@ public class LinksCleanAsync extends Thread
 							if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
 							else
 							{
+								old_flags = flagUpdateLeadingZeros( 5, old_flags );
 								// is the flag already set?
 								int flag_idx = 2;       // 3rd position for the flag
 								if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
@@ -8496,6 +8515,7 @@ public class LinksCleanAsync extends Thread
 		if( old_flags == null || old_flags.isEmpty() ) { new_flags = "01000"; }
 		else
 		{
+			old_flags = flagUpdateLeadingZeros( 5, old_flags );
 			// is the flag already set?
 			int flag_idx = 1;       // 2nd position for the flag
 			if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
@@ -8692,6 +8712,7 @@ public class LinksCleanAsync extends Thread
 					if( old_flags == null || old_flags.isEmpty() ) { new_flags = "10000"; }
 					else
 					{
+						old_flags = flagUpdateLeadingZeros( 5, old_flags );
 						// is the flag already set?
 						int flag_idx = 0;       // 1st position for the flag
 						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
@@ -8810,6 +8831,7 @@ public class LinksCleanAsync extends Thread
 				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00010"; }
 				else
 				{
+					old_flags = flagUpdateLeadingZeros( 5, old_flags );
 					// is the flag already set?
 					int flag_idx = 3;       // 4th position for the flag
 					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
@@ -8893,6 +8915,7 @@ public class LinksCleanAsync extends Thread
 				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00001"; }
 				else
 				{
+					old_flags = flagUpdateLeadingZeros( 5, old_flags );
 					// is the flag already set?
 					int flag_idx = 4;       // 5th position for the flag
 					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
@@ -8955,7 +8978,7 @@ public class LinksCleanAsync extends Thread
 		showMessage( msg, false, true );
 		clearFlagsPersonBasetable( debug, source, rmtype );
 
-		msg = String.format( "Thread id %02d; Flagging Person recs without role for source: %s, rmtype: %s ...", threadId, source, rmtype );
+		msg = String.format( "Thread id %02d; Flagging Person recs with invalid role for source: %s, rmtype: %s ...", threadId, source, rmtype );
 		showMessage( msg, false, true );
 		flagInvalidRoleRecs( debug, source, rmtype );
 
@@ -8998,24 +9021,6 @@ public class LinksCleanAsync extends Thread
 
 
 	/**
-	 * flagUpdateLeadingZeros()
-	 * @param new_length
-	 * @param old_flags
-	 * @throws Exception
-	 */
-	private String flagUpdateLeadingZeros( int new_length, String old_flags )
-	{
-		String new_flags = old_flags;
-		int missing = new_length - old_flags.length();
-		if( missing == 1 )		// other values not present in our database
-		{
-			new_flags = "0" + old_flags;
-		}
-		return new_flags;
-	};
-
-
-	/**
 	 * flagInvalidRoleRecs()
 	 * @param debug
 	 * @param source
@@ -9031,71 +9036,73 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; FlagEmptyRoleRecs for source %s", threadId, source ), false, true );
 
-		String query_p = "SELECT id_person, role, not_linksbase_p FROM person_c"
+		String query = "SELECT id_person, role, not_linksbase_p FROM person_c"
 			+ " WHERE id_source = " + source
 			+ " AND ( ( role IS NULL OR role = 0 ) OR ( role > 11 ) )";
 
-		if ( ! rmtype.isEmpty() ) { query_p += " AND registration_maintype = " + rmtype; }
-		if( debug ) { showMessage( query_p, false, true ); }
+		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query, false, true ); }
 
 		int nNoRole = 0;
-		//int stepstate = count_step;
 
-		try( ResultSet rs_p = dbconCleaned.executeQuery( query_p ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 		{
-			int row = 0;
-
-			while( rs_p.next() )        // process all persons
+			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				int id_person    = rs_p.getInt( "id_person" );
-				int role         = rs_p.getInt( "role" );
-				String old_flags = rs_p.getString( "not_linksbase_p" );
+				int row = 0;
 
-				int countRegist = 0;
-				String new_flags = "";
-				Character new_ch = '0';
-
-				if( old_flags == null || old_flags.isEmpty() )
+				while( rs.next() )        // process all persons
 				{
-					if( role > 11 )
+					int id_person    = rs.getInt( "id_person" );
+					int role         = rs.getInt( "role" );
+					String old_flags = rs.getString( "not_linksbase_p" );
+
+					int countRegist = 0;
+					String new_flags = "";
+					Character new_ch = '0';
+
+					if( old_flags == null || old_flags.isEmpty() )
 					{
-						new_flags = "001";
-						new_ch = '1';
+						if( role > 11 )
+						{
+							new_flags = "001";
+							new_ch = '1';
+						}
+						else
+						{
+							new_flags = "002";
+							new_ch = '2';
+						}
 					}
 					else
 					{
-						new_flags = "002";
-						new_ch = '2';
-					}
-				}
-				else
-				{
-					old_flags = flagUpdateLeadingZeros( 3, old_flags );
+						old_flags = flagUpdateLeadingZeros( 3, old_flags );
 
-					// is the flag already set?
-					int flag_idx = 2;       // 3rd position for the flag, L-to-R
-					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						// is the flag already set?
+						int flag_idx = 2;       // 3rd position for the flag, L-to-R
+						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						{
+							// preserve other flags, and set new flag
+							StringBuilder sb = new StringBuilder( old_flags );
+							sb.setCharAt( flag_idx, new_ch );
+							new_flags = sb.toString();
+						}
+					}
+
+					if( ! new_flags.isEmpty() )
 					{
-						// preserve other flags, and set new flag
-						StringBuilder sb = new StringBuilder( old_flags );
-						sb.setCharAt( flag_idx, new_ch );
-						new_flags = sb.toString();
+						String flagQuery = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
+						flagQuery += " WHERE id_person = " + id_person + ";";
+						if( debug ) { System.out.println( flagQuery ); }
+
+						countRegist = dbconCleaned.executeUpdate( flagQuery );
+						nNoRole += countRegist;
 					}
 				}
 
-				if( ! new_flags.isEmpty() )
-				{
-					String flagQuery_r = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
-					flagQuery_r += " WHERE id_person = " + id_person + ";";
-					if( debug ) { System.out.println(flagQuery_r); }
-
-					countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-					nNoRole += countRegist;
-				}
+				String msg = String.format( "Thread id %02d; Number of person records with invalid role flagged: %d", threadId, nNoRole );
+				showMessage( msg, false, true );
 			}
-
-			String msg = String.format( "Thread id %02d; Number of person records with missing role flagged: %d", threadId, nNoRole );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception in flagInvalidRoleRecs: %s", threadId, ex.getMessage() );
@@ -9119,57 +9126,59 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; flagEmptyFamilynameRecs for source %s", threadId, source ), false, true );
 
-		String query_p = "SELECT id_person, not_linksbase_p FROM person_c"
+		String query = "SELECT id_person, not_linksbase_p FROM person_c"
 			+ " WHERE id_source = " + source
 			+ " AND ( familyname IS NULL OR familyname = '' )";
 
-		if ( ! rmtype.isEmpty() ) { query_p += " AND registration_maintype = " + rmtype; }
-		if( debug ) { showMessage( query_p, false, true ); }
+		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query, false, true ); }
 
 		int nNoFamName = 0;
-		//int stepstate = count_step;
 
-		try( ResultSet rs_p = dbconCleaned.executeQuery( query_p ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 		{
-			int row = 0;
-
-			while( rs_p.next() )        // process all persons
+			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				int id_person = rs_p.getInt( "id_person" );
-				String old_flags = rs_p.getString( "not_linksbase_p" );
+				int row = 0;
 
-				int countRegist = 0;
-				String new_flags = "";
-
-				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "010"; }
-				else
+				while( rs.next() )        // process all persons
 				{
-					old_flags = flagUpdateLeadingZeros( 3, old_flags );
+					int id_person = rs.getInt( "id_person" );
+					String old_flags = rs.getString( "not_linksbase_p" );
 
-					// is the flag already set?
-					int flag_idx = 1;       // 2nd position for the flag, L-to-R
-					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+					int countRegist = 0;
+					String new_flags = "";
+
+					if( old_flags == null || old_flags.isEmpty() ) { new_flags = "010"; }
+					else
 					{
-						// preserve other flags, and set new flag
-						StringBuilder sb = new StringBuilder( old_flags );
-						sb.setCharAt( flag_idx,'1' );
-						new_flags = sb.toString();
+						old_flags = flagUpdateLeadingZeros( 3, old_flags );
+
+						// is the flag already set?
+						int flag_idx = 1;       // 2nd position for the flag, L-to-R
+						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						{
+							// preserve other flags, and set new flag
+							StringBuilder sb = new StringBuilder( old_flags );
+							sb.setCharAt( flag_idx,'1' );
+							new_flags = sb.toString();
+						}
+					}
+
+					if( ! new_flags.isEmpty() )
+					{
+						String flagQuery = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
+						flagQuery += " WHERE id_person = " + id_person + ";";
+						if( debug ) { System.out.println( flagQuery ); }
+
+						countRegist = dbconCleaned.executeUpdate( flagQuery );
+						nNoFamName += countRegist;
 					}
 				}
 
-				if( ! new_flags.isEmpty() )
-				{
-					String flagQuery_r = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
-					flagQuery_r += " WHERE id_person = " + id_person + ";";
-					if( debug ) { System.out.println(flagQuery_r); }
-
-					countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-					nNoFamName += countRegist;
-				}
+				String msg = String.format( "Thread id %02d; Number of person records with missing familyname flagged: %d", threadId, nNoFamName );
+				showMessage( msg, false, true );
 			}
-
-			String msg = String.format( "Thread id %02d; Number of person records with missing familyname flagged: %d", threadId, nNoFamName );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception in flagEmptyFamilynameRecs: %s", threadId, ex.getMessage() );
@@ -9193,57 +9202,60 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; flagEmptyFirstnameRecs for source %s", threadId, source ), false, true );
 
-		String query_p = "SELECT id_person, not_linksbase_p FROM person_c"
+		String query = "SELECT id_person, not_linksbase_p FROM person_c"
 			+ " WHERE id_source = " + source
 			+ " AND ( firstname IS NULL OR firstname = '' )";
 
-		if ( ! rmtype.isEmpty() ) { query_p += " AND registration_maintype = " + rmtype; }
-		if( debug ) { showMessage( query_p, false, true ); }
+		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query, false, true ); }
 
 		int nNoFirstName = 0;
 		//int stepstate = count_step;
 
-		try( ResultSet rs_p = dbconCleaned.executeQuery( query_p ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 		{
-			int row = 0;
-
-			while( rs_p.next() )        // process all persons
+			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				int id_person = rs_p.getInt( "id_person" );
-				String old_flags = rs_p.getString( "not_linksbase_p" );
+				int row = 0;
 
-				int countRegist = 0;
-				String new_flags = "";
-
-				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "100"; }
-				else
+				while( rs.next() )        // process all persons
 				{
-					old_flags = flagUpdateLeadingZeros( 3, old_flags );
+					int id_person = rs.getInt( "id_person" );
+					String old_flags = rs.getString( "not_linksbase_p" );
 
-					// is the flag already set?
-					int flag_idx = 0;       // 1st position for the flag, L-to-R
-					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+					int countRegist = 0;
+					String new_flags = "";
+
+					if( old_flags == null || old_flags.isEmpty() ) { new_flags = "100"; }
+					else
 					{
-						// preserve other flags, and set new flag
-						StringBuilder sb = new StringBuilder( old_flags );
-						sb.setCharAt( flag_idx,'1' );
-						new_flags = sb.toString();
+						old_flags = flagUpdateLeadingZeros( 3, old_flags );
+
+						// is the flag already set?
+						int flag_idx = 0;       // 1st position for the flag, L-to-R
+						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						{
+							// preserve other flags, and set new flag
+							StringBuilder sb = new StringBuilder( old_flags );
+							sb.setCharAt( flag_idx,'1' );
+							new_flags = sb.toString();
+						}
+					}
+
+					if( ! new_flags.isEmpty() )
+					{
+						String flagQuery = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
+						flagQuery += " WHERE id_person = " + id_person + ";";
+						if( debug ) { System.out.println( flagQuery ); }
+
+						countRegist = dbconCleaned.executeUpdate( flagQuery );
+						nNoFirstName += countRegist;
 					}
 				}
 
-				if( ! new_flags.isEmpty() )
-				{
-					String flagQuery_r = "UPDATE person_c SET not_linksbase_p = '" + new_flags + "'";
-					flagQuery_r += " WHERE id_person = " + id_person + ";";
-					if( debug ) { System.out.println(flagQuery_r); }
-
-					countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-					nNoFirstName += countRegist;
-				}
+				String msg = String.format( "Thread id %02d; Number of person records with missing firstname flagged: %d", threadId, nNoFirstName );
+				showMessage( msg, false, true );
 			}
-
-			String msg = String.format( "Thread id %02d; Number of person records with missing familyname flagged: %d", threadId, nNoFirstName );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception in flagEmptyFirstnameRecs: %s", threadId, ex.getMessage() );
