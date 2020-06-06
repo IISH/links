@@ -99,7 +99,7 @@ import general.PrintLogger;
  * FL-01-Jan-2020 Do not keep connection to Reference db endlessly open
  * FL-07-Jan-2020 Single-threaded refreshing in LinksCleanedMain
  * FL-18-Feb 2020 Also clean prefixes if _after_ familyname
- * FL-02-Jun-2020 Adapt and extend not_linksbase[_p] flags
+ * FL-06-Jun-2020 Adapt and extend not_linksbase[_p] flags
  */
 
 
@@ -7902,112 +7902,114 @@ public class LinksCleanAsync extends Thread
 
 		int nDuplicates = 0;
 
-		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
+		try( PreparedStatement pstmt_r = dbconCleaned.prepareStatement( query_r ) )
 		{
-			int nflagRegist = 0;
-			//int ndeletePerson = 0;
-
-			int row = 0;
-			while( rs_r.next() )        // process all groups
+			try( ResultSet rs_r = pstmt_r.executeQuery() )
 			{
-				row++;
+				int nflagRegist = 0;
 
-				String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
-				String registration_date   = rs_r.getString( "registration_date" );
-				String registration_seq    = rs_r.getString( "registration_seq" );
-
-				int registration_maintype    = rs_r.getInt( "registration_maintype" );
-				int registration_location_no = rs_r.getInt( "registration_location_no" );
-
-				if( debug ) {
-					String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
-						registration_maintype, registration_location_no, registration_date, registration_location_no );
-					System.out.println( msg );
-				}
-
-				String registrationIdsStrs[] = registrationIds_str.split( "," );
-				Vector< Integer > registrationIds = new Vector< Integer >();
-				for( String registrationId : registrationIdsStrs ) {
-					registrationIds.add( Integer.parseInt( registrationId ) );
-				}
-
-				if( debug ) { showMessage( registrationIds.toString(), false, true ); }
-				Collections.sort( registrationIds );
-
-				if( debug ) {
-					showMessage( registrationIds.toString(), false, true );
-					showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
-				}
-
-				if( registrationIds.size() > 2 )   // useless registrations, flag them all
+				while( rs_r.next() )        // process all groups
 				{
-					for( int id_regist : registrationIds )
+					String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
+					String registration_date   = rs_r.getString( "registration_date" );
+					String registration_seq    = rs_r.getString( "registration_seq" );
+
+					int registration_maintype    = rs_r.getInt( "registration_maintype" );
+					int registration_location_no = rs_r.getInt( "registration_location_no" );
+
+					if( debug ) {
+						String msg = String.format( "reg_maintype: %d, reg_location_no: %d, registration_date: %s, reg_loc_no: %s",
+							registration_maintype, registration_location_no, registration_date, registration_location_no );
+						System.out.println( msg );
+					}
+
+					String registrationIdsStrs[] = registrationIds_str.split( "," );
+					Vector< Integer > registrationIds = new Vector< Integer >();
+					for( String registrationId : registrationIdsStrs ) {
+						registrationIds.add( Integer.parseInt( registrationId ) );
+					}
+
+					if( debug ) { showMessage( registrationIds.toString(), false, true ); }
+					Collections.sort( registrationIds );
+
+					if( debug ) {
+						showMessage( registrationIds.toString(), false, true );
+						showMessage( "Id group of " + registrationIds.size() + ": " + registrationIds.toString(), false, true );
+					}
+
+					if( registrationIds.size() > 2 )   // useless registrations, flag them all
 					{
-						// get current flags string
-						String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-
-						try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+						for( int id_regist : registrationIds )
 						{
-							String old_flags = "";
-							while( rs.next() )
-							{ old_flags = rs.getString( "not_linksbase" ); }
+							// get current flags string
+							String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
 
-							int countRegist = 0;
-							String new_flags = "";
-
-							if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
-							else
+							try( PreparedStatement pstmt = dbconCleaned.prepareStatement( getFlagQuery_r ) )
 							{
-								old_flags = flagUpdateLeadingZeros( 5, old_flags );
-								// is the flag already set?
-								int flag_idx = 2;       // 3rd position for the flag
-								if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+								try( ResultSet rs = pstmt.executeQuery() )
 								{
-									// preserve other flags, and set new flag
-									StringBuilder sb = new StringBuilder( old_flags );
-									sb.setCharAt( flag_idx,'1' );
-									new_flags = sb.toString();
+									String old_flags = "";
+									while( rs.next() )
+									{ old_flags = rs.getString( "not_linksbase" ); }
+
+									int countRegist = 0;
+									String new_flags = "";
+
+									if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00100"; }
+									else
+									{
+										old_flags = flagUpdateLeadingZeros( 5, old_flags );
+										// is the flag already set?
+										int flag_idx = 2;       // 3rd position for the flag
+										if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+										{
+											// preserve other flags, and set new flag
+											StringBuilder sb = new StringBuilder( old_flags );
+											sb.setCharAt( flag_idx,'1' );
+											new_flags = sb.toString();
+										}
+									}
+
+									if( ! new_flags.isEmpty() )
+									{
+										String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+										flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+										//System.out.println(flagQuery_r);
+
+										countRegist = dbconCleaned.executeUpdate( flagQuery_r );
+									}
 								}
-							}
-
-							if( ! new_flags.isEmpty() )
-							{
-								String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-								flagQuery_r += " WHERE id_registration = " + id_regist + ";";
-								//System.out.println(flagQuery_r);
-
-								countRegist = dbconCleaned.executeUpdate( flagQuery_r );
 							}
 						}
 					}
-				}
-				else    // test pairs
-				{
-					int rid1 = 0;
-					int rid2 = 1;
-					boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
-					if( isDuplicate ) { nDuplicates++; }
-				}
-
-				for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
-				{
-					for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
+					else    // test pairs
 					{
+						int rid1 = 0;
+						int rid2 = 1;
 						boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
 						if( isDuplicate ) { nDuplicates++; }
 					}
+
+					for( int rid1 = 0; rid1 < registrationIdsStrs.length; rid1++ )
+					{
+						for( int rid2 = rid1 + 1; rid2 < registrationIdsStrs.length; rid2++ )
+						{
+							boolean isDuplicate = compare2Registrations( debug, rid1, rid2, registrationIds, registration_maintype );
+							if( isDuplicate ) { nDuplicates++; }
+						}
+					}
+
+					// free
+					registrationIds.clear();
+					registrationIds = null;
 				}
 
-				// free
-				registrationIds.clear();
-				registrationIds = null;
+				String msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate tuples: %d", threadId, nflagRegist );
+				showMessage( msg, false, true );
+
+				msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate pairs: %d", threadId, nDuplicates );
+				showMessage( msg, false, true );
 			}
-
-			String msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate tuples: %d", threadId, nflagRegist );
-			showMessage( msg, false, true );
-
-			msg = String.format( "Thread id %02d; Number of duplicate regs flagged from duplicate pairs: %d", threadId, nDuplicates );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsComps: %s", threadId, ex.getMessage() );
@@ -8044,63 +8046,69 @@ public class LinksCleanAsync extends Thread
 		String id_source1 = "";
 		String id_source2 = "";
 
-		if( registration_maintype == 1 )
+		if( registration_maintype == 1 )   // birth
 		{
-			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
-			if( debug ) { System.out.println( query_p1 ); }
-
 			String newborn_id_source1  = "";
 			String newborn_firstname1  = "";
 			String newborn_prefix1     = "";
 			String newborn_familyname1 = "";
 
-			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
+			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 1";
+			if( debug ) { System.out.println( query_p1 ); }
+
+			try( PreparedStatement pstmt_p1 = dbconCleaned.prepareStatement( query_p1 ) )
 			{
-				while( rs_p1.next() )
+				try( ResultSet rs_p1 = pstmt_p1.executeQuery() )
 				{
-					int role = rs_p1.getInt( "role" );
+					while( rs_p1.next() )
+					{
+						int role = rs_p1.getInt( "role" );
 
-					newborn_id_source1  = rs_p1.getString( "id_source" );
-					newborn_firstname1  = rs_p1.getString( "firstname" );
-					newborn_prefix1     = rs_p1.getString( "prefix" );
-					newborn_familyname1 = rs_p1.getString( "familyname" );
+						newborn_id_source1  = rs_p1.getString( "id_source" );
+						newborn_firstname1  = rs_p1.getString( "firstname" );
+						newborn_prefix1     = rs_p1.getString( "prefix" );
+						newborn_familyname1 = rs_p1.getString( "familyname" );
 
-					if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
-					if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
-					if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
-					if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
+						if( newborn_id_source1  == null ) { newborn_id_source1  = ""; }
+						if( newborn_firstname1  == null ) { newborn_firstname1  = ""; }
+						if( newborn_prefix1     == null ) { newborn_prefix1     = ""; }
+						if( newborn_familyname1 == null ) { newborn_familyname1 = ""; }
 
-					id_source1 = newborn_id_source1;
+						id_source1 = newborn_id_source1;
 
-					//if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+						//if( debug ) { System.out.printf( "role: %d, familyname: %s, prefix: %s, firstname: %s\n", role, familyname, prefix, firstname ); }
+					}
 				}
 			}
-
-			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
-			if( debug ) { System.out.println( query_p2 ); }
 
 			String newborn_id_source2  = "";
 			String newborn_firstname2  = "";
 			String newborn_prefix2     = "";
 			String newborn_familyname2 = "";
 
-			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
+			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 1";
+			if( debug ) { System.out.println( query_p2 ); }
+
+			try( PreparedStatement pstmt_p2 = dbconCleaned.prepareStatement( query_p2 ) )
 			{
-				while( rs_p2.next() )
+				try( ResultSet rs_p2 = pstmt_p2.executeQuery() )
 				{
-					int role = rs_p2.getInt( "role" );
+					while( rs_p2.next() )
+					{
+						int role = rs_p2.getInt( "role" );
 
-					newborn_id_source2  = rs_p2.getString( "id_source" );
-					newborn_firstname2  = rs_p2.getString( "firstname" );
-					newborn_prefix2     = rs_p2.getString( "prefix" );
-					newborn_familyname2 = rs_p2.getString( "familyname" );
+						newborn_id_source2  = rs_p2.getString( "id_source" );
+						newborn_firstname2  = rs_p2.getString( "firstname" );
+						newborn_prefix2     = rs_p2.getString( "prefix" );
+						newborn_familyname2 = rs_p2.getString( "familyname" );
 
-					if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
-					if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
-					if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
-					if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
+						if( newborn_id_source2  == null ) { newborn_id_source2  = ""; }
+						if( newborn_firstname2  == null ) { newborn_firstname2  = ""; }
+						if( newborn_prefix2     == null ) { newborn_prefix2     = ""; }
+						if( newborn_familyname2 == null ) { newborn_familyname2 = ""; }
 
-					id_source2 = newborn_id_source2;
+						id_source2 = newborn_id_source2;
+					}
 				}
 			}
 
@@ -8124,9 +8132,6 @@ public class LinksCleanAsync extends Thread
 
 		else if( registration_maintype == 2 )   // marriage
 		{
-			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
-			if( debug ) { System.out.println( query_p1 ); }
-
 			String bride_id_source1  = "";
 			String bride_firstname1  = "";
 			String bride_prefix1     = "";
@@ -8137,45 +8142,48 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix1     = "";
 			String groom_familyname1 = "";
 
-			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
+			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
+			if( debug ) { System.out.println( query_p1 ); }
+
+			try( PreparedStatement pstmt_p1 = dbconCleaned.prepareStatement( query_p1 ) )
 			{
-				while( rs_p1.next() )
+				try( ResultSet rs_p1 = pstmt_p1.executeQuery() )
 				{
-					int role = rs_p1.getInt( "role" );
-
-					if( role == 4 )
+					while( rs_p1.next() )
 					{
-						bride_id_source1  = rs_p1.getString( "id_source" );
-						bride_firstname1  = rs_p1.getString( "firstname" );
-						bride_prefix1     = rs_p1.getString( "prefix" );
-						bride_familyname1 = rs_p1.getString( "familyname" );
+						int role = rs_p1.getInt( "role" );
 
-						if( bride_id_source1  == null ) { bride_id_source1  = ""; }
-						if( bride_firstname1  == null ) { bride_firstname1  = ""; }
-						if( bride_prefix1     == null ) { bride_prefix1     = ""; }
-						if( bride_familyname1 == null ) { bride_familyname1 = ""; }
+						if( role == 4 )
+						{
+							bride_id_source1  = rs_p1.getString( "id_source" );
+							bride_firstname1  = rs_p1.getString( "firstname" );
+							bride_prefix1     = rs_p1.getString( "prefix" );
+							bride_familyname1 = rs_p1.getString( "familyname" );
 
-						id_source1 = bride_id_source1;
-					}
-					else    // role == 7
-					{
-						groom_id_source1  = rs_p1.getString( "id_source" );
-						groom_firstname1  = rs_p1.getString( "firstname" );
-						groom_prefix1     = rs_p1.getString( "prefix" );
-						groom_familyname1 = rs_p1.getString( "familyname" );
+							if( bride_id_source1  == null ) { bride_id_source1  = ""; }
+							if( bride_firstname1  == null ) { bride_firstname1  = ""; }
+							if( bride_prefix1     == null ) { bride_prefix1     = ""; }
+							if( bride_familyname1 == null ) { bride_familyname1 = ""; }
 
-						if( groom_id_source1  == null ) { groom_id_source1  = ""; }
-						if( groom_firstname1  == null ) { groom_firstname1  = ""; }
-						if( groom_prefix1     == null ) { groom_prefix1     = ""; }
-						if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+							id_source1 = bride_id_source1;
+						}
+						else    // role == 7
+						{
+							groom_id_source1  = rs_p1.getString( "id_source" );
+							groom_firstname1  = rs_p1.getString( "firstname" );
+							groom_prefix1     = rs_p1.getString( "prefix" );
+							groom_familyname1 = rs_p1.getString( "familyname" );
 
-						id_source1 = groom_id_source1;
+							if( groom_id_source1  == null ) { groom_id_source1  = ""; }
+							if( groom_firstname1  == null ) { groom_firstname1  = ""; }
+							if( groom_prefix1     == null ) { groom_prefix1     = ""; }
+							if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+							id_source1 = groom_id_source1;
+						}
 					}
 				}
 			}
-
-			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
-			if( debug ) { System.out.println( query_p2 ); }
 
 			String bride_id_source2  = "";
 			String bride_firstname2  = "";
@@ -8187,39 +8195,45 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix2     = "";
 			String groom_familyname2 = "";
 
-			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
+			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
+			if( debug ) { System.out.println( query_p2 ); }
+
+			try( PreparedStatement pstmt_p2 = dbconCleaned.prepareStatement( query_p2 ) )
 			{
-				while( rs_p2.next() )
+				try( ResultSet rs_p2 = pstmt_p2.executeQuery() )
 				{
-					int role = rs_p2.getInt( "role" );
-
-					if( role == 4 )
+					while( rs_p2.next() )
 					{
-						bride_id_source2  = rs_p2.getString( "id_source" );
-						bride_firstname2  = rs_p2.getString( "firstname" );
-						bride_prefix2     = rs_p2.getString( "prefix" );
-						bride_familyname2 = rs_p2.getString( "familyname" );
+						int role = rs_p2.getInt( "role" );
 
-						if( bride_id_source2  == null ) { bride_id_source2  = ""; }
-						if( bride_firstname2  == null ) { bride_firstname2  = ""; }
-						if( bride_prefix2     == null ) { bride_prefix2     = ""; }
-						if( bride_familyname2 == null ) { bride_familyname2 = ""; }
+						if( role == 4 )
+						{
+							bride_id_source2  = rs_p2.getString( "id_source" );
+							bride_firstname2  = rs_p2.getString( "firstname" );
+							bride_prefix2     = rs_p2.getString( "prefix" );
+							bride_familyname2 = rs_p2.getString( "familyname" );
 
-						id_source2 = bride_id_source2;
-					}
-					else    // role == 7
-					{
-						groom_id_source2  = rs_p2.getString( "id_source" );
-						groom_firstname2  = rs_p2.getString( "firstname" );
-						groom_prefix2     = rs_p2.getString( "prefix" );
-						groom_familyname2 = rs_p2.getString( "familyname" );
+							if( bride_id_source2  == null ) { bride_id_source2  = ""; }
+							if( bride_firstname2  == null ) { bride_firstname2  = ""; }
+							if( bride_prefix2     == null ) { bride_prefix2     = ""; }
+							if( bride_familyname2 == null ) { bride_familyname2 = ""; }
 
-						if( groom_id_source2  == null ) { groom_id_source2  = ""; }
-						if( groom_firstname2  == null ) { groom_firstname2  = ""; }
-						if( groom_prefix2     == null ) { groom_prefix2     = ""; }
-						if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+							id_source2 = bride_id_source2;
+						}
+						else    // role == 7
+						{
+							groom_id_source2  = rs_p2.getString( "id_source" );
+							groom_firstname2  = rs_p2.getString( "firstname" );
+							groom_prefix2     = rs_p2.getString( "prefix" );
+							groom_familyname2 = rs_p2.getString( "familyname" );
 
-						id_source2 = groom_id_source2;
+							if( groom_id_source2  == null ) { groom_id_source2  = ""; }
+							if( groom_firstname2  == null ) { groom_firstname2  = ""; }
+							if( groom_prefix2     == null ) { groom_prefix2     = ""; }
+							if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+							id_source2 = groom_id_source2;
+						}
 					}
 				}
 			}
@@ -8248,9 +8262,6 @@ public class LinksCleanAsync extends Thread
 
 		else if( registration_maintype == 4 )   // divorce
 		{
-			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
-			if( debug ) { System.out.println( query_p1 ); }
-
 			String bride_id_source1  = "";
 			String bride_firstname1  = "";
 			String bride_prefix1     = "";
@@ -8261,45 +8272,48 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix1     = "";
 			String groom_familyname1 = "";
 
-			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
+			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND (role = 4 OR role = 7)";
+			if( debug ) { System.out.println( query_p1 ); }
+
+			try( PreparedStatement pstmt_p1 = dbconCleaned.prepareStatement( query_p1 ) )
 			{
-				while( rs_p1.next() )
+				try( ResultSet rs_p1 = pstmt_p1.executeQuery() )
 				{
-					int role = rs_p1.getInt( "role" );
-
-					if( role == 4 )
+					while( rs_p1.next() )
 					{
-						bride_id_source1  = rs_p1.getString( "id_source" );
-						bride_firstname1  = rs_p1.getString( "firstname" );
-						bride_prefix1     = rs_p1.getString( "prefix" );
-						bride_familyname1 = rs_p1.getString( "familyname" );
+						int role = rs_p1.getInt( "role" );
 
-						if( bride_id_source1  == null ) { bride_id_source1  = ""; }
-						if( bride_firstname1  == null ) { bride_firstname1  = ""; }
-						if( bride_prefix1     == null ) { bride_prefix1     = ""; }
-						if( bride_familyname1 == null ) { bride_familyname1 = ""; }
+						if( role == 4 )
+						{
+							bride_id_source1  = rs_p1.getString( "id_source" );
+							bride_firstname1  = rs_p1.getString( "firstname" );
+							bride_prefix1     = rs_p1.getString( "prefix" );
+							bride_familyname1 = rs_p1.getString( "familyname" );
 
-						id_source1 = bride_id_source1;
-					}
-					else    // role == 7
-					{
-						groom_id_source1  = rs_p1.getString( "id_source" );
-						groom_firstname1  = rs_p1.getString( "firstname" );
-						groom_prefix1     = rs_p1.getString( "prefix" );
-						groom_familyname1 = rs_p1.getString( "familyname" );
+							if( bride_id_source1  == null ) { bride_id_source1  = ""; }
+							if( bride_firstname1  == null ) { bride_firstname1  = ""; }
+							if( bride_prefix1     == null ) { bride_prefix1     = ""; }
+							if( bride_familyname1 == null ) { bride_familyname1 = ""; }
 
-						if( groom_id_source1  == null ) { groom_id_source1  = ""; }
-						if( groom_firstname1  == null ) { groom_firstname1  = ""; }
-						if( groom_prefix1     == null ) { groom_prefix1     = ""; }
-						if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+							id_source1 = bride_id_source1;
+						}
+						else    // role == 7
+						{
+							groom_id_source1  = rs_p1.getString( "id_source" );
+							groom_firstname1  = rs_p1.getString( "firstname" );
+							groom_prefix1     = rs_p1.getString( "prefix" );
+							groom_familyname1 = rs_p1.getString( "familyname" );
 
-						id_source1 = groom_id_source1;
+							if( groom_id_source1  == null ) { groom_id_source1  = ""; }
+							if( groom_firstname1  == null ) { groom_firstname1  = ""; }
+							if( groom_prefix1     == null ) { groom_prefix1     = ""; }
+							if( groom_familyname1 == null ) { groom_familyname1 = ""; }
+
+							id_source1 = groom_id_source1;
+						}
 					}
 				}
 			}
-
-			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
-			if( debug ) { System.out.println( query_p2 ); }
 
 			String bride_id_source2  = "";
 			String bride_firstname2  = "";
@@ -8311,39 +8325,45 @@ public class LinksCleanAsync extends Thread
 			String groom_prefix2     = "";
 			String groom_familyname2 = "";
 
-			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
+			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND (role = 4 OR role = 7)";
+			if( debug ) { System.out.println( query_p2 ); }
+
+			try( PreparedStatement pstmt_p2 = dbconCleaned.prepareStatement( query_p2 ) )
 			{
-				while( rs_p2.next() )
+				try( ResultSet rs_p2 = pstmt_p2.executeQuery() )
 				{
-					int role = rs_p2.getInt( "role" );
-
-					if( role == 4 )
+					while( rs_p2.next() )
 					{
-						bride_id_source2  = rs_p2.getString( "id_source" );
-						bride_firstname2  = rs_p2.getString( "firstname" );
-						bride_prefix2     = rs_p2.getString( "prefix" );
-						bride_familyname2 = rs_p2.getString( "familyname" );
+						int role = rs_p2.getInt( "role" );
 
-						if( bride_id_source2  == null ) { bride_id_source2  = ""; }
-						if( bride_firstname2  == null ) { bride_firstname2  = ""; }
-						if( bride_prefix2     == null ) { bride_prefix2     = ""; }
-						if( bride_familyname2 == null ) { bride_familyname2 = ""; }
+						if( role == 4 )
+						{
+							bride_id_source2  = rs_p2.getString( "id_source" );
+							bride_firstname2  = rs_p2.getString( "firstname" );
+							bride_prefix2     = rs_p2.getString( "prefix" );
+							bride_familyname2 = rs_p2.getString( "familyname" );
 
-						id_source2 = bride_id_source2;
-					}
-					else    // role == 7
-					{
-						groom_id_source2  = rs_p2.getString( "id_source" );
-						groom_firstname2  = rs_p2.getString( "firstname" );
-						groom_prefix2     = rs_p2.getString( "prefix" );
-						groom_familyname2 = rs_p2.getString( "familyname" );
+							if( bride_id_source2  == null ) { bride_id_source2  = ""; }
+							if( bride_firstname2  == null ) { bride_firstname2  = ""; }
+							if( bride_prefix2     == null ) { bride_prefix2     = ""; }
+							if( bride_familyname2 == null ) { bride_familyname2 = ""; }
 
-						if( groom_id_source2  == null ) { groom_id_source2  = ""; }
-						if( groom_firstname2  == null ) { groom_firstname2  = ""; }
-						if( groom_prefix2     == null ) { groom_prefix2     = ""; }
-						if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+							id_source2 = bride_id_source2;
+						}
+						else    // role == 7
+						{
+							groom_id_source2  = rs_p2.getString( "id_source" );
+							groom_firstname2  = rs_p2.getString( "firstname" );
+							groom_prefix2     = rs_p2.getString( "prefix" );
+							groom_familyname2 = rs_p2.getString( "familyname" );
 
-						id_source2 = groom_id_source2;
+							if( groom_id_source2  == null ) { groom_id_source2  = ""; }
+							if( groom_firstname2  == null ) { groom_firstname2  = ""; }
+							if( groom_prefix2     == null ) { groom_prefix2     = ""; }
+							if( groom_familyname2 == null ) { groom_familyname2 = ""; }
+
+							id_source2 = groom_id_source2;
+						}
 					}
 				}
 			}
@@ -8372,59 +8392,65 @@ public class LinksCleanAsync extends Thread
 
 		else if( registration_maintype == 3 )   // death
 		{
-			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 10";
-			if( debug ) { System.out.println( query_p1 ); }
-
 			String deceased_id_source1  = "";
 			String deceased_firstname1  = "";
 			String deceased_prefix1     = "";
 			String deceased_familyname1 = "";
 
-			try( ResultSet rs_p1 = dbconCleaned.executeQuery( query_p1 ) )
+			String query_p1 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration1 + " AND role = 10";
+			if( debug ) { System.out.println( query_p1 ); }
+
+			try( PreparedStatement pstmt_p1 = dbconCleaned.prepareStatement( query_p1 ) )
 			{
-				while( rs_p1.next() )
+				try( ResultSet rs_p1 = pstmt_p1.executeQuery() )
 				{
-					int role = rs_p1.getInt( "role" );
+					while( rs_p1.next() )
+					{
+						int role = rs_p1.getInt( "role" );
 
-					deceased_id_source1  = rs_p1.getString( "id_source" );
-					deceased_firstname1  = rs_p1.getString( "firstname" );
-					deceased_prefix1     = rs_p1.getString( "prefix" );
-					deceased_familyname1 = rs_p1.getString( "familyname" );
+						deceased_id_source1  = rs_p1.getString( "id_source" );
+						deceased_firstname1  = rs_p1.getString( "firstname" );
+						deceased_prefix1     = rs_p1.getString( "prefix" );
+						deceased_familyname1 = rs_p1.getString( "familyname" );
 
-					if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
-					if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
-					if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
-					if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
+						if( deceased_id_source1  == null ) { deceased_id_source1  = ""; }
+						if( deceased_firstname1  == null ) { deceased_firstname1  = ""; }
+						if( deceased_prefix1     == null ) { deceased_prefix1     = ""; }
+						if( deceased_familyname1 == null ) { deceased_familyname1 = ""; }
 
-					id_source1 = deceased_id_source1;
+						id_source1 = deceased_id_source1;
+					}
 				}
 			}
-
-			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
-			if( debug ) { System.out.println( query_p2 ); }
 
 			String deceased_id_source2  = "";
 			String deceased_firstname2  = "";
 			String deceased_prefix2     = "";
 			String deceased_familyname2 = "";
 
-			try( ResultSet rs_p2 = dbconCleaned.executeQuery( query_p2 ) )
+			String query_p2 = "SELECT id_source, role, firstname, prefix, familyname FROM person_c WHERE id_registration = " + id_registration2 + " AND role = 10";
+			if( debug ) { System.out.println( query_p2 ); }
+
+			try( PreparedStatement pstmt_p2 = dbconCleaned.prepareStatement( query_p2 ) )
 			{
-				while( rs_p2.next() )
+				try( ResultSet rs_p2 = pstmt_p2.executeQuery() )
 				{
-					int role = rs_p2.getInt( "role" );
+					while( rs_p2.next() )
+					{
+						int role = rs_p2.getInt( "role" );
 
-					deceased_id_source2  = rs_p2.getString( "id_source" );
-					deceased_firstname2  = rs_p2.getString( "firstname" );
-					deceased_prefix2     = rs_p2.getString( "prefix" );
-					deceased_familyname2 = rs_p2.getString( "familyname" );
+						deceased_id_source2  = rs_p2.getString( "id_source" );
+						deceased_firstname2  = rs_p2.getString( "firstname" );
+						deceased_prefix2     = rs_p2.getString( "prefix" );
+						deceased_familyname2 = rs_p2.getString( "familyname" );
 
-					if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
-					if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
-					if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
-					if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
+						if( deceased_id_source2  == null ) { deceased_id_source2  = ""; }
+						if( deceased_firstname2  == null ) { deceased_firstname2  = ""; }
+						if( deceased_prefix2     == null ) { deceased_prefix2     = ""; }
+						if( deceased_familyname2 == null ) { deceased_familyname2 = ""; }
 
-					id_source2 = deceased_id_source2;
+						id_source2 = deceased_id_source2;
+					}
 				}
 			}
 
@@ -8503,10 +8529,13 @@ public class LinksCleanAsync extends Thread
 		String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_reg_flag;
 
 		String old_flags = "";
-		try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( getFlagQuery_r ) )
 		{
-			while( rs.next() )
-			{ old_flags = rs.getString( "not_linksbase" ); }
+			try( ResultSet rs = pstmt.executeQuery() )
+			{
+				while( rs.next() )
+				{ old_flags = rs.getString( "not_linksbase" ); }
+			}
 		}
 
 		int countRegist = 0;
@@ -8562,13 +8591,16 @@ public class LinksCleanAsync extends Thread
 		if( debug ) { showMessage( query_c, false, true ); }
 		if( debug ) { System.out.println( query_c ); }
 
-		try( ResultSet rs_c = dbconCleaned.executeQuery( query_c ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query_c ) )
 		{
-			rs_c.first();
-			int cnt = rs_c.getInt( "cnt" );
-			if( cnt != 0 ) {
-				String msg = String.format( "Thread id %02d; # of regs with invalid id_persist_registration: %d (not flagged)", threadId, cnt );
-				showMessage( msg, false, true );
+			try( ResultSet rs_c = pstmt.executeQuery() )
+			{
+				rs_c.first();
+				int cnt = rs_c.getInt( "cnt" );
+				if( cnt != 0 ) {
+					String msg = String.format( "Thread id %02d; # of regs with invalid id_persist_registration: %d (not flagged)", threadId, cnt );
+					showMessage( msg, false, true );
+				}
 			}
 		}
 
@@ -8591,66 +8623,69 @@ public class LinksCleanAsync extends Thread
 		if( debug ) { System.out.println( query_r ); }
 
 		int stepstate = count_step;
-		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query_r ) )
 		{
-			rs_r.last();
-			int total = rs_r.getRow();
-			rs_r.beforeFirst();
-
-			int nflagRegist = 0;
-
-			int ndups2 = 0;
-			int ndups3 = 0;
-			int ndups4 = 0;
-			int ndups5 = 0;
-			int ndupsx = 0;
-
-			int count = 0;
-			while( rs_r.next() )        // process all groups
+			try( ResultSet rs_r = pstmt.executeQuery() )
 			{
-				count++;
-				if( count == stepstate ) {
-					long pct = Math.round( 100.0 * (float)count / (float)total );
-					String msg = String.format( "Thread id %02d, flagDuplicateRegsPersist %d-of-%d (%d%%)", threadId, count, total, pct );
-					showMessage( msg, true, true );
-					stepstate += count_step;
-				}
+				rs_r.last();
+				int total = rs_r.getRow();
+				rs_r.beforeFirst();
 
-				String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
-				if( registrationIds_str == null ) { registrationIds_str = ""; }
-				String id_persist_registration = rs_r.getString( "id_persist_registration" );
+				int nflagRegist = 0;
 
-				String registrationIdsStrs[] = registrationIds_str.split( "," );
-				int ndups = registrationIdsStrs.length;
-				switch( ndups )
+				int ndups2 = 0;
+				int ndups3 = 0;
+				int ndups4 = 0;
+				int ndups5 = 0;
+				int ndupsx = 0;
+
+				int count = 0;
+				while( rs_r.next() )        // process all groups
 				{
-					case 2:
-						ndups2++; break;
-					case 3:
-						ndups3++; break;
-					case 4:
-						ndups4++; break;
-					case 5:
-						ndups5++; break;
-					default:
-						ndupsx++;
+					count++;
+					if( count == stepstate ) {
+						long pct = Math.round( 100.0 * (float)count / (float)total );
+						String msg = String.format( "Thread id %02d, flagDuplicateRegsPersist %d-of-%d (%d%%)", threadId, count, total, pct );
+						showMessage( msg, true, true );
+						stepstate += count_step;
+					}
+
+					String registrationIds_str = rs_r.getString( "GROUP_CONCAT(id_registration)" );
+					if( registrationIds_str == null ) { registrationIds_str = ""; }
+					String id_persist_registration = rs_r.getString( "id_persist_registration" );
+
+					String registrationIdsStrs[] = registrationIds_str.split( "," );
+					int ndups = registrationIdsStrs.length;
+					switch( ndups )
+					{
+						case 2:
+							ndups2++; break;
+						case 3:
+							ndups3++; break;
+						case 4:
+							ndups4++; break;
+						case 5:
+							ndups5++; break;
+						default:
+							ndupsx++;
+					}
+
+					if( debug ) { plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist guid: %s, ndups: %d, idregs: %s", threadId, id_persist_registration, ndups, registrationIds_str ) ); }
+
+					flagIdPersistDuplicates( debug, source, rmtype, registrationIdsStrs );
 				}
 
-				if( debug ) { plog.show( String.format( "Thread id %02d; flagDuplicateRegsPersist guid: %s, ndups: %d, idregs: %s", threadId, id_persist_registration, ndups, registrationIds_str ) ); }
-
-				flagIdPersistDuplicates( debug, source, rmtype, registrationIdsStrs );
+				if( ndups2 != 0 )
+				{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup2: %d", threadId, ndups2 ), false, true ); }
+				else if( ndups3 != 0 )
+				{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup3: %d", threadId, ndups3 ), false, true ); }
+				else if( ndups4 != 0 )
+				{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup4: %d", threadId, ndups4 ), false, true ); }
+				else if( ndups5 != 0 )
+				{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup5: %d", threadId, ndups5 ), false, true ); }
+				else if( ndupsx != 0 )
+				{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dupx: %d", threadId, ndupsx ), false, true ); }
 			}
-
-			if( ndups2 != 0 )
-			{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup2: %d", threadId, ndups2 ), false, true ); }
-			else if( ndups3 != 0 )
-			{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup3: %d", threadId, ndups3 ), false, true ); }
-			else if( ndups4 != 0 )
-			{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup4: %d", threadId, ndups4 ), false, true ); }
-			else if( ndups5 != 0 )
-			{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dup5: %d", threadId, ndups5 ), false, true ); }
-			else if( ndupsx != 0 )
-			{ showMessage( String.format( "Thread id %02d; flagDuplicateRegsPersist # of dupx: %d", threadId, ndupsx ), false, true ); }
 		}
 		catch( Exception ex ) {
 			String msg = String.format( "Thread id %02d; Exception in flagDuplicateRegsPersist: %s", threadId, ex.getMessage() );
@@ -8701,10 +8736,13 @@ public class LinksCleanAsync extends Thread
 					//System.out.println( query );
 
 					String old_flags = "";
-					try( ResultSet rs = dbconCleaned.executeQuery( query ) )
+					try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 					{
-						rs.first();
-						old_flags = rs.getString( "not_linksbase" );
+						try( ResultSet rs = pstmt.executeQuery() )
+						{
+							rs.first();
+							old_flags = rs.getString( "not_linksbase" );
+						}
 					}
 
 					String new_flags = "";
@@ -8762,100 +8800,56 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; flagEmptyDateRegs for source %s", threadId, source ), false, true );
 
-		String query_r = "SELECT id_registration, id_source, registration_date FROM registration_c"
+		String query = "SELECT id_registration, id_source, registration_date, not_linksbase FROM registration_c"
 			+ " WHERE id_source = " + source
 			+ " AND ( registration_date IS NULL OR registration_date = '' )";
 
-		if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
-		if( debug ) { showMessage( query_r, false, true ); }
+		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query, false, true ); }
 
 		int nNoRegDate = 0;
-		int stepstate = count_step;
 
-		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 		{
-			int row = 0;
-
-			while( rs_r.next() )        // process all results
+			try( ResultSet rs = pstmt.executeQuery() )
 			{
-                /*
-                row++;
-                if( row == stepstate ) {
-                    showMessage( "" + row, true, true );
-                    stepstate += count_step;
-                }
-
-                int id_registration      = rs_r.getInt( "id_registration" );
-                int id_source            = rs_r.getInt( "id_source" );
-                String registration_date = rs_r.getString( "registration_date" );
-
-                if( registration_date == null   ||
-                        registration_date.isEmpty() ||
-                        registration_date.equals( "null" ) )
-                {
-                    nNoRegDate++;
-
-                    // Flag records with this registration
-                    String deleteRegist = "DELETE FROM registration_c WHERE id_registration = " + id_registration;
-                    String deletePerson = "DELETE FROM person_c WHERE id_registration = " + id_registration;
-
-                    if( debug ) {
-                        showMessage( "Deleting id_registration without date: " + id_registration, false, true );
-                        showMessage( deleteRegist, false, true );
-                        showMessage( deletePerson, false, true );
-                    }
-
-                    String id_source_str = Integer.toString( id_source );
-                    addToReportRegistration( id_registration, id_source_str, 2, "" );       // warning 2
-
-                    dbconCleaned.runQuery( deleteRegist );
-                    dbconCleaned.runQuery( deletePerson );
-                }
-                */
-
-				int id_regist = rs_r.getInt( "id_registration" );
-
-				// get current flags string
-				String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-
-				String old_flags = "";
-				try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+				while( rs.next() )        // process all results
 				{
-					while( rs.next() )
-					{ old_flags = rs.getString( "not_linksbase" ); }
-				}
+					int id_regist    = rs.getInt( "id_registration" );
+					String old_flags = rs.getString( "not_linksbase" );
 
-				int countRegist = 0;
-				String new_flags = "";
+					int countRegist = 0;
+					String new_flags = "";
 
-				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00010"; }
-				else
-				{
-					old_flags = flagUpdateLeadingZeros( 5, old_flags );
-					// is the flag already set?
-					int flag_idx = 3;       // 4th position for the flag
-					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+					if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00010"; }
+					else
 					{
-						// preserve other flags, and set new flag
-						StringBuilder sb = new StringBuilder( old_flags );
-						sb.setCharAt( flag_idx,'1' );
-						new_flags = sb.toString();
+						old_flags = flagUpdateLeadingZeros( 5, old_flags );
+						// is the flag already set?
+						int flag_idx = 3;       // 4th position for the flag
+						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						{
+							// preserve other flags, and set new flag
+							StringBuilder sb = new StringBuilder( old_flags );
+							sb.setCharAt( flag_idx,'1' );
+							new_flags = sb.toString();
+						}
+					}
+
+					if( ! new_flags.isEmpty() )
+					{
+						String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+						flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+						if( debug ) { System.out.println(flagQuery_r); }
+
+						countRegist = dbconCleaned.executeUpdate( flagQuery_r );
+						nNoRegDate += countRegist;
 					}
 				}
 
-				if( ! new_flags.isEmpty() )
-				{
-					String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-					flagQuery_r += " WHERE id_registration = " + id_regist + ";";
-					if( debug ) { System.out.println(flagQuery_r); }
-
-					countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-					nNoRegDate += countRegist;
-				}
+				String msg =  String.format( "Thread id %02d; Number of registrations without date: %d", threadId, nNoRegDate );
+				showMessage( msg, false, true );
 			}
-
-			String msg =  String.format( "Thread id %02d; Number of registrations without date: %d", threadId, nNoRegDate );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			if( ex.getMessage() != "After end of result set" ) {
@@ -8881,65 +8875,56 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; flagEmptyDaysSinceBegin for source %s", threadId, source ), false, true );
 
-		String query_r = "SELECT id_registration, id_source, registration_days FROM registration_c"
+		String query = "SELECT id_registration, id_source, registration_days, not_linksbase FROM registration_c"
 			+ " WHERE id_source = " + source
 			+ " AND ( registration_days IS NULL OR registration_days = '' )";
 
-		if ( ! rmtype.isEmpty() ) { query_r += " AND registration_maintype = " + rmtype; }
-		if( debug ) { showMessage( query_r, false, true ); }
+		if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
+		if( debug ) { showMessage( query, false, true ); }
 
 		int nNoRegDate = 0;
-		//int stepstate = count_step;
 
-		try( ResultSet rs_r = dbconCleaned.executeQuery( query_r ) )
+		try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query ) )
 		{
-			int row = 0;
-
-			while( rs_r.next() )        // process all results
+			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				int id_regist = rs_r.getInt( "id_registration" );
-
-				// get current flags string
-				String getFlagQuery_r = "SELECT not_linksbase FROM registration_c WHERE id_registration = " + id_regist;
-
-				String old_flags = "";
-				try( ResultSet rs = dbconCleaned.executeQuery( getFlagQuery_r ) )
+				while( rs.next() )        // process all results
 				{
-					while( rs.next() )
-					{ old_flags = rs.getString( "not_linksbase" ); }
-				}
+					int id_regist = rs.getInt( "id_registration" );
+					String old_flags = rs.getString( "not_linksbase" );
 
-				int countRegist = 0;
-				String new_flags = "";
+					int countRegist = 0;
+					String new_flags = "";
 
-				if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00001"; }
-				else
-				{
-					old_flags = flagUpdateLeadingZeros( 5, old_flags );
-					// is the flag already set?
-					int flag_idx = 4;       // 5th position for the flag
-					if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+					if( old_flags == null || old_flags.isEmpty() ) { new_flags = "00001"; }
+					else
 					{
-						// preserve other flags, and set new flag
-						StringBuilder sb = new StringBuilder( old_flags );
-						sb.setCharAt( flag_idx,'1' );
-						new_flags = sb.toString();
+						old_flags = flagUpdateLeadingZeros( 5, old_flags );
+						// is the flag already set?
+						int flag_idx = 4;       // 5th position for the flag
+						if( ! old_flags.substring( flag_idx, flag_idx + 1 ).equals( "1" ) )
+						{
+							// preserve other flags, and set new flag
+							StringBuilder sb = new StringBuilder( old_flags );
+							sb.setCharAt( flag_idx,'1' );
+							new_flags = sb.toString();
+						}
+					}
+
+					if( ! new_flags.isEmpty() )
+					{
+						String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
+						flagQuery_r += " WHERE id_registration = " + id_regist + ";";
+						if( debug ) { System.out.println(flagQuery_r); }
+
+						countRegist = dbconCleaned.executeUpdate( flagQuery_r );
+						nNoRegDate += countRegist;
 					}
 				}
 
-				if( ! new_flags.isEmpty() )
-				{
-					String flagQuery_r = "UPDATE registration_c SET not_linksbase = '" + new_flags + "'";
-					flagQuery_r += " WHERE id_registration = " + id_regist + ";";
-					if( debug ) { System.out.println(flagQuery_r); }
-
-					countRegist = dbconCleaned.executeUpdate( flagQuery_r );
-					nNoRegDate += countRegist;
-				}
+				String msg =  String.format( "Thread id %02d; Number of registrations without days since begin: %d", threadId, nNoRegDate );
+				showMessage( msg, false, true );
 			}
-
-			String msg =  String.format( "Thread id %02d; Number of registrations without days since begin: %d", threadId, nNoRegDate );
-			showMessage( msg, false, true );
 		}
 		catch( Exception ex ) {
 			if( ex.getMessage() != "After end of result set" ) {
@@ -9049,8 +9034,6 @@ public class LinksCleanAsync extends Thread
 		{
 			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				int row = 0;
-
 				while( rs.next() )        // process all persons
 				{
 					int id_person    = rs.getInt( "id_person" );
