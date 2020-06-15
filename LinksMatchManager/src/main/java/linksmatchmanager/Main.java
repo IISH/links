@@ -63,7 +63,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-28-May-2020 Latest change
+ * FL-15-Jun-2020 Latest change
  */
 
 public class Main
@@ -110,6 +110,8 @@ public class Main
 
         // Notice: if debug = true (see below), dry_run => true, use_memory_tables => false
         boolean dry_run = false;     // true: do not delete former matches, + do not write new matches
+
+        boolean set_max_heap_table_size = false;    // now via global /etc/my.cnf.d/server.cnf of mysql machine
         boolean use_memory_tables = true;
         String name_postfix = "_mem";
 
@@ -126,7 +128,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "28-May-2020 06:58";
+            String timestamp1 = "15-Jun-2020 11:03";
             String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -252,9 +254,17 @@ public class Main
             }
 
             mySqlShowInfo( mainThreadId, dbconPrematch );
-            OLD_max_heap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
-            //mySqlSetVar( mainThreadId, dbconPrematch, "max_heap_table_size", max_heap_table_size );
-            //OLD_max_heap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
+            if( set_max_heap_table_size )
+            {
+                OLD_max_heap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
+                //mySqlSetVar( mainThreadId, dbconPrematch, "max_heap_table_size", max_heap_table_size );
+                //OLD_maxheap_table_size = mySqlGetVar( mainThreadId, dbconPrematch, "max_heap_table_size" );
+            }
+            else
+            {
+                msg = String.format( "Not changing MySQL variable max_heap_table_size" );
+                System.out.println( msg ); plog.show( msg );
+            }
 
             // Copy levenshtein and frequency tables to a MEMORY database table for ast access.
             // We require that the 'y' match_process lines have identical ls_firstname and ls_familyname,
@@ -558,31 +568,34 @@ public class Main
             }
             else { msg = "skipping memtables_drop()"; System.out.println( msg ); plog.show( msg ); }
 
-            msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
-            System.out.println( msg ); plog.show( msg );
-
-            if( use_memory_tables )
+            if( set_max_heap_table_size )
             {
-                try
+                msg = String.format( "Restoring MySQL max_heap_table_size to initial size: %s", OLD_max_heap_table_size );
+                System.out.println( msg ); plog.show( msg );
+
+                if( use_memory_tables )
                 {
-                    dbconPrematch = dsrcPrematch.getConnection();
-
-                    String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
-
-                    try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+                    try
                     {
-                        try( ResultSet rs = pstmt.executeQuery() ) { }
+                        dbconPrematch = dsrcPrematch.getConnection();
+
+                        String query = "SET max_heap_table_size = " + OLD_max_heap_table_size;
+
+                        try( PreparedStatement pstmt = dbconPrematch.prepareStatement( query ) )
+                        {
+                            try( ResultSet rs = pstmt.executeQuery() ) { }
+                        }
                     }
-                }
-                catch( Exception ex ) {
-                    msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
-                    System.out.println( msg );
-                    ex.printStackTrace();
-                }
-                finally
-                {
-                    dbconPrematch.close();
-                    dbconPrematch = null;
+                    catch( Exception ex ) {
+                        msg = String.format( "Thread id %02d; LinksMatchManager/main() Exception: %s", mainThreadId, ex.getMessage() );
+                        System.out.println( msg );
+                        ex.printStackTrace();
+                    }
+                    finally
+                    {
+                        dbconPrematch.close();
+                        dbconPrematch = null;
+                    }
                 }
             }
 
