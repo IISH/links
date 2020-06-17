@@ -27,6 +27,10 @@ import java.lang.management.ThreadMXBean;
 
 import java.text.SimpleDateFormat;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Period;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.concurrent.Semaphore;
@@ -63,7 +67,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-15-Jun-2020 Latest change
+ * FL-18-Jun-2020 Latest change
  */
 
 public class Main
@@ -128,10 +132,13 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "15-Jun-2020 11:03";
-            String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
+            String timestamp1 = "18-Jun-2020 15:13";
+
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
+
+            LocalDateTime ldt_start = LocalDateTime.now();
+            String timestamp2 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
             plog.show( "Start at: " + timestamp2 );
 
             String version = System.getProperty( "java.version" );
@@ -603,9 +610,22 @@ public class Main
             if( dsrcMatch    != null ) { dsrcMatch.close(); };
             if( dsrcTemp     != null ) { dsrcTemp.close(); };
 
+            msg = String.format( "Matching was started at: %s", timestamp2 );
+            plog.show( msg ); System.out.println( msg );
+
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
-            plog.show( "Matching was started at: " + timestamp2 );
-            plog.show( "Matching now stopped at: " + timestamp3 );
+            msg = String.format( "Matching now stopped at: " + timestamp3 );
+            plog.show( msg ); System.out.println( msg );
+
+            LocalDateTime ldt_stop = LocalDateTime.now();
+            Duration duration = Duration.between( ldt_start, ldt_stop);
+            int dur_days  = (int) duration.toDays();
+            int dur_hours = (int) duration.toHours();
+            int dur_mins  = (int) duration.toMinutes();
+            int dur_secs  = (int) duration.toSeconds();
+            if( dur_days > 0 ) { msg = String.format( "Matching took: %d (days) + %02d:%02d:%02d (hh:mm:ss)", dur_days, dur_hours, dur_mins, dur_secs ); }
+            else { msg = String.format( "Matching took: %02d:%02d:%02d (hh:mm:ss)", dur_hours, dur_mins, dur_secs ); }
+            plog.show( msg ); System.out.println( msg );
 
             show_java_memory( mainThreadId );   // show some java memory stats
             msg = String.format( "Thread id %02d; End.", mainThreadId );
