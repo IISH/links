@@ -131,7 +131,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "18-Jun-2020 13:00";
+            String timestamp1 = "18-Jun-2020 23:47";
 
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -633,11 +633,8 @@ public class Main
             ldt_temp = ldt_temp.plusSeconds( seconds );
             long millis = ldt_temp.until( ldt_stop, ChronoUnit.MILLIS );
 
-            // ignore years and millis
-            String elapsed = "Matching took: ";
-            if( months  > 0 ) { elapsed = elapsed + String.format( "%d (months), ", months ); }
-            if( days    > 0 ) { elapsed = elapsed + String.format( "%d (days), ",   days ); }
-            elapsed = elapsed + String.format( "%02d:%02d:%02d (hh:mm:ss)", hours, minutes, seconds );
+            String elapsed = String.format( "Matching time elapsed:   %4d.%02d.%02d-%02d:%02d:%02d (yyyy.mm.dd-hh:mm:ss)",
+                years, months, days, hours, minutes, seconds );
             plog.show( msg ); System.out.println( elapsed );
 
             show_java_memory( mainThreadId );   // show some java memory stats
