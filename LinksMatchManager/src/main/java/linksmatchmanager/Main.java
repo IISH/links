@@ -66,7 +66,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-18-Jun-2020 Elapsed time formatting
+ * FL-19-Jun-2020 Elapsed time formatting
  */
 
 public class Main
@@ -131,7 +131,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "18-Jun-2020 23:47";
+            String timestamp1 = "19-Jun-2020 11:00";
 
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -609,15 +609,15 @@ public class Main
             if( dsrcMatch    != null ) { dsrcMatch.close(); };
             if( dsrcTemp     != null ) { dsrcTemp.close(); };
 
-            msg = String.format( "Matching was started at: %s", timestamp2 );
+            msg = String.format( "Matching was started at: %s (yyyy.mm.dd-hh:mm:ss)", timestamp2 );
             plog.show( msg ); System.out.println( msg );
 
             String timestamp3 = getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
-            msg = String.format( "Matching now stopped at: " + timestamp3 );
+            msg = String.format( "Matching now stopped at: %s (yyyy.mm.dd-hh:mm:ss)", timestamp3 );
             plog.show( msg ); System.out.println( msg );
 
             LocalDateTime ldt_stop = LocalDateTime.now();
-            // format the difference between start and stop; discard what we covered as we go
+            // format the difference between start and stop; move forward as we go
             LocalDateTime ldt_temp = LocalDateTime.from( ldt_start );
             long years = ldt_temp.until( ldt_stop, ChronoUnit.YEARS );
             ldt_temp = ldt_temp.plusYears( years );
@@ -633,9 +633,9 @@ public class Main
             ldt_temp = ldt_temp.plusSeconds( seconds );
             long millis = ldt_temp.until( ldt_stop, ChronoUnit.MILLIS );
 
-            String elapsed = String.format( "Matching time elapsed:   %4d.%02d.%02d-%02d:%02d:%02d (yyyy.mm.dd-hh:mm:ss)",
+            String elapsed = String.format( "Matching time elapsed:   %04d.%02d.%02d-%02d:%02d:%02d (yyyy.mm.dd-hh:mm:ss)",
                 years, months, days, hours, minutes, seconds );
-            plog.show( msg ); System.out.println( elapsed );
+            plog.show( elapsed ); System.out.println( elapsed );
 
             show_java_memory( mainThreadId );   // show some java memory stats
             msg = String.format( "Thread id %02d; End.", mainThreadId );
