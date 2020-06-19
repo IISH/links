@@ -100,6 +100,7 @@ import general.PrintLogger;
  * FL-07-Jan-2020 Single-threaded refreshing in LinksCleanedMain
  * FL-18-Feb 2020 Also clean prefixes if _after_ familyname
  * FL-06-Jun-2020 Adapt and extend not_linksbase[_p] flags
+ * FL-19-Jun-2020 Latest Change
  */
 
 
@@ -7949,7 +7950,7 @@ public class LinksCleanAsync extends Thread
 								try( ResultSet rs = pstmt.executeQuery() )
 								{
 									String old_flags = "";
-									while( rs.next() )
+									if( rs.next() )
 									{ old_flags = rs.getString( "not_linksbase" ); }
 
 									int countRegist = 0;
@@ -8533,7 +8534,7 @@ public class LinksCleanAsync extends Thread
 		{
 			try( ResultSet rs = pstmt.executeQuery() )
 			{
-				while( rs.next() )
+				if( rs.next() )
 				{ old_flags = rs.getString( "not_linksbase" ); }
 			}
 		}
