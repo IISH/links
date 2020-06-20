@@ -66,7 +66,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-26-Feb-2018 MatchMain => Main
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
- * FL-19-Jun-2020 Elapsed time formatting
+ * FL-20-Jun-2020 Elapsed time formatting
  */
 
 public class Main
@@ -632,6 +632,7 @@ public class Main
             long seconds = ldt_temp.until( ldt_stop, ChronoUnit.SECONDS );
             ldt_temp = ldt_temp.plusSeconds( seconds );
             long millis = ldt_temp.until( ldt_stop, ChronoUnit.MILLIS );
+            if( millis > 500 ) { seconds += 1; }
 
             String elapsed = String.format( "Matching time elapsed:   %04d.%02d.%02d-%02d:%02d:%02d (yyyy.mm.dd-hh:mm:ss)",
                 years, months, days, hours, minutes, seconds );
