@@ -100,7 +100,7 @@ import general.PrintLogger;
  * FL-07-Jan-2020 Single-threaded refreshing in LinksCleanedMain
  * FL-18-Feb 2020 Also clean prefixes if _after_ familyname
  * FL-06-Jun-2020 Adapt and extend not_linksbase[_p] flags
- * FL-19-Jun-2020 Latest Change
+ * FL-02-Aug-2020 Latest familyname NULL standard exception: omit (spurious) lowercasing
  */
 
 
@@ -2300,12 +2300,12 @@ public class LinksCleanAsync extends Thread
 								// Check the standard code
 								if( standard_code.equals( SC_Y ) )
 								{
-									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ) + "\n" );
 								}
 								else if( standard_code.equals( SC_U ) ) {
 									addToReportPerson( id_person, source, 1000, nameNoSuffix );    // EC 1000
 
-									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ).toLowerCase() + "\n" );
+									writerFamilyname.write( id_person + "," + almmFamilyname.standard( nameNoSuffix ) + "\n" );
 								}
 								else if( standard_code.equals( SC_N ) ) {
 									addToReportPerson( id_person, source, 1005, nameNoSuffix );     // EC 1005
