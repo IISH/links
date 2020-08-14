@@ -38,6 +38,8 @@ import linksmatchmanager.DataSet.InputSet;
  * FL-11-Jun-2019 AND id_source IN (...) syntax
  * FL-19-Nov-2019 interprete id_source = "0" as ""
  * FL-27-Feb-2020 Add id_person_o to the s1&2 queries to be retrieved from links_base
+ * FL-12-Aug-2020 Always print id_mp in loop of setToArray()
+ * FL-14-Aug-2020 A bit more output
  */
 public class QueryGenerator
 {
@@ -137,7 +139,7 @@ public class QueryGenerator
 
             // get all the fields from the table match_process
             int id = rs.getInt( "id" );
-            if( debug ) { System.out.println( "match_process id: " + id ); }
+            System.out.println( "match_process id: " + id );
 
             int s1_maintype = rs.getInt( "s1_maintype" );
             int s2_maintype = rs.getInt( "s2_maintype" );
@@ -220,6 +222,8 @@ public class QueryGenerator
 
             String ignore_minmax = "n";
 
+            int n_qs = 0;
+
             // use ego is always true
             if( int_familyname_m > 0 || int_firstname_m > 0 || int_minmax_m > 0 ) {
                 use_mother = "y";
@@ -263,6 +267,9 @@ public class QueryGenerator
                 // - the parameters of a single 'y' match_process record,
                 // - the s1 & s2 queries to retrieve the sample data from links_base.
                 QuerySet qs = new QuerySet();
+                n_qs++;
+                String msg = String.format( "Creating QuerySet %d for match_process id %d", id,  n_qs );
+                System.out.println( msg );
 
                 qs.id = id;
 
@@ -687,7 +694,7 @@ public class QueryGenerator
                 */
 
                 // the qs querySet used for copying may involve date window ranges, but its queries have neither
-                // LIMIT not OFFSET. WE chunk for LIMIT and OFFSET here.
+                // LIMIT not OFFSET. We chunk for LIMIT and OFFSET here.
                 for( int i = 0; i < s1_nchunks; i++ )
                 {
                     for( int j = 0; j < s2_nchunks; j++ )

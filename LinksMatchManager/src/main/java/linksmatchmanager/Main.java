@@ -67,6 +67,8 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-12-Mar-2019 HikariCPDataSource
  * FL-13-May-2019 Switching to PreparedStatement
  * FL-20-Jun-2020 Elapsed time formatting
+ * FL-12-Aug-2020 memtable_check_unique() got disrupted; prematch_name was replaced by "s1_source" ???
+ * FL-14-Aug-2020 Latest Change
  */
 
 public class Main
@@ -131,7 +133,7 @@ public class Main
             plog = new PrintLogger( "LMM-" );
 
             long matchStart = System.currentTimeMillis();
-            String timestamp1 = "19-Jun-2020 11:00";
+            String timestamp1 = "14-Aug-2020 13:23";
 
             plog.show( "Links Match Manager 2.0 timestamp: " + timestamp1 );
             plog.show( "Matching names from low-to-high frequency" );
@@ -982,7 +984,7 @@ public class Main
             while( rs.next() )
             {
                 nline++;
-                String lvs_name = rs.getString( "s1_source" ) != null ? rs.getString( prematch_name ) : "";
+                String lvs_name = rs.getString( prematch_name ) != null ? rs.getString( prematch_name ) : "";
                 if( nline == 1 ) { lvs_name1 = lvs_name; }
                 else
                 {
