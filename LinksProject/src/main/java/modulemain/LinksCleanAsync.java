@@ -101,6 +101,7 @@ import general.PrintLogger;
  * FL-18-Feb 2020 Also clean prefixes if _after_ familyname
  * FL-06-Jun-2020 Adapt and extend not_linksbase[_p] flags
  * FL-02-Aug-2020 Latest familyname NULL standard exception: omit (spurious) lowercasing
+ * FL-24-Aug-2020 stillbirth renamed to lifeless_reported
  */
 
 
@@ -1474,7 +1475,7 @@ public class LinksCleanAsync extends Thread
 
 		try
 		{
-			String selectQuery = "SELECT id_person , firstname , stillbirth FROM person_o WHERE id_source = " + source;
+			String selectQuery = "SELECT id_person , firstname , lifeless_reported FROM person_o WHERE id_source = " + source;
 			if ( ! rmtype.isEmpty() ) { selectQuery += " AND registration_maintype = " + rmtype; }
 			if( debug ) { showMessage( "standardFirstname: " + selectQuery, false, true ); }
 
@@ -1506,7 +1507,7 @@ public class LinksCleanAsync extends Thread
 					}
 
 					// currently never filled in person_o, but flagged by having a firstname 'Levenloos'
-					//String stillbirth = rsFirstName.getString( "stillbirth" );
+					//String lifeless_reported = rsFirstName.getString( "lifeless_reported" );
 
 					// Is firstname empty?
 					if( firstname != null && ! firstname.isEmpty() )
@@ -1535,7 +1536,7 @@ public class LinksCleanAsync extends Thread
 
 						if( empty_name ) { addToReportPerson( id_person, source, 1101, "" ); }  // EC 1101
 
-						String stillbirth = "";
+						String lifeless_reported = "";
 						// loop through the pieces of the name
 						for( int i = 0; i < preList.size(); i++ )
 						{
@@ -1556,15 +1557,15 @@ public class LinksCleanAsync extends Thread
 									if( debug ) { System.out.println( "standard: " + standard ); }
 									postList.add( standard );
 
-									// if stillbirth has been set to 'y' for this firstname we keep it,
+									// if lifeless_reported has been set to 'y' for this firstname we keep it,
 									// and do not let it be overwritten to '' by another prename of the same firstname
-									if( stillbirth.isEmpty() )
+									if( lifeless_reported.isEmpty() )
 									{
-										// if the firstname equals or contains 'levenloos' the stillbirth column contains 'y'
-										stillbirth = almmFirstname.value( "stillbirth", prename );
-										if( debug ) { System.out.println( "stillbirth: " + stillbirth ); }
-										if( stillbirth == null ) { stillbirth = ""; }
-										else if( stillbirth.equals( "y" ) ) {
+										// if the firstname equals or contains 'levenloos' the lifeless_reported column contains 'y'
+										lifeless_reported = almmFirstname.value( "lifeless_reported", prename );
+										if( debug ) { System.out.println( "lifeless_reported: " + lifeless_reported ); }
+										if( lifeless_reported == null ) { lifeless_reported = ""; }
+										else if( lifeless_reported.equals( "y" ) ) {
 											if( debug ) {
 												String msg = String.format( "#: %d, id_person: %d, firstname: %s, prename: %s",
 													count_still, id_person, firstname, prename );
@@ -1772,9 +1773,9 @@ public class LinksCleanAsync extends Thread
 							if( n == 3 ) { firstname4 = name; }
 						}
 
-						//writerFirstname.write( id_person + "," + firstnames + "," + stillbirth + "\n" );
+						//writerFirstname.write( id_person + "," + firstnames + "," + lifeless_reported + "\n" );
 						String line = String.format( "%d,%s,%s,%s,%s,%s,%s\n",
-							id_person, firstnames, firstname1, firstname2, firstname3, firstname4, stillbirth );
+							id_person, firstnames, firstname1, firstname2, firstname3, firstname4, lifeless_reported );
 						writerFirstname.write( line );
 
 						preList.clear();
@@ -1797,9 +1798,9 @@ public class LinksCleanAsync extends Thread
 			else { strNew = "" + count_new + " new firstnames"; }
 
 			String strStill = "";
-			if( count_still == 0 ) { strStill = "no stillbirths"; }
-			else if( count_still == 1 ) { strStill = "1 stillbirth"; }
-			else { strStill = "" + count_still + " stillbirths"; }
+			if( count_still == 0 ) { strStill = "no lifeless_reporteds"; }
+			else if( count_still == 1 ) { strStill = "1 lifeless_reported"; }
+			else { strStill = "" + count_still + " lifeless_reporteds"; }
 
 			showMessage( String.format( "Thread id %02d; %d firstname records, %d without a Firstname, %s, %s", threadId, count, count_empty, strNew, strStill ), false, true );
 		}
@@ -1908,7 +1909,7 @@ public class LinksCleanAsync extends Thread
 
 		showMessage( String.format( "Thread id %02d; Creating %s", threadId, tablename + " table" ), false, true );
 
-		// Notice: the stillbirth column is not yet used
+		// Notice: the lifeless_reported column is not yet used
 		String query = "CREATE TABLE links_temp." + tablename + " ("
 			+ " person_id INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
 			+ " firstname VARCHAR(100) NULL ,"
@@ -1916,7 +1917,7 @@ public class LinksCleanAsync extends Thread
 			+ " firstname2 VARCHAR(30) NULL ,"
 			+ " firstname3 VARCHAR(30) NULL ,"
 			+ " firstname4 VARCHAR(30) NULL ,"
-			+ " stillbirth VARCHAR(3) NULL ,"
+			+ " lifeless_reported VARCHAR(3) NULL ,"
 			+ " PRIMARY KEY (person_id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
 
 		dbconTemp.executeUpdate( query );
@@ -1964,7 +1965,7 @@ public class LinksCleanAsync extends Thread
 		String query = "LOAD DATA LOCAL INFILE '" + csvname + "'"
 			+ " INTO TABLE " + tablename
 			+ " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n'"
-			+ " ( person_id , firstname , firstname1 , firstname2 , firstname3 , firstname4 , stillbirth );";
+			+ " ( person_id , firstname , firstname1 , firstname2 , firstname3 , firstname4 , lifeless_reported );";
 
 		dbconTemp.executeUpdate( query );
 	} // loadFirstnameCsvToTableT
@@ -1991,7 +1992,7 @@ public class LinksCleanAsync extends Thread
 			+ " links_cleaned.person_c.firstname2 = links_temp." + tablename + ".firstname2 ,"
 			+ " links_cleaned.person_c.firstname3 = links_temp." + tablename + ".firstname3 ,"
 			+ " links_cleaned.person_c.firstname4 = links_temp." + tablename + ".firstname4 ,"
-			+ " links_cleaned.person_c.stillbirth = links_temp." + tablename + ".stillbirth"
+			+ " links_cleaned.person_c.lifeless_reported = links_temp." + tablename + ".lifeless_reported"
 			+ " WHERE links_cleaned.person_c.id_person = links_temp." + tablename + ".person_id;";
 
 		dbconTemp.executeUpdate(query);
@@ -5303,7 +5304,7 @@ public class LinksCleanAsync extends Thread
 			+ "birth_month_max = birth_month , "
 			+ "birth_day_min   = birth_day , "
 			+ "birth_day_max   = birth_day "
-			+ "WHERE ( birth_date_valid = 1 OR LEFT(stillbirth, 1) = 'y' ) "
+			+ "WHERE ( birth_date_valid = 1 OR LEFT(lifeless_reported, 1) = 'y' ) "
 			+ "AND links_cleaned.person_c.id_source = " + source;
 
 		if ( ! rmtype.isEmpty() ) { q1 += " AND registration_maintype = " + rmtype; }
@@ -5450,7 +5451,7 @@ public class LinksCleanAsync extends Thread
 			+ " person_c.age_week ,"
 			+ " person_c.age_day ,"
 			+ " person_c.birth_date ,"
-			+ " person_c.stillbirth ,"
+			+ " person_c.lifeless_reported ,"
 			+ " person_c.mar_date ,"
 			+ " person_c.death_date ,"
 			+ " person_c.birth_year ,"
@@ -5503,7 +5504,7 @@ public class LinksCleanAsync extends Thread
 				int    age_week             = rsPersons.getInt(    "age_week" );
 				int    age_day              = rsPersons.getInt(    "age_day" );
 				String birth_date           = rsPersons.getString( "person_c.birth_date" );
-				String stillbirth           = rsPersons.getString( "person_c.stillbirth" );
+				String lifeless_reported    = rsPersons.getString( "person_c.lifeless_reported" );
 				String mar_date             = rsPersons.getString( "person_c.mar_date" );
 				String death_date           = rsPersons.getString( "person_c.death_date" );
 				int    birth_year           = rsPersons.getInt(    "birth_year" );
@@ -5514,7 +5515,7 @@ public class LinksCleanAsync extends Thread
 				int death_date_valid        = rsPersons.getInt(    "death_date_valid" );
 				String death                = rsPersons.getString( "person_c.death" );
 
-				if( stillbirth == null ) { stillbirth = ""; }
+				if( lifeless_reported == null ) { lifeless_reported = ""; }
 
 				//if( id_person == 37336505 || id_person == 37336508 ) { debug = true; }
 				//else { debug = false; continue; }
@@ -5533,7 +5534,7 @@ public class LinksCleanAsync extends Thread
 					showMessage( "age_week: "             + age_week,             false, true );
 					showMessage( "age_day: "              + age_day,              false, true );
 					showMessage( "birth_date: "           + birth_date,           false, true );
-					showMessage( "stillbirth: "           + stillbirth,           false, true );
+					showMessage( "lifeless_reported: "    + lifeless_reported,    false, true );
 					showMessage( "mar_date: "             + mar_date,             false, true );
 					showMessage( "death_date: "           + death_date,           false, true );
 					showMessage( "birth_year: "           + birth_year,           false, true );
@@ -5590,8 +5591,8 @@ public class LinksCleanAsync extends Thread
 
 				if( debug && mmds.getPersonRole() == 0 ) { showMessage( "minMaxDateMain() role = 0", false, true ); }
 
-				// invalid birth date, but not a stillbirth
-				if( birth_date_valid != 1 && ! stillbirth.startsWith( "y" ) )
+				// invalid birth date, but not a lifeless_reported
+				if( birth_date_valid != 1 && ! lifeless_reported.startsWith( "y" ) )
 				{
 					if( debug ) { showMessage( "invalid birth date", false, true ); }
 
@@ -7505,7 +7506,7 @@ public class LinksCleanAsync extends Thread
 		}
 
 
-		// stillbirth with missing birth_date -> registration_date
+		// lifeless_reported with missing birth_date -> registration_date
 		String query = "UPDATE links_cleaned.registration_c, links_cleaned.person_c "
 			+ "SET "
 			+ "person_c.birth_date = registration_c.registration_date, "
@@ -7515,7 +7516,7 @@ public class LinksCleanAsync extends Thread
 			+ "person_c.birth_date_flag = 2 "
 			+ "WHERE registration_c.id_registration = person_c.id_registration "
 			+ "AND registration_date IS NOT NULL "
-			+ "AND person_c.stillbirth IS NOT NULL AND person_c.stillbirth <> '' "
+			+ "AND person_c.lifeless_reported IS NOT NULL AND person_c.lifeless_reported <> '' "
 			+ "AND person_c.birth_date IS NULL "
 			+ "AND person_c.role = 10 "
 			+ "AND person_c.id_source = " + source;
@@ -7523,10 +7524,10 @@ public class LinksCleanAsync extends Thread
 		if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
 		if( debug ) { System.out.println( query ); }
 
-		String msg = String.format( "Thread id %02d; running stillbirth birth_date query ...", threadId  );
+		String msg = String.format( "Thread id %02d; running lifeless_reported birth_date query ...", threadId  );
 		showMessage( msg, false, true );
 		int count = dbconCleaned.executeUpdate( query );
-		msg = String.format( "Thread id %02d; stillbirth: %d rows updated", threadId, count  );
+		msg = String.format( "Thread id %02d; lifeless_reported: %d rows updated", threadId, count  );
 		showMessage( msg, false, true );
 
 	} // postTasks
@@ -9306,8 +9307,8 @@ public class LinksCleanAsync extends Thread
 		if ( ! rmtype.isEmpty() ) { clearQuery_p1 += " AND registration_maintype = " + rmtype; }
 		dbconCleaned.executeUpdate( clearQuery_p1 );
 
-		showMessage( String.format( "Thread id %02d; clear previous remarks values: stillbirth", threadId ), false, true );
-		String clearQuery_p2 = "UPDATE person_c SET stillbirth = NULL WHERE stillbirth = 'y-r' AND id_source = " + source;
+		showMessage( String.format( "Thread id %02d; clear previous remarks values: lifeless_reported", threadId ), false, true );
+		String clearQuery_p2 = "UPDATE person_c SET lifeless_reported = NULL WHERE lifeless_reported = 'y-r' AND id_source = " + source;
 		if ( ! rmtype.isEmpty() ) { clearQuery_p2 += " AND registration_maintype = " + rmtype; }
 		dbconCleaned.executeUpdate( clearQuery_p2 );
 
