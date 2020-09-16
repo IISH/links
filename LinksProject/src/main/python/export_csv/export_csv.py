@@ -5,13 +5,13 @@
 Author:		Fons Laan, KNAW HuC-DI & IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_csv.py
-Version:	0.1
+Version:	0.2
 Goal:		Export a table, including header, to a csv file
 ToDo:		Move general db stuff to a separate hsn-links-db.py
 			Get db & tabl name from command line or yaml file
 
 08-May-2020 Created
-03-Sep-2020 Latest Change
+16-Sep-2020 Latest Change
 """
 
 # future imports for Python 2/3 compatibility
@@ -81,8 +81,10 @@ class Database:
 
 
 
-def export( debug, db, table_name ):
-	csv_filename = "%s.csv" % table_name
+def export( debug, db, table_name, columns_str, where_str, csv_filename ):
+	if not csv_filename:
+		csv_filename = "%s.csv" % table_name
+	
 	csv_pathname = os.path.join( os.path.dirname(__file__), 'csv', csv_filename )
 	print( "csv_pathname: %s" % csv_pathname )
 	if not os.path.exists( os.path.dirname( csv_pathname ) ):
@@ -94,28 +96,34 @@ def export( debug, db, table_name ):
 	encoding = "utf-8"
 	newline  =  '\n'
 	
-	delimiter = ','         # notice that we imported backports.csv
-	quotechar = '"'
-	quoting   = csv.QUOTE_ALL
+	delimiter  = ','         # notice that we imported backports.csv
+	escapechar = '\\'
+	quotechar  = '"'
+	quoting    = csv.QUOTE_NONNUMERIC
 
 	with io.open( csv_pathname, "w", newline = newline, encoding = encoding ) as csv_file:
-		writer = csv.writer( csv_file, delimiter = delimiter, quotechar = quotechar, quoting = quoting )
+		writer = csv.writer( csv_file, delimiter = delimiter, escapechar = escapechar, quotechar = quotechar, quoting = quoting )
 		
-		query = "SHOW COLUMNS FROM %s" % table_name
-		print( "query: %s" % query )
-		resp = db.query( query )
-		
-		if resp is not None:
-			nrec = len( resp )
-			print( "number of columns: %d" %nrec )
-			header = []
-			for r in range( nrec ):
-				col_dict = resp[ r ]
-				col_name = col_dict[ "Field" ]
-				header.append( col_name )
+		header = []
+		if columns_str:
+			column_names = columns_str.split( ',' )
+			for col_name in column_names:
+				header.append( col_name.strip() )
+		else:
+			query = "SHOW COLUMNS FROM %s" % table_name
+			print( "query: %s" % query )
+			resp = db.query( query )
 			
-			print( header )
-			writer.writerow( header )
+			if resp is not None:
+				nrec = len( resp )
+				print( "number of columns: %d" %nrec )
+				for r in range( nrec ):
+					col_dict = resp[ r ]
+					col_name = col_dict[ "Field" ]
+					header.append( col_name )
+		
+		print( header )
+		writer.writerow( header )
 
 		query = "SELECT COUNT(*) AS count FROM %s" % table_name
 		print( "query: %s" % query )
@@ -125,7 +133,13 @@ def export( debug, db, table_name ):
 			nrec = row[ "count" ]
 			print( "number of rows: %d" %nrec )
 
-		query = "SELECT * FROM %s" % table_name
+		if columns_str:
+			query = "SELECT %s FROM %s" % ( columns_str, table_name )
+		else:
+			query = "SELECT * FROM %s" % table_name
+			
+		if where_str:
+			query = "%s WHERE %s" % ( query, where_str )
 		print( "query: %s" % query )
 
 		cursor = db.cursor
@@ -183,9 +197,12 @@ def get_yaml_config( yaml_filename ):
 if __name__ == "__main__":
 	print( "export_csv.py" )
 	
-	DB_NAME = "links_match"
-	TABLE_NAME = "match_process"
-	
+	DB_NAME = "links_original"
+	TABLE_NAME = "registration_o"
+	COLUMN_NAMES = "id_registration, registration_location"
+	WHERE_STR = "(registration_maintype = 1 OR registration_maintype = 2)"
+	CSV_FILENAME = "kees_links_original.location-rm_type=1-2-2020.09.16.csv"
+
 	time0 = time()		# seconds since the epoch
 	msg = "Start: %s" % datetime.datetime.now()
 	
@@ -202,7 +219,7 @@ if __name__ == "__main__":
 
 	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DB_NAME )
 	
-	export( debug, db, TABLE_NAME )
+	export( debug, db, TABLE_NAME, COLUMN_NAMES, WHERE_STR, CSV_FILENAME )
 
 	msg = "Stop: %s" % datetime.datetime.now()
 	
