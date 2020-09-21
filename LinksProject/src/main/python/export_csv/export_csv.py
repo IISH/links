@@ -11,7 +11,8 @@ ToDo:		Move general db stuff to a separate hsn-links-db.py
 			Get db & tabl name from command line or yaml file
 
 08-May-2020 Created
-16-Sep-2020 Latest Change
+18-Sep-2020 2 yaml files: export_csv & hsn-links-db
+21-Sep-2020 quotechar  = '|' to avoid problems with the common " and ' in strings
 """
 
 # future imports for Python 2/3 compatibility
@@ -98,7 +99,7 @@ def export( debug, db, table_name, columns_str, where_str, csv_filename ):
 	
 	delimiter  = ','         # notice that we imported backports.csv
 	escapechar = '\\'
-	quotechar  = '"'
+	quotechar  = '|'
 	quoting    = csv.QUOTE_NONNUMERIC
 
 	with io.open( csv_pathname, "w", newline = newline, encoding = encoding ) as csv_file:
@@ -171,23 +172,32 @@ def get_yaml_config( yaml_filename ):
 	config = {}
 	print( "Trying to load the yaml config file: %s" % yaml_filename )
 	
-	try:
-		LINKS_HOME = os.environ[ "LINKS_HOME" ]
-	except:
-		LINKS_HOME = ""
+	if yaml_filename.startswith( "./" ):	# look in startup directory
+		yaml_filename = yaml_filename[ 2: ]
+		config_path = os.path.join( sys.path[ 0 ], yaml_filename )
 	
-	if not LINKS_HOME:
-		print( "environment variable LINKS_HOME not set" )
 	else:
-		print( "LINKS_HOME: %s" % LINKS_HOME )
+		try:
+			LINKS_HOME = os.environ[ "LINKS_HOME" ]
+		except:
+			LINKS_HOME = ""
+		
+		if not LINKS_HOME:
+			print( "environment variable LINKS_HOME not set" )
+		else:
+			print( "LINKS_HOME: %s" % LINKS_HOME )
+		
+		config_path = os.path.join( LINKS_HOME, yaml_filename )
 	
-	config_path = os.path.join( LINKS_HOME, yaml_filename )
 	print( "yaml config path: %s" % config_path )
 	
 	try:
-		config = yaml.safe_load( open( config_path ) )
+		config_file = open( config_path )
+		config = yaml.safe_load( config_file )
 	except:
-		print( "NOT FOUND: %s" % yaml_filename )
+		etype = sys.exc_info()[ 0:1 ]
+		value = sys.exc_info()[ 1:2 ]
+		print( "%s, %s\n" % ( etype, value ) )
 		sys.exit( 1 )
 	
 	return config
@@ -197,21 +207,25 @@ def get_yaml_config( yaml_filename ):
 if __name__ == "__main__":
 	print( "export_csv.py" )
 	
-	DB_NAME = "links_original"
-	TABLE_NAME = "registration_o"
-	COLUMN_NAMES = "id_registration, registration_location"
-	WHERE_STR = "(registration_maintype = 1 OR registration_maintype = 2)"
-	CSV_FILENAME = "kees_links_original.location-rm_type=1-2-2020.09.16.csv"
-
 	time0 = time()		# seconds since the epoch
 	msg = "Start: %s" % datetime.datetime.now()
 	
-	yaml_filename = "hsn-links-db.yaml"
-	config = get_yaml_config( yaml_filename )
+	yaml_filename = "./export_csv.yaml"
+	config_local = get_yaml_config( yaml_filename )
 	
-	HOST_LINKS   = config.get( "HOST_LINKS" )
-	USER_LINKS   = config.get( "USER_LINKS" )
-	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	YAML_MAIN  = config_local.get( "YAML_MAIN" )
+	DB_NAME    = config_local.get( "DB_NAME" )
+	TABLE_NAME = config_local.get( "TABLE_NAME" )
+	
+	COLUMN_NAMES    = config_local.get( "COLUMN_NAMES" )
+	WHERE_CONDITION = config_local.get( "WHERE_CONDITION" )
+	CSV_FILENAME    = config_local.get( "CSV_FILENAME" )
+	
+	config_main = get_yaml_config( YAML_MAIN )
+	
+	HOST_LINKS   = config_main.get( "HOST_LINKS" )
+	USER_LINKS   = config_main.get( "USER_LINKS" )
+	PASSWD_LINKS = config_main.get( "PASSWD_LINKS" )
 	
 	print( "HOST_LINKS: %s" % HOST_LINKS )
 	print( "USER_LINKS: %s" % USER_LINKS )
@@ -219,7 +233,7 @@ if __name__ == "__main__":
 
 	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DB_NAME )
 	
-	export( debug, db, TABLE_NAME, COLUMN_NAMES, WHERE_STR, CSV_FILENAME )
+	export( debug, db, TABLE_NAME, COLUMN_NAMES, WHERE_CONDITION, CSV_FILENAME )
 
 	msg = "Stop: %s" % datetime.datetime.now()
 	
