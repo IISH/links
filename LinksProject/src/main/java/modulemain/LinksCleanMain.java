@@ -582,7 +582,10 @@ public class LinksCleanMain extends Thread
         if (sourceIdsGui.isEmpty()) {
             idsInt = sourceListAvail;
         }           // use all Ids from links_original.registration_o
-        else {
+        else
+        {
+            sourceIdsGui = sourceIdsGui.replace( "  ", " " );
+            sourceIdsGui = sourceIdsGui.replace( ", ", " " );
             String idsStr[] = sourceIdsGui.split(" ");
 
             if (idsStr.length == 0)           // nothing from GUI

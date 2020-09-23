@@ -66,7 +66,8 @@ import general.PrintLogger;
  * FL-05-Aug-2014 ref db also in GUI
  * FL-20-Aug-2014 Occupation added
  * FL-28-Jun-2017 rmtype from gui
- * FL-24-Aug-2020 timestamp
+ * FL-23-Sep-2020 Call LinksCleanMain instead of LinksCleanOld !
+ * FL-23-Sep-2020 timestamp
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2896,7 +2897,7 @@ public class ManagerGui extends javax.swing.JFrame
         tbLOLClatestOutput.setText( "" );
         taLOLCoutput.setText( "" );
 
-        LinksCleanOld linksCleaned = new LinksCleanOld( opts, tbLOLClatestOutput, taLOLCoutput, this );
+        LinksCleanMain linksCleaned = new LinksCleanMain( opts, tbLOLClatestOutput, taLOLCoutput, this );
 
         linksCleaned.start();
     }//GEN-LAST:event_btnStartProcessClean
@@ -3023,7 +3024,7 @@ public class ManagerGui extends javax.swing.JFrame
 			public void run()
 			{
 				long threadId = Thread.currentThread().getId();
-				String timestamp1 = "24-Aug-2020 13:17";
+				String timestamp1 = "23-Sep-2020 13:29";
 				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
 				try

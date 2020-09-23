@@ -102,6 +102,7 @@ import general.PrintLogger;
  * FL-06-Jun-2020 Adapt and extend not_linksbase[_p] flags
  * FL-02-Aug-2020 Latest familyname NULL standard exception: omit (spurious) lowercasing
  * FL-24-Aug-2020 stillbirth renamed to lifeless_reported
+ * FL-23-Sep-2020 set empty/whitespace registration_type via registration_maintype
  */
 
 
@@ -3365,6 +3366,21 @@ public class LinksCleanAsync extends Thread
 					// update links_cleaned.registration_c
 					String query_r = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
 					dbconCleaned.executeUpdate( query_r );
+				}
+
+				// FL-22-Sep-2020 default to usable registration_type if possible for empty or whitespace value
+				if( registration_type.trim().isEmpty() )
+				{
+					     if( registration_maintype.equals( "1") ) { registration_type = "g"; }
+					else if( registration_maintype.equals( "2") ) { registration_type = "h"; }
+					else if( registration_maintype.equals( "3") ) { registration_type = "o"; }
+					else if( registration_maintype.equals( "4") ) { registration_type = "s"; }
+
+					if( ! registration_type.isEmpty() )		// update links_cleaned.registration_c
+					{
+						String query_r = RegistrationC.updateQuery( "registration_type", registration_type, id_registration );
+						dbconCleaned.executeUpdate( query_r );
+					}
 				}
 			}
 
