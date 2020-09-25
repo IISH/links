@@ -42,7 +42,7 @@ import linksmanager.ManagerGui;
  * FL-05-Nov-2019 Extensive cleanup
  * FL-29-Dec-2019 Separate DB pool for HSN
  * FL-07-Jan-2020 Single-threaded data refresh
- * FL-06-Feb-2020 Latest Change
+ * FL-24-Sep-2020 Latest Change
  */
 
 public class LinksCleanMain extends Thread
@@ -270,6 +270,7 @@ public class LinksCleanMain extends Thread
                     dbconCleaned.close();
                 }
 
+                int id = 0;
                 for( int sourceId : sourceList )
                 {
                     /*
@@ -280,6 +281,9 @@ public class LinksCleanMain extends Thread
                     }
                     tm.addThread();        // Add a thread to the thread count
                     */
+
+                    id++;
+                    String idStr = String.format ( "%d-of-%d", id, sourceList.length );
 
                     // Wait until semaphore gives permission
                     int npermits = semaphore.availablePermits();
@@ -297,7 +301,7 @@ public class LinksCleanMain extends Thread
                     LinksCleanAsync lca = new LinksCleanAsync( semaphore, opts, guiLine, guiArea, source, rmtype, showskip,
                         logTableName, dsLog, dsReference, dsOriginal, dsCleaned, dsTemp );
 
-                    msg = String.format( "Thread id %02d; Start cleaning source: %s, rmtype: %s", mainThreadId, source, rmtype );
+                    msg = String.format( "Thread id %02d; Start cleaning %s, source: %s, rmtype: %s", mainThreadId, idStr, source, rmtype );
                     plog.show( msg ); showMessage(msg, false, true);
 
                     lca.start();

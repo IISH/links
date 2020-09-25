@@ -3337,6 +3337,7 @@ public class LinksCleanAsync extends Thread
 						addToReportRegistration( id_registration, source, 55, registration_type );       // warning 55
 
 						String refSRegisType = almmRegistration.standard( registration_type );
+						if( refSRegisType == null ) { refSRegisType = ""; }
 
 						String query_r = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
 						dbconCleaned.executeUpdate( query_r );
@@ -3345,6 +3346,7 @@ public class LinksCleanAsync extends Thread
 						if( debug ) { showMessage( "Standard reg type: id_person: " + id_registration + ", reg type: " + registration_type, false, true ); }
 
 						String refSRegisType = almmRegistration.standard( registration_type );
+						if( refSRegisType == null ) { refSRegisType = ""; }
 
 						String query_r = RegistrationC.updateQuery( "registration_type", refSRegisType, id_registration );
 						dbconCleaned.executeUpdate( query_r );
