@@ -590,6 +590,7 @@ public class LinksCleanMain extends Thread
         {
             sourceIdsGui = sourceIdsGui.replace( "  ", " " );
             sourceIdsGui = sourceIdsGui.replace( ", ", " " );
+            sourceIdsGui = sourceIdsGui.replace( ",", " " );
             String idsStr[] = sourceIdsGui.split(" ");
 
             if (idsStr.length == 0)           // nothing from GUI

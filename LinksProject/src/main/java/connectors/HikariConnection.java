@@ -1,6 +1,15 @@
 package connectors;
 
-import java.sql.*;
+import java.lang.InterruptedException;
+import java.lang.Thread;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
+
 
 /**
  * @author Fons Laan
@@ -9,7 +18,7 @@ import java.sql.*;
  * We call this class HikariConnection because we use it it in combination with Hikari Connection Pooling.
  *
  * FL-08-Oct-2019 Created
- * FL-28-Oct-2019 Changed
+ * FL-30-Sep-2020 Restart commit with delay after SQLTransactionRollbackException
  */
 
 public class HikariConnection
@@ -27,6 +36,7 @@ public class HikariConnection
 
 
 	/**
+	 * Show Metadata
 	 * @throws SQLException
 	 */
 	public void showMetaData( String connectionName )
@@ -46,18 +56,55 @@ public class HikariConnection
 
 
 	/**
-	* @throws SQLException
-	*/
+	 * Commit Connection
+	 * @throws InterruptedException
+	 * @throws SQLException
+	 */
 	public void commit()
-	throws SQLException
+	throws SQLException, InterruptedException
 	{
-		connection.commit();
+		// With multi-threaded cleaning we get sometimes a SQLTransactionRollbackException,
+		// with message: Deadlock found when trying to get lock; try restarting transaction.
+		// We retry the commit after increasing delays, max
+
+		long threadId = Thread.currentThread().getId();
+		int nloops = 0;
+		boolean done = false;
+		long millisecs = 250;
+
+		do
+		{
+			try
+			{
+				connection.commit();
+				done = true;
+				if( nloops > 0 )
+				{
+					String msg = String.format( "Thread id %02d; Retrying failed commit succeeded after %d time(s)", threadId, nloops );
+					System.out.println( msg );
+				}
+			}
+			catch( SQLTransactionRollbackException ex )
+			{
+				if( nloops > 10 ) { throw ex; }		// retrying failed
+				else	// retry
+				{
+					String msg = String.format( "Thread id %02d; Exception in standardRegistrationType: %s", threadId, ex.getMessage() );
+					System.out.println( msg );
+					Thread.sleep( millisecs );
+					nloops += 1;
+					millisecs += millisecs;
+				}
+			}
+		} while( ! done );
+
 	}
 
 
 	/**
-	* @throws SQLException
-	*/
+	 * Close Connection
+	 * @throws SQLException
+	 */
 	public void close()
 	throws SQLException
 	{

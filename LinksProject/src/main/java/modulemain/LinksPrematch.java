@@ -34,6 +34,7 @@ import prematch.Lvs;
  * FL-04-Sep-2017 Frequency tables per source & rmtype
  * FL-28-Aug-2018 Cosmetic update in links_base update
  * FL-25-Feb-2020 Include person_c.id_person_o (better name would be: person_seq_nr: 1,2,3...)
+ * FL-26-Sep-2020 Allow comma's in sourceIdsGui
  */
 
 public class LinksPrematch extends Thread
@@ -153,6 +154,9 @@ public class LinksPrematch extends Thread
         {
             doSplitFirstnames( debug, bSplitFirstames );
 
+            sourceIdsGui = sourceIdsGui.replace( "  ", " " );
+            sourceIdsGui = sourceIdsGui.replace( ", ", " " );
+            sourceIdsGui = sourceIdsGui.replace( ",", " " );
             String idsStr[] = sourceIdsGui.split( " " );
 
             String rmtype = "";
