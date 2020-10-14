@@ -38,6 +38,7 @@ Goal:		export matches for CBG
 18-Dec-2019 Latest Change
 09-Sep-2020 id_source_low_limit for export1 method: does not work?
 07-Oct-2020 yaml_main & yaml_local
+14-Oct-2020 Empty GUID handling bug ('null' was not skipped)
 """
 
 # future-0.17.0 imports for Python 2/3 compatibility
@@ -332,8 +333,8 @@ def export1( db_ref, db_links, tbl_base, tbl_matches, id_match_process, Type_lin
 			id_registration_1 = rec_linksbase_1[ "id_registration" ]
 			id_registration_2 = rec_linksbase_2[ "id_registration" ]
 			
-			GUID_1 = rec_linksbase_1[ "id_persist_registration" ]
-			GUID_2 = rec_linksbase_2[ "id_persist_registration" ]
+			GUID_1 = none2empty( rec_linksbase_1[ "id_persist_registration" ] )
+			GUID_2 = none2empty( rec_linksbase_2[ "id_persist_registration" ] )
 			
 			if not GUID_1 or not GUID_2:
 				continue		# not usable for CBG, skip
@@ -470,8 +471,8 @@ def export2( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_mat
 			
 			#Type_Match = none2zero( rec_match[ "type_match" ] )
 			
-			GUID_1 = rec_match[ "id_persist_registration_1" ]
-			GUID_2 = rec_match[ "id_persist_registration_2" ]
+			GUID_1 = none2empty( rec_match[ "id_persist_registration_1" ] )
+			GUID_2 = none2empty( rec_match[ "id_persist_registration_2" ] )
 			
 			if not GUID_1 or not GUID_2:		# Only CBG records have a GUID
 			# The '{' & '}' come from the CBG XML, but they do not want them in the export data
