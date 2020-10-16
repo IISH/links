@@ -414,7 +414,8 @@ def export2( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_mat
 	# tbl_base only needed if we also want to export the source names
 	print( "export2() for id_match_process %s" % id_match_process )
 
-	empty_guid_recs = 0
+	filled_guid_recs = 0
+	empty_guid_recs  = 0
 	
 	query = "SELECT COUNT(*) AS count FROM links_match.%s WHERE id_match_process = %s;" % ( tbl_matches, id_match_process )
 	print( query )
@@ -479,6 +480,7 @@ def export2( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_mat
 				empty_guid_recs += 1
 				continue		# not usable for CBG, skip
 			
+			filled_guid_recs += 1
 			GUID_1 = GUID_1.strip( '{}' )
 			GUID_2 = GUID_2.strip( '{}' )
 			
@@ -546,7 +548,8 @@ def export2( db_ref, db_links, tbl_base, tbl_matches, id_match_process, type_mat
 			writer.writerow( line )
 		
 		print( "%d-of-%d records processed" % ( nrec, nrec ) )
-		print( "empty_guid_recs: %d" % empty_guid_recs )
+		print( "skipped empty_guid_recs: %d" % empty_guid_recs )
+		print( "written filled_guid_recs: %d" % filled_guid_recs )
 		
 	csvfile.close()
 
