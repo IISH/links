@@ -103,6 +103,7 @@ import general.PrintLogger;
  * FL-02-Aug-2020 Latest familyname NULL standard exception: omit (spurious) lowercasing
  * FL-24-Aug-2020 stillbirth renamed to lifeless_reported
  * FL-23-Sep-2020 set empty/whitespace registration_type via registration_maintype
+ * FL-01-Dec-2020 Missing source in EC 106, in function minMaxMainAge()
  */
 
 
@@ -6585,7 +6586,8 @@ public class LinksCleanAsync extends Thread
 					showMessage( "minMaxMainAge(): id_person = " + id_person + ", looping too much, quit (warning 106)", false, true );
 					showMessage( queryRef, false, true );
 				}
-				addToReportPerson( id_person, "0", 106, "" );
+				String source = Integer.toString( id_source );
+				addToReportPerson( id_person, source, 106, "" );	// EC 106
 				done = true;
 			}
 			loop++;
