@@ -104,6 +104,7 @@ import general.PrintLogger;
  * FL-24-Aug-2020 stillbirth renamed to lifeless_reported
  * FL-23-Sep-2020 set empty/whitespace registration_type via registration_maintype
  * FL-01-Dec-2020 Missing source in EC 106, in function minMaxMainAge()
+ * FL-08-Dec-2020 prepareStatement() instead of manual escaping
  */
 
 
@@ -9546,14 +9547,12 @@ public class LinksCleanAsync extends Thread
 		if( name_table.equals( "person_c" ) )
 		{
 			String mysqlStr = divorceStr;
-			mysqlStr = mysqlStr.replace( "'",  "\\'" );       // escape single quotes
-			mysqlStr = mysqlStr.replace( "\"", "\\\"" );      // escape quotes quotes
-
 			query_u = String.format( "UPDATE links_cleaned.person_c SET %s = '%s' WHERE id_registration = %d AND role = %d",
 				name_field, mysqlStr, id_registration, role );
 
-			try {
-				int rowsAffected = dbconCleaned.executeUpdate( query_u );
+			try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query_u ) )
+			{
+				int rowsAffected = pstmt.executeUpdate( query_u );
 				if( debug ) { System.out.println( String.format( "%d %s", rowsAffected, query_u ) ); }
 			}
 			catch( Exception ex ) {
