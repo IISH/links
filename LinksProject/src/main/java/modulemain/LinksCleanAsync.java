@@ -105,6 +105,7 @@ import general.PrintLogger;
  * FL-23-Sep-2020 set empty/whitespace registration_type via registration_maintype
  * FL-01-Dec-2020 Missing source in EC 106, in function minMaxMainAge()
  * FL-08-Dec-2020 prepareStatement() instead of manual escaping
+ * FL-06-Jan-2021 display affected records in postTasks() setting person_c.sex
  */
 
 
@@ -7451,53 +7452,56 @@ public class LinksCleanAsync extends Thread
 		String table_female = "links_temp.female_" + Long.toString( threadId );
 
 		String[] queries1 =
-			{
-				"DROP TABLE IF EXISTS " + table_male   + ";",
-				"DROP TABLE IF EXISTS " + table_female + ";",
+		{
+			"DROP TABLE IF EXISTS " + table_male   + ";",
+			"DROP TABLE IF EXISTS " + table_female + ";",
 
-				"CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
-				"CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
-			};
+			"CREATE TABLE " + table_male   + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;",
+			"CREATE TABLE " + table_female + " ( id_registration INT NOT NULL , PRIMARY KEY (id_registration) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
+		};
 
 		int n = 0;
 		for( String query : queries1 )
 		{
 			n++;
-			String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries1.length );
-			showMessage( msg, false, true );
+			if( debug ) {
+				String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries1.length );
+				showMessage( msg, false, true );
+			}
 			dbconCleaned.executeUpdate( query );
 		}
 
 
 		String[] queries2 =
-			{
-				"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 2 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 4 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 5 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 8 AND id_source = " + source,
-				"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
+		{
+			"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 2 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 3 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 4 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 5 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 6 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 7 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'f' WHERE role = 8 AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'm' WHERE role = 9 AND id_source = " + source,
 
-				"UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
+			"UPDATE links_cleaned.person_c SET sex = 'u' WHERE (sex IS NULL OR (sex <> 'm' AND sex <> 'f')) AND id_source = " + source,
 
-				"INSERT INTO " + table_male   + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
-					+ "WHERE role = 10 AND sex = 'm' AND id_source = " + source,
+			"INSERT INTO " + table_male   + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
+				+ "WHERE role = 10 AND sex = 'm' AND id_source = " + source,
 
-				"INSERT INTO " + table_female + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
-					+ "WHERE role = 10 AND sex = 'f' AND id_source = " + source,
+			"INSERT INTO " + table_female + " (id_registration) SELECT id_registration FROM links_cleaned.person_c "
+				+ "WHERE role = 10 AND sex = 'f' AND id_source = " + source,
 
-				"UPDATE links_cleaned.person_c, " + table_male   + " SET sex = 'f' "
-					+ "WHERE " + table_male   + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-					+ "AND id_source = " + source,
+			"UPDATE links_cleaned.person_c, " + table_male   + " SET sex = 'f' "
+				+ "WHERE " + table_male   + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+				+ "AND id_source = " + source,
 
-				"UPDATE links_cleaned.person_c, " + table_female + " SET sex = 'm' "
-					+ "WHERE " + table_female + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
-					+ "AND id_source = " + source
-			};
+			"UPDATE links_cleaned.person_c, " + table_female + " SET sex = 'm' "
+				+ "WHERE " + table_female + ".id_registration = links_cleaned.person_c.id_registration AND role = 11 "
+				+ "AND id_source = " + source
+		};
 
 		n = 0;
+		int tot_count = 0;
 		for( String query : queries2 )
 		{
 			n++;
@@ -7505,24 +7509,36 @@ public class LinksCleanAsync extends Thread
 			if ( ! rmtype.isEmpty() ) { query += " AND registration_maintype = " + rmtype; }
 			if( debug ) { System.out.println( query ); }
 
-			String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries2.length );
+			String msg = String.format( "Thread id %02d; query %d-of-%d ...", threadId, n, queries2.length );
 			showMessage( msg, false, true );
-			dbconCleaned.executeUpdate( query );
+
+			PreparedStatement pstmt = dbconCleaned.prepareStatement( query );
+			int rowsAffected = pstmt.executeUpdate();
+			if( query.startsWith( "UPDATE links_cleaned.person_c" ) )
+			{
+				tot_count += rowsAffected;
+				msg = String.format( "Thread id %02d; query %d-of-%d %d rows updated", threadId, n, queries2.length, rowsAffected );
+				showMessage( msg, false, true );
+			}
 		}
 
+		String msg = String.format( "Thread id %02d; person_c sex: %d rows updated", threadId, tot_count  );
+		showMessage( msg, false, true );
 
 		String[] queries3 =
-			{
-				"DROP TABLE IF EXISTS " + table_male + ";",
-				"DROP TABLE IF EXISTS " + table_female + ";"
-			};
+		{
+			"DROP TABLE IF EXISTS " + table_male + ";",
+			"DROP TABLE IF EXISTS " + table_female + ";"
+		};
 
 		n = 0;
 		for( String query : queries3 )
 		{
 			n++;
-			String msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries3.length );
-			showMessage( msg, false, true );
+			if( debug ) {
+				msg = String.format( "Thread id %02d; query %d-of-%d", threadId, n, queries3.length );
+				showMessage( msg, false, true );
+			}
 			dbconCleaned.executeUpdate( query );
 		}
 
@@ -7545,7 +7561,7 @@ public class LinksCleanAsync extends Thread
 		if ( ! rmtype.isEmpty() ) { query += " AND person_c.registration_maintype = " + rmtype; }
 		if( debug ) { System.out.println( query ); }
 
-		String msg = String.format( "Thread id %02d; running lifeless_reported birth_date query ...", threadId  );
+		msg = String.format( "Thread id %02d; running lifeless_reported birth_date query ...", threadId  );
 		showMessage( msg, false, true );
 		int count = dbconCleaned.executeUpdate( query );
 		msg = String.format( "Thread id %02d; lifeless_reported: %d rows updated", threadId, count  );
