@@ -107,7 +107,8 @@ import general.PrintLogger;
  * FL-08-Dec-2020 prepareStatement() instead of manual escaping
  * FL-06-Jan-2021 display affected records in postTasks() setting person_c.sex
  * FL-15-Jan-2021 scan_remarks: not_string => not_string1; not_string2 will follow
- * FL-18-Jan-2021 scan_remarks: not_string2 finished but still needs testing
+ * FL-19-Jan-2021 scan_remarks: not_string2 finished but still needs testing
+ * FL-20-Jan-2021 postTasks() renamed updateSexRole()
  */
 
 
@@ -7395,7 +7396,7 @@ public class LinksCleanAsync extends Thread
 
 		String msg = String.format( "Thread id %02d; Processing postTasks for source: %s, rmtype: %s ...", threadId, source, rmtype );
 		showMessage( msg, false, true );
-		postTasks( debug, source, rmtype );
+		updateSexRole( debug, source, rmtype );
 
 		elapsedShowMessage( funcname, start, System.currentTimeMillis() );
 		showMessage_nl();
@@ -7437,18 +7438,18 @@ public class LinksCleanAsync extends Thread
 
 
 	/**
-	 * postTasks()
+	 * updateSexRole()
 	 * @param debug
 	 * @param source
 	 * @param rmtype
 	 * @throws Exception
 	 */
-	private void postTasks( boolean debug, String source, String rmtype )
+	private void updateSexRole( boolean debug, String source, String rmtype )
 		throws Exception
 	{
 		long threadId = Thread.currentThread().getId();
 
-		if( debug ) { showMessage( "postTasks()", false, true ); }
+		if( debug ) { showMessage( "updateSexRole()", false, true ); }
 
 		String table_male   = "links_temp.male_"   + Long.toString( threadId );
 		String table_female = "links_temp.female_" + Long.toString( threadId );
@@ -7569,7 +7570,7 @@ public class LinksCleanAsync extends Thread
 		msg = String.format( "Thread id %02d; lifeless_reported: %d rows updated", threadId, count  );
 		showMessage( msg, false, true );
 
-	} // postTasks
+	} // updateSexRole
 
 
 	/**
@@ -9378,42 +9379,42 @@ public class LinksCleanAsync extends Thread
 				int maintype = rs_r.getInt( "maintype" );
 				int role     = rs_r.getInt( "role" );
 
-				String string_1    = rs_r.getString( "string_1" );
-				String string_2    = rs_r.getString( "string_2" );
-				String string_3    = rs_r.getString( "string_3" );
-				String not_string1 = rs_r.getString( "not_string1" );
-				String not_string2 = rs_r.getString( "not_string2" );
-				String name_table  = rs_r.getString( "name_table" );
-				String name_field  = rs_r.getString( "name_field" );
-				String value       = rs_r.getString( "value" );
+				String string_1     = rs_r.getString( "string_1" );
+				String string_2     = rs_r.getString( "string_2" );
+				String string_3     = rs_r.getString( "string_3" );
+				String not_string_1 = rs_r.getString( "not_string_1" );
+				String not_string_2 = rs_r.getString( "not_string_2" );
+				String name_table   = rs_r.getString( "name_table" );
+				String name_field   = rs_r.getString( "name_field" );
+				String value        = rs_r.getString( "value" );
 
-				if( string_1    != null ) { string_1    = string_1  .toLowerCase(); }
-				if( string_2    != null ) { string_2    = string_2  .toLowerCase(); }
-				if( string_3    != null ) { string_3    = string_3  .toLowerCase(); }
-				if( not_string1 != null ) { not_string1 = not_string1.toLowerCase(); }
-				if( not_string2 != null ) { not_string2 = not_string2.toLowerCase(); }
-				if( name_table  != null ) { name_table  = name_table.toLowerCase(); }
-				if( name_field  != null ) { name_field  = name_field.toLowerCase(); }
-				if( value       != null ) { value       = value     .toLowerCase(); }
+				if( string_1     != null ) { string_1     = string_1  .toLowerCase(); }
+				if( string_2     != null ) { string_2     = string_2  .toLowerCase(); }
+				if( string_3     != null ) { string_3     = string_3  .toLowerCase(); }
+				if( not_string_1 != null ) { not_string_1 = not_string_1.toLowerCase(); }
+				if( not_string_2 != null ) { not_string_2 = not_string_2.toLowerCase(); }
+				if( name_table   != null ) { name_table   = name_table.toLowerCase(); }
+				if( name_field   != null ) { name_field   = name_field.toLowerCase(); }
+				if( value        != null ) { value        = value     .toLowerCase(); }
 
 				Remarks ref_remarks = new Remarks();
 
-				ref_remarks.setIdScan(     id_scan );
-				ref_remarks.setMaintype(   maintype );
-				ref_remarks.setRole(       role );
-				ref_remarks.setString_1(   string_1 );
-				ref_remarks.setString_2(   string_2 );
-				ref_remarks.setString_3(   string_3 );
-				ref_remarks.setNotString1( not_string1 );
-				ref_remarks.setNotString2( not_string2 );
-				ref_remarks.setNameTable(  name_table );
-				ref_remarks.setNameField(  name_field );
-				ref_remarks.setValue(      value );
+				ref_remarks.setIdScan(      id_scan );
+				ref_remarks.setMaintype(    maintype );
+				ref_remarks.setRole(        role );
+				ref_remarks.setString_1(    string_1 );
+				ref_remarks.setString_2(    string_2 );
+				ref_remarks.setString_3(    string_3 );
+				ref_remarks.setNotString_1( not_string_1 );
+				ref_remarks.setNotString_2( not_string_2 );
+				ref_remarks.setNameTable(   name_table );
+				ref_remarks.setNameField(   name_field );
+				ref_remarks.setValue(       value );
 
 				ref_remarksVec.add( ref_remarks  );
 
-				if( debug ) { System.out.printf( "%2d, id_scan: %3d, maintype: %d, role: %2d, string_1: %s, string_2: %s, string_3: %s, not_string1: %s, not_string2: %s,  name_table: %s, name_field: %s, value: %s\n",
-					nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string1, not_string2, name_table, name_field, value ); }
+				if( debug ) { System.out.printf( "%2d, id_scan: %3d, maintype: %d, role: %2d, string_1: %s, string_2: %s, string_3: %s, not_string_1: %s, not_string_2: %s,  name_table: %s, name_field: %s, value: %s\n",
+					nrecord, id_scan, maintype, role, string_1, string_2, string_3, not_string_1, not_string_2, name_table, name_field, value ); }
 
 				nrecord++;
 			}
@@ -9466,14 +9467,14 @@ public class LinksCleanAsync extends Thread
 					int maintype = ref_remarks.getMaintype();
 					int role     = ref_remarks.getRole();
 
-					String string_1    = ref_remarks.getString_1();
-					String string_2    = ref_remarks.getString_2();
-					String string_3    = ref_remarks.getString_3();
-					String not_string1 = ref_remarks.getNotString1();
-					String not_string2 = ref_remarks.getNotString2();
-					String name_table  = ref_remarks.getNameTable();
-					String name_field  = ref_remarks.getNameField();
-					String value       = ref_remarks.getValue();
+					String string_1     = ref_remarks.getString_1();
+					String string_2     = ref_remarks.getString_2();
+					String string_3     = ref_remarks.getString_3();
+					String not_string_1 = ref_remarks.getNotString_1();
+					String not_string_2 = ref_remarks.getNotString_2();
+					String name_table   = ref_remarks.getNameTable();
+					String name_field   = ref_remarks.getNameField();
+					String value        = ref_remarks.getValue();
 
 					boolean found = false;
 					if( registration_maintype ==  maintype )                    // maintype should match
@@ -9503,9 +9504,9 @@ public class LinksCleanAsync extends Thread
 
 					if( found )
 					{
-						if( debug ) { System.out.println( String.format("id_registration: %d: 1:|%s| 2:|%s| 3:|%s| ~1:|%s| ~1:|%s|", id_registration, string_1, string_2, string_3, not_string1, not_string2 )); }
+						if( debug ) { System.out.println( String.format("id_registration: %d: 1:|%s| 2:|%s| 3:|%s| ~1:|%s| ~1:|%s|", id_registration, string_1, string_2, string_3, not_string_1, not_string_2 )); }
 
-						if( not_string1 == null || ( not_string1.isEmpty() && not_string2.isEmpty() ) || ( remarks_str.indexOf( not_string1 ) == -1 && remarks_str.indexOf( not_string2 ) == -1 ) )
+						if( not_string_1 == null || ( not_string_1.isEmpty() && not_string_2.isEmpty() ) || ( remarks_str.indexOf( not_string_1 ) == -1 && remarks_str.indexOf( not_string_2 ) == -1 ) )
 						{
 							nupdates++;
 
@@ -9524,9 +9525,9 @@ public class LinksCleanAsync extends Thread
 							}
 							else { scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
 						}
-						else    // not_string1 and not_string2 not both empty
+						else    // not_string_1 and not_string_2 not both empty
 						{
-							if( remarks_str.indexOf( not_string1 ) == -1 && remarks_str.indexOf( not_string2 ) == -1  )   // but neither found
+							if( remarks_str.indexOf( not_string_1 ) == -1 && remarks_str.indexOf( not_string_2 ) == -1  )   // but neither found
 							{ scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
 						}
 					}

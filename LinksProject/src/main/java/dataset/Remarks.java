@@ -6,7 +6,7 @@ package dataset;
  * @author Fons Laan
  *
  * FL-25-Mar-2015 Created
- * FL-15-Jan-2021 Changed
+ * FL-19-Jan-2021 Changed
  *
  * Class to hold a record from the table links_general.scan_remarks
  */
@@ -19,8 +19,8 @@ public class Remarks
     private String string_1;
     private String string_2;
     private String string_3;
-    private String not_string1;
-    private String not_string2;
+    private String not_string_1;
+    private String not_string_2;
     private String name_table;
     private String name_field;
     private String value;
@@ -56,13 +56,15 @@ public class Remarks
     public String getString_3() { return string_3; }
 
 
-    public void setNotString1( String not_string1 ) { this.not_string1 = not_string1; }
+    public void setNotString_1( String not_string_1 ) { this.not_string_1 = not_string_1; }
 
-    public String getNotString1() { return not_string1; }
+    public String getNotString_1() { return not_string_1; }
 
-    public void setNotString2( String not_string2 ) { this.not_string2 = not_string2; }
 
-    public String getNotString2() { return not_string2; }
+    public void setNotString_2( String not_string_2 ) { this.not_string_2 = not_string_2; }
+
+    public String getNotString_2() { return not_string_2; }
+
 
     public void setNameTable( String name_table ) { this.name_table = name_table; }
 
