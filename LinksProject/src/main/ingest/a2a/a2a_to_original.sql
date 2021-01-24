@@ -16,6 +16,7 @@
 -- 05-Jun-2018 no longer use MysQL FUNCTION: links_functions.regex_replace
 -- 05-Jun-2018 add role = 'other:Gewezen echtgenoot' & 'other:Gewezen echtgenote' for 'Echtscheiding'
 -- 11-Jun-2018 copy divorce_date from person_o_temp
+-- 24-Jan-2021 patronyme => patronym
 
 TRUNCATE TABLE links_a2a.registration_o_temp ;
 
@@ -88,7 +89,7 @@ INSERT INTO links_a2a.person_o_temp
 		title_other,
 		firstname,
 		initials,
-		patronyme,
+		patronym,
 		prefix,
 		familyname,
 		alias_familyname,
@@ -328,7 +329,7 @@ INSERT INTO links_original.person_o
 		firstname,
 		alias_firstname,
 		initials,
-		patronyme,
+		patronym,
 		prefix,
 		familyname,
 		alias_familyname,
@@ -363,7 +364,7 @@ SELECT
 	firstname,
 	alias_firstname,
 	initials,
-	patronyme,
+	patronym,
 	prefix,
 	familyname,
 	alias_familyname,
