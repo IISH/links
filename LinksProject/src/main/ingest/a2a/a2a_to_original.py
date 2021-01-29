@@ -13,13 +13,13 @@ Goal:		Read the sql file with MySQL queries to fill the 2 table of
 04-Dec-2014	Created
 18-Jan-2016	Update for Python-3
 10-Apr-2017	Get sources/rmtypes from links_a2a, and delete them accordingly from links_original
-05-Jun-2018	Changed
+29-Jul-2019	Changed
 """
 
-# future-0.16.0 imports for Python 2/3 compatibility
+# future-0.17.1 imports for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
 from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
-	next, object, oct, open, pow, range, round, super, str, zip )
+    next, object, oct, open, pow, range, round, super, str, zip )
 
 import datetime
 import MySQLdb

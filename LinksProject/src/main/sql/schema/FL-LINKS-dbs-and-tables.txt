@@ -1,0 +1,139 @@
+FL-07-Jan-2021 Created
+FL-12-Jan-2021 Changed
+
+List of LINKS dbs and tables.
+
+We only dump the tables needed for a new installation, and so skip additional tables 
+(dated copies, partial tables, tmp stuff) that are present in the current production database.
+
+In the tables, we always use DEFAULT CHARSET=utf8 COLLATE=utf8_bin
+
+links_a2a and links_original use ENGINE=MyISAM, the other databases use ENGINE=InnoDB. 
+The reason for this is that ingesting the CBG XML into InnoDB tables is quite slow. 
+With MyISAM tables (without transactions) we can do a bulk ingest. In addition, 
+links_original does not change after the ingest. 
+
++--------------------+
+| Database           |
++--------------------+
+| links_a2a          |
+| links_cleaned      |
+| links_dbf          | skip, obsolete dbf import
+| links_general      | skip, local copy of HSN links_general
+| links_ids          |
+| links_logs         |
+| links_match        |
+| links_original     |
+| links_prematch     |
+| links_root         |
+| links_temp         |
++--------------------+
+11 rows
+
++----------------------------------+
+| Tables_in_links_a2a              |
++----------------------------------+
+| a2a                              |
+| event                            |
+| object                           |
+| person                           |
+| person_o_temp                    |
+| person_profession                |
+| registration_o_temp              |
+| relation                         |
+| remark                           |
+| source                           |
+| source_sourceavailablescans_scan |
++----------------------------------+
+11 rows
+
++-------------------------+
+| Tables_in_links_cleaned |
++-------------------------+
+| person_c                |
+| registration_c          |
++-------------------------+
+2 rows
+
++---------------------+
+| Tables_in_links_ids |
++---------------------+
+| context             |
+| context_context     |
+| indiv_context       |
+| indiv_indiv         |
+| individual          |
+| personNumbers       |
+| personNumbers_save  |
++---------------------+
+7 rows
+
++-------------------------+
+| Tables_in_links_logs    |
++-------------------------+
+| ERROR_STORE             | only ERROR_STORE
+| log-2018.02.26-12:29:11 | skip, log tables are created programmatically during cleaning,
+| ...                     | one per cleaning run.  
+| log-2020.12.01-15:37:43 |
++-------------------------+
+1 table
+
++-----------------------+
+| Tables_in_links_match |
++-----------------------+
+| MATCHES_CBG_WWW       |
+| match_process         |
+| match_view            |
+| matches               |
+| matrix                |
+| notation              |
++-----------------------+
+6 rows
+
++----------------------------+
+| Tables_in_links_original   |
++----------------------------+
+| person_o                   |
+| registration_o             |
++----------------------------+
+2 rows
+
++--------------------------+
+| Tables_in_links_prematch |
++--------------------------+
+| freq_familyname          |
+| freq_firstname           |
+| freq_firstname_sex       |
+| links_base               |
+| ls_familyname            |
+| ls_familyname_first      |
+| ls_familyname_strict     |
+| ls_firstname             |
+| ls_firstname_first       |
+| ls_firstname_strict      |
+| root_familyname          |
+| root_firstname           |
++--------------------------+
+12 rows
+
++-------------------------------+
+| Tables_in_links_root          |
++-------------------------------+
+| names_gn_1                    |
+| names_gn_pairs_1              |
+| names_gn_standard_1           |
+| names_gn_standard_relations_1 |
+| names_snf_1                   |
+| names_snf_prefix              |
+| names_sns                     |
+| names_sns_pairs               |
+| names_sns_standard            |
+| names_sns_standard_relations  |
++-------------------------------+
+10 rows
+
++-------------------------------+
+| Tables_in_links_temp          | db must be present, tables are created programmatically
++-------------------------------+
+
+[eof]
