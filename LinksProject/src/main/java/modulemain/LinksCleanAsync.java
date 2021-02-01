@@ -109,6 +109,7 @@ import general.PrintLogger;
  * FL-15-Jan-2021 scan_remarks: not_string => not_string1; not_string2 will follow
  * FL-19-Jan-2021 scan_remarks: not_string2 finished but still needs testing
  * FL-20-Jan-2021 postTasks() renamed updateSexRole()
+ * FL-01-Feb-2021 latest change
  */
 
 
@@ -9388,11 +9389,12 @@ public class LinksCleanAsync extends Thread
 				String name_field   = rs_r.getString( "name_field" );
 				String value        = rs_r.getString( "value" );
 
-				if( string_1     != null ) { string_1     = string_1  .toLowerCase(); }
-				if( string_2     != null ) { string_2     = string_2  .toLowerCase(); }
-				if( string_3     != null ) { string_3     = string_3  .toLowerCase(); }
-				if( not_string_1 != null ) { not_string_1 = not_string_1.toLowerCase(); }
-				if( not_string_2 != null ) { not_string_2 = not_string_2.toLowerCase(); }
+				if( string_1     != null ) { string_1     = string_1    .toLowerCase(); } else { string_1     = ""; }
+				if( string_2     != null ) { string_2     = string_2    .toLowerCase(); } else { string_2     = ""; }
+				if( string_3     != null ) { string_3     = string_3    .toLowerCase(); } else { string_3     = ""; }
+				if( not_string_1 != null ) { not_string_1 = not_string_1.toLowerCase(); } else { not_string_1 = ""; }
+				if( not_string_2 != null ) { not_string_2 = not_string_2.toLowerCase(); } else { not_string_2 = ""; }
+
 				if( name_table   != null ) { name_table   = name_table.toLowerCase(); }
 				if( name_field   != null ) { name_field   = name_field.toLowerCase(); }
 				if( value        != null ) { value        = value     .toLowerCase(); }
@@ -9506,7 +9508,7 @@ public class LinksCleanAsync extends Thread
 					{
 						if( debug ) { System.out.println( String.format("id_registration: %d: 1:|%s| 2:|%s| 3:|%s| ~1:|%s| ~1:|%s|", id_registration, string_1, string_2, string_3, not_string_1, not_string_2 )); }
 
-						if( not_string_1 == null || ( not_string_1.isEmpty() && not_string_2.isEmpty() ) || ( remarks_str.indexOf( not_string_1 ) == -1 && remarks_str.indexOf( not_string_2 ) == -1 ) )
+						if( not_string_1.isEmpty() || ( not_string_1.isEmpty() && not_string_2.isEmpty() ) || ( remarks_str.indexOf( not_string_1 ) == -1 && remarks_str.indexOf( not_string_2 ) == -1 ) )
 						{
 							nupdates++;
 
