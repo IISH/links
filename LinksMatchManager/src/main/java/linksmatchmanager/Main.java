@@ -68,7 +68,7 @@ import linksmatchmanager.DataSet.QuerySet;
  * FL-13-May-2019 Switching to PreparedStatement
  * FL-20-Jun-2020 Elapsed time formatting
  * FL-12-Aug-2020 memtable_check_unique() got disrupted; prematch_name was replaced by "s1_source" ???
- * FL-14-Aug-2020 Latest Change
+ * FL-02-Jan-2021 use_memory_tables cmdline parameter;
  */
 
 public class Main
@@ -151,7 +151,7 @@ public class Main
             //System.exit( 0 );
 
             // Load cmd line arguments; check length
-            if( args.length != 9 ) {
+            if( args.length != 10 ) {
                 String msg ="Invalid argument length " + args.length + ", it should be 9";
                 plog.show( msg ); System.out.println( msg );
 
@@ -174,7 +174,10 @@ public class Main
             String max_heap_table_size = args[ 5 ];
             String s1_sample_limit     = args[ 6 ];
             String s2_sample_limit     = args[ 7 ];
-            String debug_str           = args[ 8 ];
+            String mem_table_str       = args[ 8 ];
+            String debug_str           = args[ 9 ];
+
+            if( mem_table_str .equals( "false" ) ) { use_memory_tables = false; }
 
             //System.out.println( "debug_str: '" + debug_str + "'" );
             if( debug_str.equals( "true" ) ) { debug = true; }
