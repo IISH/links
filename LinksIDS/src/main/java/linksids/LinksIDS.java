@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
  * <p/>
  * FL-21-Jan-2014 Imported from CM
  * FL-12-May-2015 Latest change, changes by CM
+ * FL-03-Feb-2021 Unchanged code works with mysql-connector-java 3.1.14, 5.0.8, 5.1.49, NOT with 6.0.6
  */
 public class LinksIDS
 {
