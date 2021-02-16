@@ -9571,12 +9571,12 @@ public class LinksCleanAsync extends Thread
 
 		if( name_table.equals( "person_c" ) )
 		{
-			String mysqlStr = divorceStr;
-			query_u = String.format( "UPDATE links_cleaned.person_c SET %s = '%s' WHERE id_registration = %d AND role = %d",
-				name_field, mysqlStr, id_registration, role );
+			query_u = String.format( "UPDATE links_cleaned.person_c SET %s = ? WHERE id_registration = %d AND role = %d",
+				name_field, id_registration, role );
 
 			try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query_u ) )
 			{
+				pstmt.setString(1, divorceStr);
 				int rowsAffected = pstmt.executeUpdate( query_u );
 				if( debug ) { System.out.println( String.format( "%d %s", rowsAffected, query_u ) ); }
 			}
