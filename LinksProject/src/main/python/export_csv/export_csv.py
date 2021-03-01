@@ -5,7 +5,7 @@
 Author:		Fons Laan, KNAW HuC-DI & IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_csv.py
-Version:	0.2
+Version:	0.3
 Goal:		Export a table, including header, to a csv file
 ToDo:		Move general db stuff to a separate hsn-links-db.py
 			Get db & tabl name from command line or yaml file
@@ -14,6 +14,7 @@ ToDo:		Move general db stuff to a separate hsn-links-db.py
 18-Sep-2020 2 yaml files: export_csv & hsn-links-db
 21-Sep-2020 quotechar  = '|' to avoid problems with the common " and ' in strings
 30-Sep-2020 WHERE string also in COUNT(*)
+01-Mar-2021 python version dependent csv import
 """
 
 # future imports for Python 2/3 compatibility
@@ -29,8 +30,20 @@ import os
 import sys
 import yaml
 
-from backports import csv
 from time import time
+
+if sys.version_info[ 0 ] == 2:		# Python-2
+	from backports import csv		# better csv support for Python-2
+else:
+	import csv
+
+# CSV creation parameters: 
+encoding   = "utf-8"
+newline    =  '\n'
+delimiter  = ';'					# ','
+escapechar = '\\'
+quotechar  = '"'					# '|' use for links_original
+quoting    = csv.QUOTE_NONNUMERIC	# quote strings, not numbers
 
 debug = False
 
@@ -95,14 +108,6 @@ def export( debug, db, table_name, columns_str, where_str, csv_filename ):
 		except: 
 			raise
 	
-	encoding = "utf-8"
-	newline  =  '\n'
-	
-	delimiter  = ','         # notice that we imported backports.csv
-	escapechar = '\\'
-	quotechar  = '|'
-	quoting    = csv.QUOTE_NONNUMERIC
-
 	with io.open( csv_pathname, "w", newline = newline, encoding = encoding ) as csv_file:
 		writer = csv.writer( csv_file, delimiter = delimiter, escapechar = escapechar, quotechar = quotechar, quoting = quoting )
 		
@@ -208,10 +213,14 @@ def get_yaml_config( yaml_filename ):
 
 
 if __name__ == "__main__":
-	print( "export_csv.py" )
-	
 	time0 = time()		# seconds since the epoch
 	msg = "Start: %s" % datetime.datetime.now()
+	
+	python_vertuple = sys.version_info
+	python_version = str( python_vertuple[ 0 ] ) + '.' + str( python_vertuple[ 1 ] ) + '.' + str( python_vertuple[ 2 ] )
+	print( "Python version: %s" % python_version )
+	
+	print( "export_csv.py" )
 	
 	yaml_filename = "./export_csv.yaml"
 	config_local = get_yaml_config( yaml_filename )
