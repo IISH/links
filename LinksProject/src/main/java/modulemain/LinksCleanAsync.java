@@ -109,7 +109,7 @@ import general.PrintLogger;
  * FL-15-Jan-2021 scan_remarks: not_string => not_string1; not_string2 will follow
  * FL-19-Jan-2021 scan_remarks: not_string2 finished but still needs testing
  * FL-20-Jan-2021 postTasks() renamed updateSexRole()
- * FL-01-Feb-2021 latest change
+ * FL-16-Feb-2021 merged 2 pull requests from Kerim
  */
 
 
