@@ -5,11 +5,11 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		hsn-links-db.py
-Version:	0.1
+Version:	0.2
 Goal:		db access
 
 25-Nov-2020 Created
-14-Dec-2020 Changed
+17-Mar-2021 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -119,5 +119,25 @@ def format_secs( seconds ):
 
 	return str_elapsed
 # format_secs()
+
+
+
+def none2empty( var ):
+	if var is None or var == "None" or var == "null":
+		var = ""
+	return var
+# none2empty()
+
+
+
+def none2zero( var ):
+	ivar = 0
+	try:
+		ivar = int( var )
+	except:
+		ivar = 0
+		
+	return ivar
+# none2zero()
 
 # [eof]
