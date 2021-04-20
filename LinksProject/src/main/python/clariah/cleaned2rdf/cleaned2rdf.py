@@ -8,11 +8,17 @@ Project: LINKS
 Name:    cleaned2rdf.py
 Version: 0.1
 Goal:	 Create RDF from links_cleaned db selection
-ToDo:	 rdf from tables
+
+ToDo:	 - log file for each export
+		 - check age_month, age_day usage in links
+		 - optional merge rdf output
+		 - report unused links fields from queries
+		 - separate optional roles for marriage matchings
 
 FL-02-Mar-2021 converted to script with jupyter from Joe's convert-births-to-rdf.ipynb and convert-marriages-to-rdf.ipynb
 FL-09-Mar-2021 steering parameters in cleaned2rdf.yaml
-FL-17-Mar-2021 changed
+FL-07-Apr-2021 cbg export of complete registration_c & person_c tables
+FL-14-Apr-2021 encountered several '\' in registration_seq, which fucked up rdf2hdt conversion
 """
 
 import datetime
@@ -403,11 +409,13 @@ def convertTableRegistrationsToRDF( db, query, rdf_path ):
 	start_time = datetime.datetime.now()
 	
 	print( "Converting table registration_c to RDF..." )
+	
 	print( rdf_path )
-
 	rdf_file = open( rdf_path, "w" )
 
+	print( query )
 	resp = db.query( query )
+	
 	if resp is None:
 		print( "No query result, Nothing to do!" )
 		return
@@ -415,13 +423,14 @@ def convertTableRegistrationsToRDF( db, query, rdf_path ):
 		print( "No records, Nothing to do!" )
 		return
 	else:
+		print( "processing %d links records" % len( resp ) )
+		
 		counter  = 0
 		nchunk   = 0
 		ntriples = 0
 		chunk_size = 10000
 		filebuffer = []
 		
-		print( "processing %d links records" % len( resp ) )
 		for r, row in enumerate( resp ):
 			#print( r, row )
 			
@@ -451,6 +460,8 @@ def convertTableRegistrationsToRDF( db, query, rdf_path ):
 					filebuffer.append( createTripleRegistrationOrigID( registrationURI, registrationOrigID ) )
 				
 				registrationSeqID = none2empty( row[ "registration_seq" ] )
+				registrationSeqID = registrationSeqID.replace( "\\", '' )	# we encountered several registration_seq that started 
+				# with a '\', and that gave "Illegal escape sequence value" by the rdf2hdt conversion. 
 				if not isNaN( registrationSeqID ):
 					filebuffer.append( createTripleRegistrationSeq( registrationURI, registrationSeqID ) )
 				
@@ -472,7 +483,7 @@ def convertTableRegistrationsToRDF( db, query, rdf_path ):
 			print( "write remains (%d)" % (r+1) )
 		
 		print( "%d links records processed" % (r+1) )
-		print( "%d rdf triples written" % ntriples )
+		print( "%d N-Quads written" % ntriples )
 
 	rdf_file.close()
 	
@@ -487,11 +498,13 @@ def convertTablePersonsToRDF( db, query, rdf_path ):
 	start_time = datetime.datetime.now()
 	
 	print( "Converting table person_c to RDF..." )
-	print( rdf_path )
 	
+	print( rdf_path )
 	rdf_file = open( rdf_path, "w" )
 
+	print( query )
 	resp = db.query( query )
+	
 	if resp is None:
 		print( "No query result, Nothing to do!" )
 		return
@@ -499,13 +512,14 @@ def convertTablePersonsToRDF( db, query, rdf_path ):
 		print( "No records, Nothing to do!" )
 		return
 	else:
+		print( "processing %d links records" % len( resp ) )
+		
 		counter  = 0
 		nchunk   = 0
 		ntriples = 0
 		chunk_size = 10000
 		filebuffer = []
 		
-		print( "processing %d links records" % len( resp ) )
 		for r, row in enumerate( resp ):
 			#print( r, row )
 			
@@ -598,7 +612,7 @@ def convertTablePersonsToRDF( db, query, rdf_path ):
 			print( "write remains (%d)" % (r+1) )
 		
 		print( "%d links records processed" % (r+1) )
-		print( "%d rdf triples written" % ntriples )
+		print( "%d N-Quads written" % ntriples )
 
 	rdf_file.close()
 	
@@ -655,8 +669,6 @@ def make_queries( match_params, config_params ):
 	s1_query_person += " AND not_linksbase_p IS NULL"
 	if id_sources:
 		s1_query_person += " AND id_source IN (%s)" % id_sources
-	s1_query_person.strip()
-	s1_query_person.replace( "  ", ' ' )
 	
 	s2_query_registration  = "SELECT %s FROM links_cleaned.registration_c" % config_params[ "registration_fields" ]
 	s2_query_registration += " WHERE registration_maintype = %d" % s2_rmtype
@@ -674,8 +686,6 @@ def make_queries( match_params, config_params ):
 	s2_query_person += " AND not_linksbase_p IS NULL"
 	if id_sources:
 		s2_query_person += " AND id_source IN (%s)" % id_sources
-	s2_query_person.strip()
-	s2_query_person.replace( "  ", ' ' )
 	
 	# clean whitespace
 	s1_query_registration = ' '.join( s1_query_registration.split() )
@@ -699,20 +709,47 @@ def get_matches_params():
 	"""
 	Showing the relation of Joe matching types with Kees LINKS parameters in match_process table. 
 	9 matching types, 3 between generations, 6 within a generation.
+	The role #'s of the parents in [].
 	========================================================================================
 	#	Done	Name		s1_r[m]type		s1_role		s2_r[m]type		s2_role		LINKS
 	----------------------------------------------------------------------------------------
-	1	 y	 Within_B_M			1	g		1,2,3			2	h		4,7			
+	1	 y	 Within_B_M			1	g		1 [,2,3]		2	h		4,7			
 	2	 y	Between_M_M			2	h		5,6,8,9			2	h		4,7			released
 	3	 y	Between_B_M			1	g		2,3				2	h		4,7			released
 	----------------------------------------------------------------------------------------
-	4	 n	 Within_B_D			1	g		1,2,3			3	o		2,3,10		
-	5	 n	 Within_M_D			2	h		4,5,6,7,8,9		3	o		2,3,10,11	
-	6	 n	 Within_B_B			1	g		2,3				1	g		2,3			
+	4	 n	 Within_B_D			1	g		1 [,2,3			3	o		10 [2,3,]	
+	5	 n	 Within_M_D			2	h		4,7 [,5,6,8,9]	3	o		10,11 [,2,3]
+	6	 n	 Within_B_B			1	g		[2,3]			1	g		[2,3]		
 	7	 n	 Within_M_M			2	h		5,6,8,9			2	h		5,6,8,9		
 	8	 n	 Within_D_D			3	o		2,3				3	o		2,3			
-	9	 n	Between_D_M			3	o		2,3,10,11		2	h		4,5,6,7,8,9	
+	9	 n	Between_D_M			3	o		10,11 [,2,3]	2	h		4,7 [,5,6,8,9]
 	========================================================================================
+	
+	Role #'s of the 2 generations in the certificates
+	================+============================
+					|---------Certificate--------
+					| Birth		Marriage	Death
+	----------------+----------------------------
+	Role Prev Gen	| 2,3		5,6,8,9		2,3	
+	Role Curr Gen	| 1			4,7			10,11
+	================+============================
+	
+	======================
+					role #
+	----------------------
+	newborn"			 1
+	mother"				 2
+	father"				 3
+	bride"				 4
+	motherBride"		 5
+	fatherBride"		 6
+	groom"				 7
+	motherGroom"		 8
+	fatherGroom"		 9
+	deceased"			10
+	deceasedPartner"	11
+	unknown"			
+==========================
 """
 	
 	matches_params = {
@@ -748,27 +785,57 @@ def get_matches_params():
 		
 		# 4	 n	1	g	1,2,3			3	o	2,3,10
 		"Within_B_D" : {
-			
+			"s1_rmtype" : 1,
+			"s1_rtype"  : 'g',
+			"s1_roles"  : "1,2,3",
+			"s2_rmtype" : 3,
+			"s2_rtype"  : 'o',
+			"s2_roles"  : "2,3,10"
 		},
 		# 5	 n	2	h	4,5,6,7,8,9		3	o		2,3,10,11
 		"Within_M_D": {
-			
+			"s1_rmtype" : 2,
+			"s1_rtype"  : 'h',
+			"s1_roles"  : "4,5,6,7,8,9",
+			"s2_rmtype" : 3,
+			"s2_rtype"  : 'o',
+			"s2_roles"  : "2,3,10,11"
 		},
 		# 6	 n	1	g	2,3				1	g		2,3
 		"Within_B_B": {
-			
+			"s1_rmtype" : 1,
+			"s1_rtype"  : 'g',
+			"s1_roles"  : "2,3",
+			"s2_rmtype" : 1,
+			"s2_rtype"  : 'g',
+			"s2_roles"  : "2,3"
 		},
 		# 7	 n	2	h	5,6,8,9			2	h		5,6,8,9
 		"Within_M_M": {
-			
+			"s1_rmtype" : 2,
+			"s1_rtype"  : 'h',
+			"s1_roles"  : "5,6,8,9",
+			"s2_rmtype" : 2,
+			"s2_rtype"  : 'h',
+			"s2_roles"  : "5,6,8,9"
 		},
 		# 8	 n	3	o	2,3				3	o		2,3
 		"Within_D_D": {
-			
+			"s1_rmtype" : 3,
+			"s1_rtype"  : 'o',
+			"s1_roles"  : "2,3",
+			"s2_rmtype" : 3,
+			"s2_rtype"  : 'o',
+			"s2_roles"  : "2,3"
 		},
 		# 9	 n	3	o	2,3,10,11		2	h		4,5,6,7,8,9
 		"Between_D_M": {
-			
+			"s1_rmtype" : 3,
+			"s1_rtype"  : 'o',
+			"s1_roles"  : "2,3,10,11",
+			"s2_rmtype" : 2,
+			"s2_rtype"  : 'h',
+			"s2_roles"  : "4,5,6,7,8,9"
 		}
 	}
 	
@@ -777,18 +844,43 @@ def get_matches_params():
 
 
 
-def make_rdf( match_params, config_params ):
-	print( "make_rdf()" )
+def make_rdf_by_function( rdf_dir, match_params, config_params ):
+	print( "make_rdf_by_function()" )
 	
 	s1_query_registration, s1_query_person, s2_query_registration, s2_query_person = make_queries( match_params, config_params )
 	
 	date = datetime.datetime.now().strftime( "%04Y.%02m.%02d" )
-	id_sources = config_params[ "id_sources" ]
-	sources = ''.join( id_sources.split() )
-	#s1_registration_rdf_name = "%s-s1-registrations-sources-%s-2021.03.16.nq" % ( match_method, sources )
-	#s2_registration_rdf_name = "%s-s2-registrations-sources-%s-2021.03.16.nq" % ( match_method, sources )
-	s1_registration_rdf_name = "%s-s1-registrations-sources-%s-%s.nq" % ( match_method, sources, date )
-	s2_registration_rdf_name = "%s-s2-registrations-sources-%s-%s.nq" % ( match_method, sources, date )
+	
+	s1_sample_spec = ""
+	s2_sample_spec = ""
+	s1_certificate_spec = ""
+	s2_certificate_spec = ""
+	
+	rdf_merge = config_params[ "rdf_merge" ]
+	if rdf_merge in [ "", "None" ]:
+		s1_sample_spec     = "-s1"
+		s2_sample_spec     = "-s2"
+		r_certificate_spec = "-registrations"
+		p_certificate_spec = "-persons"
+	elif rdf_merge == "Samples":
+		r_certificate_spec = "-registrations"
+		p_certificate_spec = "-persons"
+	elif rdf_merge == "Certificates":
+		s1_sample_spec     = "-s1"
+		s2_sample_spec     = "-s2"
+	
+	source_spec = ""
+	source_name = config_params[ "source_name" ]
+	if source_name:
+		source_spec = "-source=%s" % source_name
+	
+	if not source_spec:
+		id_sources  = config_params[ "id_sources" ]
+		sources = ''.join( id_sources.split() )
+		source_spec = "-source=%s" % sources
+	
+	s1_registration_rdf_name = "match=%s%s%s%s-%s.nq" % ( match_function, s1_sample_spec, r_certificate_spec, source_spec, date )
+	s2_registration_rdf_name = "match=%s%s%s%s-%s.nq" % ( match_function, s2_sample_spec, r_certificate_spec, source_spec, date )
 	
 	s1_registration_rdf_path = os.path.join( rdf_dir, s1_registration_rdf_name )
 	s2_registration_rdf_path = os.path.join( rdf_dir, s2_registration_rdf_name )
@@ -796,10 +888,8 @@ def make_rdf( match_params, config_params ):
 	convertTableRegistrationsToRDF( db, s1_query_registration, s1_registration_rdf_path )
 	convertTableRegistrationsToRDF( db, s2_query_registration, s2_registration_rdf_path )
 	
-	#s1_person_rdf_name = "%s-s1-person-sources-%s-2021.03.16.nq" % ( match_method, sources )
-	#s2_person_rdf_name = "%s-s2-person-sources-%s-2021.03.16.nq" % ( match_method, sources )
-	s1_person_rdf_name = "%s-s1-person-sources-%s-%s.nq" % ( match_method, sources, date  )
-	s2_person_rdf_name = "%s-s2-person-sources-%s-%s.nq" % ( match_method, sources, date  )
+	s1_person_rdf_name = "match=%s%s%s%s-%s.nq" % ( match_function, s1_sample_spec, p_certificate_spec, source_spec, date  )
+	s2_person_rdf_name = "match=%s%s%s%s-%s.nq" % ( match_function, s2_sample_spec, p_certificate_spec, source_spec, date  )
 	
 	s1_person_rdf_path = os.path.join( rdf_dir, s1_person_rdf_name )
 	s2_person_rdf_path = os.path.join( rdf_dir, s2_person_rdf_name )
@@ -807,7 +897,116 @@ def make_rdf( match_params, config_params ):
 	convertTablePersonsToRDF( db, s1_query_person, s1_person_rdf_path )
 	convertTablePersonsToRDF( db, s2_query_person, s2_person_rdf_path )
 	
-# make_rdf()
+# make_rdf_by_function()
+
+
+
+def make_rdf_cbg( db, rdf_dir, config_params ):
+	print( "make_rdf_cbg()" )
+	
+	date = datetime.datetime.now().strftime( "%04Y.%02m.%02d" )
+	
+	source_spec = ""
+	source_name = config_params[ "source_name" ]
+	if source_name:
+		source_spec = "-%s" % source_name
+	
+	if not source_spec:
+		id_sources  = config_params.get( "id_sources", "" )
+		if id_sources:
+			sources = ''.join( id_sources.split() )
+			source_spec = "-source=%s" % sources
+	
+	
+	# registrations
+	registration_fields = config_params[ "registration_fields" ]
+	
+	rmtypes  = "1,2,3"
+	rtypes   = "'g','h','o'"
+	role_min = 1
+	role_max = 11
+	
+	query_registration  = "SELECT %s FROM links_cleaned.registration_c" % registration_fields
+	query_registration += " WHERE registration_maintype IN (%s)" % rmtypes
+	query_registration += " AND registration_type IN (%s)" % rtypes
+	query_registration += " AND not_linksbase IS NULL"
+	query_registration += " AND id_persist_registration IS NOT NULL AND id_persist_registration <> ''"
+	if id_sources:
+		query_registration += " AND id_source IN (%s)" % id_sources
+	query_registration = ' '.join( query_registration.split() )	# clean whitespace
+	#print( "query_registration: %s " % query_registration)
+	
+	r_prefix = "cbg-registrations"
+	registration_rdf_name = "%s%s-%s.nq" % ( r_prefix, source_spec, date )
+	registration_rdf_path = os.path.join( rdf_dir, registration_rdf_name )
+	convertTableRegistrationsToRDF( db, query_registration, registration_rdf_path )
+	
+	"""
+	# persons
+	# doing person_c in one go used to much memory (> 50 GB, Killed by kernel)
+	# consider using LIMIT or fetchmany() or add-on module pymysql_utils
+	# tmp solution: split into birth/marriage/death
+	"""
+	person_fields = config_params[ "person_fields_common" ]
+	person_fields += ", %s" % config_params[ "person_fields_birth" ]
+	person_fields += ", %s" % config_params[ "person_fields_marriage" ]
+	person_fields += ", %s" % config_params[ "person_fields_death" ]
+	
+	query_person  = "SELECT %s FROM links_cleaned.person_c" % person_fields
+	query_person += " WHERE registration_maintype IN (%s)" % rmtypes
+	query_person += " AND registration_type IN (%s)" % rtypes
+	query_person += " AND role >= %s AND role <= %s" % ( role_min, role_max )
+	query_person += " AND not_linksbase_p IS NULL"
+	if id_sources:
+		query_person += " AND id_source IN (%s)" % id_sources
+	query_person = ' '.join( query_person.split() )		# clean whitespace
+	#print( "query_person: %s" % query_person )
+	"""
+	
+	person_fields_common   = config_params[ "person_fields_common" ]
+	person_fields_birth    = config_params[ "person_fields_birth" ]
+	person_fields_marriage = config_params[ "person_fields_marriage" ]
+	person_fields_death    = config_params[ "person_fields_death" ]
+	
+	for registration_maintype in [ 1, 2, 3 ]:
+		if registration_maintype == 1:
+			person_fields  = person_fields_common
+			person_fields += ", %s" % person_fields_birth
+			registration_type = 'g'
+			roles = "1,2,3"
+			p_prefix = "cbg-persons-birth"
+			
+		elif registration_maintype == 2:
+			person_fields  = person_fields_common
+			person_fields += ", %s" % person_fields_marriage
+			registration_type = 'h'
+			roles = "4,5,6,7,8,9"
+			p_prefix = "cbg-persons-marriage"
+			
+		elif registration_maintype == 3:
+			person_fields  = person_fields_common
+			person_fields += ", %s" % person_fields_death
+			registration_type = 'o'
+			roles = "2,3,10,11"
+			p_prefix = "cbg-persons-death"
+	
+		query_person  = "SELECT %s FROM links_cleaned.person_c" % person_fields
+		query_person += " WHERE registration_maintype = %d" % registration_maintype
+		query_person += " AND registration_type = '%s'" % registration_type
+		query_person += " AND role IN (%s)" % roles
+		query_person += " AND not_linksbase_p IS NULL"
+		
+		if id_sources:
+			query_person += " AND id_source IN (%s)" % id_sources
+			query_person = ' '.join( query_person.split() )		# clean whitespace
+		
+		print( "query_person: %s" % query_person )
+		
+		person_rdf_name = "%s%s-%s.nq" % ( p_prefix, source_spec, date )
+		person_rdf_path = os.path.join( rdf_dir, person_rdf_name )
+		convertTablePersonsToRDF( db, query_person, person_rdf_path )
+		"""
+# make_rdf_cbg()
 
 
 
@@ -900,29 +1099,36 @@ if __name__ == "__main__":
 		db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DB_NAME )
 		
 		config_params = {
-			"match_method"           : config_local.get( "MATCH_METHOD" ),
+			"match_function"         : config_local.get( "MATCH_FUNCTION" ),
 			"id_sources"             : config_local.get( "ID_SOURCES" ),
+			"source_name"            : config_local.get( "SOURCE_NAME", "" ),
 			"registration_fields"    : config_local.get( "REGISTRATION_FIELDS" ),
 			"person_fields_common"   : config_local.get( "PERSON_FIELDS_COMMON" ),
 			"person_fields_birth"    : config_local.get( "PERSON_FIELDS_BIRTH" ),
 			"person_fields_marriage" : config_local.get( "PERSON_FIELDS_MARRIAGE" ),
-			"person_fields_death"    : config_local.get( "PERSON_FIELDS_DEATH" )
+			"person_fields_death"    : config_local.get( "PERSON_FIELDS_DEATH" ),
+			"rdf_merge_samples"      : config_local.get( "RDF_MERGE_SAMPLES", "" )
 		}
 		
-		print( "match_method:           %s" % config_params[ "match_method" ] )
+		print( "match_function:         %s" % config_params[ "match_function" ] )
 		print( "id_sources:             %s" % config_params[ "id_sources" ] )
+		print( "source_name:            %s" % config_params[ "source_name" ] )
 		print( "registration_fields:    %s" % config_params[ "registration_fields" ] )
 		print( "person_fields_common:   %s" % config_params[ "person_fields_common" ] )
 		print( "person_fields_birth:    %s" % config_params[ "person_fields_birth" ] )
 		print( "person_fields_marriage: %s" % config_params[ "person_fields_marriage" ] )
 		print( "person_fields_death:    %s" % config_params[ "person_fields_death" ] )
+		print( "rdf_merge_samples:      %s" % config_params[ "rdf_merge_samples" ] )
 		
-		match_method = config_params[ "match_method" ]
-		matches_params = get_matches_params()
-		match_params = matches_params.get( match_method )
+		match_function = config_params[ "match_function" ]
 		
-		make_rdf( match_params, config_params )
-		
+		if match_function:
+			matches_params = get_matches_params()
+			match_params   = matches_params.get( match_function )
+			
+			make_rdf_by_function( rdf_dir, match_params, config_params )
+		else:
+			make_rdf_cbg( db, rdf_dir, config_params )
 
 	msg = "Stop: %s" % datetime.datetime.now()
 	
