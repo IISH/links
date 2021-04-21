@@ -5,11 +5,12 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		ingest_cbgxml.py
-Version:	0.1
+Version:	0.2
 Goal:		Ingest CBG XMl files into links_a2a db
+			This script produces an ingest-%s-yyyy.mm.dd.sh shell script to be run
 
 15-Dec-2020 Created
-18-Dec-2020 Changed
+21-Apr-2021 Also create csv overview
 """
 
 # python-future for Python 2/3 compatibility
@@ -18,20 +19,23 @@ from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, ne
 	oct, open, pow, range, round, str, super, zip )
 
 import arrow
+import csv
 import io
 import os
 import sys
 import datetime
 import MySQLdb
 import socket
+import tablib
 import yaml
 
 from time import time
 
-debug = False
+debug = True
 
 
 def get_id_source_from_archive( db_ref, archive_name ):
+	print( "get_id_source_from_archive()" )
 	id_source  = None
 	short_name = None
 	
@@ -50,7 +54,7 @@ def get_id_source_from_archive( db_ref, archive_name ):
 		else:
 			print( "Too many archive_name records found, ignoring them all\n" )
 	
-	if debug:
+	if debug and id_source:
 		print( "id_source = %d, short_name = %s" % ( id_source, short_name ) )
 	
 	return id_source, short_name
@@ -59,6 +63,8 @@ def get_id_source_from_archive( db_ref, archive_name ):
 
 
 def split_xml_fname( xml_fname ):
+	#print( "split_xml_fname()" )
+	
 	rmtype = None
 	archive_name = ""
 	
@@ -68,7 +74,8 @@ def split_xml_fname( xml_fname ):
 		return rmtype, archive_name
 	
 	parts = root.split( '_' )
-	if len( parts ) != 4:
+	
+	if len( parts ) not in [ 4, 5 ]:	# date part: 4: yyyy-mm or 5: yyyy_mm
 		print( "root: %s " % root )
 		for p, part in enumerate ( parts ):
 			print( "%d %s" % ( p, part ) )
@@ -80,28 +87,34 @@ def split_xml_fname( xml_fname ):
 		print( "%s: prefix must be 'A2A', but it is '%s'" % ( xml_fname, prefix ) )
 		return rmtype, archive_name
 	
-	gho_type = prefix = archive_name = parts[ 1 ]
-	if gho_type == "BSG":
+	ghoe_type = parts[ 1 ]
+	if ghoe_type == "BSG":
 		rmtype = 1
-	elif gho_type == "BSH":
+	elif ghoe_type == "BSH":
 		rmtype = 2
-	elif gho_type == "BSO":
+	elif ghoe_type == "BSO":
 		rmtype = 3
+	elif ghoe_type == "BSE":
+		rmtype = 4
 	else:
-		print( "%s: gho_type must be one of 'BSG', 'BSH', 'BSO', but it is '%s'" % ( xml_fname, gho_type ) )
+		print( "%s: ghoe_type must be one of 'BSG', 'BSH', 'BSE', 'BSO', but it is '%s'" % ( xml_fname, ghoe_type ) )
 		return rmtype, archive_name
 	
-	archive_name = parts[ 3 ]
+	archive_name = parts[ -1 ]
 	if debug: print( "archive_name: %s " % archive_name )
 
-	return rmtype, archive_name
+	return ghoe_type, rmtype, archive_name
 # split_xml_fname()
 
 
 
 def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgxml_dir, cbgxml_list ):
+	print( "process_xml()" )
 	print( "cbgxml_dir:  %s" % cbgxml_dir )
 	print( "cbgxml_list: %s" % cbgxml_list )
+	
+	add_all = False
+	ghoe_type = ""
 	
 	if not cbgxml_list:
 		dir_list = os.listdir( cbgxml_dir )
@@ -109,28 +122,34 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 		for filename in dir_list:
 			if filename.startswith( '.' ):		# ignore hidden files
 				continue
-			rmtype, archive_name = split_xml_fname( filename )
+			ghoe_type, rmtype, archive_name = split_xml_fname( filename )
 			if archive_name:
 				cbgxml_list.append( filename )
 		
-		add_all = False
 		yn = input( "No XML files specified by the cbgxml_list. \nAdd all %d eligible xml files from the cbgxml_dir? [y,N] "  % len( cbgxml_list ) )
 		if yn.lower() == 'y':
 			add_all = True
 	
+	subdir = os.path.basename(  cbgxml_dir )
 	#timestamp = arrow.now().format( "YYYY.MM.DD-hh:mm" )
 	timestamp = arrow.now().format( "YYYY.MM.DD" )
-	sh_filename = "ingest-%s.sh" % timestamp
+	sh_filename = "ingest-%s-%s.sh" % ( ghoe_type, timestamp )
 	sh_pathname = os.path.join( os.path.dirname(__file__), sh_filename )
 	print( "sh_pathname: %s" % sh_pathname )
-	encoding = "utf-8"
-	newline  =  '\n'
 	
+	csv_filename = "ingest-%s-%s.csv" % ( ghoe_type, timestamp )
+	csv_pathname = os.path.join( os.path.dirname(__file__), csv_filename )
+	data = tablib.Dataset()
+	
+	encoding = "utf-8"
+	newline  = '\n'
+		
 	with io.open( sh_pathname, "w", newline = newline, encoding = encoding ) as sh_file:
 		# write header
 		sh_file.write( "#!/bin/sh\n" )
 		sh_file.write( "\n" )
 		sh_file.write( "# Project LINKS, KNAW IISH\n" )
+		sh_file.write( "# %s\n" % timestamp )
 		sh_file.write( "\n" )
 		sh_file.write( "# perl parameters:\n" )
 		sh_file.write( "# [Perl File] [XML File] [db URL] [id_source] [registration_maintype] [drop-and-create] [db usr] [db pwd]\n" )
@@ -144,7 +163,7 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 		for f, xml_fname in enumerate( cbgxml_list ):
 			print( "%d %s" % ( f+1, xml_fname ) )
 			
-			rmtype, archive_name = split_xml_fname( xml_fname )
+			gho_type, rmtype, archive_name = split_xml_fname( xml_fname )
 			if not archive_name:
 				print( "Skipping %s" % xml_fname )
 				nskipped += 1
@@ -152,6 +171,7 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 			
 			id_source, short_name = get_id_source_from_archive( db_ref, archive_name )
 			if not id_source:
+				data.append( [ f+1, 0, '',  archive_name ] )
 				print( "Skipping %s\n" % xml_fname )
 				nskipped += 1
 				continue
@@ -176,11 +196,23 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 			if debug: print( perl_line )
 			sh_file.write( perl_line + '\n' )
 			
+			data.append( [ f+1, int( id_source ), short_name,  archive_name ] )
+			
 		sh_file.write( "\n# [eof]\n" )
 		
 		print( "\n%d filenames considered, of which:" % len( cbgxml_list ) )
 		print( "%d filenames skipped" % nskipped )
 		print( "%d filenames written to %s" % ( naccept, sh_filename ) )
+	
+		encoding  = "utf-8"
+		delimiter = ';'
+		newline   = '\n'
+		data.headers = [ "#", "id_source", "short_name", "archive_name" ]
+		data = data.sort( "id_source", reverse = False )
+		with io.open( csv_pathname, "w", encoding = encoding ) as csv_file:
+			quoting = csv.QUOTE_NONNUMERIC
+			csv_file.write( data.export( "csv", delimiter = delimiter, quoting = quoting ) )
+		
 # process_xml()
 
 
