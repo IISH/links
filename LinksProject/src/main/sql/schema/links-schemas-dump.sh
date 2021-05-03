@@ -3,7 +3,7 @@
 # Project LINKS, KNAW IISH
 
 # FL-28-Dec-2020 Created
-# FL-29-Jan-2020 Changed
+# FL-03-May-2021 Changed
 
 # Dump LINKS schemas
 
@@ -18,7 +18,10 @@
 #pwd=...
 
 # Or get usr & pwd from hsn-links-db.yaml (this needs yq [python] and jq [linux])
-yaml=$YAML_MAIN_DIR/hsn-links-db.yaml
+# activate the virtual python
+PYTHON3_HOME=$LINKS_HOME/python392
+source $PYTHON3_HOME/bin/activate
+yaml=$LINKS_HOME/python/hsn-links-db.yaml
 usr=`yq --raw-output .USER_LINKS $yaml`
 pwd=`yq --raw-output .PASSWD_LINKS $yaml`
 
@@ -26,6 +29,8 @@ filter=" AUTO_INCREMENT=[0-9]*"
 today=`date "+%Y.%m.%d"`
 
 # Dump LINKS schemas
+
+echo "Dumping schemas of the essential LINKS tables to the current directory ..."
 
 # links_a2a db: all 11 tables
 db="links_a2a"
