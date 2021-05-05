@@ -9,13 +9,15 @@ Version:	0.2
 Goal:		db access
 
 25-Nov-2020 Created
-17-Mar-2021 Changed
+05-May-2021 Changed
 """
 
 # python-future for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
 from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
 	oct, open, pow, range, round, str, super, zip )
+
+import sys
 
 import MySQLdb
 
@@ -39,15 +41,26 @@ class Database:
 		)
 		self.cursor = self.connection.cursor()
 
-	def insert( self, query ):
+
+	def execute( self, query ):
 		try:
 			resp = self.cursor.execute( query )
 			self.connection.commit()
+			return resp
 		except:
 			self.connection.rollback()
 			etype = sys.exc_info()[ 0:1 ]
 			value = sys.exc_info()[ 1:2 ]
 			print( "%s, %s\n" % ( etype, value ) )
+
+	def insert( self, query ):
+		return self.execute( query )
+
+	def update( self, query ):
+		return self.execute( query )
+
+	def delete( self, query ):
+		return self.execute( query )
 
 	def query( self, query ):
 	#	print( "\n%s" % query )
