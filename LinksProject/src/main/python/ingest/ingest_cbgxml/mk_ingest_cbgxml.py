@@ -4,15 +4,15 @@
 """
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
-Name:		ingest_cbgxml.py
-Version:	0.2
+Name:		mk_ingest_cbgxml.py
+Version:	0.3
 Goal:		Ingest CBG XMl files into links_a2a db
-			This script produces an ingest-%s-yyyy.mm.dd.sh shell script to be run
+			This script creates an ingest-%s-yyyy.mm.dd.sh shell script to be run
 
 15-Dec-2020 Created
 21-Apr-2021 Also create csv overview
 04-May-2021 Yaml structure changed
-05-May-2021 Changed
+09-May-2021 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -166,6 +166,8 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 		sh_file.write( "# [Perl File] [XML File] [db URL] [id_source] [registration_maintype] [drop-and-create] [db usr] [db pwd]\n" )
 		sh_file.write( "# [drop-and-create]: first xml file:  1 = truncate a2a tables\n" )
 		sh_file.write( "# [drop-and-create]: other xml files: 0 = keep a2a tables contents\n" )
+		sh_file.write( "\n\n" )
+		sh_file.write( "date \"+%F %T\"\n" )
 		sh_file.write( "\n" )
 		
 		naccept  = 0
@@ -208,7 +210,8 @@ def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgx
 			sh_file.write( perl_line + '\n' )
 			
 			data.append( [ f+1, int( id_source ), short_name,  archive_name ] )
-			
+		
+		sh_file.write( "\ndate \"+%F %T\"\n" )
 		sh_file.write( "\n# [eof]\n" )
 		
 		print( "\n%d filenames considered, of which:" % len( cbgxml_list ) )
@@ -266,11 +269,11 @@ def get_yaml_config( yaml_filename ):
 
 
 if __name__ == "__main__":
-	if debug: print( "ingest_cbgxml.py" )
+	if debug: print( "mk_ingest_cbgxml.py" )
 	
 	time0 = time()		# seconds since the epoch
 	
-	yaml_filename = "./ingest_cbgxml.yaml"
+	yaml_filename = "./mk_ingest_cbgxml.yaml"
 	config_local = get_yaml_config( yaml_filename )
 	
 	YAML_MAIN   = config_local.get( "YAML_MAIN" )
