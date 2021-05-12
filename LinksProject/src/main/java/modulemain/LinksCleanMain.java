@@ -43,6 +43,7 @@ import linksmanager.ManagerGui;
  * FL-29-Dec-2019 Separate DB pool for HSN
  * FL-07-Jan-2020 Single-threaded data refresh
  * FL-10-May-2021 Added column scan_url to links_logs, to contain registration_o.source_digital_original
+ * FL-12-May-2021 Increase size archive column in log table
  */
 
 public class LinksCleanMain extends Thread
@@ -621,7 +622,7 @@ public class LinksCleanMain extends Thread
             + " CREATE TABLE `links_logs`.`" + logTableName + "` ("
             + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " `id_source`    INT UNSIGNED NULL ,"
-            + " `archive`      VARCHAR(30)  NULL ,"
+            + " `archive`      VARCHAR(120) NULL ,"
             + " `scan_url`     VARCHAR(80)  NULL ,"
             + " `location`     VARCHAR(120) NULL ,"
             + " `reg_type`     VARCHAR(50)  NULL ,"
