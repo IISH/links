@@ -110,7 +110,7 @@ import general.PrintLogger;
  * FL-19-Jan-2021 scan_remarks: not_string2 finished but still needs testing
  * FL-20-Jan-2021 postTasks() renamed updateSexRole()
  * FL-16-Feb-2021 merged 2 pull requests from Kerim
- * FL-11-May-2021 add scan_url to logging tables
+ * FL-12-May-2021 add scan_url and archive to logging tables
  */
 
 
