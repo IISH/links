@@ -42,7 +42,7 @@ import linksmanager.ManagerGui;
  * FL-05-Nov-2019 Extensive cleanup
  * FL-29-Dec-2019 Separate DB pool for HSN
  * FL-07-Jan-2020 Single-threaded data refresh
- * FL-24-Sep-2020 Latest Change
+ * FL-10-May-2021 Added column scan_url to links_logs, to contain registration_o.source_digital_original
  */
 
 public class LinksCleanMain extends Thread
@@ -622,6 +622,7 @@ public class LinksCleanMain extends Thread
             + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " `id_source`    INT UNSIGNED NULL ,"
             + " `archive`      VARCHAR(30)  NULL ,"
+            + " `scan_url`     VARCHAR(80)  NULL ,"
             + " `location`     VARCHAR(120) NULL ,"
             + " `reg_type`     VARCHAR(50)  NULL ,"
             + " `date`         VARCHAR(25)  NULL ,"

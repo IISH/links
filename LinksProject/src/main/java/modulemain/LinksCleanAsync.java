@@ -110,6 +110,7 @@ import general.PrintLogger;
  * FL-19-Jan-2021 scan_remarks: not_string2 finished but still needs testing
  * FL-20-Jan-2021 postTasks() renamed updateSexRole()
  * FL-16-Feb-2021 merged 2 pull requests from Kerim
+ * FL-11-May-2021 add scan_url to logging tables
  */
 
 
@@ -473,13 +474,15 @@ public class LinksCleanAsync extends Thread
 		if( debug ) { System.out.println( "report_class: " + report_class + ", report_content: " + report_content ); }
 
 		// get registration values from links_original.registration_o
+		String archive   = "";
+		String scan_url  = "";
 		String location  = "";
 		String reg_type  = "";
 		String date      = "";
 		String sequence  = "";
 		String guid      = "";
 
-		String selectQuery = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+		String selectQuery = "SELECT name_source, source_digital_original, registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
 			+ " FROM registration_o WHERE id_registration = " + id;
 
 		if( debug ) {
@@ -490,6 +493,8 @@ public class LinksCleanAsync extends Thread
 		try( ResultSet rs = dbconOriginal.executeQuery( selectQuery ); )
 		{
 			rs.first();
+			archive  = rs.getString( "name_source" );
+			scan_url = rs.getString( "source_digital_original" );
 			location = rs.getString( "registration_location" );
 			reg_type = rs.getString( "registration_type" );
 			date     = rs.getString( "registration_date" );
@@ -503,6 +508,8 @@ public class LinksCleanAsync extends Thread
 			ex.printStackTrace( new PrintStream( System.out ) );
 		}
 
+		if( archive  == null) { archive  = ""; }
+		if( scan_url == null) { scan_url = ""; }
 		if( location == null) { location = ""; }
 		if( reg_type == null) { reg_type = ""; }
 		if( date     == null) { date     = ""; }
@@ -511,22 +518,24 @@ public class LinksCleanAsync extends Thread
 
 		String insertQuery = "INSERT INTO links_logs.`" + logTableName + "`"
 			+ " ( reg_key , id_source , report_class , report_type , content ,"
-			+ " date_time , location , reg_type , date , sequence , guid )"
-			+ " VALUES ( ? , ? , ? , ? , ? , NOW() , ? , ? , ? , ? , ? ) ;";
+			+ " date_time , archive, scan_url, location , reg_type , date , sequence , guid )"
+			+ " VALUES ( ? , ? , ? , ? , ? , NOW() , ?, ? , ? , ? , ? , ? , ? ) ;";
 
 		try( PreparedStatement pstmt = dbconLog.prepareStatement( insertQuery ) )
 		{
 			int i = 1;
-			pstmt.setInt(    i++, id );
-			pstmt.setString( i++, id_source );
-			pstmt.setString( i++, report_class.toUpperCase() );
-			pstmt.setString( i++, errorCodeStr );
-			pstmt.setString( i++, report_content );
-			pstmt.setString( i++, location );
-			pstmt.setString( i++, reg_type );
-			pstmt.setString( i++, date );
-			pstmt.setString( i++, sequence );
-			pstmt.setString( i++, guid );
+			pstmt.setInt(    i++, id );							// ? 1
+			pstmt.setString( i++, id_source );					// ? 2
+			pstmt.setString( i++, report_class.toUpperCase() );	// ? 3
+			pstmt.setString( i++, errorCodeStr );				// ? 4
+			pstmt.setString( i++, report_content );				// ? 5	date_time with NOW() after content
+			pstmt.setString( i++, archive );					// ? 1	date_time with NOW() before archive
+			pstmt.setString( i++, scan_url );					// ? 2
+			pstmt.setString( i++, location );					// ? 3
+			pstmt.setString( i++, reg_type );					// ? 4
+			pstmt.setString( i++, date );						// ? 5
+			pstmt.setString( i++, sequence );					// ? 6
+			pstmt.setString( i++, guid );						// ? 7
 
 			int numRowsChanged = pstmt.executeUpdate();
 		}
@@ -595,6 +604,8 @@ public class LinksCleanAsync extends Thread
 		if( role            == null) { role = ""; }
 
 		// get registration values from links_original.registration_o
+		String archive   = "";
+		String scan_url  = "";
 		String location  = "";
 		String reg_type  = "";
 		String date      = "";
@@ -603,7 +614,7 @@ public class LinksCleanAsync extends Thread
 
 		if( ! id_registration.isEmpty() )
 		{
-			String selectQueryR = "SELECT registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
+			String selectQueryR = "SELECT name_source, source_digital_original, registration_location , registration_type , registration_date , registration_seq , id_persist_registration"
 				+ " FROM registration_o WHERE id_registration = " + id_registration;
 
 			if( debug ) { showMessage( selectQueryR, false, true ); }
@@ -611,6 +622,8 @@ public class LinksCleanAsync extends Thread
 			try( ResultSet rs = dbconOriginal.executeQuery( selectQueryR ) )
 			{
 				rs.first();
+				archive  = rs.getString( "name_source" );
+				scan_url = rs.getString( "source_digital_original" );
 				location = rs.getString( "registration_location" );
 				reg_type = rs.getString( "registration_type" );
 				date     = rs.getString( "registration_date" );
@@ -625,6 +638,8 @@ public class LinksCleanAsync extends Thread
 			}
 		}
 
+		if( archive  == null) { archive  = ""; }
+		if( scan_url == null) { scan_url = ""; }
 		if( location == null) { location = ""; }
 		if( reg_type == null) { reg_type = ""; }
 		if( date     == null) { date     = ""; }
@@ -638,24 +653,26 @@ public class LinksCleanAsync extends Thread
 
 		String insertQuery = "INSERT INTO links_logs.`" + logTableName + "`"
 			+ " ( pers_key , id_source , report_class , report_type , content ,"
-			+ " date_time , location , reg_type , date , sequence , role, reg_key, guid )"
-			+ " VALUES ( ? , ? , ? , ? , ? , NOW() , ? , ? , ? , ? , ? , ?, ? ) ;";
+			+ " date_time , archive, scan_url, location , reg_type , date , sequence , role, reg_key, guid )"
+			+ " VALUES ( ? , ? , ? , ? , ? , NOW() , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ;";
 
 		try( PreparedStatement pstmt = dbconLog.prepareStatement( insertQuery ) )
 		{
 			int i = 1;
-			pstmt.setInt(    i++, id );
-			pstmt.setString( i++, id_source );
-			pstmt.setString( i++, report_class.toUpperCase() );
-			pstmt.setString( i++, errorCodeStr );
-			pstmt.setString( i++, report_content );
-			pstmt.setString( i++, location );
-			pstmt.setString( i++, reg_type );
-			pstmt.setString( i++, date );
-			pstmt.setString( i++, sequence );
-			pstmt.setString( i++, role );
-			pstmt.setString( i++, id_registration );
-			pstmt.setString( i++, guid );
+			pstmt.setInt(    i++, id );							// ? 1
+			pstmt.setString( i++, id_source );					// ? 2
+			pstmt.setString( i++, report_class.toUpperCase() );	// ? 3
+			pstmt.setString( i++, errorCodeStr );				// ? 4
+			pstmt.setString( i++, report_content );				// ? 5	date_time with NOW() after content
+			pstmt.setString( i++, archive );					// ? 1	date_time with NOW() before archive
+			pstmt.setString( i++, scan_url );					// ? 2
+			pstmt.setString( i++, location );					// ? 3
+			pstmt.setString( i++, reg_type );					// ? 4
+			pstmt.setString( i++, date );						// ? 5
+			pstmt.setString( i++, sequence );					// ? 6
+			pstmt.setString( i++, role );						// ? 7
+			pstmt.setString( i++, id_registration );			// ? 8
+			pstmt.setString( i++, guid );						// ? 9
 
 			int numRowsChanged = pstmt.executeUpdate();
 		}
