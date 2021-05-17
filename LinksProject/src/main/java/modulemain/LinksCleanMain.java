@@ -44,6 +44,7 @@ import linksmanager.ManagerGui;
  * FL-07-Jan-2020 Single-threaded data refresh
  * FL-10-May-2021 Added column scan_url to links_logs, to contain registration_o.source_digital_original
  * FL-12-May-2021 Increase size archive column in log table
+ * FL-17-May-2021 Add source_digital_original to the refesh columns
  */
 
 public class LinksCleanMain extends Thread
@@ -261,6 +262,8 @@ public class LinksCleanMain extends Thread
                     HikariConnection dbconCleaned = new HikariConnection( dsCleaned.getConnection() );
                     msg = String.format( "Thread id %02d; Single-threaded refreshing of data", mainThreadId );
                     plog.show( msg );
+                    showMessage( msg, false, true ) ;
+
                     for( int sourceId : sourceList )
                     {
                         msg = String.format( "Thread id %02d; refreshing source: %d", mainThreadId, sourceId );
@@ -432,11 +435,11 @@ public class LinksCleanMain extends Thread
             showMessage( msg, false, true );
         }
 
-        // Copy key column data from links_original to links_cleaned
+        // Copy 'key' column data from links_original to links_cleaned, i.e. columns whose data will not be cleaned
         String keysRegistration = ""
             + "INSERT INTO links_cleaned.registration_c"
-            + " ( id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq )"
-            + " SELECT id_registration, id_source, id_persist_registration, id_orig_registration, registration_maintype, registration_seq"
+            + " ( id_registration, id_source, id_persist_registration, source_digital_original, id_orig_registration, registration_maintype, registration_seq )"
+            + " SELECT id_registration, id_source, id_persist_registration, source_digital_original, id_orig_registration, registration_maintype, registration_seq"
             + " FROM links_original.registration_o"
             + " WHERE registration_o.id_source = " + source;
 
