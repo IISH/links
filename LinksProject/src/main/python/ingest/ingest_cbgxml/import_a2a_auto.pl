@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # FL-13-Apr-2015 Read a2a input as UTF-8 (default ISO Latin-1 is wrong)
 # FL-23-Apr-2015 Remove DELAYED in first INSERT
 # FL-21-Dec-2016 Skip header lines if header is more than 1 line
+# FL-18-May-2021 Increase width of sourcedigitaloriginal to VARCHAR(256)
 
 # TODO: use strict, use warnings
 #use strict;
@@ -1262,7 +1263,7 @@ sub create_source
 		documentnumber VARCHAR(100) NULL DEFAULT NULL ,
 		sourcedigitalizationdate VARCHAR(100) NULL DEFAULT NULL ,
 		sourcelastchangedate VARCHAR(100) NULL DEFAULT NULL ,
-		sourcedigitaloriginal VARCHAR(100) NULL DEFAULT NULL ,
+		sourcedigitaloriginal VARCHAR(256) NULL DEFAULT NULL ,
 		recordidentifier VARCHAR(100) NULL DEFAULT NULL ,
 		recordguid VARCHAR(100) NULL DEFAULT NULL ,
 		PRIMARY KEY (id) 
