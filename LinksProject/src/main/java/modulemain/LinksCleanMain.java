@@ -45,6 +45,7 @@ import linksmanager.ManagerGui;
  * FL-10-May-2021 Added column scan_url to links_logs, to contain registration_o.source_digital_original
  * FL-12-May-2021 Increase size archive column in log table
  * FL-17-May-2021 Add source_digital_original to the refesh columns
+ * FL-18-May-2021 Increase width of scan_url to VARCHAR(256) in log tables
  */
 
 public class LinksCleanMain extends Thread
@@ -626,7 +627,7 @@ public class LinksCleanMain extends Thread
             + " `id_log`       INT UNSIGNED NOT NULL AUTO_INCREMENT ,"
             + " `id_source`    INT UNSIGNED NULL ,"
             + " `archive`      VARCHAR(120) NULL ,"
-            + " `scan_url`     VARCHAR(80)  NULL ,"
+            + " `scan_url`     VARCHAR(256) NULL ,"
             + " `location`     VARCHAR(120) NULL ,"
             + " `reg_type`     VARCHAR(50)  NULL ,"
             + " `date`         VARCHAR(25)  NULL ,"
