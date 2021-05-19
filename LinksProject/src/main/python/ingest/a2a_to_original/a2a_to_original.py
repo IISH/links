@@ -13,7 +13,7 @@ Goal:		Read the sql file with MySQL queries to fill the 2 table of
 04-Dec-2014	Created
 18-Jan-2016	Update for Python-3
 10-Apr-2017	Get sources/rmtypes from links_a2a, and delete them accordingly from links_original
-05-May-2021	Changed
+19-May-2021	Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -213,7 +213,7 @@ def delete_from_orig( db, log, rmtypes ):
 			log.write( "%d records in %s\n" % ( count, table ) )
 			
 			if count == 0:
-				log.write( "Empty table, reseting AUTO_INCREMENT\n" )
+				log.write( "Empty table, resetting AUTO_INCREMENT\n" )
 				query = "ALTER TABLE %s.%s AUTO_INCREMENT = 1" % ( db_name, table )
 				log.write( "%s\n" % query )
 				resp = db.execute( query )
