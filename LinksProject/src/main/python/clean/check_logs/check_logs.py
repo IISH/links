@@ -9,7 +9,7 @@ Version:	0.2
 Goal:		Find report_type records, and optionally delete log tables
 
 25-Nov-2020 Created
-14-Dec-2020 Changed
+19-May-2020 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -20,17 +20,17 @@ from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, ne
 import os
 import sys
 import datetime
+from time import time
 import MySQLdb
 import re
 import yaml
 
-from time import time
 
 debug = False
 
 
-def get_table_list( db ):
-	if debug: print( "get_table_list(" )
+def get_log_table_list( db ):
+	if debug: print( "get_log_table_list(" )
 	log_tables = []
 	query = "SHOW TABLES FROM links_logs LIKE 'log-%'"
 	if debug: print( query )
@@ -42,65 +42,56 @@ def get_table_list( db ):
 	
 	print( "Number of log_tables: %d" % len( log_tables ) )
 	return log_tables
-# get_table_list()
+# get_log_table_list()
 
 
 
-def check_table_list( db, table_list, min_rec_count ):
-	if debug: print( "check_table_list()" )
+def check_log_table_list( db, log_table_list, min_rec_count ):
+	if debug: print( "check_log_table_list()" )
 	
-	ntables = len( table_list  )
-	keep_list = []
+	ntables = len( log_table_list  )
+	nonempty_list = []
 	ndeleted = 0
 	
-	for t, table_name in enumerate( table_list ):
-		#if debug: print( table_name )
-		query = "SELECT COUNT(*) AS count FROM links_logs.`%s`" % table_name
+	for t, log_table_name in enumerate( log_table_list ):
+		#if debug: print( log_table_name )
+		query = "SELECT COUNT(*) AS count FROM links_logs.`%s`" % log_table_name
 		resp = db.query( query )
 		count = resp[ 0 ][ "count" ]
-		print( "%d-of-%d table: %s, # of records: %d" % ( t+1, ntables, table_name, count ) )
+		print( "%d-of-%d table: %s, # of records: %d" % ( t+1, ntables, log_table_name, count ) )
 		
 		if count <= min_rec_count:	# interactvely delete
-			yn = input( "Delete table %s? [N,y] " % table_name )
+			yn = input( "Delete table %s? [N,y] " % log_table_name )
 			if yn.lower() == 'y':
-				query = "DROP TABLE links_logs.`%s`" % table_name
+				query = "DROP TABLE links_logs.`%s`" % log_table_name
 				if debug: print( query )
 				resp = db.query( query )
 				if debug: print( resp )
 				ndeleted += 1
-			else:
-				keep_list.append( table_name )
 		else:
-			keep_list.append( table_name )
+			nonempty_list.append( log_table_name )
 	
 	
 	print( "%d tables were deleted" %  ndeleted )
-	print( "%d tables remain" % len( keep_list ) )
-	return keep_list
-# check_table_list()
+	print( "%d tables remain" % len( nonempty_list ) )
+	return nonempty_list
+# check_log_table_list()
 
 
 
-def find_report_type( db, keep_list, report_type ): 
+def find_report_type( db, nonempty_list, report_type ): 
 	if debug: print( "find_report_type(()" )
-	ntables = len( keep_list  )
-	nskipped = 0
-	nnonzero = 0
+	ntables = len( nonempty_list  )
 	
-	for t, table_name in enumerate( keep_list ):
-		if debug: print( table_name )
-		query = "SELECT COUNT(*) AS count FROM links_logs.`%s` WHERE report_type = %d" % ( table_name, report_type )
+	for t, log_table_name in enumerate( log_table_list ):
+		if debug: print( log_table_name )
+		query = "SELECT COUNT(*) AS count FROM links_logs.`%s` WHERE report_type = %d" % ( log_table_name, report_type )
 		resp = db.query( query )
 		for rec in resp:
 			#if debug: print( rec )
 			count = rec[ "count" ]
-			if count == 0:
-				nskipped += 1
-			else:
-				nnonzero += 1
-				print( "%d-(%d)-of-%d table: %s, report_type = %d count: %d" % ( t+1, nnonzero, ntables, table_name, report_type, count ) )
-	
-	print( "%d tables skipped with 0 count of report_type = %d " % ( nskipped, report_type ) )
+			if count > 0: 
+				print( "%d-of-%d table: %s, report_type = %d count: %d" % ( t+1, ntables, log_table_name, report_type, count ) )
 # find_report_type()
 
 
@@ -138,7 +129,7 @@ def get_yaml_config( yaml_filename ):
 		sys.exit( 1 )
 	
 	return config
-# get_yaml_config()
+#get_yaml_config()
 
 
 
@@ -174,14 +165,18 @@ if __name__ == "__main__":
 	db = Database( host = HOST_LINKS , user = USER_LINKS , passwd = PASSWD_LINKS , dbname = DBNAME_LINKS )
 	
 	print( "MINIMUM_RECORD_COUNT: %s" % MINIMUM_RECORD_COUNT )
-	table_list = get_table_list( db )
-	keep_list = check_table_list( db, table_list, MINIMUM_RECORD_COUNT )
+	log_table_list = get_log_table_list( db )
+	nonempty_list = check_log_table_list( db, log_table_list, MINIMUM_RECORD_COUNT )
 	
-	print( "\nREPORT_TYPE: %s" % REPORT_TYPE )
-	if REPORT_TYPE:
-		find_report_type( db, keep_list, REPORT_TYPE )	
+	try:
+		report_type = int( REPORT_TYPE )
+		if report_type > 0:
+			print( "\nREPORT_TYPE: %s" % REPORT_TYPE )
+			find_report_type( db, nonempty_list, REPORT_TYPE )
+	except:
+		pass
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "\nprocessing took %s" % str_elapsed )
-		
+
 # [eof]
