@@ -5,12 +5,13 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		chk_cbgxml.py
-Version:	0.1
-Goal:		Check CBG XMl file tag lengths, to be compared with the links declarations
-Notice:		Currently, only the max length of text of tag "SourceDigitalOriginal" is checked
+Version:	0.2
+Goal:		Check CBG XMl files:
+			1) find max length of tag text
+			1) get certificate counts of the xml files
 
 18-Dec-2021 Created
-22-May-2021 Changed
+24-May-2021 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -100,11 +101,13 @@ def collection_sizes( db_ref, cbgxml_dir ):
 		quoting = csv.QUOTE_NONNUMERIC
 		csv_file.write( data.export( "csv", delimiter = delimiter, quoting = quoting ) )
 		print( "written: %s" % csv_filename )
+# collection_sizes()
 
 
 
-def process_xml( cbgxml_dir ):
-	print( "process_xml()" )
+def max_text_length( cbgxml_dir, tag_test ):
+	print( "\nmax_text_length()" )
+	print( cbgxml_dir )
 	
 	len_max  = 0
 	text_max = ""
@@ -125,7 +128,7 @@ def process_xml( cbgxml_dir ):
 			if not len( tag ):		# select only (end) leafs
 				tag_name = etree.QName( tag ).localname
 				#print ( tag_name )
-				if tag_name == "SourceDigitalOriginal":
+				if tag_name == tag_test:
 					tag_text = "%s" % tag.text
 					len_text = len( tag_text )
 					if len_text > len_max:
@@ -136,6 +139,7 @@ def process_xml( cbgxml_dir ):
 				pass
 	
 	return len_max, text_max
+# max_text_length()
 
 
 
@@ -187,19 +191,9 @@ if __name__ == "__main__":
 	YAML_MAIN   = config_local.get( "YAML_MAIN" )
 	config_main = get_yaml_config( YAML_MAIN )
 	
-	HOST_REF   = config_main.get( "HOST_REF" )
-	USER_REF   = config_main.get( "USER_REF" )
-	PASSWD_REF = config_main.get( "PASSWD_REF" )
-	DBNAME_REF = config_main.get( "DBNAME_REF" )
-	
-	print( "HOST_REF: %s" % HOST_REF )
-	print( "USER_REF: %s" % USER_REF )
-	print( "PASSWD_REF: %s" % PASSWD_REF )
-	print( "DBNAME_REF: %s" % DBNAME_REF )
-	
 	main_dir = os.path.dirname( YAML_MAIN )
 	sys.path.insert( 0, main_dir )
-	from hsn_links_db import Database, format_secs, get_archive_name
+	from hsn_links_db import Database, format_secs
 	
 	CBGXML_BSG_DIR = config_local.get( "CBGXML_BSG_DIR" )
 	CBGXML_BSH_DIR = config_local.get( "CBGXML_BSH_DIR" )
@@ -208,17 +202,38 @@ if __name__ == "__main__":
 	
 	CBGXML_DIR_LIST = [ CBGXML_BSG_DIR, CBGXML_BSH_DIR, CBGXML_BSE_DIR, CBGXML_BSO_DIR ]
 	
-	print( "Connecting to database at %s" % HOST_REF )
-	db_ref = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
+	function = config_local.get( "FUNCTION" )
 	
-	for CBGXML_DIR in CBGXML_DIR_LIST:
-		collection_sizes( db_ref, CBGXML_DIR )
+	if function == "TAG_TEXT_MAX_LENGTH":
+		tag_test = config_local.get( "TAG_NAME" )
+		print( "Find maximum text length of tag: %s" % tag_test )
 		
-		"""
-		len_max, text_max = process_xml( CBGXML_DIR )
-		print( "maximum for %s" % CBGXML_DIR )
-		print( "len_max: %s, text_max: %s" % ( len_max, text_max ) )
-		"""
+		for CBGXML_DIR in CBGXML_DIR_LIST:
+			len_max, text_max = max_text_length( CBGXML_DIR, tag_test )
+			print( "maximum for %s" % CBGXML_DIR )
+			print( "len_max: %s, text_max: %s" % ( len_max, text_max ) )
+	
+	elif function == "CERTIFICATE_COUNTS":
+		print( "Get certificate counts of the cbg a2a xml files" )
+		HOST_REF   = config_main.get( "HOST_REF" )
+		USER_REF   = config_main.get( "USER_REF" )
+		PASSWD_REF = config_main.get( "PASSWD_REF" )
+		DBNAME_REF = config_main.get( "DBNAME_REF" )
+		
+		print( "HOST_REF: %s" % HOST_REF )
+		print( "USER_REF: %s" % USER_REF )
+		print( "PASSWD_REF: %s" % PASSWD_REF )
+		print( "DBNAME_REF: %s" % DBNAME_REF )
+		
+		main_dir = os.path.dirname( YAML_MAIN )
+		sys.path.insert( 0, main_dir )
+		from hsn_links_db import Database, format_secs
+		
+		print( "Connecting to database at %s" % HOST_REF )
+		db_ref = Database( host = HOST_REF,   user = USER_REF,   passwd = PASSWD_REF,   dbname = DBNAME_REF )
+		
+		for CBGXML_DIR in CBGXML_DIR_LIST:
+			collection_sizes( db_ref, CBGXML_DIR )
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "Done in %s\n" % str_elapsed )
