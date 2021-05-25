@@ -12,7 +12,7 @@ Goal:		Ingest CBG XMl files into links_a2a db
 15-Dec-2020 Created
 21-Apr-2021 Also create csv overview
 04-May-2021 Yaml structure changed
-09-May-2021 Changed
+25-May-2021 Import a2a_xml
 """
 
 # python-future for Python 2/3 compatibility
@@ -25,90 +25,14 @@ import csv
 import io
 import os
 import sys
-import datetime
-import MySQLdb
-import socket
 import tablib
 import yaml
 
 from time import time
 
-debug = True
+from a2a_xml import split_xml_fname, get_id_source_from_archive
 
-
-def get_id_source_from_archive( db_ref, archive_name ):
-	print( "get_id_source_from_archive()" )
-	id_source  = None
-	short_name = None
-	
-	query = "SELECT id_source, short_name FROM ref_source WHERE source_name = '%s'" % archive_name
-	if debug: print( query )
-	resp = db_ref.query( query )
-	if resp is not None:
-		#print( resp )
-		nrec = len( resp )
-		if nrec == 0:
-			print( "No valid record found in ref_source for archive_name = '%s'" % archive_name )
-		elif nrec == 1:
-			rec = resp[ 0 ]
-			id_source  = rec[ "id_source" ]
-			short_name = rec[ "short_name" ]
-		else:
-			print( "Too many archive_name records found, ignoring them all\n" )
-	
-	if debug and id_source:
-		print( "id_source = %d, short_name = %s" % ( id_source, short_name ) )
-	
-	return id_source, short_name
-# get_id_source_from_archive()
-
-
-
-def split_xml_fname( xml_fname ):
-	#print( "split_xml_fname()" )
-	
-	ghoe_type = None
-	rmtype = None
-	archive_name = ""
-	
-	root, ext = os.path.splitext( xml_fname )
-	if ext != ".xml":
-		print( "%s: xml_fname extension must be '.xml', but it is '%s'" % ( xml_fname, ext ) )
-		return ghoe_type, rmtype, archive_name
-	
-	parts = root.split( '_' )
-	
-	if len( parts ) not in [ 4, 5 ]:	# date part: 4: yyyy-mm or 5: yyyy_mm
-		print( "root: %s " % root )
-		for p, part in enumerate ( parts ):
-			print( "%d %s" % ( p, part ) )
-		print( "%s: xml_fname must split into 4 parts, but it has %d" % ( xml_fname, len( parts ) ) )
-		return ghoe_type, rmtype, archive_name
-	
-	prefix = archive_name = parts[ 0 ]
-	if prefix != "A2A":
-		print( "%s: prefix must be 'A2A', but it is '%s'" % ( xml_fname, prefix ) )
-		return ghoe_type, rmtype, archive_name
-	
-	ghoe_type = parts[ 1 ]
-	if ghoe_type == "BSG":
-		rmtype = 1
-	elif ghoe_type == "BSH":
-		rmtype = 2
-	elif ghoe_type == "BSO":
-		rmtype = 3
-	elif ghoe_type == "BSE":
-		rmtype = 4
-	else:
-		print( "%s: ghoe_type must be one of 'BSG', 'BSH', 'BSE', 'BSO', but it is '%s'" % ( xml_fname, ghoe_type ) )
-		return ghoe_type, rmtype, archive_name
-	
-	archive_name = parts[ -1 ]
-	if debug: print( "archive_name: %s " % archive_name )
-
-	return ghoe_type, rmtype, archive_name
-# split_xml_fname()
-
+debug = False
 
 
 def process_xml( db_ref, host_links, user_links, passwd_links, a2aperl_dir, cbgxml_dir, cbgxml_list, cbgxml_skip ):
