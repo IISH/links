@@ -5,15 +5,17 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		export_reports.py
-Version:	0.4
+Version:	0.5
 Goal:		Select records from table links_logs.ERROR_STORE where flag = 2, 
 			write a selection of fields to csv files, grouped by reg_type (and 
 			optionally id_source). 
 			Finally, update the flag value to 3 of the affected records. 
-TODO:		Read archive_names directly from HOST_REF db
+Notice:		Set flag values for exporting to 2: 
+			USE links_logs;
+			UPDATE links_logs.ERROR_STORE SET flag = 2 WHERE flag = 1;
 
 07-Sep-2016 Created
-29-Jan-2019 Changed
+19-May-2021 Changed
 """
 
 # future-0.17.1 imports for Python 2/3 compatibility
@@ -31,7 +33,6 @@ import yaml
 from time import time
 
 debug = False
-groupby_source = False
 
 # settings, read from config file
 HOST_LINKS   = ""
@@ -43,7 +44,7 @@ HOST_REF   = ""
 USER_REF   = ""
 PASSWD_REF = ""
 DBNAME_REF = ""
-
+"""
 # SELECT id_source, source_name, short_name FROM links_general.ref_source WHERE source_type = "BS" AND WWW_CollID IS NOT NULL AND id_source > 201 ORDER BY id_source;
 long_archive_names = {
 	"211" : "Groninger Archieven",
@@ -88,7 +89,9 @@ long_archive_names = {
 	"254" : "West-Brabants Archief",
 	"255" : "Erfgoed Leiden en Omstreken"
 }
+"""
 
+"""
 short_archive_names = {
 	"211" : "GR_Groningen",
 	"213" : "DR_Assen",
@@ -134,54 +137,7 @@ short_archive_names = {
 }
 
 archive_names = short_archive_names
-
-
-class Database:
-	def __init__( self, host, user, passwd, dbname ):
-		self.host   = host
-		self.user   = user
-		self.passwd = passwd
-		self.dbname = dbname
-
-		self.connection = MySQLdb.connect( \
-			host = self.host, 
-			user = self.user, 
-			passwd = self.passwd, 
-			db = self.dbname,
-			charset     = "utf8",			# needed when there is e.g. 
-			use_unicode = True				# &...; html escape stuff in strings
-		)
-		self.cursor = self.connection.cursor()
-
-	def insert( self, query ):
-		try:
-			resp = self.cursor.execute( query )
-			self.connection.commit()
-		except:
-			self.connection.rollback()
-			etype = sys.exc_info()[ 0:1 ]
-			value = sys.exc_info()[ 1:2 ]
-			print( "%s, %s\n" % ( etype, value ) )
-
-	def query( self, query ):
-	#	print( "\n%s" % query )
-		cursor = self.connection.cursor( MySQLdb.cursors.DictCursor )
-		cursor.execute( query )
-		return cursor.fetchall()
-
-	def info( self ):
-		"""
-		See the MySQLdb User's Guide: 
-		Returns some information about the last query. Normally you don't need to check this. If there are any MySQL 
-		warnings, it will cause a Warning to be issued through the Python warning module. By default, Warning causes 
-		a message to appear on the console. However, it is possible to filter these out or cause Warning to be raised 
-		as exception. See the MySQL docs for mysql_info(), and the Python warning module. (Non-standard)
-		"""
-		return self.connection.info()
-
-	def __del__( self ):
-		self.connection.close()
-
+"""
 
 
 def none2empty( var ):
@@ -191,13 +147,18 @@ def none2empty( var ):
 
 
 
-def export_source_type( debug, db, table, id_source, reg_type_in ):
+def export_source_type( debug, db_ref, db_links, table, id_source, include_id_source, reg_type_in ):
 	if debug: print( "export_source_type() id_source: %s, reg_type: %s" % ( id_source, reg_type_in ) )
 	
+	short_name = "no_source"
+	source_name, short_name = get_archive_name( db_ref, id_source )
+	
+	"""
 	try:
 		short_name = short_archive_names[ str(id_source) ]
 	except:
 		short_name = "no_source"
+	"""
 	
 	rtype_fname = none2empty( reg_type_in )
 	if rtype_fname == '':
@@ -219,14 +180,16 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
-#	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
-	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
+	if include_id_source:		# for debugging convenience
+		header = [ "id_log", "id_source", "archive", "scan_url", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
+	else:						# CBG does not want our id_source
+		header = [ "id_log", "archive", "scan_url", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
 	query += "WHERE id_source = %d AND reg_type = '%s' AND flag = 2;" % ( id_source, reg_type_in )
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		nrec = len( resp )
@@ -239,6 +202,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 			id_log       = none2empty( rec[ "id_log" ] )
 			id_source    = none2empty( rec[ "id_source" ] )
 			archive      = none2empty( rec[ "archive" ] )
+			scan_url     = none2empty( rec[ "scan_url" ] )
 			location     = none2empty( rec[ "location" ] )
 			reg_type_out = none2empty( rec[ "reg_type" ] )
 			date         = none2empty( rec[ "date" ] )
@@ -258,6 +222,7 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 				print( "id_log     = %s" % id_log )
 				print( "id_source  = %s" % id_source  )
 				print( "archive    = %s" % archive )
+				print( "scan_url   = %s" % scan_url )
 				print( "location   = %s" % location )
 				print( "reg_type   = %s" % reg_type_out )
 				print( "date       = %s" % date )
@@ -267,7 +232,10 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 				print( "error_type = %s" % error_type )
 				print( "content    = %s" % content )
 			
-			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, error_type, content ]
+			if include_id_source:		# for debugging convenience
+				line =  [ id_log, id_source, archive, scan_url, location, reg_type_out, date, sequence, role, guid, error_type, content ]
+			else:						# CBG does not want our id_source
+				line =  [ id_log, archive, scan_url, location, reg_type_out, date, sequence, role, guid, error_type, content ]
 			writer.writerow( line )
 
 	csvfile.close()
@@ -276,13 +244,14 @@ def export_source_type( debug, db, table, id_source, reg_type_in ):
 	query  = "UPDATE links_logs.ERROR_STORE SET flag = 3, date_export = '%s', destination = '%s' " % ( today, archive )
 	query += "WHERE id_source = %d AND reg_type = '%s' AND flag = 2;" % ( id_source, reg_type_in )
 	if debug: print( query )
-	resp = db.insert( query )
-	if resp is not None and len(resp) != 0:
+	resp = db_links.insert( query )
+	if resp is not None:
 		print( resp )
+# export_source_type()
 
 
 
-def export_type( debug, db, table, reg_type_in ):
+def export_type( debug, db_ref, db_links, table, include_id_source, reg_type_in ):
 	if debug: print( "export_type() reg_type: %s" % reg_type_in )
 	
 	rtype_fname = none2empty( reg_type_in )
@@ -305,14 +274,16 @@ def export_type( debug, db, table, reg_type_in ):
 	csvfile = open( filepath, "w" )
 	writer = csv.writer( csvfile )
 	
-#	header = [ "id_log", "id_source", "archive", "location", "reg_type", "error_type", "date", "sequence", "role", "guid", "content" ]
-	header = [ "id_log", "id_source", "archive", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
+	if include_id_source:		# for debugging convenience
+		header = [ "id_log", "id_source", "archive", "scan_url", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
+	else:						# CBG does not want our id_source
+		header = [ "id_log", "archive", "scan_url", "location", "reg_type", "date", "sequence", "role", "guid", "error_type", "content" ]
 	writer.writerow( header )
 	
 	query  = "SELECT * FROM links_logs.`%s` " % table
 	query += "WHERE reg_type = '%s' AND flag = 2;" % reg_type_in
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		nrec = len( resp )
@@ -325,6 +296,7 @@ def export_type( debug, db, table, reg_type_in ):
 			id_log       = none2empty( rec[ "id_log" ] )
 			id_source    = none2empty( rec[ "id_source" ] )
 			archive      = none2empty( rec[ "archive" ] )
+			scan_url     = none2empty( rec[ "scan_url" ] )
 			location     = none2empty( rec[ "location" ] )
 			reg_type_out = none2empty( rec[ "reg_type" ] )
 			date         = none2empty( rec[ "date" ] )
@@ -344,6 +316,7 @@ def export_type( debug, db, table, reg_type_in ):
 				print( "id_log     = %s" % id_log )
 				print( "id_source  = %s" % id_source  )
 				print( "archive    = %s" % archive )
+				print( "scan_url   = %s" % scan_url )
 				print( "location   = %s" % location )
 				print( "reg_type   = %s" % reg_type_out )
 				print( "date       = %s" % date )
@@ -353,7 +326,10 @@ def export_type( debug, db, table, reg_type_in ):
 				print( "error_type = %s" % error_type )
 				print( "content    = %s" % content )
 			
-			line =  [ id_log, id_source, archive, location, reg_type_out, date, sequence, role, guid, error_type, content ]
+			if include_id_source:		# for debugging convenience
+				line =  [ id_log, id_source, archive, scan_url, location, reg_type_out, date, sequence, role, guid, error_type, content ]
+			else:						# CBG does not want our id_source
+				line =  [ id_log, archive, scan_url, location, reg_type_out, date, sequence, role, guid, error_type, content ]
 			writer.writerow( line )
 
 	csvfile.close()
@@ -362,18 +338,19 @@ def export_type( debug, db, table, reg_type_in ):
 	query  = "UPDATE links_logs.ERROR_STORE SET flag = 3, date_export = '%s', destination = '%s' " % ( today, archive )
 	query += "WHERE reg_type = '%s' AND flag = 2;" % reg_type_in
 	if debug: print( query )
-	resp = db.insert( query )
-	if resp is not None and len(resp) != 0:
+	resp = db_links.insert( query )
+	if resp is not None:
 		print( resp )
+# export_type()
 
 
 
-def export( debug, db ):
+def export( debug, db_ref, db_links, groupby_source, include_id_source ):
 	if debug: print( "export()" )
 
 	query = "USE links_logs;"
 	#print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is None:
 		print( "Null response from db" )
 
@@ -381,7 +358,7 @@ def export( debug, db ):
 	
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		count = resp[ 0 ][ "count" ]
@@ -389,7 +366,7 @@ def export( debug, db ):
 
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s` WHERE flag = 2;" % table
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None:
 		#print( resp )
 		count = resp[ 0 ][ "count" ]
@@ -405,7 +382,7 @@ def export( debug, db ):
 		query += "WHERE flag = 2 GROUP BY reg_type;"
 	
 	if debug: print( query )
-	resp = db.query( query )
+	resp = db_links.query( query )
 	if resp is not None and len(resp) != 0:
 		ndict = len( resp )
 		if debug: print( resp )
@@ -417,26 +394,48 @@ def export( debug, db ):
 			if groupby_source:
 				id_source = rec[ "id_source" ]
 				print( "\nnumber of report records for id_source %3s, reg_type %s = %s" % ( id_source, reg_type, count ) )
-				export_source_type( debug, db, table, id_source, reg_type )
+				export_source_type( debug, db_ref, db_links, table, id_source, include_id_source, reg_type )
 			else:
 				print( "\nnumber of report records for reg_type %s = %s" % ( reg_type, count ) )
-				export_type( debug, db, table, reg_type )
+				export_type( debug, db_ref, db_links, table, include_id_source, reg_type )
+# export()
 
 
 
-def format_secs( seconds ):
-	nmin, nsec  = divmod( seconds, 60 )
-	nhour, nmin = divmod( nmin, 60 )
-
-	if nhour > 0:
-		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+def get_yaml_config( yaml_filename ):
+	config = {}
+	print( "Trying to load the yaml config file: %s" % yaml_filename )
+	
+	if yaml_filename.startswith( "./" ):	# look in startup directory
+		yaml_filename = yaml_filename[ 2: ]
+		config_path = os.path.join( sys.path[ 0 ], yaml_filename )
+	
 	else:
-		if nmin > 0:
-			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		try:
+			LINKS_HOME = os.environ[ "LINKS_HOME" ]
+		except:
+			LINKS_HOME = ""
+		
+		if not LINKS_HOME:
+			print( "environment variable LINKS_HOME not set" )
 		else:
-			str_elapsed = "%d (sec)" % nsec
-
-	return str_elapsed
+			print( "LINKS_HOME: %s" % LINKS_HOME )
+		
+		config_path = os.path.join( LINKS_HOME, yaml_filename )
+	
+	print( "yaml config path: %s" % config_path )
+	
+	try:
+		config_file = open( config_path )
+		config = yaml.safe_load( config_file )
+	except:
+		etype = sys.exc_info()[ 0:1 ]
+		value = sys.exc_info()[ 1:2 ]
+		print( "%s, %s\n" % ( etype, value ) )
+		sys.exit( 1 )
+	
+	return config
+# get_yaml_config()
 
 
 
@@ -446,21 +445,57 @@ if __name__ == "__main__":
 	time0 = time()		# seconds since the epoch
 	msg = "Start: %s" % datetime.datetime.now()
 	
-	config_path = os.path.join( os.getcwd(), "export_reports.yaml" )
-#	print( "Config file: %s" % config_path )
-	config = yaml.safe_load( open( config_path ) )
+	yaml_filename = "./export_reports.yaml"
+	config_local = get_yaml_config( yaml_filename )
 	
-	HOST_LINKS   = config.get( "HOST_LINKS" )
-	USER_LINKS   = config.get( "USER_LINKS" )
-	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
 	
-#	HOST_REF   = config.get( "HOST_REF" )
-#	USER_REF   = config.get( "USER_REF" )
-#	PASSWD_REF = config.get( "PASSWD_REF" )
+	#groupby_source = False
+	groupby_source = config_local.get( "GROUPBY_SOURCE" )		# multiple csv's ?
+	#if GROUPBY_SOURCE in [ "1" "True" ]:
+	#	groupby_source = True
+	print( "groupby_source: %s" % groupby_source )
 	
-	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
+	#include_id_source = False
+	include_id_source = config_local.get( "INCLUDE_ID_SOURCE" )		# id_source in export csv
+	#if INCLUDE_ID_SOURCE in [ "1" "True" ]:
+	#	include_id_source = True
+	print( "include_id_source: %s" % include_id_source )
 	
-	export( debug, db )
+	print( "HOST_LINKS: %s" % HOST_LINKS )
+	
+	YAML_MAIN   = config_local.get( "YAML_MAIN" )
+	config_main = get_yaml_config( YAML_MAIN )
+	
+	HOST_LINKS   = config_main.get( "HOST_LINKS" )
+	USER_LINKS   = config_main.get( "USER_LINKS" )
+	PASSWD_LINKS = config_main.get( "PASSWD_LINKS" )
+	DBNAME_LINKS = "links_logs"
+	
+	print( "HOST_LINKS: %s" % HOST_LINKS )
+	print( "USER_LINKS: %s" % USER_LINKS )
+	print( "PASSWD_LINKS: %s" % PASSWD_LINKS )
+	
+	HOST_REF   = config_main.get( "HOST_REF" )
+	USER_REF   = config_main.get( "USER_REF" )
+	PASSWD_REF = config_main.get( "PASSWD_REF" )
+	DBNAME_REF = "links_general"
+	
+	print( "HOST_REF: %s" % HOST_REF )
+	print( "USER_REF: %s" % USER_REF )
+	print( "PASSWD_REF: %s" % PASSWD_REF )
+	
+	
+	main_dir = os.path.dirname( YAML_MAIN )
+	sys.path.insert( 0, main_dir )
+	from hsn_links_db import Database, format_secs, get_archive_name
+	
+	print( "Connecting to database at %s" % HOST_REF )
+	db_ref = Database( host = HOST_REF, user = USER_REF, passwd = PASSWD_REF, dbname = DBNAME_REF )
+	
+	print( "Connecting to database at %s" % HOST_LINKS )
+	db_links = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
+	
+	export( debug, db_ref, db_links, groupby_source, include_id_source )
 	
 	msg = "Stop: %s" % datetime.datetime.now()
 	

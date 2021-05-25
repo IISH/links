@@ -1,0 +1,27 @@
+FL-14-Sep-2016 Created
+FL-25-May-2021 Changed
+
+The contents of selected log tables is collected in the table ERROR_STORE. 
+In order to create such a table in the links_logs db: 
+	$ mysql -u links -p links_logs < links_logs.ERROR_STORE.schema-2021.05.19.sql
+Apart from the pk, the table also contains the unique index: 
+	UNIQUE KEY `unique_index` (`id_source`,`location`,`reg_type`,`date`,`sequence`,`role`,`content`)
+Its role is to prevent duplicates for the combination of those 7 columns. 
+
+Two Python scripts are used to create the reports: 
+	import_logs.py
+	Based on the provided date range and exclude error list, the script 
+	import_logs.py loads selected cleaning log tables into the ERROR_STORE table. 
+	The values in column links_logs.ERROR_STORE.flag are set to 1. 
+	
+	export_reports.py
+	Before running the script export_reports.py, 'manually' set the value in 
+	column links_logs.ERROR_STORE.flag to 2, for those records that you want to 
+	be included in csv output files. 
+	E.g. set all values to 2:
+		mysql> UPDATE links_logs.ERROR_STORE SET flag = 2;
+	Only records with flag value 2 will be processed by the script. 
+	During running the script, the flag value is updated from 2 to 3. 
+	The generated csv files are written to the subdirectory csv. 
+
+[eof]

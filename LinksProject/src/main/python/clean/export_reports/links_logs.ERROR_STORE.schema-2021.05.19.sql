@@ -1,8 +1,8 @@
--- MySQL dump 10.14  Distrib 5.5.50-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.14  Distrib 5.5.64-MariaDB, for Linux (x86_64)
 --
 -- Host: localhost    Database: links_logs
 -- ------------------------------------------------------
--- Server version	5.5.50-MariaDB
+-- Server version	5.5.64-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -26,6 +26,7 @@ CREATE TABLE `ERROR_STORE` (
   `id_log` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `id_source` int(10) unsigned DEFAULT NULL,
   `archive` varchar(30) DEFAULT NULL,
+  `scan_url` varchar(256) DEFAULT NULL,
   `location` varchar(120) DEFAULT NULL,
   `reg_type` varchar(50) DEFAULT NULL,
   `date` varchar(25) DEFAULT NULL,
@@ -43,7 +44,7 @@ CREATE TABLE `ERROR_STORE` (
   `destination` varchar(30) DEFAULT NULL,
   PRIMARY KEY (`id_log`),
   UNIQUE KEY `unique_index` (`id_source`,`location`,`reg_type`,`date`,`sequence`,`role`,`content`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=7579 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -55,4 +56,4 @@ CREATE TABLE `ERROR_STORE` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-09-07 15:05:29
+-- Dump completed on 2021-05-19 13:38:22

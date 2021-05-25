@@ -5,23 +5,20 @@
 Author:		Fons Laan, KNAW IISH - International Institute of Social History
 Project:	LINKS
 Name:		import_logs.py
-Version:	0.1.1
+Version:	0.2
 Goal:		Collect error log tables into a single table ERROR_STORE. 
 			The records are written with flag value = 1. 
 Database:	Create table links_logs.ERROR_STORE from schema: 
 			$ mysql --user=USER_LINKS --password=PASSWD_LINKS links_logs < ERROR_STORE.schema.sql
-Notice:		See the variable x_codes below. If the ref_report table is updated 
-			with new report_type values for 'x' codes, this variable must also 
-			be updated. 
 
 05-Sep-2016 Created
-29-Jan-2019 Changed
+25-May-2021 Changed
 """
 
-# future-0.17.1 imports for Python 2/3 compatibility
+# python-future for Python 2/3 compatibility
 from __future__ import ( absolute_import, division, print_function, unicode_literals )
-from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, list, map, 
-    next, object, oct, open, pow, range, round, super, str, zip )
+from builtins import ( ascii, bytes, chr, dict, filter, hex, input, int, map, next, 
+	oct, open, pow, range, round, str, super, zip )
 
 import datetime
 import MySQLdb
@@ -35,10 +32,8 @@ from time import time
 debug = False
 chunk = 100000		# show progress in processing records
 
-#begin_date_default = "2016-04-15"
-#end_date_default   = "2016-05-12"
-begin_date_default = "2016-09-08"
-end_date_default   = "2016-09-09"
+begin_date_default = "2021-01-01"
+end_date_default   = "2021-12-31"
 
 # settings, read from config file
 HOST_LINKS   = ""
@@ -55,84 +50,7 @@ single_quote = "'"
 double_quote = '"'
 
 # column 'type' of ref_report, where column 'content' contains 'standard_code= 'x''.
-x_codes = [ 21, 31, 41, 51, 61, 71, 81, 91, 141, 251, 1009, 1109 ]
-
-	
-class Database:
-	def __init__( self, host, user, passwd, dbname ):
-		self.host   = host
-		self.user   = user
-		self.passwd = passwd
-		self.dbname = dbname
-
-		self.connection = MySQLdb.connect( \
-			host = self.host, 
-			user = self.user, 
-			passwd = self.passwd, 
-			db = self.dbname,
-			charset     = "utf8",			# needed when there is e.g. 
-			use_unicode = True				# &...; html escape stuff in strings
-		)
-		self.cursor = self.connection.cursor()
-
-	def insert( self, query ):
-		try:
-			resp = self.cursor.execute( query )
-			self.connection.commit()
-		except:
-			self.connection.rollback()
-			etype = sys.exc_info()[ 0:1 ]
-			value = sys.exc_info()[ 1:2 ]
-			print( "%s, %s\n" % ( etype, value ) )
-
-	def query( self, query ):
-	#	print( "\n%s" % query )
-		cursor = self.connection.cursor( MySQLdb.cursors.DictCursor )
-		cursor.execute( query )
-		return cursor.fetchall()
-
-	def info( self ):
-		"""
-		See the MySQLdb User's Guide: 
-		Returns some information about the last query. Normally you don't need to check this. If there are any MySQL 
-		warnings, it will cause a Warning to be issued through the Python warning module. By default, Warning causes 
-		a message to appear on the console. However, it is possible to filter these out or cause Warning to be raised 
-		as exception. See the MySQL docs for mysql_info(), and the Python warning module. (Non-standard)
-		"""
-		return self.connection.info()
-
-	def __del__( self ):
-		self.connection.close()
-
-
-
-def db_check( db ):
-	if debug: print( "db_check()" )
-
-	# links_a2a
-	#tables = [ "a2a", "event", "object", "person", "person_o_temp", "person_profession", 
-	#	"registration_o_temp", "relation", "remark", "source", "source_sourceavailablescans_scan" ]
-	
-	db_name = "links_match"
-	tables = [ "match_process", "match_view", "matches", "matrix", "notation" ]
-
-	print( "table row counts:" )
-	for table in tables:
-		query = """SELECT COUNT(*) FROM %s.%s""" % ( db_name, table )
-		resp = db.query( query )
-		if resp is not None:
-			count_dict = resp[ 0 ]
-			count = count_dict[ "COUNT(*)" ]
-			print( "%s %d" % ( table, count ) )
-		else:
-			print( "Null response from db" )
-
-	# we could show the strings from these GROUPs for cheking, because there should be no variation
-	# SELECT eventtype, COUNT(*) FROM links_a2a.event GROUP BY eventtype;
-	# SELECT relationtype, COUNT(*) FROM links_a2a.relation GROUP BY relationtype;
-	# SELECT relation, COUNT(*) FROM links_a2a.relation GROUP BY relation;
-	# SELECT remark_key, COUNT(*) FROM links_a2a.remark GROUP BY remark_key;
-
+x_codes_default = [ 21, 31, 41, 51, 61, 71, 81, 91, 141, 251, 1009, 1109 ]
 
 
 def get_log_names( db_logs ):
@@ -162,6 +80,7 @@ def get_log_names( db_logs ):
 		print( "Null response from db_logs" )
 
 	return log_names
+# get_log_names()
 
 
 
@@ -203,6 +122,7 @@ def inspect_log( n, log_name ):
 	accept = True
 	
 	return accept
+# inspect_log()
 
 
 
@@ -236,6 +156,7 @@ def select_log_names( db_logs, begin_date, end_date ):
 				log_names.append( log_name )
 			
 	return log_names
+# select_log_names()
 
 
 
@@ -243,6 +164,7 @@ def none2empty( var ):
 	if var is None or var == "None" or var == "null":
 		var = ""
 	return var
+# none2empty()
 
 
 
@@ -250,9 +172,10 @@ def process_logs( log_names ):
 	if debug: print( "process_logs()" )
 	print( "\nprocessing selected logs" )
 	nnames = len( log_names )
-	fields = "id_log, id_source, archive, location, reg_type, date, sequence, role, guid, "
+	fields = "id_log, id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, "
 	fields += "reg_key, pers_key, report_class, report_type, content, date_time"
 	
+	"""
 	clause = ""
 	for xtype in x_codes:		# where column 'content' contains 'standard_code= 'x'
 		if clause == "":
@@ -260,6 +183,7 @@ def process_logs( log_names ):
 		else:
 			clause += " OR report_type = %d" % xtype
 	#print( clause )
+	"""
 	
 	time0 = time()		# seconds since the epoch
 	for n in range( nnames ):
@@ -267,7 +191,9 @@ def process_logs( log_names ):
 		print( log_name )
 		
 		time1 = time()		# seconds since the epoch
-		query = "SELECT %s FROM links_logs.`%s` WHERE NOT (%s);" % ( fields, log_name, clause )
+		#query = "SELECT %s FROM links_logs.`%s` WHERE NOT (%s);" % ( fields, log_name, clause )
+		x_tuple = tuple( x_codes )
+		query = "SELECT %s FROM links_logs.`%s` WHERE NOT report_type IN %s;" % ( fields, log_name, x_tuple )
 		print( query )
 		
 		resp = db_logs.query( query )
@@ -290,6 +216,7 @@ def process_logs( log_names ):
 				id_log       = none2empty( rec[ "id_log" ] )
 				id_source    = none2empty( rec[ "id_source" ] )
 				archive      = none2empty( rec[ "archive" ] )
+				scan_url     = none2empty( rec[ "scan_url" ] )
 				location     = none2empty( rec[ "location" ] )
 				reg_type     = none2empty( rec[ "reg_type" ] )
 				date         = none2empty( rec[ "date" ] )
@@ -310,6 +237,7 @@ def process_logs( log_names ):
 					print( "id_log       = %s" % id_log )
 					print( "id_source    = %s" % id_source  )
 					print( "archive      = %s" % archive )
+					print( "scan_url     = %s" % scan_url )
 					print( "location     = %s" % location )
 					print( "reg_type     = %s" % reg_type )
 					print( "date         = %s" % date )
@@ -329,15 +257,15 @@ def process_logs( log_names ):
 				er_fields += ", flag"
 				
 				flag = 1
-				er_values = ( id_source, archive, location, reg_type, date, sequence, role, guid, 
+				er_values = ( id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, 
 					reg_key, pers_key, report_class, report_type, content, date_time, flag )
 				
 				# Using 'IGNORE' to ignore violations of the unique_index constraint
-				er_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
-				if debug: print ( er_query )
-				er_resp = db_logs.insert( er_query )
-				if er_resp is not None:
-					print( "er_resp:", er_resp )
+				es_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
+				if debug: print ( es_query )
+				es_resp = db_logs.insert( es_query )
+				#if es_resp != 0:
+				#	print( "es_resp:", es_resp )
 			
 			print( "%d-of-%d records processed" % ( nrec, nrec ) )
 	
@@ -352,6 +280,7 @@ def process_logs( log_names ):
 
 	str_elapsed = format_secs( time() - time0 )
 	print( "importing took %s" % str_elapsed )
+# process_logs()
 
 
 
@@ -364,6 +293,7 @@ def validate_date( date_string ):
 		print( "validate_date() ValueError: %s" % date_string )
 
 	return date
+# validate_date()
 
 
 
@@ -379,63 +309,106 @@ def get_date_limit( prompt, date_default ):
 		print( "%s date is not a valid date" % date )
 	
 	return date
+# get_date_limit()
 
 
 
-def get_date_limits():
+def get_date_limits( begin_date, end_date ):
 	prompt = "Begin date for inclusion of log tables: "
-	begin_date = get_date_limit( prompt, begin_date_default )
+	begin_date = get_date_limit( prompt, begin_date )
 	
 	if begin_date is not None:
 		prompt = "End date for inclusion of log tables: "
-		end_date = get_date_limit( prompt, end_date_default )
+		end_date = get_date_limit( prompt, end_date )
 	
 	if begin_date > end_date:
 		print( "Begin date exceeds end date" )
 		begin_date = end_date = None
 		
 	return begin_date, end_date
+# get_date_limits()
 
 
 
-def format_secs( seconds ):
-	nmin, nsec  = divmod( seconds, 60 )
-	nhour, nmin = divmod( nmin, 60 )
-
-	if nhour > 0:
-		str_elapsed = "%d:%02d:%02d (hh:mm:ss)" % ( nhour, nmin, nsec )
+def get_yaml_config( yaml_filename ):
+	config = {}
+	print( "Trying to load the yaml config file: %s" % yaml_filename )
+	
+	if yaml_filename.startswith( "./" ):	# look in startup directory
+		yaml_filename = yaml_filename[ 2: ]
+		config_path = os.path.join( sys.path[ 0 ], yaml_filename )
+	
 	else:
-		if nmin > 0:
-			str_elapsed = "%02d:%02d (mm:ss)" % ( nmin, nsec )
+		try:
+			LINKS_HOME = os.environ[ "LINKS_HOME" ]
+		except:
+			LINKS_HOME = ""
+		
+		if not LINKS_HOME:
+			print( "environment variable LINKS_HOME not set" )
 		else:
-			str_elapsed = "%d (sec)" % nsec
-
-	return str_elapsed
-# format_secs()
+			print( "LINKS_HOME: %s" % LINKS_HOME )
+		
+		config_path = os.path.join( LINKS_HOME, yaml_filename )
+	
+	print( "yaml config path: %s" % config_path )
+	
+	try:
+		config_file = open( config_path )
+		config = yaml.safe_load( config_file )
+	except:
+		etype = sys.exc_info()[ 0:1 ]
+		value = sys.exc_info()[ 1:2 ]
+		print( "%s, %s\n" % ( etype, value ) )
+		sys.exit( 1 )
+	
+	return config
+# get_yaml_config()
 
 
 
 if __name__ == "__main__":
 	print( "import_logs.py" )
 	time0 = time()		# seconds since the epoch
-	msg = "Start: %s" % datetime.datetime.now()
 	
-	config_path = os.path.join( os.getcwd(), "import_logs.yaml" )
-#	print( "Config file: %s" % config_path )
-	config = yaml.safe_load( open( config_path ) )
-
-	begin_date, end_date = get_date_limits()
+	yaml_filename = "./import_logs.yaml"
+	config_local = get_yaml_config( yaml_filename )
+	
+	x_codes = config_local.get( "EXCLUDE_ERR" )
+	if not x_codes:
+		x_codes = x_codes_default
+	print( "Excluded error codes for log import: %s" % x_codes )
+	
+	begin_date = config_local.get( "BEGIN_DATE", begin_date_default )
+	end_date   = config_local.get( "END_DATE",   end_date_default )
+	
+	begin_date, end_date = get_date_limits( begin_date, end_date )
 	if begin_date is None or end_date is None:
 		print( "EXIT" )
 		sys.exit( 1 )
 	
-	HOST_LINKS   = config.get( "HOST_LINKS" )
-	USER_LINKS   = config.get( "USER_LINKS" )
-	PASSWD_LINKS = config.get( "PASSWD_LINKS" )
+	YAML_MAIN   = config_local.get( "YAML_MAIN" )
+	config_main = get_yaml_config( YAML_MAIN )
 	
-	HOST_REF   = config.get( "HOST_REF" )
-	USER_REF   = config.get( "USER_REF" )
-	PASSWD_REF = config.get( "PASSWD_REF" )
+	HOST_LINKS   = config_main.get( "HOST_LINKS" )
+	USER_LINKS   = config_main.get( "USER_LINKS" )
+	PASSWD_LINKS = config_main.get( "PASSWD_LINKS" )
+	
+	print( "HOST_LINKS: %s" % HOST_LINKS )
+	print( "USER_LINKS: %s" % USER_LINKS )
+	print( "PASSWD_LINKS: %s" % PASSWD_LINKS )
+	
+	HOST_REF   = config_main.get( "HOST_REF" )
+	USER_REF   = config_main.get( "USER_REF" )
+	PASSWD_REF = config_main.get( "PASSWD_REF" )
+	
+	print( "HOST_REF: %s" % HOST_REF )
+	print( "USER_REF: %s" % USER_REF )
+	print( "PASSWD_REF: %s" % PASSWD_REF )
+	
+	main_dir = os.path.dirname( YAML_MAIN )
+	sys.path.insert( 0, main_dir )
+	from hsn_links_db import Database, format_secs, get_archive_name
 	
 	db = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 
@@ -443,12 +416,9 @@ if __name__ == "__main__":
 	
 	db_logs = Database( host = HOST_LINKS, user = USER_LINKS, passwd = PASSWD_LINKS, dbname = DBNAME_LINKS )
 	
-#	db_check( db )
 
 	log_names = select_log_names( db_logs, begin_date, end_date )
 	process_logs( log_names )
-	
-	msg = "Stop: %s" % datetime.datetime.now()
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "Importing Logs took %s" % str_elapsed )
