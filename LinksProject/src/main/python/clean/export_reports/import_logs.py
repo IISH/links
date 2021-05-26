@@ -12,7 +12,7 @@ Database:	Create table links_logs.ERROR_STORE from schema:
 			$ mysql --user=USER_LINKS --password=PASSWD_LINKS links_logs < ERROR_STORE.schema.sql
 
 05-Sep-2016 Created
-25-May-2021 Changed
+26-May-2021 Changed
 """
 
 # python-future for Python 2/3 compatibility
@@ -49,8 +49,9 @@ DBNAME_REF = ""
 single_quote = "'"
 double_quote = '"'
 
-# column 'type' of ref_report, where column 'content' contains 'standard_code= 'x''.
-x_codes_default = [ 21, 31, 41, 51, 61, 71, 81, 91, 141, 251, 1009, 1109 ]
+# excluded 'type' values of ref_report with 'standard_code= 'x''.
+# now from yaml config
+#x_codes_default = [ 21, 31, 41, 51, 61, 71, 81, 91, 141, 251, 1009, 1109 ]
 
 
 def get_log_names( db_logs ):
@@ -171,29 +172,22 @@ def none2empty( var ):
 def process_logs( log_names ):
 	if debug: print( "process_logs()" )
 	print( "\nprocessing selected logs" )
+	
 	nnames = len( log_names )
 	fields = "id_log, id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, "
 	fields += "reg_key, pers_key, report_class, report_type, content, date_time"
-	
-	"""
-	clause = ""
-	for xtype in x_codes:		# where column 'content' contains 'standard_code= 'x'
-		if clause == "":
-			clause = "report_type = %d" % xtype
-		else:
-			clause += " OR report_type = %d" % xtype
-	#print( clause )
-	"""
 	
 	time0 = time()		# seconds since the epoch
 	for n in range( nnames ):
 		log_name = log_names[ n ]
 		print( log_name )
-		
 		time1 = time()		# seconds since the epoch
-		#query = "SELECT %s FROM links_logs.`%s` WHERE NOT (%s);" % ( fields, log_name, clause )
-		x_tuple = tuple( x_codes )
-		query = "SELECT %s FROM links_logs.`%s` WHERE NOT report_type IN %s;" % ( fields, log_name, x_tuple )
+		
+		if len( x_codes ) > 0:
+			x_tuple = tuple( x_codes )
+			query = "SELECT %s FROM links_logs.`%s` WHERE NOT report_type IN %s;" % ( fields, log_name, x_tuple )
+		else:		# no exclusions
+			query = "SELECT %s FROM links_logs.`%s`;" % ( fields, log_name )
 		print( query )
 		
 		resp = db_logs.query( query )
@@ -204,6 +198,7 @@ def process_logs( log_names ):
 		if resp is not None:
 			nrec = len( resp )
 			print( "number of records in table %s: %d" % ( log_name, nrec ) )
+			insert_count = 0
 			
 			for r in range( nrec ):
 				if ( r > 0 and ( r + chunk ) % chunk == 0 ):
@@ -264,10 +259,11 @@ def process_logs( log_names ):
 				es_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
 				if debug: print ( es_query )
 				es_resp = db_logs.insert( es_query )
-				#if es_resp != 0:
-				#	print( "es_resp:", es_resp )
+				insert_count += es_resp
 			
 			print( "%d-of-%d records processed" % ( nrec, nrec ) )
+			print( "%d records inserted in ERROR_STORE" % insert_count )
+			
 	
 	table = "ERROR_STORE"
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
@@ -375,8 +371,6 @@ if __name__ == "__main__":
 	config_local = get_yaml_config( yaml_filename )
 	
 	x_codes = config_local.get( "EXCLUDE_ERR" )
-	if not x_codes:
-		x_codes = x_codes_default
 	print( "Excluded error codes for log import: %s" % x_codes )
 	
 	begin_date = config_local.get( "BEGIN_DATE", begin_date_default )
