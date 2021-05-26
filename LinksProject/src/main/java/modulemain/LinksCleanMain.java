@@ -46,6 +46,7 @@ import linksmanager.ManagerGui;
  * FL-12-May-2021 Increase size archive column in log table
  * FL-17-May-2021 Add source_digital_original to the refesh columns
  * FL-18-May-2021 Increase width of scan_url to VARCHAR(256) in log tables
+ * FL-26-May-2021 Process big sources first
  */
 
 public class LinksCleanMain extends Thread
@@ -200,10 +201,12 @@ public class LinksCleanMain extends Thread
 
             if( use_links_logs ) {
                 logTableName = LinksSpecific.getLogTableName();
-                createLogTable();                                           // Create log table with timestamp
+                createLogTable();                                               // Create log table with timestamp
             }
 
-            int[] sourceListAvail = getOrigSourceIds();                 // get source ids from links_original.registration_o
+            boolean count_desc = false;                                         // process in id_source order
+            if( multithreaded && max_threads_simul > 1) { count_desc = true; }  // for speed-up, start big sources first
+            int[] sourceListAvail = getOrigSourceIds( count_desc );             // get source ids from links_original.registration_o
             sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
@@ -531,15 +534,21 @@ public class LinksCleanMain extends Thread
 
     /**
      * Read distinct source ids from links_original.registration_o
-     *
+     * @param count_desc
      * @return
      */
-    private int[] getOrigSourceIds()
+    private int[] getOrigSourceIds( boolean count_desc )
     throws SQLException
     {
         ArrayList< String > ids = new ArrayList();
-        String query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
+
         HikariConnection dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
+
+        String query = "";
+        if( count_desc )
+        { query = "SELECT COUNT(*) as count, id_source FROM registration_o GROUP BY id_source ORDER BY count DESC;"; }
+        else
+        { query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;"; }
 
         try( ResultSet rs = dbconOriginal.executeQuery( query ) )
         {
@@ -566,6 +575,7 @@ public class LinksCleanMain extends Thread
                 ex.printStackTrace( new PrintStream( System.out ) ) ;
             }
         }
+
         //System.out.println( ids );
         dbconOriginal.close();
 
