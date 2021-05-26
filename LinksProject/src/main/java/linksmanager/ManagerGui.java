@@ -68,6 +68,7 @@ import general.PrintLogger;
  * FL-28-Jun-2017 rmtype from gui
  * FL-23-Sep-2020 Call LinksCleanMain instead of LinksCleanOld !
  * FL-18-May-2021 timestamp
+ * FL-25-May-2021 enable/disable cbCdoRefreshData
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -2181,6 +2182,14 @@ public class ManagerGui extends javax.swing.JFrame
         System.out.println( "mysql_links_username:\t" + user );
         System.out.println( "mysql_links_password:\t" + pass );
 
+        // Enable cleaning checkboxes ?
+		String noRefreshData = properties.getProperty( "noRefreshData" );
+        if( noRefreshData != null ) {
+            if( noRefreshData.equals( "true" ) ) { cbCdoRefreshData.setEnabled( false ); }
+            else { cbCdoRefreshData.setEnabled( true ); }
+        }
+
+
         // Remove previous data ?
         String doRefreshData = properties.getProperty( "doRefreshData" );
         if( doRefreshData != null ) {
@@ -3024,7 +3033,7 @@ public class ManagerGui extends javax.swing.JFrame
 			public void run()
 			{
 				long threadId = Thread.currentThread().getId();
-				String timestamp1 = "18-May-2021 12:15";
+				String timestamp1 = "25-May-2021 14:22";
 				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
 				try
