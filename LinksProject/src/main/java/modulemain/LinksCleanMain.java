@@ -47,6 +47,7 @@ import linksmanager.ManagerGui;
  * FL-17-May-2021 Add source_digital_original to the refesh columns
  * FL-18-May-2021 Increase width of scan_url to VARCHAR(256) in log tables
  * FL-26-May-2021 Process big sources first
+ * FL-30-May-2021 Also use rmtype for ordering sources
  */
 
 public class LinksCleanMain extends Thread
@@ -204,9 +205,22 @@ public class LinksCleanMain extends Thread
                 createLogTable();                                               // Create log table with timestamp
             }
 
+            // we currently only support a single rmtype, not a list
+            try {
+                int rmtype_int = Integer.parseInt(RMtypesGui);    // test for (single) int
+                rmtype = RMtypesGui;                                // but we use the string
+            } catch (NumberFormatException nfex) {
+                rmtype = "";
+                //msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, nfex.getMessage() );
+                //nfex.printStackTrace( new PrintStream( System.out ) );
+                if (!RMtypesGui.isEmpty()) {
+                    showMessage("Not using registration_maintype", false, true);
+                }
+            }
+
             boolean count_desc = false;                                         // process in id_source order
             if( multithreaded && max_threads_simul > 1) { count_desc = true; }  // for speed-up, start big sources first
-            int[] sourceListAvail = getOrigSourceIds( count_desc );             // get source ids from links_original.registration_o
+            int[] sourceListAvail = getOrigSourceIds( count_desc, rmtype );             // get source ids from links_original.registration_o
             sourceList = createSourceList( sourceIdsGui, sourceListAvail );
 
             String s = "";
@@ -222,18 +236,6 @@ public class LinksCleanMain extends Thread
             }
             showMessage(s, false, true);
 
-            // we currently only support a single rmtype, not a list
-            try {
-                int rmtype_int = Integer.parseInt(RMtypesGui);    // test for (single) int
-                rmtype = RMtypesGui;                                // but we use the string
-            } catch (NumberFormatException nfex) {
-                rmtype = "";
-                //msg = String.format( "Thread id %02d; Exception: %s", mainThreadId, nfex.getMessage() );
-                //nfex.printStackTrace( new PrintStream( System.out ) );
-                if (!RMtypesGui.isEmpty()) {
-                    showMessage("Not using registration_maintype", false, true);
-                }
-            }
             msg = String.format("Thread id %02d; rmtype: %s", mainThreadId, rmtype);
             showMessage(msg, false, true);
 
@@ -537,18 +539,32 @@ public class LinksCleanMain extends Thread
      * @param count_desc
      * @return
      */
-    private int[] getOrigSourceIds( boolean count_desc )
+    private int[] getOrigSourceIds( boolean count_desc, String rmtype )
     throws SQLException
     {
+        long threadId = Thread.currentThread().getId();
         ArrayList< String > ids = new ArrayList();
 
         HikariConnection dbconOriginal = new HikariConnection( dsOriginal.getConnection() );
 
+        String msg = "";
         String query = "";
         if( count_desc )
-        { query = "SELECT COUNT(*) as count, id_source FROM registration_o GROUP BY id_source ORDER BY count DESC;"; }
+        {
+            msg = String.format( "Thread id %02d; Ordering sources by certificate counts...", threadId );
+            query  = "SELECT COUNT(*) as count, id_source FROM registration_o";
+            if( ! rmtype.isEmpty() )
+            { query += String.format( " WHERE registration_maintype = %s", rmtype ); }
+            query += " GROUP BY id_source ORDER BY count DESC;";
+        }
         else
-        { query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;"; }
+        {
+            msg = String.format( "Thread id %02d; Getting available sources...", threadId );
+            query = "SELECT DISTINCT id_source FROM registration_o ORDER BY id_source;";
+        }
+        showMessage( msg, false, true );
+        System.out.println( msg );
+        System.out.println( query );
 
         try( ResultSet rs = dbconOriginal.executeQuery( query ) )
         {
@@ -565,7 +581,10 @@ public class LinksCleanMain extends Thread
                 }
             }
 
-            if( count == 0 ) { showMessage("Empty links_original ?", false, true ); }
+            if( count == 0 ) {
+                msg = String.format( "Thread id %02d; No sources to clean?", threadId );
+                showMessage(msg, false, true );
+            }
 
         }
         catch( Exception ex )
