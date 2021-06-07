@@ -68,7 +68,7 @@ import general.PrintLogger;
  * FL-28-Jun-2017 rmtype from gui
  * FL-23-Sep-2020 Call LinksCleanMain instead of LinksCleanOld !
  * FL-25-May-2021 enable/disable cbCdoRefreshData
- * FL-30-May-2021 timestamp
+ * FL-07-Jun-2021 timestamp
  */
 
 public class ManagerGui extends javax.swing.JFrame
@@ -3033,7 +3033,7 @@ public class ManagerGui extends javax.swing.JFrame
 			public void run()
 			{
 				long threadId = Thread.currentThread().getId();
-				String timestamp1 = "30-May-2021 08:51";
+				String timestamp1 = "07-Jun-2021 10:09";
 				String timestamp2 = LinksSpecific.getTimeStamp2( "yyyy.MM.dd-HH:mm:ss" );
 
 				try

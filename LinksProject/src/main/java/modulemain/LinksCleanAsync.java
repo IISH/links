@@ -111,6 +111,7 @@ import general.PrintLogger;
  * FL-20-Jan-2021 postTasks() renamed updateSexRole()
  * FL-16-Feb-2021 merged 2 pull requests from Kerim
  * FL-12-May-2021 add scan_url and archive to logging tables
+ * FL-07-Jun-2021 scanRemarksDivorce() bad query
  */
 
 
@@ -278,8 +279,16 @@ public class LinksCleanAsync extends Thread
 
 			doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );								// GUI cb: Age, Role, Dates
 
-			// doDates1(): all other datesfunctions
-			doDates1(  opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
+			// doDates0(): standardDate() + 4 types : split into 5 separate funcs
+			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "birth" );				// GUI cb: Age, Role, Dates
+			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "mar" );					// GUI cb: Age, Role, Dates
+			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "divorce" );				// GUI cb: Age, Role, Dates
+			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "death" );				// GUI cb: Age, Role, Dates
+
+			// doDates1(): standardRegistrationDate() + 4 flag functions + minMaxDateValid() :
+			// standardRegistrationDate() separate, and the remaining 5 updates (without looping): SINGLE threaded
+			//doDates1(  opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
+
 			// doDates2(): only minMaxDateMain()
 			doDates2( opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
 
@@ -287,6 +296,9 @@ public class LinksCleanAsync extends Thread
 
 			doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );	// GUI cb: Parts to Full Date
 
+			// split in 2:
+			//doDaysSinceBeginRegist() probably deadlock save,
+			// doDaysSinceBeginPerson() split in 8 or SINGLE threaded
 			doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );	// GUI cb: Days since begin
 
 			doPostTasks( opts.isDbgPostTasks(), opts.isDoPostTasks(), source, rmtype );					// GUI cb: Post Tasks
@@ -4409,18 +4421,19 @@ public class LinksCleanAsync extends Thread
 	/*---< Dates >------------------------------------------------------------*/
 
 	/**
-	 * doDates1()
+	 * doDates0()
 	 * @param debug
 	 * @param go
 	 * @param source
 	 * @param rmtype
+	 * @param type
 	 * @throws Exception
 	 */
-	private void doDates1( boolean debug, boolean go, String source, String rmtype ) throws Exception
+	private void doDates0( boolean debug, boolean go, String source, String rmtype, String type ) throws Exception
 	{
 		long threadId = Thread.currentThread().getId();
 
-		String funcname = String.format( "Thread id %02d; doDates1 for source: %s, rmtype: %s", threadId, source, rmtype );
+		String funcname = String.format( "Thread id %02d; doDates0 for source: %s, rmtype: %s", threadId, source, rmtype );
 
 		if( !go ) {
 			if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
@@ -4433,10 +4446,19 @@ public class LinksCleanAsync extends Thread
 		long ts = System.currentTimeMillis();
 		String msg = "";
 
-		//msg = "skipping untill standardRegistrationDate()";
-		//msg = "ONLY flag functions";
-		//showMessage( msg, false, true );
-		///*
+		// With parallel cleaning of multiple sources we easily get deadlocks when mixing standardDate() with the
+		// 4 type strings: birth, mar, divorce, death.
+		// With parallel, do 1 at a time for all sources
+
+		// type now as function parameter
+		ts = System.currentTimeMillis();
+		msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
+		showMessage( msg, false, true );
+		standardDate( debug, source, type, rmtype );
+		msg = String.format( "Thread id %02d; Processing standard dates", threadId );
+		elapsedShowMessage( msg, ts, System.currentTimeMillis() );
+
+		/*
 		ts = System.currentTimeMillis();
 		String type = "birth";
 		msg = String.format( "Thread id %02d; Processing standardDate for source: %s, rmtype: %s, type: %s ...", threadId, source, rmtype, type );
@@ -4468,7 +4490,44 @@ public class LinksCleanAsync extends Thread
 		standardDate( debug, source, type, rmtype );
 		msg = String.format( "Thread id %02d; Processing standard dates", threadId );
 		elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-		//*/
+		 */
+
+		elapsedShowMessage( funcname, timeStart, System.currentTimeMillis() );
+		showMessage_nl();
+	} // doDates0
+
+
+	/**
+	 * doDates1()
+	 * @param debug
+	 * @param go
+	 * @param source
+	 * @param rmtype
+	 * @throws Exception
+	 */
+	private void doDates1( boolean debug, boolean go, String source, String rmtype ) throws Exception
+	{
+		long threadId = Thread.currentThread().getId();
+
+		String funcname = String.format( "Thread id %02d; doDates1 for source: %s, rmtype: %s", threadId, source, rmtype );
+
+		if( !go ) {
+			if( showskip ) { showMessage( "Skipping " + funcname, false, true ); }
+			return;
+		}
+
+		long timeStart = System.currentTimeMillis();
+		showMessage( funcname + " ...", false, true );
+
+		long ts = System.currentTimeMillis();
+		String msg = "";
+
+		// Split off standardRegistrationDate() and run the remaining 5 update functions
+		// (that contain no looping) SINGLE threaded
+
+		//msg = "skipping untill standardRegistrationDate()";
+		//msg = "ONLY flag functions";
+		//showMessage( msg, false, true );
 
 		///*
 		ts = System.currentTimeMillis();
@@ -4481,7 +4540,7 @@ public class LinksCleanAsync extends Thread
 
 		//msg = "skipping remaining date functions";
 		//showMessage( msg, false, true );
-		///*
+		// Also split flag funcs into 4 to eliminate deadlock risk
 		// Fill empty event dates with registration dates
 		ts = System.currentTimeMillis();
 		msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
@@ -4502,7 +4561,7 @@ public class LinksCleanAsync extends Thread
 
 		msg = String.format( "Thread id %02d; Flagging empty dates", threadId );
 		elapsedShowMessage( msg, ts, System.currentTimeMillis() );
-		//*/
+
 
 		///*
 		ts = System.currentTimeMillis();
@@ -9539,7 +9598,8 @@ public class LinksCleanAsync extends Thread
 								{
 									if( debug ) { System.out.println( String.format("%d: '%s'", id_registration, remarks_str )); }
 									String divorce_str = remarks_str.substring( p );    // skip until "echtscheiding"
-									scanRemarksDivorce( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, divorce_str );
+									// First solve JIRA LINKS-118
+									//scanRemarksDivorce( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, divorce_str );
 								}
 							}
 							else { scanRemarksUpdate( debug, nupdates, remarks_str, id_scan, id_registration, role, name_table, name_field, value ); }
@@ -9588,12 +9648,16 @@ public class LinksCleanAsync extends Thread
 
 		if( name_table.equals( "person_c" ) )
 		{
-			query_u = String.format( "UPDATE links_cleaned.person_c SET %s = ? WHERE id_registration = %d AND role = %d",
-				name_field, id_registration, role );
+			//query_u = String.format( "UPDATE links_cleaned.person_c SET %s = ? WHERE id_registration = %d AND role = %d", name_field, id_registration, role );
+			// JDBC does not allow parameter for table name. But what about column nme?
+			query_u = String.format( "UPDATE links_cleaned.person_c SET %s = ? WHERE id_registration = ? AND role = ?", name_field );
 
 			try( PreparedStatement pstmt = dbconCleaned.prepareStatement( query_u ) )
 			{
-				pstmt.setString(1, divorceStr);
+				pstmt.setString(1, divorceStr );
+				pstmt.setInt(2, id_registration );
+				pstmt.setInt(3, role );
+				if( debug ) { System.out.println( pstmt ); }
 				int rowsAffected = pstmt.executeUpdate( query_u );
 				if( debug ) { System.out.println( String.format( "%d %s", rowsAffected, query_u ) ); }
 			}
