@@ -12,7 +12,7 @@ Database:	Create table links_logs.ERROR_STORE from schema:
 			$ mysql --user=USER_LINKS --password=PASSWD_LINKS links_logs < ERROR_STORE.schema.sql
 
 05-Sep-2016 Created
-26-May-2021 Changed
+11-Jun-2021 Chunk processing log tables, can be big
 """
 
 # python-future for Python 2/3 compatibility
@@ -30,7 +30,7 @@ from dateutil.parser import parse		# $ pip install python-dateutil
 from time import time
 
 debug = False
-chunk = 100000		# show progress in processing records
+chunk_default = 100000		# show progress in processing records
 
 begin_date_default = "2021-01-01"
 end_date_default   = "2021-12-31"
@@ -169,7 +169,7 @@ def none2empty( var ):
 
 
 
-def process_logs( log_names ):
+def process_logs( log_names, chunk ):
 	if debug: print( "process_logs()" )
 	print( "\nprocessing selected logs" )
 	
@@ -177,93 +177,137 @@ def process_logs( log_names ):
 	fields = "id_log, id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, "
 	fields += "reg_key, pers_key, report_class, report_type, content, date_time"
 	
-	time0 = time()		# seconds since the epoch
+	nrec_tot = 0
+	inserted_tot = 0
+	
 	for n in range( nnames ):
+		time0 = time()		# seconds since the epoch
+		
 		log_name = log_names[ n ]
-		print( log_name )
-		time1 = time()		# seconds since the epoch
+		print( "table %d-of-%d %s" % ( n+1, nnames, log_name ) )
 		
 		if len( x_codes ) > 0:
 			x_tuple = tuple( x_codes )
-			query = "SELECT %s FROM links_logs.`%s` WHERE NOT report_type IN %s;" % ( fields, log_name, x_tuple )
+			query = "SELECT COUNT(*) as count FROM links_logs.`%s` WHERE NOT report_type IN %s;" % ( log_name, x_tuple )
 		else:		# no exclusions
-			query = "SELECT %s FROM links_logs.`%s`;" % ( fields, log_name )
-		print( query )
+			query = "SELECT COUNT(*) as count FROM links_logs.`%s`;" % ( log_name )
+		#print( query )
 		
+		count_file = 0
 		resp = db_logs.query( query )
-		
-		str_elapsed = format_secs( time() - time1 )
-		print( "query took %s" % str_elapsed )
-		
 		if resp is not None:
-			nrec = len( resp )
-			print( "number of records in table %s: %d" % ( log_name, nrec ) )
-			insert_count = 0
+			count_file = resp[ 0 ].get( "count", 0 )
+		if debug: print( "number of records in log table = %d" % count_file )
+		
+		nchunks = 0
+		if count_file > 0:
+			nremain = count_file % chunk
+			nchunks = int( ( count_file + chunk ) / chunk )
+		print( "nchunks = %d" % nchunks )
+		
+		nrec_file = 0
+		inserted_file = 0
+		
+		for n in range( nchunks ):
+			print( "nchunk %d-of-%d" % ( n+1, nchunks ) )
+			offset = n * chunk
+		
+			time1 = time()		# seconds since the epoch
 			
-			for r in range( nrec ):
-				if ( r > 0 and ( r + chunk ) % chunk == 0 ):
-					print( "%d-of-%d records processed" % ( r, nrec ) )
-				
-				rec = resp[ r ]
-				if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
-				if debug: print( rec )
-				
-				id_log       = none2empty( rec[ "id_log" ] )
-				id_source    = none2empty( rec[ "id_source" ] )
-				archive      = none2empty( rec[ "archive" ] )
-				scan_url     = none2empty( rec[ "scan_url" ] )
-				location     = none2empty( rec[ "location" ] )
-				reg_type     = none2empty( rec[ "reg_type" ] )
-				date         = none2empty( rec[ "date" ] )
-				sequence     = none2empty( rec[ "sequence" ] )
-				role         = none2empty( rec[ "role" ] )
-				guid         = none2empty( rec[ "guid" ] )
-				reg_key      = none2empty( rec[ "reg_key" ] )
-				pers_key     = none2empty( rec[ "pers_key" ] )
-				report_class = none2empty( rec[ "report_class" ] )
-				report_type  = none2empty( rec[ "report_type" ] )
-				content      = none2empty( rec[ "content" ] )
-				date_time    = str( none2empty( rec[ "date_time" ] ) )
-				
-				if pers_key == '': 
-					pers_key = 0	# declared as INTEGER
-				
-				if debug:
-					print( "id_log       = %s" % id_log )
-					print( "id_source    = %s" % id_source  )
-					print( "archive      = %s" % archive )
-					print( "scan_url     = %s" % scan_url )
-					print( "location     = %s" % location )
-					print( "reg_type     = %s" % reg_type )
-					print( "date         = %s" % date )
-					print( "sequence     = %s" % sequence )
-					print( "role         = %s" % role )
-					print( "guid         = %s" % guid )
-					print( "reg_key      = %s" % reg_key )
-					print( "pers_key     = %s" % pers_key )
-					print( "report_class = %s" % report_class )
-					print( "report_type  = %s" % report_type )
-					print( "content      = %s" % content )
-					print( "date_time    = %s" % date_time )
-				
-				# without id_log (also pk of ERROR_STORE table)
-				# add flag = 1
-				er_fields  = fields[ 8: ]
-				er_fields += ", flag"
-				
-				flag = 1
-				er_values = ( id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, 
-					reg_key, pers_key, report_class, report_type, content, date_time, flag )
-				
-				# Using 'IGNORE' to ignore violations of the unique_index constraint
-				es_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
-				if debug: print ( es_query )
-				es_resp = db_logs.insert( es_query )
-				insert_count += es_resp
+			if len( x_codes ) > 0:
+				x_tuple = tuple( x_codes )
+				query = "SELECT %s FROM links_logs.`%s` WHERE NOT report_type IN %s" % ( fields, log_name, x_tuple )
+			else:		# no exclusions
+				query = "SELECT %s FROM links_logs.`%s`" % ( fields, log_name )
+			query += " LIMIT %d OFFSET %d;" % ( chunk, offset )
+			print( query )
 			
-			print( "%d-of-%d records processed" % ( nrec, nrec ) )
-			print( "%d records inserted in ERROR_STORE" % insert_count )
+			resp = db_logs.query( query )
 			
+			str_elapsed = format_secs( time() - time1 )
+			print( "query took %s" % str_elapsed )
+			
+			
+			if resp is not None:
+				nrec = len( resp )
+				nrec_file += nrec
+				print( "number of records in chunk %s: %d" % ( log_name, nrec ) )
+				
+				for r in range( nrec ):
+					if ( r > 0 and ( r + chunk ) % chunk == 0 ):
+						print( "%d-of-%d records processed" % ( r, nrec ) )
+					
+					rec = resp[ r ]
+					if debug: print( "record %d-of-%d" % ( r+1, nrec ) )
+					if debug: print( rec )
+					
+					id_log       = none2empty( rec[ "id_log" ] )
+					id_source    = none2empty( rec[ "id_source" ] )
+					archive      = none2empty( rec[ "archive" ] )
+					scan_url     = none2empty( rec[ "scan_url" ] )
+					location     = none2empty( rec[ "location" ] )
+					reg_type     = none2empty( rec[ "reg_type" ] )
+					date         = none2empty( rec[ "date" ] )
+					sequence     = none2empty( rec[ "sequence" ] )
+					role         = none2empty( rec[ "role" ] )
+					guid         = none2empty( rec[ "guid" ] )
+					reg_key      = none2empty( rec[ "reg_key" ] )
+					pers_key     = none2empty( rec[ "pers_key" ] )
+					report_class = none2empty( rec[ "report_class" ] )
+					report_type  = none2empty( rec[ "report_type" ] )
+					content      = none2empty( rec[ "content" ] )
+					date_time    = str( none2empty( rec[ "date_time" ] ) )
+					
+					if pers_key == '': 
+						pers_key = 0	# declared as INTEGER
+					
+					if debug:
+						print( "id_log       = %s" % id_log )
+						print( "id_source    = %s" % id_source  )
+						print( "archive      = %s" % archive )
+						print( "scan_url     = %s" % scan_url )
+						print( "location     = %s" % location )
+						print( "reg_type     = %s" % reg_type )
+						print( "date         = %s" % date )
+						print( "sequence     = %s" % sequence )
+						print( "role         = %s" % role )
+						print( "guid         = %s" % guid )
+						print( "reg_key      = %s" % reg_key )
+						print( "pers_key     = %s" % pers_key )
+						print( "report_class = %s" % report_class )
+						print( "report_type  = %s" % report_type )
+						print( "content      = %s" % content )
+						print( "date_time    = %s" % date_time )
+					
+					# without id_log (also pk of ERROR_STORE table)
+					# add flag = 1
+					er_fields  = fields[ 8: ]
+					er_fields += ", flag"
+					
+					flag = 1
+					er_values = ( id_source, archive, scan_url, location, reg_type, date, sequence, role, guid, 
+						reg_key, pers_key, report_class, report_type, content, date_time, flag )
+					
+					# Using 'IGNORE' to ignore violations of the unique_index constraint
+					es_query = "INSERT IGNORE INTO links_logs.ERROR_STORE ( %s ) VALUES %s;" % ( er_fields, er_values )
+					if debug: print ( es_query )
+					es_resp = db_logs.insert( es_query )
+					if debug: print( "es_resp: %s" % es_resp )
+					if es_resp is not None:
+						inserted_file += es_resp
+				
+			print( "%d-of-%d records processed from chunk" % ( nrec, nrec ) )
+			print( "%d records inserted in ERROR_STORE" % inserted_file )
+			
+		inserted_tot += inserted_file
+		if count_file != nrec_file:
+			print( "bookkeeping error: count_file: %d, nrec_file: %d" % ( count_file, nrec_file ) )
+		print( "from %d records %d were actually inserted" % ( nrec_file, inserted_file ) )
+		
+		str_elapsed = format_secs( time() - time0 )
+		print( "importing table took %s\n" % str_elapsed )
+	
+	print( "total records inserted: %d" % inserted_tot )
 	
 	table = "ERROR_STORE"
 	query = "SELECT COUNT(*) AS count FROM links_logs.`%s`;" % table
@@ -273,9 +317,6 @@ def process_logs( log_names ):
 		#print( resp )
 		count = resp[ 0 ][ "count" ]
 		print( "number of records in table %s: %d" % ( table, count ) )
-
-	str_elapsed = format_secs( time() - time0 )
-	print( "importing took %s" % str_elapsed )
 # process_logs()
 
 
@@ -381,6 +422,8 @@ if __name__ == "__main__":
 		print( "EXIT" )
 		sys.exit( 1 )
 	
+	chunk = config_local.get( "CHUNK", chunk_default )
+	
 	YAML_MAIN   = config_local.get( "YAML_MAIN" )
 	config_main = get_yaml_config( YAML_MAIN )
 	
@@ -412,7 +455,7 @@ if __name__ == "__main__":
 	
 
 	log_names = select_log_names( db_logs, begin_date, end_date )
-	process_logs( log_names )
+	process_logs( log_names, chunk )
 	
 	str_elapsed = format_secs( time() - time0 )
 	print( "Importing Logs took %s" % str_elapsed )
