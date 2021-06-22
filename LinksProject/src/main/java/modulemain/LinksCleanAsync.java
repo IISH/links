@@ -112,6 +112,7 @@ import general.PrintLogger;
  * FL-16-Feb-2021 merged 2 pull requests from Kerim
  * FL-12-May-2021 add scan_url and archive to logging tables
  * FL-07-Jun-2021 scanRemarksDivorce() bad query
+ * FL-21-Jun-2021 all functions enabled, so NOT multi-threaded deadlock save
  */
 
 
@@ -279,15 +280,22 @@ public class LinksCleanAsync extends Thread
 
 			doRole( opts.isDbgRole(), opts.isDoRole(), source, rmtype );								// GUI cb: Age, Role, Dates
 
-			// doDates0(): standardDate() + 4 types : split into 5 separate funcs
-			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "birth" );				// GUI cb: Age, Role, Dates
-			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "mar" );					// GUI cb: Age, Role, Dates
-			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "divorce" );				// GUI cb: Age, Role, Dates
-			//doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "death" );				// GUI cb: Age, Role, Dates
+			int max_threads_simul = opts.getMaxThreadsSimul();
+			if( max_threads_simul > 1 ) {
+				msg = "WARNING: Dates functions must be split further to avoid dead-locks with parallel cleaning!";
+				elapsedShowMessage( msg, threadStart, System.currentTimeMillis() );
+				System.out.println( msg );
+			}
 
-			// doDates1(): standardRegistrationDate() + 4 flag functions + minMaxDateValid() :
+			// doDates0(): standardDate() with 4 types : split into 4 separate funcs
+			doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "birth" );				// GUI cb: Age, Role, Dates
+			doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "mar" );					// GUI cb: Age, Role, Dates
+			doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "divorce" );				// GUI cb: Age, Role, Dates
+			doDates0(  opts.isDbgDates(), opts.isDoDates(), source, rmtype, "death" );				// GUI cb: Age, Role, Dates
+
+			// doDates1(): standardRegistrationDate(), 4 flag*Date() funcs, minMaxDateValid() :
 			// standardRegistrationDate() separate, and the remaining 5 updates (without looping): SINGLE threaded
-			//doDates1(  opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
+			doDates1(  opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
 
 			// doDates2(): only minMaxDateMain()
 			doDates2( opts.isDbgDates(), opts.isDoDates(), source, rmtype );							// GUI cb: Age, Role, Dates
@@ -297,7 +305,7 @@ public class LinksCleanAsync extends Thread
 			doPartsToFullDate( opts.isDbgPartsToFullDate(), opts.isDoPartsToFullDate(), source, rmtype );	// GUI cb: Parts to Full Date
 
 			// split in 2:
-			//doDaysSinceBeginRegist() probably deadlock save,
+			// doDaysSinceBeginRegist() probably deadlock save,
 			// doDaysSinceBeginPerson() split in 8 or SINGLE threaded
 			doDaysSinceBegin( opts.isDbgDaysSinceBegin(), opts.isDoDaysSinceBegin(), source, rmtype );	// GUI cb: Days since begin
 
@@ -4543,6 +4551,7 @@ public class LinksCleanAsync extends Thread
 		// Also split flag funcs into 4 to eliminate deadlock risk
 		// Fill empty event dates with registration dates
 		ts = System.currentTimeMillis();
+
 		msg = String.format( "Thread id %02d; Flagging birth dates (-> Reg dates) for source: %s, rmtype: %s ...", threadId, source, rmtype );
 		showMessage( msg, false, true );
 		flagBirthDate( debug, source, rmtype );
