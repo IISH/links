@@ -15,6 +15,7 @@ ToDo:		Move general db stuff to a separate hsn-links-db.py
 21-Sep-2020 quotechar  = '|' to avoid problems with the common " and ' in strings
 30-Sep-2020 WHERE string also in COUNT(*)
 01-Mar-2021 python version dependent csv import
+30-Jun-2021 clean whitespace query string
 """
 
 # future imports for Python 2/3 compatibility
@@ -149,6 +150,8 @@ def export( debug, db, table_name, columns_str, where_str, csv_filename ):
 			
 		if where_str:
 			query = "%s WHERE %s" % ( query, where_str )
+		
+		query = ' '.join( query.split() )		# clean whitespace
 		print( "query: %s" % query )
 
 		cursor = db.cursor
