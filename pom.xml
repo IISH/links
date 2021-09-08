@@ -29,7 +29,6 @@
                 <version>2.22.2</version>
                 <configuration>
                     <groups>regression</groups>
-                    <parallel>true</parallel>
                 </configuration>
             </plugin>
             <plugin>

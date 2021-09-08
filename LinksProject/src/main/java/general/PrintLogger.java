@@ -36,6 +36,7 @@ public class PrintLogger
     private String pathName;
     private FileWriter fw;
     private boolean fileIsLocked;
+    private boolean toConsole;
     private static String intextPrevious;
 
     /**
@@ -45,6 +46,11 @@ public class PrintLogger
      */
     public PrintLogger() throws Exception
     {
+        this(false);
+    }
+
+    public PrintLogger(boolean toConsole) throws Exception
+    {
         // create log filename
         //String format = "yyyy-MM-dd'T'HH:mm:ssz";
         String format = "yyyy-MM-dd_HH:mm:ss";
@@ -52,6 +58,7 @@ public class PrintLogger
         fileName = "LDM-" + ts + ".log";
         pathName = "log/" + fileName;
         fileIsLocked = false;
+        this.toConsole = toConsole;
         intextPrevious = "";
         System.out.printf( "Log filename: %s\n", pathName );
     }
@@ -73,26 +80,29 @@ public class PrintLogger
             text = ts + " " + text;
         }
 
-        try
-        {
-            // While file is locked sleep a bit
-            while( fileIsLocked ) {
-                //Thread.sleep(2000 + new java.util.Random().nextInt(2000));
-                Thread.sleep( 1000 );
-            }
-            
-            fileIsLocked = true;
-            {
-                fw = new FileWriter( pathName, true );
-                fw.write( text  + "\r\n" );
-                fw.close();
-            }
-            fileIsLocked = false;
-            
+        if (toConsole) {
+            System.out.println(text);
         }
-        catch( Exception ex ) {
-            String msg = String.format( "Could not write to file: %s,\n%s", pathName, intext );
-            throw new Exception( "Could not write to file " + pathName, ex );
+        else {
+            try {
+                // While file is locked sleep a bit
+                while (fileIsLocked) {
+                    //Thread.sleep(2000 + new java.util.Random().nextInt(2000));
+                    Thread.sleep(1000);
+                }
+
+                fileIsLocked = true;
+                {
+                    fw = new FileWriter(pathName, true);
+                    fw.write(text + "\r\n");
+                    fw.close();
+                }
+                fileIsLocked = false;
+
+            } catch (Exception ex) {
+                String msg = String.format("Could not write to file: %s,\n%s", pathName, intext);
+                throw new Exception("Could not write to file " + pathName, ex);
+            }
         }
 
         intextPrevious = intext;

@@ -167,8 +167,12 @@ public class LinksCleanMain extends Thread
             plog.show(msg);
             showMessage(msg, false, true);
 
-            guiLine.setText("");
-            guiArea.setText("");
+            if (guiLine != null) {
+                guiLine.setText("");
+            }
+            if (guiArea != null) {
+                guiArea.setText("");
+            }
 
             showOptions();
 
@@ -684,7 +688,9 @@ public class LinksCleanMain extends Thread
      */
     public void showMessage( String logText, boolean isMinOnly, boolean newLine )
     {
-        guiLine.setText( logText );
+        if (guiLine != null) {
+            guiLine.setText(logText);
+        }
 
         if( !isMinOnly ) {
             String newLineToken = "";
@@ -696,7 +702,9 @@ public class LinksCleanMain extends Thread
             if( logText != endl ) {
                 String ts = LinksSpecific.getTimeStamp2( "HH:mm:ss" );
 
-                guiArea.append( ts + " " );
+                if (guiArea != null) {
+                    guiArea.append(ts + " ");
+                }
                 // System.out.printf( "%s ", ts );
                 //logger.info( logText );
                 try { plog.show( logText ); }
@@ -706,7 +714,9 @@ public class LinksCleanMain extends Thread
                 }
             }
 
-            guiArea.append( logText + newLineToken );
+            if (guiArea != null) {
+                guiArea.append(logText + newLineToken);
+            }
             //System.out.printf( "%s%s", logText, newLineToken );
             try { plog.show( logText ); }
             catch( Exception ex ) {
@@ -723,7 +733,9 @@ public class LinksCleanMain extends Thread
     {
         String newLineToken = "\r\n";
 
-        guiArea.append( newLineToken );
+        if (guiArea != null) {
+            guiArea.append(newLineToken);
+        }
 
         try { plog.show( "" ); }
         catch( Exception ex ) {

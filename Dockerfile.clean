@@ -1,0 +1,74 @@
+FROM openjdk:11-jdk-slim AS build
+
+RUN apt update && apt install maven -y
+
+COPY . /app
+WORKDIR /app
+
+RUN mvn install
+RUN mkdir -p LinksProject/target/dependency && (cd LinksProject/target/dependency; jar -xf ../LinksProject-2.0.jar)
+
+FROM openjdk:11-jdk-slim
+
+COPY --from=build /app/LinksProject/target/dependency/ /app
+COPY --from=build /app/docker/ /app
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get -y install gettext-base && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV USE_LINKS_LOGS=true
+ENV MAX_THREADS_SIMUL=8
+
+ENV MYSQL_HSNREF_HOSTURL=mysql_ref
+ENV MYSQL_HSNREF_DBNAME=links_general
+ENV MYSQL_HSNREF_USERNAME=root
+ENV MYSQL_HSNREF_PASSWORD=rootroot
+
+ENV MYSQL_LINKS_HOSTURL=mysql_links
+ENV MYSQL_LINKS_USERNAME=root
+ENV MYSQL_LINKS_PASSWORD=rootroot
+
+ENV DO_REFRESH_DATA=false
+ENV DO_PREPIECE_SUFFIX=false
+ENV DO_FIRSTNAMES=false
+ENV DO_FAMILYNAMES=false
+ENV DO_LOCATIONS=false
+ENV DO_STATUS_SEX=false
+ENV DO_REG_TYPE=false
+ENV DO_OCCUPATION=false
+ENV DO_AGE=false
+ENV DO_ROLE=false
+ENV DO_DATES=false
+ENV DO_MIN_MAX_MARRIAGE=false
+ENV DO_PARTS_TO_FULL_DATE=false
+ENV DO_DAYS_SINCE_BEGIN=false
+ENV DO_POST_TASKS=false
+ENV DO_REMOVE_EMPTY_DATE_REGS=false
+ENV DO_REMOVE_EMPTY_ROLE_REGS=false
+ENV DO_REMOVE_DUPLICATE_REGS=false
+ENV DO_SCAN_REMARKS=false
+
+ENV DBG_REFRESH_DATA=false
+ENV DBG_PREPIECE_SUFFIX=false
+ENV DBG_FIRSTNAMES=false
+ENV DBG_FAMILYNAMES=false
+ENV DBG_LOCATIONS=false
+ENV DBG_STATUS_SEX=false
+ENV DBG_REG_TYPE=false
+ENV DBG_OCCUPATION=false
+ENV DBG_AGE=false
+ENV DBG_ROLE=false
+ENV DBG_DATES=false
+ENV DBG_MIN_MAX_MARRIAGE=false
+ENV DBG_PARTS_TO_FULL_DATE=false
+ENV DBG_DAYS_SINCE_BEGIN=false
+ENV DBG_POST_TASKS=false
+ENV DBG_REMOVE_EMPTY_DATE_REGS=false
+ENV DBG_REMOVE_EMPTY_ROLE_REGS=false
+ENV DBG_REMOVE_DUPLICATE_REGS=false
+ENV DBG_SCAN_REMARKS=false
+
+ENTRYPOINT ["/app/entrypoint.sh"]
