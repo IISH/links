@@ -1,0 +1,20 @@
+# REQUIRED: YAML main for db access
+YAML_MAIN : "/app/hsn-links-db.yaml"
+
+# All person roles used [1...11] when MATCH_FUNCTION not specified implemented for matching
+MATCH_FUNCTION : "$MATCH_FUNCTION"
+
+# All CBG sources (using id_persist_registration) if not specified
+ID_SOURCES : "$ID_SOURCES"
+
+# Used in rdf output filenames if present
+SOURCE_NAME : "$SOURCE_NAME"
+
+REGISTRATION_FIELDS : "$REGISTRATION_FIELDS"
+PERSON_FIELDS_COMMON : "$PERSON_FIELDS_COMMON"
+PERSON_FIELDS_BIRTH : "$PERSON_FIELDS_BIRTH"
+PERSON_FIELDS_MARRIAGE : "$PERSON_FIELDS_MARRIAGE"
+PERSON_FIELDS_DEATH : "$PERSON_FIELDS_DEATH"
+
+# "All" (1 file), Certificates (2 files), Samples (2 files), "None" (4 files)
+RDF_MERGE_SAMPLES : "$RDF_MERGE_SAMPLES"
