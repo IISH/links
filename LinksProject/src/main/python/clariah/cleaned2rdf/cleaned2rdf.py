@@ -853,10 +853,10 @@ def make_rdf_by_function( rdf_dir, match_params, config_params ):
 	
 	s1_sample_spec = ""
 	s2_sample_spec = ""
-	s1_certificate_spec = ""
-	s2_certificate_spec = ""
+	r_certificate_spec = ""
+	p_certificate_spec = ""
 	
-	rdf_merge = config_params[ "rdf_merge" ]
+	rdf_merge = config_params[ "rdf_merge_samples" ]
 	if rdf_merge in [ "", "None" ]:
 		s1_sample_spec     = "-s1"
 		s2_sample_spec     = "-s2"
@@ -961,8 +961,7 @@ def make_rdf_cbg( db, rdf_dir, config_params ):
 		query_person += " AND id_source IN (%s)" % id_sources
 	query_person = ' '.join( query_person.split() )		# clean whitespace
 	#print( "query_person: %s" % query_person )
-	"""
-	
+
 	person_fields_common   = config_params[ "person_fields_common" ]
 	person_fields_birth    = config_params[ "person_fields_birth" ]
 	person_fields_marriage = config_params[ "person_fields_marriage" ]
@@ -1005,7 +1004,7 @@ def make_rdf_cbg( db, rdf_dir, config_params ):
 		person_rdf_name = "%s%s-%s.nq" % ( p_prefix, source_spec, date )
 		person_rdf_path = os.path.join( rdf_dir, person_rdf_name )
 		convertTablePersonsToRDF( db, query_person, person_rdf_path )
-		"""
+
 # make_rdf_cbg()
 
 
