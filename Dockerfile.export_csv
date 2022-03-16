@@ -1,0 +1,44 @@
+FROM python:3.9-slim AS build
+
+# Install required packages for building
+RUN apt update && \
+    apt install build-essential python3-dev default-libmysqlclient-dev -y
+
+# Copy source code for building
+COPY ./LinksProject/src/main/python/export_csv/export_csv.py /app/
+COPY ./docker/export_csv/ /app
+WORKDIR /app
+
+# Setup the virtual environment
+RUN pip install --no-cache-dir virtualenv && \
+    virtualenv venv
+ENV PATH "/app/venv/bin:$PATH"
+
+# Install dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+FROM python:3.9-slim
+
+# Install envsubst tool for adding env variables to config file and the MySQL client libraries
+RUN apt update && \
+    apt install gettext-base default-mysql-client -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the application from the builder
+COPY --from=build /app /app
+ENV PATH "/app/venv/bin:$PATH"
+WORKDIR /app
+
+# Define default values for the env variables
+ENV MYSQL_LINKS_HOSTURL mysql_links
+ENV MYSQL_LINKS_USERNAME root
+ENV MYSQL_LINKS_PASSWORD rootroot
+
+ENV DB_NAME links_cleaned
+ENV TABLE_NAME person_c
+ENV COLUMN_NAMES id_person
+ENV CSV_FILENAME persons.csv
+
+# Run envsubst to create YAML files and start the Python script; CSV export in /app/csv
+ENTRYPOINT ["/app/entrypoint.sh"]
