@@ -6378,7 +6378,7 @@ public class LinksCleanAsync extends Thread
 			}
 		}
 
-		String query = "SELECT function, min_year, max_year FROM ref_date_minmax"
+		String query = "SELECT `function`, min_year, max_year FROM ref_date_minmax"
 			+ " WHERE maintype = '"    + main_type + "'"
 			+ " AND role = '"          + role + "'"
 			+ " AND date_type = '"     + date_type + "'"
@@ -6554,7 +6554,7 @@ public class LinksCleanAsync extends Thread
 		{
 			if( debug ) { showMessage( "minMaxMainAge(): age_main_role = " + age_main_role + " [loop = " + loop + "]", false, true ); }
 
-			String queryRef = "SELECT function, min_year, max_year, min_person, max_person FROM links_general.ref_date_minmax"
+			String queryRef = "SELECT `function`, min_year, max_year, min_person, max_person FROM links_general.ref_date_minmax"
 				+ " WHERE maintype = '"    + main_type + "'"
 				+ " AND role = '"          + role + "'"
 				+ " AND date_type = '"     + date_type + "'"
