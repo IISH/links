@@ -1,7 +1,4 @@
-FROM openjdk:11-jdk-slim AS build
-
-# Install Maven
-RUN apt update && apt install maven -y
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 # Copy source code for building
 COPY . /app
@@ -11,11 +8,11 @@ WORKDIR /app
 RUN mvn install
 RUN mkdir -p LinksProject/target/dependency && (cd LinksProject/target/dependency; jar -xf ../LinksProject-2.0.jar)
 
-FROM openjdk:11-jdk-slim
+FROM eclipse-temurin:21-jre
 
 # Copy the application from the builder
-COPY --from=build /app/LinksProject/target/dependency/ /app
-COPY --from=build /app/docker/clean/ /app
+COPY --from=builder /app/LinksProject/target/dependency/ /app
+COPY --from=builder /app/docker/clean/ /app
 WORKDIR /app
 
 # Install envsubst tool for adding env variables to config file
