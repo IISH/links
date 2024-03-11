@@ -6,3 +6,22 @@ TABLE_NAME : $TABLE_NAME
 COLUMN_NAMES : $COLUMN_NAMES
 WHERE_CONDITION : $WHERE_CONDITION
 CSV_FILENAME : $CSV_FILENAME
+
+#DB_NAME    : links_cleaned
+#TABLE_NAME : person_c
+#COLUMN_NAMES : id_person, id_registration, id_source, registration_maintype, registration_type, firstname, prefix, familyname, sex, role, occupation,
+#   age_day, age_month, age_year,
+#   birth_day, birth_month, birth_year, birth_location,
+#   mar_day,   mar_month,   mar_year,   mar_location,
+#   death_day, death_month, death_year, death_location
+#WHERE_CONDITION : not_linksbase_p IS NULL
+#CSV_FILENAME : persons.csv
+
+#DB_NAME    : links_cleaned
+#TABLE_NAME : registration_c
+#COLUMN_NAMES : id_registration, id_source, id_persist_registration, source_digital_original, id_orig_registration,
+#   registration_maintype, registration_type,
+#   registration_location_no, registration_day,
+#   registration_month, registration_year, registration_seq
+#WHERE_CONDITION : not_linksbase IS NULL
+#CSV_FILENAME :registrations.csv
